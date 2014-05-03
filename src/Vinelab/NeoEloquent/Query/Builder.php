@@ -3,6 +3,7 @@
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Batch;
 use Vinelab\NeoEloquent\Connection;
+use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Illuminate\Database\Query\Builder as IlluminateQueryBuilder;
 
 class Builder extends IlluminateQueryBuilder {
@@ -40,8 +41,10 @@ class Builder extends IlluminateQueryBuilder {
      * @param Vinelab\NeoEloquent\Connection $connection
      * @return void
      */
-    public function __construct(Connection $connection)
+    public function __construct(Connection $connection, CypherGrammar $grammar)
     {
+        $this->grammar = $grammar;
+
         $this->connection = $connection;
 
         $this->client = $connection->getClient();
@@ -88,6 +91,39 @@ class Builder extends IlluminateQueryBuilder {
         $node->addLabels(array_map(array($this, 'makeLabel'), $this->from));
 
         return $id;
+    }
+
+    	/**
+	 * Execute the query as a fresh "select" statement.
+	 *
+	 * @param  array  $columns
+	 * @return array|static[]
+	 */
+	public function getFresh($columns = array('*'))
+	{
+		if (is_null($this->columns)) $this->columns = $columns;
+
+        return $this->runSelect();
+	}
+
+	/**
+	 * Run the query as a "select" statement against the connection.
+	 *
+	 * @return array
+	 */
+	protected function runSelect()
+	{
+		return $this->connection->select($this->toCypher(), $this->getBindings());
+	}
+
+    /**
+	 * Get the Cypher representation of the traversal.
+	 *
+	 * @return string
+	 */
+    public function toCypher()
+    {
+        return $this->grammar->compileSelect($this);
     }
 
     /**

@@ -13,7 +13,6 @@ abstract class Model extends IlluminateModel {
      */
     protected $label = null;
 
-
     /**
      * Set the node label for this model
      *
@@ -44,7 +43,9 @@ abstract class Model extends IlluminateModel {
 	{
 		$conn = $this->getConnection();
 
-		return new QueryBuilder($conn);
+        $grammar = $conn->getQueryGrammar();
+
+		return new QueryBuilder($conn, $grammar);
 	}
 
     /**
@@ -92,4 +93,7 @@ abstract class Model extends IlluminateModel {
 	{
 		return $this->getDefaultNodeLabel();
 	}
+
+    
+
 }
