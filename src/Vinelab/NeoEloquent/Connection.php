@@ -1,6 +1,7 @@
 <?php namespace Vinelab\NeoEloquent;
 
 use Everyman\Neo4j\Client as NeoClient;
+use Everyman\Neo4j\Cypher\Query as CypherQuery;
 use Vinelab\NeoEloquent\Query\Builder;
 use Illuminate\Database\Connection as IlluminateConnection;
 
@@ -67,6 +68,7 @@ class Connection extends IlluminateConnection {
         return $this->node($table);
     }
 
+
     /**
      * Create a new Neo4j client
      *
@@ -127,6 +129,97 @@ class Connection extends IlluminateConnection {
     public function getDriverName()
     {
         return $this->driverName;
+    }
+
+    /**
+	 * Run a select statement against the database.
+	 *
+	 * @param  string  $query
+	 * @param  array   $bindings
+	 * @return array
+	 */
+    public function select($query, $bindings = array())
+    {
+        return $this->run($query, $bindings, function($me, $query, $bindings)
+		{
+			if ($me->pretending()) return array();
+
+			// For select statements, we'll simply execute the query and return an array
+			// of the database result set. Each element in the array will be a single
+			// node from the database, and will either be an array or objects.
+            $statement = $me->getCypherQuery($query, $bindings);
+
+            return $statement->getResultSet();
+		});
+    }
+
+    /**
+     * Make a query out of a Cypher statement
+     * and the bindings values
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     */
+    public function getCypherQuery($query, array $bindings)
+    {
+        return new CypherQuery($this->getClient(), $query, $this->transformBindings($query, $bindings));
+    }
+
+    /**
+	 * Prepare the query bindings for execution.
+	 *
+     * @param  string $query
+	 * @param  array  $bindings
+	 * @return array
+	 */
+	public function transformBindings($query, array $bindings)
+    {
+        // first we call our mother to prepare the bindings for us
+        $prepared = parent::prepareBindings($bindings);
+
+        // Now that our bindings are ready to be injected into
+        // the query, according to the Neo4j client bindings
+        // can be matched by key, i.e. {name} will match
+        // the value in an associative arra like ['name' => $name]
+        // therefore we need to match the "columns" to their values
+        preg_match_all('/{(.*?)}/', $query, $matches);
+
+        $transformed = array();
+
+        if ((isset($matches[1]) and ! empty($matches[1])))
+        {
+            foreach ($matches[1] as $index=>$property)
+            {
+                $transformed[$property] = $bindings[$index];
+            }
+        }
+
+        return $transformed;
+    }
+
+    /**
+     * Get the query grammar used by the connection.
+     *
+     * @return \Vinelab\NeoEloquent\Query\Grammars\CypherGrammar
+     */
+    public function getQueryGrammar()
+    {
+        if ( ! $this->queryGrammar)
+        {
+            $this->useDefaultQueryGrammar();
+        }
+
+        return $this->queryGrammar;
+    }
+
+    /**
+     * Get the default query grammar instance.
+     *
+     * @return \Vinelab\NeoEloquent\Query\Grammars\CypherGrammar
+     */
+    protected function getDefaultQueryGrammar()
+    {
+        return new Query\Grammars\CypherGrammar;
     }
 
 }
