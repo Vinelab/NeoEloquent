@@ -199,4 +199,46 @@ class CypherGrammar extends Grammar {
     {
         return 'RETURN ' . $this->columnize($properties);
     }
+
+    public function compileUpdate(Builder $query, $values)
+    {
+        // Each one of the columns in the update statements needs to be wrapped in the
+		// keyword identifiers, also a place-holder needs to be created for each of
+		// the values in the list of bindings so we can make the sets statements.
+
+        foreach ($values as $key => $value)
+		{
+			$columns[] = $this->wrap($key) . ' = ' . $this->parameter(array('column' => $key));
+		}
+
+		$columns = implode(', ', $columns);
+
+		// If the query has any "join" clauses, we will setup the joins on the builder
+		// and compile them so we can attach them to this update, as update queries
+		// can get join statements to attach to other tables when they're needed.
+		if (isset($query->joins))
+		{
+			$joins = ' '.$this->compileJoins($query, $query->joins);
+		}
+		else
+		{
+			$joins = '';
+		}
+
+		// Of course, update queries may also be constrained by where clauses so we'll
+		// need to compile the where clauses and attach it to the query so only the
+		// intended records are updated by the SQL statements we generate to run.
+		$where = $this->compileWheres($query);
+
+        // We always need the MATCH clause in our cypher which
+        // is the responsibility of compiling the From component.
+		$from = $this->compileComponents($query, array('from'))['from'];
+
+        // When updating we need to return the count of the affected nodes
+        // so we trick the Columns compiler into returning that for us.
+        $return = $this->compileColumns($query, array('count(n)'));
+
+        return "$from $where SET $columns $return";
+    }
+
 }

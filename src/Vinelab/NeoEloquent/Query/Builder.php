@@ -93,7 +93,21 @@ class Builder extends IlluminateQueryBuilder {
         return $id;
     }
 
-    	/**
+    /**
+     * Update a record in the database.
+     *
+     * @param  array  $values
+     * @return int
+     */
+    public function update(array $values)
+    {
+        $bindings = array_merge($values, reset($this->bindings));
+
+        $cypher = $this->grammar->compileUpdate($this, $values);
+
+        return $this->connection->update($cypher, $bindings);
+    }
+
     /**
 	 * Add a basic where clause to the query.
 	 *
