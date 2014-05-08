@@ -197,9 +197,6 @@ class CypherGrammar extends Grammar {
 
     protected function compileColumns(Builder $query, $properties)
     {
-        // Columnize method always expects an array so we give it that
-        if ( ! is_array($properties)) $properties = array($properties);
-
         return 'RETURN ' . $this->columnize($properties);
     }
 }
