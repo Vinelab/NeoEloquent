@@ -94,6 +94,78 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     	/**
+    /**
+	 * Add a basic where clause to the query.
+	 *
+	 * @param  string  $column
+	 * @param  string  $operator
+	 * @param  mixed   $value
+	 * @param  string  $boolean
+	 * @return \Illuminate\Database\Query\Builder|static
+	 *
+	 * @throws \InvalidArgumentException
+	 */
+	public function where($column, $operator = null, $value = null, $boolean = 'and')
+	{
+		if (func_num_args() == 2)
+		{
+			list($value, $operator) = array($operator, '=');
+		}
+		elseif ($this->invalidOperatorAndValue($operator, $value))
+		{
+			throw new \InvalidArgumentException("Value must be provided.");
+		}
+
+		// If the columns is actually a Closure instance, we will assume the developer
+		// wants to begin a nested where statement which is wrapped in parenthesis.
+		// We'll add that Closure to the query then return back out immediately.
+		if ($column instanceof Closure)
+		{
+			return $this->whereNested($column, $boolean);
+		}
+
+		// If the given operator is not found in the list of valid operators we will
+		// assume that the developer is just short-cutting the '=' operators and
+		// we will set the operators to '=' and set the values appropriately.
+		if ( ! in_array(strtolower($operator), $this->operators, true))
+		{
+			list($value, $operator) = array($operator, '=');
+		}
+
+		// If the value is a Closure, it means the developer is performing an entire
+		// sub-select within the query and we will need to compile the sub-select
+		// within the where clause to get the appropriate query record results.
+		if ($value instanceof Closure)
+		{
+			return $this->whereSub($column, $operator, $value, $boolean);
+		}
+
+		// If the value is "null", we will just assume the developer wants to add a
+		// where null clause to the query. So, we will allow a short-cut here to
+		// that method for convenience so the developer doesn't have to check.
+		if (is_null($value))
+		{
+			return $this->whereNull($column, $boolean, $operator != '=');
+		}
+
+		// Now that we are working with just a simple query we can put the elements
+		// in our array and add the query binding to our array of bindings that
+		// will be bound to each SQL statements when it is finally executed.
+		$type = 'Basic';
+
+		$this->wheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
+
+		if ( ! $value instanceof Expression)
+		{
+            if ($column == 'id(n)') $column = 'id';
+
+			$this->addBinding(array($column => $value), 'where');
+		}
+
+		return $this;
+	}
+
+    /**
 	 * Execute the query as a fresh "select" statement.
 	 *
 	 * @param  array  $columns

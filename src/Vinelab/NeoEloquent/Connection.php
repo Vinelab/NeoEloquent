@@ -162,40 +162,69 @@ class Connection extends IlluminateConnection {
      */
     public function getCypherQuery($query, array $bindings)
     {
-        return new CypherQuery($this->getClient(), $query, $this->transformBindings($query, $bindings));
+        return new CypherQuery($this->getClient(), $query, $this->prepareBindings($bindings));
     }
 
     /**
 	 * Prepare the query bindings for execution.
 	 *
-     * @param  string $query
 	 * @param  array  $bindings
 	 * @return array
 	 */
-	public function transformBindings($query, array $bindings)
-    {
-        // first we call our mother to prepare the bindings for us
-        $prepared = parent::prepareBindings($bindings);
+	public function prepareBindings(array $bindings)
+	{
 
-        // Now that our bindings are ready to be injected into
-        // the query, according to the Neo4j client bindings
-        // can be matched by key, i.e. {name} will match
-        // the value in an associative arra like ['name' => $name]
-        // therefore we need to match the "columns" to their values
-        preg_match_all('/{(.*?)}/', $query, $matches);
+		$grammar = $this->getQueryGrammar();
 
-        $transformed = array();
+        $prepared = array();
 
-        if ((isset($matches[1]) and ! empty($matches[1])))
-        {
-            foreach ($matches[1] as $index=>$property)
+		foreach ($bindings as $key => $value)
+		{
+            // The bindings are a collected in a little bit different way than
+            // Eloquent, we will need the key name in order to know where to replace
+            // the value using the Neo4j client.
+            $binding = array($key => $value);
+
+            // We need to get the array value of the binding
+            // if it were mapped
+            if (is_array($value))
             {
-                $transformed[$property] = $bindings[$index];
+                $value = reset($value);
             }
-        }
 
-        return $transformed;
-    }
+			// We need to transform all instances of the DateTime class into an actual
+			// date string. Each query grammar maintains its own date string format
+			// so we'll just ask the grammar for the format to get from the date.
+
+			if ($value instanceof DateTime)
+			{
+				$bindings[$key] = $value->format($grammar->getDateFormat());
+			}
+			elseif ($value === false)
+			{
+				$bindings[$key] = 0;
+			}
+
+            if ( ! $this->isBinding($binding))
+            {
+                $binding = reset($binding);
+            }
+
+            $property = key($binding);
+
+            // We do this because the binding replacement
+            // will not accept replacing "id(n)" with a value
+            // which have been previously processed by the grammar
+            // to be _nodeId instead.
+
+            if ($property == 'id') $property = '_nodeId';
+
+            // Set the binding key name and value
+            $prepared[$property] = $value;
+		}
+
+		return $prepared;
+	}
 
     /**
      * Get the query grammar used by the connection.
@@ -220,6 +249,23 @@ class Connection extends IlluminateConnection {
     protected function getDefaultQueryGrammar()
     {
         return new Query\Grammars\CypherGrammar;
+    }
+
+    /**
+     * A binding should always be in an associative
+     * form of a key=>value, otherwise we will not be able to
+     * consider it a valid binding and replace its values in the query.
+     * This function validates whether the binding is valid to be used.
+     *
+     * @param  array $binding
+     * @return boolean
+     */
+    public function isBinding(array $binding)
+    {
+        // A binding is valid only when the key is not a number
+        $keys = array_keys($binding);
+
+        return ! is_numeric(reset($keys));
     }
 
 }

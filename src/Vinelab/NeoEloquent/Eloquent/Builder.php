@@ -49,7 +49,7 @@ class Builder extends IlluminateBuilder {
         {
     		foreach ($results as $result)
     		{
-                $attributes = $this->getProperties($result, $columns);
+                $attributes = $this->getProperties($result);
 
     			$models[] = $model = $this->model->newFromBuilder($attributes);
 
@@ -68,9 +68,11 @@ class Builder extends IlluminateBuilder {
      * @param  array $columns
      * @return array
      */
-    public function getProperties(Row $row, array $columns)
+    public function getProperties(Row $row)
     {
         $attributes = array();
+
+        $columns = $this->query->columns;
 
         // What we get returned from the client is a result set
         // and each result is either a Node or a single column value
