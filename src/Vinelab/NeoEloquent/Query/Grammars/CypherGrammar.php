@@ -31,29 +31,69 @@ class CypherGrammar extends Grammar {
 	 * Compile the components necessary for a select clause.
 	 *
 	 * @param  \Vinelab\NeoEloquent\Query\Builder
+     * @param  array|string $specified You may specify a component to compile
 	 * @return array
 	 */
-	protected function compileComponents(Builder $query)
+	protected function compileComponents(Builder $query, $specified = null)
 	{
 		$cypher = array();
 
-		foreach ($this->selectComponents as $component)
+        $components = array();
+
+        // Setup the components that we need to compile
+        if ($specified)
+        {
+            // We support passing a string as well
+            // by turning it into an array as needed
+            // to be $components
+            if ( ! is_array($specified))
+            {
+                $specified = array($specified);
+            }
+
+            $components = $specified;
+
+        } else
+        {
+            $components = $this->selectComponents;
+        }
+
+		foreach ($components as $component)
 		{
+            // Compiling return for Neo4j is
+            // handled in the compileColumns method
+            // in order to keep the convenience provided by Eloquent
+            // that deals with collecting and processing the columns
             if ($component == 'return') $component = 'columns';
 
-			// To compile the query, we'll spin through each component of the query and
-			// see if that component exists. If it does we'll just call the compiler
-			// function for the component which is responsible for making the SQL.
-			if ( ! is_null($query->$component))
-			{
-				$method = 'compile'.ucfirst($component);
-
-				$cypher[$component] = $this->$method($query, $query->$component);
-			}
+            $cypher[$component] = $this->compileComponent($query, $components, $component);
 		}
 
 		return $cypher;
 	}
+
+    protected function compileComponent($query, $components, $component)
+    {
+        $cypher = '';
+
+        // Let's make sure this is a proprietary component that we support
+        if ( ! in_array($component, $components))
+        {
+            throw new InvalidCypherGrammarComponentException($component);
+        }
+
+        // To compile the query, we'll spin through each component of the query and
+        // see if that component exists. If it does we'll just call the compiler
+        // function for the component which is responsible for making the Cypher.
+        if ( ! is_null($query->$component))
+        {
+            $method = 'compile'.ucfirst($component);
+
+            $cypher = $this->$method($query, $query->$component);
+        }
+
+        return $cypher;
+    }
 
     /**
 	 * Compile the "from" portion of the query
