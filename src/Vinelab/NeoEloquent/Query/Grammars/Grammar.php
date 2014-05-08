@@ -15,9 +15,9 @@ class Grammar extends IlluminateGrammar {
         // Validate whether the requested field is the
         // node id, in that case id(n) doesn't work as
         // a placeholder so we transform it to _nodeId instead
-        $property = ($value['column'] == 'id(n)') ? '_nodeId' : $value['column'];
+        $property = ($value['column'] == 'id(n)' or $value['column'] == 'id') ? '_nodeId' : $value['column'];
 
-		return $this->isExpression($value) ? $this->getValue($value) : '{' . $property . '}';
+		return $this->isExpression($property) ? $this->getValue($property) : '{' . $property . '}';
 	}
 
     /**
