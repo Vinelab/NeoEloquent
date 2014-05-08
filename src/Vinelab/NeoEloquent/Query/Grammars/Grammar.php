@@ -1,5 +1,6 @@
 <?php namespace Vinelab\NeoEloquent\Query\Grammars;
 
+use Illuminate\Database\Query\Builder as Builder;
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar {
@@ -53,6 +54,34 @@ class Grammar extends IlluminateGrammar {
         if ($value == 'id') return 'id(n)';
 
         return 'n.' . $value;
+    }
+
+    /**
+     * Turn an array of values into a comma separated string of values
+     * that are escaped and ready to be passed as values in a query
+     *
+     * @param  array $values
+     * @return  string
+     */
+    public function valufy(array $values)
+    {
+        // escape and wrap them with a quote.
+        $values = array_map(function ($value)
+        {
+            // We need to keep the data type of values
+            // except when they're strings, we need to
+            // escape wrap them.
+            if (is_string($value))
+            {
+                $value = "'" . addslashes($value) . "'";
+            }
+
+            return $value;
+
+        }, $values);
+
+        // stringify them.
+        return implode(', ', $values);
     }
 
 }

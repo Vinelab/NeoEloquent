@@ -232,7 +232,7 @@ class Connection extends IlluminateConnection {
                 $binding = reset($binding);
             }
 
-            $property = key($binding);
+            $property = is_array($binding) ? key($binding) : $binding;
 
             // We do this because the binding replacement
             // will not accept replacing "id(n)" with a value

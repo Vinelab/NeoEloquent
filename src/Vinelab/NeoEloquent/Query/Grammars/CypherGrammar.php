@@ -241,4 +241,18 @@ class CypherGrammar extends Grammar {
         return "$from $where SET $columns $return";
     }
 
+    /**
+     * Compile a "where in" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereIn(Builder $query, $where)
+    {
+        $values = $this->valufy($where['values']);
+
+        return $this->wrap($where['column']).' IN ['.$values.']';
+    }
+
 }
