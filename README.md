@@ -36,3 +36,9 @@ make sure it's flattened. *Example:*
 // Don't
 User::create(['name' => 'Some Name', 'location' => ['lat' => 123, 'lng'=> -123 ] ]);
 ```
+
+## Remarks
+
+- Avoid assigning a property `_nodeId` unless you would like it to actually be the Node id,
+NeoEloquent has a special case when fetching a node by its id since it is treated differently
+by the Neo4j client.
