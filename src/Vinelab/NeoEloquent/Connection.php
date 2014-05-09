@@ -45,31 +45,6 @@ class Connection extends IlluminateConnection {
     }
 
     /**
-     * Begin a fluent query against a node
-     *
-     * @param string $label The node lable
-     * @return QueryBuilder
-     */
-    public function node($labels)
-    {
-        $query = new Builder($this);
-
-        return $query->from($labels);
-    }
-
-    /**
-     * Begin a fluent query against a database collection.
-     *
-     * @param  string  $table
-     * @return Builder
-     */
-    public function table($table)
-    {
-        return $this->node($table);
-    }
-
-
-    /**
      * Create a new Neo4j client
      *
      * @return Everyman\Neo4j\Client
