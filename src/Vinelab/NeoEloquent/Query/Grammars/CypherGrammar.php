@@ -232,13 +232,13 @@ class CypherGrammar extends Grammar {
 
         // We always need the MATCH clause in our cypher which
         // is the responsibility of compiling the From component.
-		$from = $this->compileComponents($query, array('from'))['from'];
+		$match = $this->compileComponents($query, array('from'))['from'];
 
         // When updating we need to return the count of the affected nodes
         // so we trick the Columns compiler into returning that for us.
         $return = $this->compileColumns($query, array('count(n)'));
 
-        return "$from $where SET $columns $return";
+        return "$match $where SET $columns $return";
     }
 
     /**
@@ -253,6 +253,23 @@ class CypherGrammar extends Grammar {
         $values = $this->valufy($where['values']);
 
         return $this->wrap($where['column']).' IN ['.$values.']';
+    }
+
+    /**
+	 * Compile a delete statement into SQL.
+	 *
+	 * @param  \Illuminate\Database\Query\Builder  $query
+	 * @return string
+	 */
+	public function compileDelete(Builder $query)
+    {
+        // We always need the MATCH clause in our cypher which
+        // is the responsibility of compiling the From component.
+        $match = $this->compileComponents($query, array('from'))['from'];
+
+        $where = is_array($query->wheres) ? $this->compileWheres($query) : '';
+
+        return "$match $where DELETE n";
     }
 
 }
