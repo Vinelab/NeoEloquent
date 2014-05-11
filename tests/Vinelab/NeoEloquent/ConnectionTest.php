@@ -195,7 +195,8 @@ class ConnectionTest extends TestCase {
 
         $results = $c->select($query, $bindings);
 
-        $log = reset($c->getQueryLog());
+        $log = $c->getQueryLog();
+        $log = reset($log);
 
         $this->assertEquals($log['query'], $query);
         $this->assertEquals($log['bindings'], $bindings);
