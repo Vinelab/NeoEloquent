@@ -12,3 +12,6 @@ before_script:
   - composer install --prefer-source --no-interaction --dev
 
 script: phpunit
+
+services:
+  - neo4j
