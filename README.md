@@ -1,5 +1,7 @@
 > **This package is still in the very early development phase, do not use it in production.**
 
+[![Build Status](https://travis-ci.org/Vinelab/NeoEloquent.svg?branch=master)](https://travis-ci.org/Vinelab/NeoEloquent)
+
 # NeoEloquent
 
 Neo4j Graph Eloquent Driver for Laravel 4
