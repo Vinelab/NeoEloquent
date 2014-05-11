@@ -12,10 +12,7 @@ class TestCase extends \Orchestra\Testbench\TestCase {
         // load custom configuration file
         $config = require 'config/database.php';
 
-        // make neo4j the default datbase
-        $app['config']->set('database.default', 'neo4j');
-
-        // setup connection parameters
-        $app['config']->set('database.connections.neo4j', $config['connections']['neo4j']);
+        // set the database configuration for the environment
+        $app['config']->set('database', $config);
     }
 }
