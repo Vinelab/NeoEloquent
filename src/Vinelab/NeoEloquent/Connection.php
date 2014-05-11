@@ -170,7 +170,6 @@ class Connection extends IlluminateConnection {
 	 */
 	public function prepareBindings(array $bindings)
 	{
-
 		$grammar = $this->getQueryGrammar();
 
         $prepared = array();
@@ -259,10 +258,15 @@ class Connection extends IlluminateConnection {
      */
     public function isBinding(array $binding)
     {
-        // A binding is valid only when the key is not a number
-        $keys = array_keys($binding);
+        if ( ! empty($binding))
+        {
+            // A binding is valid only when the key is not a number
+            $keys = array_keys($binding);
 
-        return ! is_numeric(reset($keys));
+            return ! is_numeric(reset($keys));
+        }
+
+        return false;
     }
 
 }
