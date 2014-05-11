@@ -232,7 +232,8 @@ class CypherGrammar extends Grammar {
 
         // We always need the MATCH clause in our cypher which
         // is the responsibility of compiling the From component.
-		$match = $this->compileComponents($query, array('from'))['from'];
+		$match = $this->compileComponents($query, array('from'));
+        $match = $match['from'];
 
         // When updating we need to return the count of the affected nodes
         // so we trick the Columns compiler into returning that for us.
@@ -265,7 +266,8 @@ class CypherGrammar extends Grammar {
     {
         // We always need the MATCH clause in our cypher which
         // is the responsibility of compiling the From component.
-        $match = $this->compileComponents($query, array('from'))['from'];
+        $match = $this->compileComponents($query, array('from'));
+        $match = $match['from'];
 
         $where = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
