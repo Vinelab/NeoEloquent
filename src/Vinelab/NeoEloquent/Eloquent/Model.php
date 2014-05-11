@@ -26,7 +26,7 @@ abstract class Model extends IlluminateModel {
     /**
      * Create a new Eloquent query builder for the model.
      *
-     * @param  Vinelab\NeoEloquent\Eloquent\Builder $query
+     * @param  Vinelab\NeoEloquent\Query\Builder $query
      * @return Vinelab\NeoEloquent\Eloquent\Builder|static
      */
     public function newEloquentBuilder($query)
@@ -76,7 +76,15 @@ abstract class Model extends IlluminateModel {
         // since this is not an array, it is assumed to be a string
         // we check to see if it follows neo4j's labels naming (User:Fan)
         // and return an array exploded from the ':'
-        if ( ! empty($label)) return explode(':', $label);
+        if ( ! empty($label))
+        {
+            $label = array_filter(explode(':', $label));
+
+            // This trick re-indexes the array
+            array_splice($label, 0, 0);
+
+            return $label;
+        }
 
         // Since there was no label for this model
         // we take the fully qualified (namespaced) class name and
@@ -94,6 +102,6 @@ abstract class Model extends IlluminateModel {
 		return $this->getDefaultNodeLabel();
 	}
 
-    
+
 
 }
