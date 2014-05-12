@@ -84,4 +84,11 @@ class ModelTest extends TestCase {
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Builder', $builder);
     }
+
+    public function tearDown()
+    {
+        M::close();
+
+        parent::tearDown();
+    }
 }
