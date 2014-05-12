@@ -10,33 +10,33 @@ class Builder extends IlluminateBuilder {
 	 * Find a model by its primary key.
 	 *
 	 * @param  mixed  $id
-	 * @param  array  $columns
+	 * @param  array  $properties
 	 * @return \Illuminate\Database\Eloquent\Model|static|null
 	 */
-	public function find($id, $columns = array('*'))
+	public function find($id, $properties = array('*'))
 	{
 		if (is_array($id))
 		{
-		    return $this->findMany($id, $columns);
+		    return $this->findMany($id, $properties);
 		}
 
 		$this->query->where($this->model->getKeyName() . '(n)', '=', $id);
 
-		return $this->first($columns);
+		return $this->first($properties);
 	}
 
-    	/**
+    /**
 	 * Get the hydrated models without eager loading.
 	 *
-	 * @param  array  $columns
+	 * @param  array  $properties
 	 * @return array|static[]
 	 */
-	public function getModels($columns = array('*'))
+	public function getModels($properties = array('*'))
 	{
 		// First, we will simply get the raw results from the query builders which we
 		// can use to populate an array with Eloquent models. We will pass columns
 		// that should be selected as well, which are typically just everything.
-		$results = $this->query->get($columns);
+		$results = $this->query->get($properties);
 
 		$connection = $this->model->getConnectionName();
 
