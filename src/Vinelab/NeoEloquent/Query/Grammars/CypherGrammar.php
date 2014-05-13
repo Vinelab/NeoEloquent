@@ -197,7 +197,8 @@ class CypherGrammar extends Grammar {
 
     protected function compileColumns(Builder $query, $properties)
     {
-        return 'RETURN ' . $this->columnize($properties);
+        $distinct = ($query->distinct) ? 'DISTINCT ' : '';
+        return 'RETURN ' . $distinct . $this->columnize($properties);
     }
 
     public function compileUpdate(Builder $query, $values)
