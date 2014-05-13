@@ -3,6 +3,7 @@
 use Mockery as M;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
 class QueryBuilderTest extends TestCase {
 
@@ -19,14 +20,19 @@ class QueryBuilderTest extends TestCase {
         $this->builder = new Builder($this->connection, $this->grammar);
     }
 
+    public function tearDown()
+    {
+        M::close();
+
+        parent::tearDown();
+    }
+
     public function testSettingNodeLabels()
     {
         $this->builder->from(array('labels'));
-
         $this->assertEquals(array('labels'), $this->builder->from);
 
         $this->builder->from('User:Fan');
-
         $this->assertEquals('User:Fan', $this->builder->from);
     }
 
@@ -78,15 +84,12 @@ class QueryBuilderTest extends TestCase {
     /**
      * @depends testTransformingQueryToCypher
      */
-    public function testSelect()
+    public function testSelectResult()
     {
         $cypher = 'Some cypher here';
-
         $this->grammar->shouldReceive('compileSelect')->once()->andReturn($cypher);
-
         $this->connection->shouldReceive('select')->once()
             ->with($cypher, array())->andReturn('result');
-
 
         $result = $this->builder->getFresh();
 
@@ -96,15 +99,12 @@ class QueryBuilderTest extends TestCase {
      /**
      * @depends testTransformingQueryToCypher
      */
-    public function testSelectWithProperties()
+    public function testSelectingProperties()
     {
         $cypher = 'Some cypher here';
-
         $this->grammar->shouldReceive('compileSelect')->once()->andReturn($cypher);
-
         $this->connection->shouldReceive('select')->once()
             ->with($cypher, array())->andReturn('result');
-
 
         $result = $this->builder->getFresh(array('poop', 'head'));
 
@@ -121,7 +121,7 @@ class QueryBuilderTest extends TestCase {
         $this->builder->where('id', '>', null);
     }
 
-    public function testBasicWhere()
+    public function testBasicWhereBindings()
     {
         $this->builder->where('id', 19);
 
@@ -140,7 +140,7 @@ class QueryBuilderTest extends TestCase {
         ), $this->builder->getBindings());
     }
 
-    public function testNullWhere()
+    public function testNullWhereBindings()
     {
         $this->builder->where('farted', null);
 
@@ -187,10 +187,169 @@ class QueryBuilderTest extends TestCase {
         $this->markTestIncomplete('This test has not been implemented yet.');
     }
 
-    public function tearDown()
+    public function testBasicSelect()
     {
-        M::close();
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('User');
+        $this->assertEquals('MATCH (n:User) RETURN *', $builder->toCypher());
+    }
 
-        parent::tearDown();
+    public function testBasicAlias()
+    {
+        $builder = $this->getBuilder();
+        $builder->select('foo as bar')->from('User');
+
+        $this->assertEquals('MATCH (n:User) RETURN n.foo as bar', $builder->toSql());
+    }
+
+    public function testAddigSelects()
+    {
+        $builder = $this->getBuilder();
+        $builder->select('foo')->addSelect('bar')->addSelect(array('baz', 'boom'))->from('User');
+        $this->assertEquals('MATCH (n:User) RETURN n.foo, n.bar, n.baz, n.boom', $builder->toCypher());
+    }
+
+
+    public function testBasicWheres()
+    {
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('User')->where('username', '=', 'bakalazma');
+
+        $bindings = $builder->getBindings();
+        $this->assertEquals('MATCH (n:User) WHERE n.username = {username} RETURN *', $builder->toCypher());
+        $this->assertEquals(array('username' => 'bakalazma'), reset($bindings));
+    }
+
+    public function testBasicSelectDistinct()
+    {
+        $builder = $this->getBuilder();
+        $builder->distinct()->select('foo', 'bar')->from('User');
+
+        $this->assertEquals('MATCH (n:User) RETURN DISTINCT n.foo, n.bar', $builder->toCypher());
+    }
+
+    public function testSelectWithCaching()
+    {
+        $cache = m::mock('stdClass');
+        $driver = m::mock('stdClass');
+        $query = $this->setupCacheTestQuery($cache, $driver);
+
+        $query = $query->remember(5);
+
+        $driver->shouldReceive('remember')
+                         ->once()
+                         ->with($query->getCacheKey(), 5, m::type('Closure'))
+                         ->andReturnUsing(function($key, $minutes, $callback) { return $callback(); });
+
+        $this->assertEquals($query->get(), array('results'));
+    }
+
+    public function testSelectWithCachingForever()
+    {
+        $cache = m::mock('stdClass');
+        $driver = m::mock('stdClass');
+        $query = $this->setupCacheTestQuery($cache, $driver);
+
+        $query = $query->rememberForever();
+
+        $driver->shouldReceive('rememberForever')
+                                                ->once()
+                                                ->with($query->getCacheKey(), m::type('Closure'))
+                                                ->andReturnUsing(function($key, $callback) { return $callback(); });
+
+
+
+        $this->assertEquals($query->get(), array('results'));
+    }
+
+    public function testSelectWithCachingAndTags()
+    {
+        $taggedCache = m::mock('StdClass');
+        $cache = m::mock('stdClass');
+        $driver = m::mock('stdClass');
+
+        $driver->shouldReceive('tags')
+                ->once()
+                ->with(array('foo','bar'))
+                ->andReturn($taggedCache);
+
+        $query = $this->setupCacheTestQuery($cache, $driver);
+        $query = $query->cacheTags(array('foo', 'bar'))->remember(5);
+
+        $taggedCache->shouldReceive('remember')
+                        ->once()
+                        ->with($query->getCacheKey(), 5, m::type('Closure'))
+                        ->andReturnUsing(function($key, $minutes, $callback) { return $callback(); });
+
+        $this->assertEquals($query->get(), array('results'));
+    }
+
+    public function testAddBindingWithArrayMergesBindings()
+    {
+        $builder = $this->getBuilder();
+        $builder->addBinding(array('foo' => 'bar'));
+        $builder->addBinding(array('bar' => 'baz'));
+
+        $this->assertEquals(array(
+            array('foo' => 'bar'),
+            array('bar' => 'baz')
+        ), $builder->getBindings());
+    }
+
+    public function testAddBindingWithArrayMergesBindingsInCorrectOrder()
+    {
+        $builder = $this->getBuilder();
+        $builder->addBinding(array('bar' => 'baz'), 'having');
+        $builder->addBinding(array('foo' => 'bar'), 'where');
+
+        $this->assertEquals(array(
+            array('bar' => 'baz'),
+            array('foo' => 'bar'),
+        ), $builder->getBindings());
+    }
+
+    public function testMergeBuilders()
+    {
+        $builder = $this->getBuilder();
+        $builder->addBinding(array('foo' => 'bar'));
+
+        $otherBuilder = $this->getBuilder();
+        $otherBuilder->addBinding(array('baz' => 'boom'));
+
+        $builder->mergeBindings($otherBuilder);
+
+        $this->assertEquals(array(
+            array('foo' => 'bar'),
+            array('baz' => 'boom'),
+        ), $builder->getBindings());
+    }
+
+    /*
+     *  Utility functions down this line
+     */
+
+    public function setupCacheTestQuery($cache, $driver)
+    {
+        $connection = m::mock('Vinelab\NeoEloquent\Connection');
+        $connection->shouldReceive('getClient')->once()->andReturn(M::mock('Everyman\Neo4j\Client'));
+        $connection->shouldReceive('getName')->andReturn('default');
+        $connection->shouldReceive('getCacheManager')->once()->andReturn($cache);
+        $cache->shouldReceive('driver')->once()->andReturn($driver);
+        $grammar = new CypherGrammar;
+
+        $builder = $this->getMock('Vinelab\NeoEloquent\Query\Builder', array('getFresh'), array($connection, $grammar));
+        $builder->expects($this->once())->method('getFresh')->with($this->equalTo(array('*')))->will($this->returnValue(array('results')));
+
+        return $builder->select('*')->from('User')->where('email', 'foo@bar.com');
+    }
+
+    protected function getBuilder()
+    {
+        $connection = M::mock('Vinelab\NeoEloquent\Connection');
+        $client = M::mock('Everyman\Neo4j\Client');
+        $connection->shouldReceive('getClient')->once()->andReturn($client);
+        $grammar = new CypherGrammar;
+
+        return new Builder($connection, $grammar);
     }
 }
