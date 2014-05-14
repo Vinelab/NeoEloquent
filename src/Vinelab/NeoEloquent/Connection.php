@@ -13,7 +13,8 @@ class Connection extends IlluminateConnection {
      *
      * @var Everyman\Neo4j\Client
      */
-    protected $connection;
+    protected $neo;
+
 
     /**
      * Default connection configuration parameters
@@ -42,7 +43,7 @@ class Connection extends IlluminateConnection {
         $this->config = $config;
 
         // activate and set the database client connection
-        $this->connection = $this->createConnection();
+        $this->neo = $this->createConnection();
     }
 
     /**
@@ -56,13 +57,15 @@ class Connection extends IlluminateConnection {
     }
 
     /**
-     * Get the currenty active client
+     * Get the currenty active database client
      *
      * @return Everyman\Neo4j\Client
      */
     public function getClient()
     {
-        return $this->connection;
+        return $this->neo;
+    }
+
     }
 
     /**
