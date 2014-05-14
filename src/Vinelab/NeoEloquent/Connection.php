@@ -1,5 +1,6 @@
 <?php namespace Vinelab\NeoEloquent;
 
+use DateTime;
 use Everyman\Neo4j\Client as NeoClient;
 use Everyman\Neo4j\Cypher\Query as CypherQuery;
 use Vinelab\NeoEloquent\Query\Builder;
@@ -191,10 +192,9 @@ class Connection extends IlluminateConnection {
 			// We need to transform all instances of the DateTime class into an actual
 			// date string. Each query grammar maintains its own date string format
 			// so we'll just ask the grammar for the format to get from the date.
-
 			if ($value instanceof DateTime)
 			{
-				$bindings[$key] = $value->format($grammar->getDateFormat());
+				$value = $value->format($grammar->getDateFormat());
 			}
 			elseif ($value === false)
 			{
