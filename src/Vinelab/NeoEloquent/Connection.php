@@ -38,7 +38,7 @@ class Connection extends IlluminateConnection {
      *
      * @param array $config The database connection configuration
      */
-    public function __construct(array $config)
+    public function __construct(array $config = array())
     {
         $this->config = $config;
 
@@ -76,6 +76,7 @@ class Connection extends IlluminateConnection {
     {
         $this->neo = $client;
     }
+
 
     /**
      * Get the connection host
