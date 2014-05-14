@@ -15,6 +15,12 @@ class Connection extends IlluminateConnection {
      */
     protected $neo;
 
+    /**
+     * The Neo4j database transaction
+     *
+     * @var \Everyman\Neo4j\Transaction
+     */
+    protected $transaction;
 
     /**
      * Default connection configuration parameters
@@ -280,6 +286,72 @@ class Connection extends IlluminateConnection {
         }
 
         return false;
+    }
+
+    /**
+     * Start a new database transaction.
+     *
+     * @return void
+     */
+    public function beginTransaction()
+    {
+        ++$this->transactions;
+
+        if ($this->transactions == 1)
+        {
+            $this->transaction = $this->neo->beginTransaction();
+        }
+
+        $this->fireConnectionEvent('beganTransaction');
+    }
+
+    /**
+     * Commit the active database transaction.
+     *
+     * @return void
+     */
+    public function commit()
+    {
+        if ($this->transactions == 1) $this->transaction->commit();
+
+        --$this->transactions;
+
+        $this->fireConnectionEvent('committed');
+    }
+
+    /**
+     * Rollback the active database transaction.
+     *
+     * @return void
+     */
+    public function rollBack()
+    {
+        if ($this->transactions == 1)
+        {
+            $this->transactions = 0;
+
+            $this->transaction->rollBack();
+        }
+        else
+        {
+            --$this->transactions;
+        }
+
+        $this->fireConnectionEvent('rollingBack');
+    }
+
+    /**
+     * Begin a fluent query against a database table.
+     * In neo4j's terminologies this is a node.
+     *
+     * @param  string  $table
+     * @return \Vinelab\NeoEloquent\Query\Builder
+     */
+    public function table($table)
+    {
+        $query = new Builder($this, $this->getQueryGrammar());
+
+        return $query->from($table);
     }
 
 }
