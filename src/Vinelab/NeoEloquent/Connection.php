@@ -66,6 +66,15 @@ class Connection extends IlluminateConnection {
         return $this->neo;
     }
 
+    /**
+     * Set the client responsible for the
+     * database communication
+     *
+     * @param \Everyman\Neo4j\Client $client
+     */
+    public function setClient(NeoClient $client)
+    {
+        $this->neo = $client;
     }
 
     /**
