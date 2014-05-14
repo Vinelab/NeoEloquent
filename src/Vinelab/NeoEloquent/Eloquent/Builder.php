@@ -118,4 +118,27 @@ class Builder extends IlluminateBuilder {
 
         return $attributes;
     }
+
+    /**
+     * Get a paginator only supporting simple next and previous links.
+     *
+     * This is more efficient on larger data-sets, etc.
+     *
+     * @param  \Illuminate\Pagination\Factory  $paginator
+     * @param  int    $perPage
+     * @param  array  $columns
+     * @return \Illuminate\Pagination\Paginator
+     */
+    public function simplePaginate($perPage = null, $columns = array('*'))
+    {
+        $paginator = $this->query->getConnection()->getPaginator();
+
+        $page = $paginator->getCurrentPage();
+
+        $perPage = $perPage ?: $this->model->getPerPage();
+
+        $this->query->skip(($page - 1) * $perPage)->take($perPage + 1);
+
+        return $paginator->make($this->get($columns)->all(), $perPage);
+    }
 }
