@@ -1,18 +1,15 @@
 <?php namespace Vinelab\NeoEloquent\Tests;
 
-class TestCase extends \Orchestra\Testbench\TestCase {
+use PHPUnit_Framework_TestCase as PHPUnit;
 
-    protected function getPackageProviders()
-    {
-        return array('Vinelab\NeoEloquent\NeoEloquentServiceProvider');
-    }
+class TestCase extends PHPUnit {
 
-    protected function getEnvironmentSetup($app)
+    public function __construct()
     {
+        parent::__construct();
+
         // load custom configuration file
-        $config = require 'config/database.php';
-
-        // set the database configuration for the environment
-        $app['config']->set('database', $config);
+        $this->dbConfig = require 'config/database.php';
     }
+
 }
