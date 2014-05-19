@@ -197,25 +197,28 @@ class Connection extends IlluminateConnection {
 
         $prepared = array();
 
-		foreach ($bindings as $key => $value)
+		foreach ($bindings as $key => $binding)
 		{
-            // The bindings are a collected in a little bit different way than
+            // The bindings are collected in a little bit different way than
             // Eloquent, we will need the key name in order to know where to replace
             // the value using the Neo4j client.
-            $binding = array($key => $value);
+            $value = $binding;
 
             // We need to get the array value of the binding
             // if it were mapped
             if (is_array($value))
             {
-                $value = reset($value);
+                // There are different ways to handle multiple
+                // bindings vs. single bindings as values.
+                $value = array_values($value);
             }
 
 			// We need to transform all instances of the DateTime class into an actual
 			// date string. Each query grammar maintains its own date string format
 			// so we'll just ask the grammar for the format to get from the date.
-			if ($value instanceof DateTime)
-			{
+
+            if ($value instanceof DateTime)
+            {
 				$value = $value->format($grammar->getDateFormat());
 			}
 			elseif ($value === false)
@@ -223,22 +226,29 @@ class Connection extends IlluminateConnection {
 				$bindings[$key] = 0;
 			}
 
-            if ( ! $this->isBinding($binding))
+            $property = is_array($binding) ? key($binding) : $key;
+
+            if (is_array($binding))
             {
-                $binding = reset($binding);
+                // We will set the binding key and value, then
+                // we replace the binding property of the id (if found)
+                // with a _nodeId instead since the client
+                // will not accept replacing "id(n)" with a value
+                // which have been previously processed by the grammar
+                // to be _nodeId instead.
+                foreach ($binding as $property => $real)
+                {
+                    if ($property == 'id') $property = $this->getIdReplacement();
+
+                    $prepared[$property] = $real;
+                }
+
+            } else
+            {
+                if ($property == 'id') $property = $this->getIdReplacement();
+
+                $prepared[$property] = $value;
             }
-
-            $property = is_array($binding) ? key($binding) : $binding;
-
-            // We do this because the binding replacement
-            // will not accept replacing "id(n)" with a value
-            // which have been previously processed by the grammar
-            // to be _nodeId instead.
-
-            if ($property == 'id') $property = '_nodeId';
-
-            // Set the binding key name and value
-            $prepared[$property] = $value;
 		}
 
 		return $prepared;
