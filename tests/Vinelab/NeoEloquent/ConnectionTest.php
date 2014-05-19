@@ -1,6 +1,7 @@
 <?php namespace Vinelab\NeoEloquent\Tests;
 
-use DB, Mockery as M;
+use Mockery as M;
+use Vinelab\NeoEloquent\Connection;
 
 class ConnectionTest extends TestCase {
 
@@ -17,19 +18,14 @@ class ConnectionTest extends TestCase {
 
     public function testConnection()
     {
-        $c = DB::connection('neo4j');
+        $c = $this->getConnectionWithConfig('neo4j');
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Connection', $c);
-
-        $c1 = DB::connection('neo4j');
-		$c2 = DB::connection('neo4j');
-
-		$this->assertEquals(spl_object_hash($c1), spl_object_hash($c2));
     }
 
     public function testConnectionClientInstance()
     {
-        $c = DB::connection('neo4j');
+        $c = $this->getConnectionWithConfig('neo4j');
 
         $client = $c->getClient();
 
@@ -38,7 +34,7 @@ class ConnectionTest extends TestCase {
 
     public function testGettingConfigParam()
     {
-        $c = DB::connection('neo4j');
+        $c = $this->getConnectionWithConfig('neo4j');
 
         $this->assertEquals($c->getConfig('port'), 7474);
         $this->assertEquals($c->getConfig('host'), 'localhost');
@@ -46,28 +42,28 @@ class ConnectionTest extends TestCase {
 
     public function testDriverName()
     {
-        $c = DB::connection('neo4j');
+        $c = $this->getConnectionWithConfig('neo4j');
 
         $this->assertEquals('neo4j', $c->getDriverName());
     }
 
     public function testGettingClient()
     {
-        $c = DB::connection('neo4j');
+        $c = $this->getConnectionWithConfig('neo4j');
 
         $this->assertInstanceOf('Everyman\Neo4j\Client', $c->getClient());
     }
 
     public function testGettingDefaultHost()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $this->assertEquals('localhost', $c->getHost());
     }
 
     public function testGettingDefaultPort()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $port=  $c->getPort();
 
@@ -77,7 +73,7 @@ class ConnectionTest extends TestCase {
 
     public function testGettingQueryCypherGrammar()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $grammar = $c->getQueryGrammar();
 
@@ -149,7 +145,7 @@ class ConnectionTest extends TestCase {
             'name' => 'John Doe'
         );
 
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $prepared = $c->prepareBindings($bindings);
 
@@ -163,7 +159,7 @@ class ConnectionTest extends TestCase {
             array('email'    => 'marie@curie.sci')
         );
 
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $expected = array(
             'username' => 'jd',
@@ -181,7 +177,7 @@ class ConnectionTest extends TestCase {
             array('id' => 6)
         );
 
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $expected = array('_nodeId' => 6);
 
@@ -192,14 +188,19 @@ class ConnectionTest extends TestCase {
 
     public function testPreparingWhereInBindings()
     {
-        $bindings = array('mc', 'ae', '2pac', 'mulkave');
+        $bindings = array(
+            'mc'      => 'mc',
+            'ae'      => 'ae',
+            'animals' => 'animals',
+            'mulkave' => 'mulkave'
+        );
 
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $expected = array(
             'mc'      => 'mc',
             'ae'      => 'ae',
-            '2pac'    => '2pac',
+            'animals' => 'animals',
             'mulkave' => 'mulkave'
         );
 
@@ -210,7 +211,7 @@ class ConnectionTest extends TestCase {
 
     public function testGettingCypherGrammar()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $query = $c->getCypherQuery('MATCH (u:`User`) RETURN * LIMIT 10', array());
 
@@ -219,7 +220,7 @@ class ConnectionTest extends TestCase {
 
     public function testCheckingIfBindingIsABinding()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $empty = array();
         $valid = array('key' => 'value');
@@ -234,7 +235,7 @@ class ConnectionTest extends TestCase {
 
     public function testCreatingConnection()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $connection = $c->createConnection();
 
@@ -249,7 +250,7 @@ class ConnectionTest extends TestCase {
 
         $bindings = array(array('username' => $this->user['username']));
 
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $results = $c->select($query, $bindings);
 
@@ -277,7 +278,7 @@ class ConnectionTest extends TestCase {
         // Create the User record
         $created = $this->createUser();
 
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $query = 'MATCH (n:`User`) WHERE n.username = {username} RETURN * LIMIT 1';
 
@@ -309,7 +310,7 @@ class ConnectionTest extends TestCase {
 
     public function testAffectingStatement()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $created = $this->createUser();
 
@@ -358,7 +359,7 @@ class ConnectionTest extends TestCase {
 
     public function testAffectingStatementOnNonExistingRecord()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $type = 'dev';
 
@@ -388,7 +389,7 @@ class ConnectionTest extends TestCase {
     {
         $query = 'MATCH (n:User) WHERE n.username = {username} DELETE n RETURN count(n)';
 
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $cypher = $c->getCypherQuery($query, array(array('username' => $this->user['username'])));
         $cypher->getResultSet();
@@ -509,10 +510,10 @@ class ConnectionTest extends TestCase {
     public function testFromCreatesNewQueryBuilder()
     {
         $conn = $this->getMockConnection();
-        $conn->setQueryGrammar(M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar'));
-        $builder = $conn->table('users');
+        $conn->setQueryGrammar(M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial());
+        $builder = $conn->table('User');
         $this->assertInstanceOf('Vinelab\NeoEloquent\Query\Builder', $builder);
-        $this->assertEquals('users', $builder->from);
+        $this->assertEquals('User', $builder->from);
     }
 
     /*
@@ -521,7 +522,7 @@ class ConnectionTest extends TestCase {
 
     public function createUser()
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         // First we create the record that we need to update
         $create = 'CREATE (u:User {name: {name}, email: {email}, username: {username}})';
@@ -541,6 +542,14 @@ class ConnectionTest extends TestCase {
     {
         $defaults = array('getDefaultQueryGrammar', 'getDefaultPostProcessor', 'getDefaultSchemaGrammar');
         return $this->getMock('Vinelab\NeoEloquent\Connection', array_merge($defaults, $methods), array());
+    }
+
+    protected function getConnectionWithConfig($config = null)
+    {
+        $connection = is_null($config) ? $this->dbConfig['connections']['default'] :
+                                         $this->dbConfig['connections'][$config];
+
+        return new Connection($connection);
     }
 
 }
