@@ -9,6 +9,8 @@ use Illuminate\Database\Connection as IlluminateConnection;
 
 class Connection extends IlluminateConnection {
 
+    protected $replaceId = '_nodeId';
+
     /**
      * The Neo4j active client connection
      *
@@ -394,4 +396,26 @@ class Connection extends IlluminateConnection {
 
         return $result;
     }
+
+    /**
+     * Get the replacement of an id property.
+     *
+     * @return string
+     */
+    public function getIdReplacement()
+    {
+        return $this->replaceId;
+    }
+
+    /**
+     * Set the replacement of the id property.]
+     *
+     * @param string $replacement
+     * @return  void
+     */
+    public function setIdReplacement($replacement)
+    {
+        $this->replaceId = $replacement;
+    }
+
 }
