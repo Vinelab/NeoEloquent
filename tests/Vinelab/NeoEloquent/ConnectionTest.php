@@ -1,7 +1,6 @@
 <?php namespace Vinelab\NeoEloquent\Tests;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Connection;
 
 class ConnectionTest extends TestCase {
 
@@ -542,14 +541,6 @@ class ConnectionTest extends TestCase {
     {
         $defaults = array('getDefaultQueryGrammar', 'getDefaultPostProcessor', 'getDefaultSchemaGrammar');
         return $this->getMock('Vinelab\NeoEloquent\Connection', array_merge($defaults, $methods), array());
-    }
-
-    protected function getConnectionWithConfig($config = null)
-    {
-        $connection = is_null($config) ? $this->dbConfig['connections']['default'] :
-                                         $this->dbConfig['connections'][$config];
-
-        return new Connection($connection);
     }
 
 }
