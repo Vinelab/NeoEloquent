@@ -1,7 +1,8 @@
 <?php namespace Vinelab\NeoEloquent;
 
-use DateTime;
+use DateTime, Closure;
 use Everyman\Neo4j\Client as NeoClient;
+use Vinelab\NeoEloquent\QueryException;
 use Everyman\Neo4j\Cypher\Query as CypherQuery;
 use Vinelab\NeoEloquent\Query\Builder;
 use Illuminate\Database\Connection as IlluminateConnection;
@@ -354,4 +355,43 @@ class Connection extends IlluminateConnection {
         return $query->from($table);
     }
 
+    /**
+     * Run a Cypher statement and log its execution context.
+     *
+     * @param  string   $query
+     * @param  array    $bindings
+     * @param  Closure  $callback
+     * @return mixed
+     *
+     * @throws QueryException
+     */
+    protected function run($query, $bindings, Closure $callback)
+    {
+        $start = microtime(true);
+
+        // To execute the statement, we'll simply call the callback, which will actually
+        // run the Cypher against the Neo4j connection. Then we can calculate the time it
+        // took to execute and log the query Cypher, bindings and time in our memory.
+        try
+        {
+            $result = $callback($this, $query, $bindings);
+        }
+
+        // If an exception occurs when attempting to run a query, we'll format the error
+        // message to include the bindings with Cypher, which will make this exception a
+        // lot more helpful to the developer instead of just the database's errors.
+        catch (\Exception $e)
+        {
+            throw new QueryException($query, $bindings, $e);
+        }
+
+        // Once we have run the query we will calculate the time that it took to run and
+        // then log the query, bindings, and execution time so we will report them on
+        // the event that the developer needs them. We'll log time in milliseconds.
+        $time = $this->getElapsedTime($start);
+
+        $this->logQuery($query, $bindings, $time);
+
+        return $result;
+    }
 }
