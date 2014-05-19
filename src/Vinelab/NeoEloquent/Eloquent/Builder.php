@@ -15,10 +15,16 @@ class Builder extends IlluminateBuilder {
 	 */
 	public function find($id, $properties = array('*'))
 	{
+        // If the dev did not specify the $id as an int it would break
+        // so we cast it anyways.
+
 		if (is_array($id))
 		{
-		    return $this->findMany($id, $properties);
-		}
+		    return $this->findMany(array_map(function($id){ return (int) $id; }, $id), $properties);
+		} else {
+
+            $id = (int) $id;
+        }
 
 		$this->query->where($this->model->getKeyName() . '(n)', '=', $id);
 
