@@ -23,3 +23,8 @@ jdk:
 
 env:
   - NEO4J_VERSION="2.0.3"
+
+notifications:
+  slack:
+    rooms:
+      - vinelab:52MiVOHdct34FRg2o9sPBlJJ#graphdb
