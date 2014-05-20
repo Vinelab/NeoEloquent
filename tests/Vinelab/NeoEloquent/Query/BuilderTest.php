@@ -11,7 +11,7 @@ class QueryBuilderTest extends TestCase {
     {
         parent::setUp();
 
-        $this->grammar    = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar');
+        $this->grammar    = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->connection = M::mock('Vinelab\NeoEloquent\Connection');
 
         $this->neoClient = M::mock('Everyman\Neo4j\Client');
@@ -135,9 +135,7 @@ class QueryBuilderTest extends TestCase {
             )
         ), $this->builder->wheres, 'make sure the statement was atted to $wheres');
 
-        $this->assertEquals(array(
-            array('id' => 19)
-        ), $this->builder->getBindings());
+        $this->assertEquals(array('id' => 19), $this->builder->getBindings());
     }
 
     public function testNullWhereBindings()
@@ -172,9 +170,7 @@ class QueryBuilderTest extends TestCase {
             )
         ), $this->builder->wheres);
 
-        $this->assertEquals(array(
-            array('id' => 200)
-        ), $this->builder->getBindings());
+        $this->assertEquals(array('id' => 200), $this->builder->getBindings());
     }
 
     public function testNestedWhere()
@@ -191,7 +187,7 @@ class QueryBuilderTest extends TestCase {
     {
         $builder = $this->getBuilder();
         $builder->select('*')->from('User');
-        $this->assertEquals('MATCH (n:User) RETURN *', $builder->toCypher());
+        $this->assertEquals('MATCH (user:User) RETURN *', $builder->toCypher());
     }
 
     public function testBasicAlias()
@@ -199,16 +195,15 @@ class QueryBuilderTest extends TestCase {
         $builder = $this->getBuilder();
         $builder->select('foo as bar')->from('User');
 
-        $this->assertEquals('MATCH (n:User) RETURN n.foo as bar', $builder->toSql());
+        $this->assertEquals('MATCH (user:User) RETURN user.foo as bar', $builder->toSql());
     }
 
     public function testAddigSelects()
     {
         $builder = $this->getBuilder();
         $builder->select('foo')->addSelect('bar')->addSelect(array('baz', 'boom'))->from('User');
-        $this->assertEquals('MATCH (n:User) RETURN n.foo, n.bar, n.baz, n.boom', $builder->toCypher());
+        $this->assertEquals('MATCH (user:User) RETURN user.foo, user.bar, user.baz, user.boom', $builder->toCypher());
     }
-
 
     public function testBasicWheres()
     {
@@ -216,8 +211,8 @@ class QueryBuilderTest extends TestCase {
         $builder->select('*')->from('User')->where('username', '=', 'bakalazma');
 
         $bindings = $builder->getBindings();
-        $this->assertEquals('MATCH (n:User) WHERE n.username = {username} RETURN *', $builder->toCypher());
-        $this->assertEquals(array('username' => 'bakalazma'), reset($bindings));
+        $this->assertEquals('MATCH (user:User) WHERE user.username = {username} RETURN *', $builder->toCypher());
+        $this->assertEquals(array('username' => 'bakalazma'), $bindings);
     }
 
     public function testBasicSelectDistinct()
@@ -225,7 +220,7 @@ class QueryBuilderTest extends TestCase {
         $builder = $this->getBuilder();
         $builder->distinct()->select('foo', 'bar')->from('User');
 
-        $this->assertEquals('MATCH (n:User) RETURN DISTINCT n.foo, n.bar', $builder->toCypher());
+        $this->assertEquals('MATCH (user:User) RETURN DISTINCT user.foo, user.bar', $builder->toCypher());
     }
 
     public function testSelectWithCaching()
@@ -291,8 +286,8 @@ class QueryBuilderTest extends TestCase {
         $builder->addBinding(array('bar' => 'baz'));
 
         $this->assertEquals(array(
-            array('foo' => 'bar'),
-            array('bar' => 'baz')
+            'foo' => 'bar',
+            'bar' => 'baz'
         ), $builder->getBindings());
     }
 
@@ -303,8 +298,8 @@ class QueryBuilderTest extends TestCase {
         $builder->addBinding(array('foo' => 'bar'), 'where');
 
         $this->assertEquals(array(
-            array('bar' => 'baz'),
-            array('foo' => 'bar'),
+            'bar' => 'baz',
+            'foo' => 'bar',
         ), $builder->getBindings());
     }
 
@@ -319,8 +314,8 @@ class QueryBuilderTest extends TestCase {
         $builder->mergeBindings($otherBuilder);
 
         $this->assertEquals(array(
-            array('foo' => 'bar'),
-            array('baz' => 'boom'),
+            'foo' => 'bar',
+            'baz' => 'boom',
         ), $builder->getBindings());
     }
 

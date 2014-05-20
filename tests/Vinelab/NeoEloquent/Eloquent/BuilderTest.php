@@ -1,6 +1,6 @@
 <?php namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
-use Mockery as M, DB;
+use Mockery as M;
 use Illuminate\Support\Collection;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Builder;
@@ -13,6 +13,7 @@ class EloquentBuilderTest extends TestCase {
         parent::setUp();
 
         $this->query = M::mock('Vinelab\NeoEloquent\Query\Builder');
+        $this->query->shouldReceive('modelAsNode')->andReturn('n');
         $this->model = M::mock('Vinelab\NeoEloquent\Eloquent\Model');
 
         $this->builder = new Builder($this->query);
@@ -27,7 +28,7 @@ class EloquentBuilderTest extends TestCase {
 
     public function testFindMethod()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
+        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
         $builder->getQuery()->shouldReceive('where')->once()->with('foo(n)', '=', 'bar');
         $builder->shouldReceive('first')->with(array('column'))->andReturn('baz');
@@ -186,7 +187,7 @@ class EloquentBuilderTest extends TestCase {
     {
         $query = $this->getMock('Vinelab\NeoEloquent\Query\Builder', array('from', 'getConnection', 'skip', 'take'), array(
             m::mock('Vinelab\NeoEloquent\Connection', function($mock){ $mock->shouldReceive('getClient'); }),
-            m::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar'),
+            m::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial(),
         ));
         $query->expects($this->once())->method('from')->will($this->returnValue('foo_table'));
         $builder = $this->getMock('Vinelab\NeoEloquent\Eloquent\Builder', array('get'), array($query));
@@ -207,7 +208,10 @@ class EloquentBuilderTest extends TestCase {
 
     public function testGetModelsProperlyHydratesModels()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
+        $query = $this->getMockQueryBuilder();
+        $query->columns = array('n.name', 'n.age');
+
+        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($query));
 
         $records[] = array('id' => 1902, 'name' => 'taylor', 'age' => 26);
         $records[] = array('id' => 6252, 'name' => 'dayle', 'age' => 28);
@@ -215,9 +219,11 @@ class EloquentBuilderTest extends TestCase {
         $resultSet = $this->createNodeResultSet($records, array('name', 'age'));
 
         $builder->getQuery()->shouldReceive('get')->once()->with(array('foo'))->andReturn($resultSet);
-        $model = m::mock('Vinelab\NeoEloquent\Eloquent\Model[getTable,getConnectionName,newInstance]');
+        $model = M::mock('Vinelab\NeoEloquent\Eloquent\Model[getTable,getConnectionName,newInstance]');
         $model->shouldReceive('getTable')->once()->andReturn('foo_table');
+
         $builder->setModel($model);
+
         $model->shouldReceive('getConnectionName')->once()->andReturn('foo_connection');
         $model->shouldReceive('newInstance')->andReturnUsing(function() { return new EloquentBuilderTestModelStub; });
         $models = $builder->getModels(array('foo'));
@@ -381,6 +387,7 @@ class EloquentBuilderTest extends TestCase {
     public function testFindingById()
     {
         $resultSet = M::mock('Everyman\Query\ResultSet');
+        $resultSet->shouldReceive('getColumns')->withNoArgs()->andReturn(array('id', 'name', 'age'));
 
         $this->query->shouldReceive('where')->once()->with('id(n)', '=', 1);
         $this->query->shouldReceive('from')->once()->with('Model')->andReturn(array('Model'));
@@ -554,7 +561,7 @@ class EloquentBuilderTest extends TestCase {
 
         $this->builder->setModel($this->model);
 
-        $attributes = $this->builder->getProperties($row);
+        $attributes = $this->builder->getProperties(array_keys($properties), $row);
 
         $this->assertEquals($properties, $attributes);
     }
@@ -580,12 +587,11 @@ class EloquentBuilderTest extends TestCase {
 
         $this->builder->setModel($this->model);
 
-        $attributes = $this->builder->getProperties($row);
+        $attributes = $this->builder->getProperties(array('arms', 'legs'), $row);
 
         $expected = array('arms' => $properties['arms'], 'legs' => $properties['legs']);
 
         $this->assertEquals($expected, $attributes);
-
     }
 
 
@@ -607,7 +613,7 @@ class EloquentBuilderTest extends TestCase {
      */
     public function createNodeResultSet($data = array(), $properties = array())
     {
-        $c = DB::connection('default');
+        $c = $this->getConnectionWithConfig('default');
 
         $rows = array();
 
@@ -667,15 +673,18 @@ class EloquentBuilderTest extends TestCase {
     public function createRowWithPropertiesAtIndex($index, array $properties)
     {
         $row = M::mock('Everyman\Neo4j\Query\Row');
-        $row->shouldReceive('offsetGet')->once()->with($index)->andReturn($properties);
+        // $row->shouldReceive('offsetGet')->with($index)->andReturn($properties);
 
         foreach($properties as $key => $value)
         {
             // prepare the row's offsetGet to rerturn the desired value when asked
             // by prepending the key with an n. representing the node in the Cypher query.
             $row->shouldReceive('offsetGet')
-                ->between(0, 1)
                 ->with("n.{$key}")
+                ->andReturn($properties[$key]);
+
+            $row->shouldReceive('offsetGet')
+                ->with("{$key}")
                 ->andReturn($properties[$key]);
         }
 
@@ -694,13 +703,17 @@ class EloquentBuilderTest extends TestCase {
     {
         $query = m::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('from')->with('foo_table');
+        $query->shouldReceive('modelAsNode')->andReturn('n');
+
         return $query;
     }
 
-    public function getMockBuilder()
+    public function getMockBuilder($classname = null)
     {
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('from')->andReturn('foo_table');
+        $query->shouldReceive('modelAsNode')->andReturn('n');
+
         return $query;
     }
 
