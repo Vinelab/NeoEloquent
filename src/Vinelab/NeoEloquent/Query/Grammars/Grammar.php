@@ -6,6 +6,13 @@ use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 class Grammar extends IlluminateGrammar {
 
     /**
+     * The Query builder instance.
+     *
+     * @var Vinelab\NeoEloquent\Query\Builder
+     */
+    protected $query;
+
+    /**
 	 * Get the appropriate query parameter place-holder for a value.
 	 *
 	 * @param  mixed   $value
@@ -16,7 +23,7 @@ class Grammar extends IlluminateGrammar {
         // Validate whether the requested field is the
         // node id, in that case id(n) doesn't work as
         // a placeholder so we transform it to _nodeId instead
-        $property = ($value['column'] == 'id(n)' or $value['column'] == 'id') ? '_nodeId' : $value['column'];
+        $property = preg_match('/^id(\(.*\))?$/', $value['column']) ? '_nodeId' : $value['column'];
 
 		return $this->isExpression($property) ? $this->getValue($property) : '{' . $property . '}';
 	}
@@ -28,11 +35,46 @@ class Grammar extends IlluminateGrammar {
      * @var  string  $label
      * @return string
      */
-    protected function prepareLabel($label)
+    public function prepareLabels(array $labels)
     {
-        // we do not accept any existing backticks so we remove them
-        // and add them as they should be, around the label string
-        return '`' . preg_replace('/`/', '', trim($label)) . '`';
+        // get the labels prepared and back to a string imploded by : they go.
+        return implode('', array_map(array($this, 'wrapLabel'), $labels));
+    }
+
+    /**
+     * Make sure the label is wrapped with backticks
+     *
+     * @param  string $label
+     * @return string
+     */
+    public function wrapLabel($label)
+    {
+        // every label must begin with a ':' so we need to check
+        // and reformat if need be.
+        return trim(':' . preg_replace('/^:/', '', "`$label`"));
+    }
+
+    /**
+     * Prepare a relationship label.
+     *
+     * @param  string $relation
+     * @return string
+     */
+    public function prepareRelation($relation, $related)
+    {
+        return "rel_". strtolower($relation) .'_'. $related .":{$relation}";
+    }
+
+    /**
+     * Turn labels like this ':User:Admin'
+     * into this 'user_admin'
+     *
+     * @param  string $labels
+     * @return string
+     */
+    public function normalizeLabels($labels)
+    {
+        return strtolower(str_replace(':', '_', $labels));
     }
 
     /**
@@ -51,9 +93,13 @@ class Grammar extends IlluminateGrammar {
         // everything, we need to check whether the primaryKey is meant to be returned
         // since Neo4j's way of evaluating returned properties for the Node id is
         // different: id(n) instead of n.id
-        if ($value == 'id') return 'id(n)';
 
-        return 'n.' . $value;
+        if ($value == 'id')
+        {
+            return 'id(' . $this->query->modelAsNode() . ')';
+        }
+
+        return $this->query->modelAsNode() . '.' . $value;
     }
 
     /**
@@ -84,4 +130,34 @@ class Grammar extends IlluminateGrammar {
         return implode(', ', $values);
     }
 
+    /**
+     * Get a model's name as a Node placeholder
+     *
+     * i.e. in "MATCH (user:`User`)"... "user" is what this method returns
+     *
+     * @param  string|array $labels The labels we're choosing from
+     * @return string
+     */
+    public function modelAsNode($labels = null)
+    {
+        if (is_null($labels))
+        {
+            return 'n';
+        } elseif (is_array($labels))
+        {
+            return strtolower(reset($labels));
+        }
+
+        return strtolower($labels);
+    }
+
+    /**
+     * Set the query builder for this grammar instance.
+     *
+     * @param \Vinelab\NeoEloquent\Query\Builder $query
+     */
+    public function setQuery($query)
+    {
+        $this->query = $query;
+    }
 }

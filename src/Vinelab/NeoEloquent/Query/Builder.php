@@ -23,6 +23,22 @@ class Builder extends IlluminateQueryBuilder {
     protected $client;
 
     /**
+     * The matches constraints for the query.
+     *
+     * @var array
+     */
+    public $matches = array();
+
+    protected $bindings = array(
+        'matches'=> [],
+        'select' => [],
+        'join'   => [],
+        'where'  => [],
+        'having' => [],
+        'order'  => []
+    );
+
+    /**
 	 * All of the available clause operators.
 	 *
 	 * @var array
@@ -30,6 +46,7 @@ class Builder extends IlluminateQueryBuilder {
     protected $operators = array(
         '+', '-', '*', '/', '%', '^',    // Mathematical
         '=', '<>', '<', '>', '<=', '>=', // Comparison
+        'IS NULL', 'IS NOT NULL',
         'AND', 'OR', 'XOR', 'NOT',       // Boolean
         'IN, [x], [x .. y]',             // Collection
         '=~'                             // Regular Expression
@@ -44,6 +61,7 @@ class Builder extends IlluminateQueryBuilder {
     public function __construct(Connection $connection, CypherGrammar $grammar)
     {
         $this->grammar = $grammar;
+        $this->grammar->setQuery($this);
 
         $this->connection = $connection;
 
@@ -101,11 +119,40 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function update(array $values)
     {
-        $bindings = array_merge($values, reset($this->bindings));
+        $bindings = array_merge($values, $this->getBindings());
 
         $cypher = $this->grammar->compileUpdate($this, $values);
 
         return $this->connection->update($cypher, $bindings);
+    }
+
+    /**
+     * Get the current query value bindings in a flattened array
+     * of $key => $value.
+     *
+     * @return array
+     */
+    public function getBindings()
+    {
+        $bindings = [];
+
+        // We will run through all the bindings and pluck out
+        // the component (select, where, etc.)
+        foreach($this->bindings as $component => $binding)
+        {
+            if ( ! empty($binding))
+            {
+                // For every binding there could be multiple
+                // values set so we need to add all of them as
+                // flat $key => $value item in our $bindings.
+                foreach ($binding as $key => $value)
+                {
+                    $bindings[$key] = $value;
+                }
+            }
+        }
+
+        return $bindings;
     }
 
     /**
@@ -171,7 +218,7 @@ class Builder extends IlluminateQueryBuilder {
 
 		if ( ! $value instanceof Expression)
 		{
-            if ($column == 'id(n)') $column = 'id';
+            if ($column == 'id('. $this->modelAsNode() .')') $column = 'id';
 
 			$this->addBinding(array($column => $value), 'where');
 		}
@@ -213,7 +260,70 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     /**
-     * Convert a string into a neo4j Label
+     * Add a relationship MATCH clause to the query.
+     *
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model of the relationship
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related      The related model
+     * @param  string $relatedNode  The related node' placeholder
+     * @param  string $relationship The relationship title
+     * @param  string $property     The parent's property we are matching against
+     * @param  string $value
+     * @param  string $direction
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
+     */
+    public function match($parent, $related, $relatedNode, $relationship, $property, $value = null, $direction = 'outgoing')
+    {
+        $parentLabels  = $parent->getTable();
+        $relatedLabels = $related->getTable();
+        $parentNode    = $this->modelAsNode($parentLabels);
+
+        $this->matches[] = array(
+            'property'     => $property,
+            'direction'    => $direction,
+            'relationship' => $relationship,
+            'parent' => array(
+                'node'   => $parentNode,
+                'labels' => $parentLabels
+            ),
+            'related' => array(
+                'node'   => $relatedNode,
+                'labels' => $relatedLabels
+            )
+        );
+
+        $this->addBinding(array($property => $value), 'matches');
+
+        return $this;
+    }
+
+    /**
+     * Add a binding to the query.
+     *
+     * @param  mixed   $value
+     * @param  string  $type
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function addBinding($value, $type = 'where')
+    {
+        if ( ! array_key_exists($type, $this->bindings))
+        {
+            throw new \InvalidArgumentException("Invalid binding type: {$type}.");
+        }
+
+        if (is_array($value))
+        {
+            $this->bindings[$type] = array_merge($this->bindings[$type], $value);
+        }
+        else
+        {
+            $this->bindings[$type][] = $value;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Convert a string into a Neo4j Label.
      *
      * @param   string  $label
      * @return Everyman\Neo4j\Label
@@ -221,6 +331,24 @@ class Builder extends IlluminateQueryBuilder {
     public function makeLabel($label)
     {
         return $this->client->makeLabel($label);
+    }
+
+    /**
+     * Tranfrom a model's name into a placeholder
+     * for fetched properties. i.e.:
+     *
+     * MATCH (user:`User`)... "user" is what this method returns
+     * out of User (and other labels).
+     * PS: It consideres the first value in $labels
+     *
+     * @param  array $labels
+     * @return string
+     */
+    public function modelAsNode(array $labels = null)
+    {
+        $labels = ( ! is_null($labels)) ? $labels : $this->from;
+
+        return $this->grammar->modelAsNode($labels);
     }
 
 }
