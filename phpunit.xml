@@ -13,6 +13,7 @@
     <testsuites>
         <testsuite name="NeoEloquent Test Suite">
             <directory suffix=".php">./tests/Vinelab</directory>
+            <directory suffix=".php">./tests/functional</directory>
         </testsuite>
     </testsuites>
 </phpunit>
