@@ -268,16 +268,17 @@ class Builder extends IlluminateQueryBuilder {
      * @param  string $relationship The relationship title
      * @param  string $property     The parent's property we are matching against
      * @param  string $value
-     * @param  string $direction
+     * @param  string $direction Possible values are in, out and in-out
      * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
-    public function match($parent, $related, $relatedNode, $relationship, $property, $value = null, $direction = 'outgoing')
+    public function matchRelation($parent, $related, $relatedNode, $relationship, $property, $value = null, $direction = 'out')
     {
         $parentLabels  = $parent->getTable();
         $relatedLabels = $related->getTable();
         $parentNode    = $this->modelAsNode($parentLabels);
 
         $this->matches[] = array(
+            'type'         => 'Relation',
             'property'     => $property,
             'direction'    => $direction,
             'relationship' => $relationship,

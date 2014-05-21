@@ -166,16 +166,16 @@ class CypherGrammar extends Grammar {
     {
         switch($direction)
         {
-            case 'outgoing':
+            case 'out':
             default:
                 $relation = '(%s)-[%s]->(%s)';
             break;
 
-            case 'incoming':
+            case 'in':
                 $relation = '(%s)<-[%s]-(%s)';
             break;
 
-            case 'bidirectional':
+            case 'in-out':
                 $relation = '(%s)<-[%s]->(%s)';
             break;
         }

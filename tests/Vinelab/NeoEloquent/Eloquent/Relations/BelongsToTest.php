@@ -107,12 +107,13 @@ class BelongsToTest extends TestCase  {
 
         $builder->shouldReceive('where')->once()->with('id', '=', $id);
 
-        $builder->shouldReceive('matchIncoming')->twice()
+        $builder->shouldReceive('matchIn')->twice()
             ->with($parent, $related, 'relation', 'RELATIONSHIP', 'id', $id);
 
         $relation = new belongsTo($builder, $parent, 'RELATIONSHIP', 'id', 'relation');
 
-        $builder->shouldReceive('whereIn')->once()->with('id', array_map(function($model){ return $model->id; }, $models));
+        $builder->shouldReceive('whereIn')->once()
+            ->with('id', array_map(function($model){ return $model->id; }, $models));
 
         $relation->addEagerConstraints($models);
 
@@ -137,7 +138,7 @@ class BelongsToTest extends TestCase  {
         $id = 19;
         $parent = new Stub(['id' => $id]);
 
-        $builder->shouldReceive('matchIncoming')->once()
+        $builder->shouldReceive('matchIn')->once()
             ->with($parent, $related, 'relation', 'RELATIONSHIP', 'id', $id);
 
         $builder->shouldReceive('where')->once()

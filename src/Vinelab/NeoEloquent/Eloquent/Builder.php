@@ -214,10 +214,10 @@ class Builder extends IlluminateBuilder {
      * @param  string                             $relationship
      * @return void
      */
-    public function matchIncoming()
+    public function matchIn($parent, $related, $relatedNode, $relationship, $property, $value = null)
     {
-        $args = array_merge(func_get_args(), array('incoming'));
-        call_user_func_array(array($this->query, 'match'), $args);
+        // Add a MATCH clause for a relation to the query
+        $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'in');
 
         return $this;
     }

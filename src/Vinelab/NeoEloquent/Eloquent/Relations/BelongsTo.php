@@ -50,7 +50,7 @@ class BelongsTo extends IlluminateBelongsTo {
             // Set the parent node's placeholder as the RETURN key.
             $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()<-[]-() Cypher clause.
-            $this->query->matchIncoming($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
+            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
             // Add WHERE clause over the parent node's matching key = value.
             $this->query->where($this->otherKey, '=', $this->parent->{$this->otherKey});
         }
@@ -83,7 +83,7 @@ class BelongsTo extends IlluminateBelongsTo {
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()<-[]-() Cypher clause.
-        $this->query->matchIncoming($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
+        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->otherKey, $this->getEagerModelKeys($models));
     }
