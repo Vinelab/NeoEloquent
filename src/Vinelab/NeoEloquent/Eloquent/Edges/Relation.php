@@ -179,6 +179,15 @@ abstract class Relation {
     }
 
     /**
+     * Get the NeoEloquent connection for this relation.
+     *
+     * @return \Vinelab\NeoEloquent\Connection
+     */
+    public function getConnection()
+    {
+        return $this->connection;
+    }
+
      * Set a given attribute on the relation.
      *
      * @param  string  $key
@@ -274,6 +283,19 @@ abstract class Relation {
     }
 
     /**
+     * Determine whether this relation exists.
+     *
+     * @return boolean
+     */
+    public function exists()
+    {
+        if ($this->relation and ! is_null($this->relation->getId()))
+        {
+            return true;
+        }
+
+        return false;
+    }
      * Return a timestamp as DateTime object.
      *
      * @param  mixed  $value
