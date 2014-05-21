@@ -139,6 +139,8 @@ abstract class Relation {
      */
     public function save()
     {
+        $this->updateTimestamps();
+
         // Go through the properties and assign them
         // to the relation.
         foreach ($this->toArray() as $key => $value)
@@ -188,6 +190,7 @@ abstract class Relation {
         return $this->connection;
     }
 
+    /**
      * Set a given attribute on the relation.
      *
      * @param  string  $key
@@ -196,6 +199,14 @@ abstract class Relation {
      */
     public function setAttribute($key, $value)
     {
+        if (in_array($key, $this->getDates()))
+        {
+            if ($value)
+            {
+                $value = $this->fromDateTime($value);
+            }
+        }
+
         $this->attributes[$key] = $value;
     }
 
@@ -296,6 +307,63 @@ abstract class Relation {
 
         return false;
     }
+
+    /**
+     * Get the format for database stored dates.
+     *
+     * @return string
+     */
+    protected function getDateFormat()
+    {
+        return $this->getConnection()->getQueryGrammar()->getDateFormat();
+    }
+
+    /**
+     * Convert a DateTime to a storable string.
+     *
+     * @param  \DateTime|int  $value
+     * @return string
+     */
+    public function fromDateTime($value)
+    {
+        $format = $this->getDateFormat();
+
+        // If the value is already a DateTime instance, we will just skip the rest of
+        // these checks since they will be a waste of time, and hinder performance
+        // when checking the field. We will just return the DateTime right away.
+        if ($value instanceof DateTime)
+        {
+            //
+        }
+
+        // If the value is totally numeric, we will assume it is a UNIX timestamp and
+        // format the date as such. Once we have the date in DateTime form we will
+        // format it according to the proper format for the database connection.
+        elseif (is_numeric($value))
+        {
+            $value = Carbon::createFromTimestamp($value);
+        }
+
+        // If the value is in simple year, month, day format, we will format it using
+        // that setup. This is for simple "date" fields which do not have hours on
+        // the field. This conveniently picks up those dates and format correct.
+        elseif (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value))
+        {
+            $value = Carbon::createFromFormat('Y-m-d', $value)->startOfDay();
+        }
+
+        // If this value is some other type of string, we'll create the DateTime with
+        // the format used by the database connection. Once we get the instance we
+        // can return back the finally formatted DateTime instances to the devs.
+        elseif ( ! $value instanceof DateTime)
+        {
+            $value = Carbon::createFromFormat($format, $value);
+        }
+
+        return $value->format($format);
+    }
+
+    /**
      * Return a timestamp as DateTime object.
      *
      * @param  mixed  $value
@@ -410,6 +478,58 @@ abstract class Relation {
         $this->connection = $name;
 
         return $this;
+    }
+
+    /**
+     * Update the creation and update timestamps.
+     *
+     * @return void
+     */
+    protected function updateTimestamps()
+    {
+        if ($this->parent->timestamps)
+        {
+            $time = $this->freshTimestamp();
+
+            $this->setUpdatedAt($time);
+
+            if ( ! $this->exists())
+            {
+                $this->setCreatedAt($time);
+            }
+        }
+    }
+
+    /**
+     * Set the value of the "created at" attribute.
+     *
+     * @param  mixed  $value
+     * @return void
+     */
+    public function setCreatedAt($value)
+    {
+        $this->{static::CREATED_AT} = $value;
+    }
+
+    /**
+     * Set the value of the "updated at" attribute.
+     *
+     * @param  mixed  $value
+     * @return void
+     */
+    public function setUpdatedAt($value)
+    {
+        $this->{static::UPDATED_AT} = $value;
+    }
+
+    /**
+     * Get a fresh timestamp for the model.
+     *
+     * @return \Carbon\Carbon
+     */
+    public function freshTimestamp()
+    {
+        return new Carbon;
     }
 
     /**

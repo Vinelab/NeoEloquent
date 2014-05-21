@@ -56,6 +56,8 @@ class BelongsToRelationTest extends TestCase {
         $saved = $relation->save();
 
         $this->assertTrue($saved);
+        $this->assertInstanceOf('Carbon\Carbon', $relation->created_at, 'make sure we set the created_at timestamp');
+        $this->assertInstanceOf('Carbon\Carbon', $relation->updated_at, 'make sure we set the updated_at timestamp');
         $this->assertArrayHasKey('user', $location->getRelations(), 'make sure the user has been set as relation in the model');
         $this->assertArrayHasKey('user', $location->toArray(), 'make sure it is also returned when dealing with the model');
         $this->assertEquals($location->user, $user);
