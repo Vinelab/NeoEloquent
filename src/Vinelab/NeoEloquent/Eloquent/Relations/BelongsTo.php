@@ -4,6 +4,8 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as IlluminateBelongsTo;
 
 class BelongsTo extends IlluminateBelongsTo {
@@ -162,5 +164,39 @@ class BelongsTo extends IlluminateBelongsTo {
         }
 
         return $models;
+    }
+
+    /**
+     * Associate the model instance to the given parent.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function associate(EloquentModel $model, $attributes = array())
+    {
+        /**
+         * For associated models we will need to create a unique relationship
+         * between the parent and the related model. In Cypher we can use the
+         * MERGE clause to make sure that the relationship doesn't happen more than once.
+         *
+         * An example query would be like:
+         *
+         * MATCH (account:`Account`), (user:`User`)
+         * WHERE id(account) = 10892 AND id(user) = 98522
+         * MERGE (account)<-[rel:ACCOUNT]-(user)
+         * RETURN rel;
+         */
+
+        // Set the relation on the model
+        $this->parent->setRelation($this->relation, $model);
+
+        /**
+         * Due to the fact that relationships in Graph are entities themselves
+         * we will need to treat them as such and in this case what we're looking for is
+         * a relationship with an INCOMING direction towards the parent node, in other words
+         * it is a relationship with an edge incoming towards the $parent model and we call it
+         * an "EdgeIn" relationship.
+         */
+        return new EdgeIn($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique = true);
     }
 }
