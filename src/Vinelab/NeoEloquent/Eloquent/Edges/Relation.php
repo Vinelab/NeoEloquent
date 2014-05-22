@@ -1,10 +1,13 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Carbon\Carbon;
+use Everyman\Neo4j\Path;
+use Everyman\Neo4j\Relationship;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\NoEdgeDirectionException;
+use Vinelab\NeoEloquent\UnknownDirectionException;
 
 abstract class Relation {
 
@@ -72,6 +75,14 @@ abstract class Relation {
      * @var boolean
      */
     protected $unique = false;
+
+    /**
+     * The primary key that is used to
+     * identify the relationship.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
 
     /**
      * The relationship instance.
@@ -169,6 +180,51 @@ abstract class Relation {
     }
 
     /**
+     * Find a relationship either by Id or
+     * the currently setup relation.
+     *
+     * @param  int $id
+     * @return static
+     */
+    public function current()
+    {
+        // To get a relationship between two models we will have
+        // to find the Path between them so first let's transform
+        // them to nodes.
+        $parent = $this->asNode($this->parent);
+        $related = $this->asNode($this->related);
+
+        // Determine the relationship, the real one!
+        $direction = $this->getRealDirection();
+
+        // Find the path between parent and related nodes in the previously
+        // determined direction according to the type and we will get returned
+        // an instance of \Everyman\Neo4j\Path which will lead us to the relationship.
+        $path = $parent->findPathsTo($related, $this->type, $direction)->getSinglePath();
+
+        // Since we are sure that the relation between these two nodes is direct
+        // with depth of 1 we will get the path and return the first relationship (if any).
+        if ( ! is_null($path))
+        {
+            // Tell the path that we need to work with the relationships now
+            // so that it sets the nodes aside.
+            $path->setContext(Path::ContextRelationship);
+
+            $relationships = $path->getRelationships();
+
+            if ( is_array($relationships) and ! empty($relationships))
+            {
+                // Now that we are sure that there is an valid relationship between
+                // the nodes let's extract it then create and return a new instance based on it.
+                $relation = $relationships[0];
+
+                return $this->newFromRelation($relation);
+            }
+
+        }
+    }
+
+    /**
      * Save the relationship to the database.
      *
      * @return boolean
@@ -176,6 +232,22 @@ abstract class Relation {
     public function save()
     {
         $this->updateTimestamps();
+
+         /**
+         * If this is a unique relationship we should check for an existing
+         * one of the same type and direction for the $parent node before saving
+         * and delete it, only if we are not updating a relationship.
+         */
+        if ($this->unique and ! $this->exists())
+        {
+            $parent = $this->asNode($this->parent);
+            $existing = $parent->getFirstRelationship([$this->type], $this->getRealDirection());
+
+            if ( ! empty($existing))
+            {
+                $existing->delete();
+            }
+        }
 
         // Go through the properties and assign them
         // to the relation.
@@ -186,7 +258,16 @@ abstract class Relation {
 
         $saved = $this->relation->save();
 
-        return  $saved ? true : false;
+        if ($saved)
+        {
+            // Let's refresh the relation we alreay have set so that
+            // we make sure that it is totally in sync with the saved one.
+            $this->setRelation($this->relation);
+
+            return true;
+        }
+
+        return  false;
     }
 
     /**
@@ -204,6 +285,43 @@ abstract class Relation {
         }
 
         return false;
+    }
+
+    public function newFromRelation(Relationship $relation)
+    {
+        $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);
+
+        $instance->setRelation($relation);
+
+        return $instance;
+    }
+
+    /**
+     * Get the direction value from the Neo4j
+     * client according to the direction set on
+     * the inheriting class,
+     *
+     * @throws UnknownDirectionException If the specified $direction is not one of in, out or inout
+     * @return string
+     */
+    public function getRealDirection()
+    {
+        if ($this->direction == 'in' or $this->direction == 'out')
+        {
+            $direction = ucfirst($this->direction);
+
+        } elseif ($this->direction == 'inout')
+        {
+            $direction = 'All';
+
+        } else
+        {
+            throw new UnknownDirectionException($this->direction);
+        }
+
+        $direction = "Direction". $direction;
+
+        return constant("Everyman\Neo4j\Relationship::". $direction);
     }
 
     /**
@@ -224,6 +342,21 @@ abstract class Relation {
     public function getConnection()
     {
         return $this->connection;
+    }
+
+    /**
+     * Set a given relationship on this relation.
+     *
+     * @param \Everyman\Neo4j\Relationship $relation
+     */
+    public function setRelation(Relationship $relation)
+    {
+        // Set the relation object.
+        $this->relation = $relation;
+
+        // Replace the attributes with those brought from the given relation.
+        $this->attributes = $relation->getProperties();
+        $this->setAttribute($this->primaryKey, $relation->getId());
     }
 
     /**

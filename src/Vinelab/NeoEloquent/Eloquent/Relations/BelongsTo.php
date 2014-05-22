@@ -197,6 +197,25 @@ class BelongsTo extends IlluminateBelongsTo {
          * it is a relationship with an edge incoming towards the $parent model and we call it
          * an "EdgeIn" relationship.
          */
+        return $this->getEdge($model, $attributes);
+    }
+
+    public function edge(EloquentModel $model = null)
+    {
+        return $this->getEdge($model)->current();
+    }
+
+    /**
+     * Get an instance of the EdgeIn relationship.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model $model
+     * @param  array         $attributes
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
+     */
+    public function getEdge(EloquentModel $model = null, $attributes = array())
+    {
+        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
+
         return new EdgeIn($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique = true);
     }
 }
