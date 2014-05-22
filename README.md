@@ -17,7 +17,8 @@ in this case it will be `:User`. Read about [node labels here](http://docs.neo4j
 
 ### Custom Node Labels
 
-You may specify the label(s) you wish to be used instead of the default generated.
+You may specify the label(s) you wish to be used instead of the default generated, they are also
+case sensitive so they will be stored as put here.
 
 ```php
 class User extends NeoEloquent {
@@ -86,6 +87,33 @@ class Phone extends NeoEloquent {
 
 This represents an `INCOMING` relationship direction from
 the `:User` node to this `:Phone` node.
+
+##### Associating Models
+
+A very important thing to note here is that once you call `associate()` on a model
+it is directly saving the relationship, in contrast with `Eloquent` where you have to forcefully `save()` the model
+and this is due to the fact that we do not deal with **foreign keys**, in our case it is much
+more than just setting the foreign key attribute on the parent model. In Neo4j (and Graph in general) a relationship is an entity itself that can also have attributes of its own, hence the introduction of
+[`Edges`](#Edges)
+
+```php
+$account = Account::find(10);
+
+// $relation will be Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
+$relation = $user->account()->associate($account);
+
+// Save the relation
+$relation->save();
+```
+
+The Cypher performed by this statement will be as follows:
+
+```sql
+MATCH (account:`Account`), (user:`User`)
+WHERE id(account) = 1986 AND id(user) = 9862
+MERGE (account)<-[rel_user_account:ACCOUNT]-(user)
+RETURN rel_user_account;
+```
 
 ##### Dynamic Loading
 
@@ -225,6 +253,97 @@ MATCH (user:`User`), (followers:`User`), (user)-[rel_user_followers:FOLLOWS]-(fo
 WHERE id(user) = 1012
 RETURN rel_follows;
 ```
+
+## Edges
+
+### Introduction
+
+Due to the fact that relationships in Graph are much different than Relational and Document databases
+we will have to handle them accordingly. Relationships have directions that can vary between
+**In**, **Out** and **Bidirectional** or in NeoEloquent terms **InOut**. Directions respectively
+reference the parent node.
+
+*Example*: Consider this model
+
+```php
+class Location extends NeoEloquent {
+    public function user()
+    {
+        // Assign an INCOMING relationship towards this model
+        return $this->belongsTo('User', 'LOCATED_AT');
+    }
+}
+```
+
+To associate a `User` to a `Location`:
+
+```php
+$location = Location::find(1922);
+$user = User::find(3876);
+$location->associate($user);
+```
+
+which in Cypher land will map to `(:Location)<-[:LOCATED_AT]-(:User)`.
+
+### Working With Edges
+
+As stated earlier **Edges** are entities to Graph unlike *SQL* where they are a matter of a foreign key having the value of the parent model as an attribute on the belonging model or in *Documents* where they are either embeds or ids as references. So we developed them to be *light models* which means you can work with them as if you were working with an Eloquent `Model` - to a certain extent.
+
+```php
+// Create a new relationship
+$relation = $location->associate($user);
+
+// $relation is now an instance of EdgeIn
+var_dump($relation); Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
+
+// Save the relationship to the database
+$relation->save(); // true
+```
+
+#### Edge Attributes
+
+By default, edges will have the timestamps `created_at` and `updated_at` automatically set and updated **only if** timestamps are enabled by setting `$timestamps` to `true`
+on the parent model.
+
+```php
+$located_at = $location->associate($user);
+$located_at->since = 1966;
+$located_at->present = true;
+$located_at->save();
+
+// $created_at is a Carbon/Carbon instance holding the timestamp
+$created_at = $located_at->created_at;
+// so is $updated_at
+$updated_at = $located_at->updated_at;
+```
+
+##### Retrieve an Edge from a Relation
+
+The same way an association will create an `EdgeIn` relationship we can retrieve
+the edge between two models by calling the `edge($model)` method on the `belongsTo`
+relationship.
+
+```php
+$location = Location::find(1892);
+$edge = $location->user()->edge();
+```
+
+You may also specify the other side of the edge.
+
+> Note: By default NeoEloquent will try to pefrorm the `$location->user` internally to figure
+out the related side of the edge based on the relation function name, in this case it's
+`user()`.
+
+```php
+$location = Location::find(1892);
+$edge = $location->user()->edge($location->user);
+```
+
+
+#### EdgeIn
+
+Represents an `INCOMING` direction relationship towards the parent model.
+
 ## Avoid
 
 Here are some constraints and Graph-specific gotchas.
@@ -252,12 +371,4 @@ make sure it's flat. *Example:*
 User::create(['name' => 'Some Name', 'location' => ['lat' => 123, 'lng'=> -123 ] ]);
 ```
 
-Check out [#Relationships](#Relationships) on how you can achieve this.
-
-# TODO
-- test Boolean vs. 0 and 1.
-- in getModels() the connection of the model should be set per model instead of getting
-the connection name of $this->model (might introduce a bug where the connection of the model
-    is not persisted over results).
-- add support for AND, OR, XOR and NOT operators
-- add support for [x] and [x..y] operators
+Check out [Relationships](#Relationships) and [Edges](#Edges) on how you can achieve this in a Graph way.
