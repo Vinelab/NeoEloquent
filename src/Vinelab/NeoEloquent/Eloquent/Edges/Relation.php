@@ -4,8 +4,16 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\NoEdgeDirectionException;
 
 abstract class Relation {
+
+    /**
+     * The Eloquent builder instance.
+     *
+     * @var \Vinelab\NeoEloquent\Eloquent\Builder
+     */
+    protected $query;
 
     /**
      * The database connection.
@@ -34,22 +42,6 @@ abstract class Relation {
      * @var \Vinelab\NeoEloquent\Eloquent\Model
      */
     protected $related;
-
-    /**
-     * The start Node of the relationship,
-     * represented by the $parent Model.
-     *
-     * @var \Everyman\Neo4j\Node
-     */
-    protected $start;
-
-    /**
-     * The end Node of the relationship,
-     * represented by the $related Model.
-     *
-     * @var \Everyman\Neo4j\Node
-     */
-    protected $end;
 
     /**
      * The relationship type.
@@ -84,7 +76,7 @@ abstract class Relation {
     /**
      * The relationship instance.
      *
-     * @var \Everyman\Neo4j\
+     * @var \Everyman\Neo4j\Relationship
      */
     protected $relation;
 
@@ -103,6 +95,20 @@ abstract class Relation {
     const UPDATED_AT = 'updated_at';
 
     /**
+     * The direction of this relation,
+     * this flag will be used to determine
+     * which model will be the start node
+     * and which is the end node.
+     *
+     * Possible values are: in, out.
+     *
+     * WARNING: Every inheriting class must set this value
+     *     or it will throw a NoEdgeDirectionException
+     * @var string
+     */
+    protected $direction;
+
+    /**
      * Create a new Relation instance.
      *
      * @param Builder $query
@@ -112,6 +118,7 @@ abstract class Relation {
      */
     public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = array(), $unique = false)
     {
+        $this->query      = $query;
         $this->type       = $type;
         $this->parent     = $parent;
         $this->related    = $related;
@@ -128,9 +135,38 @@ abstract class Relation {
      * Initialize the relationship setting the start node,
      * end node and relation type.
      *
+     * @throws  \Vinelab\NeoEloquent\NoEdgeDirectionException If $direction is not set on the inheriting relation.
      * @return void
      */
-    abstract public function initRelation();
+    public function initRelation()
+    {
+        switch ($this->direction)
+        {
+            case 'in':
+                // Make them nodes
+                $start = $this->asNode($this->related);
+                $end   = $this->asNode($this->parent);
+            break;
+
+            case 'out':
+                // Make them nodes
+                $start = $this->asNode($this->parent);
+                $end   = $this->asNode($this->related);
+            break;
+
+            default:
+                throw new NoEdgeDirectionException;
+            break;
+        }
+
+        // Setup relationship
+        $this->relation = $this->client
+            ->makeRelationship()
+            ->setType($this->type)
+            ->setStartNode($start)
+            ->setEndNode($end)
+            ->setProperties($this->attributes);
+    }
 
     /**
      * Save the relationship to the database.
