@@ -8,7 +8,7 @@ class Wiz extends Model {
 
     protected $label = ':Wiz';
 
-    protected $fillable = ['fiz', 'biz'];
+    protected $fillable = ['fiz', 'biz', 'triz'];
 }
 
 class SimpleCRUDTest extends TestCase {
@@ -177,5 +177,24 @@ class SimpleCRUDTest extends TestCase {
 
         $this->assertInternalType('int', $id);
         $this->assertGreaterThan(0, $id, 'message');
+    }
+
+    public function testSavingBooleanValuesStayBoolean()
+    {
+        $w = Wiz::create(['fiz' => true, 'biz' => false]);
+
+        $g = Wiz::find($w->id);
+        $this->assertTrue($g->fiz);
+        $this->assertFalse($g->biz);
+    }
+
+    public function testNumericValuesPreserveDataTypes()
+    {
+        $w = Wiz::create(['fiz' => 1, 'biz' => 8.276123, 'triz' => 0]);
+
+        $g = Wiz::find($w->id);
+        $this->assertInternalType('int', $g->fiz);
+        $this->assertInternalType('int', $g->triz);
+        $this->assertInternalType('float', $g->biz);
     }
 }
