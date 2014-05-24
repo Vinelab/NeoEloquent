@@ -15,6 +15,19 @@ class User extends NeoEloquent {}
 As simple as it is, NeoEloquent will generate the default node label from the class name,
 in this case it will be `:User`. Read about [node labels here](http://docs.neo4j.org/chunked/stable/rest-api-node-labels.html)
 
+### Namespaced Models
+When you use namespaces with your models the label will consider the full namespace.
+
+```php
+namespace Vinelab\Cms;
+
+class Admin extends NeoEloquent { }
+```
+
+The generated label from that relationship will be `VinelabCmsAdmin`, this is necessary to make sure
+that labels do not clash in cases where we introduce another  `Admin` instance like
+`Vinelab\Blog\Admin` then things gets messy with `:Admin` in the database.
+
 ### Custom Node Labels
 
 You may specify the label(s) you wish to be used instead of the default generated, they are also
@@ -31,7 +44,7 @@ class User extends NeoEloquent {
 $user = User::craete(['name', 'email']);
 ```
 
-> Note: The `$table` is the fallback variable that will be used if found and there was no `$label`.
+NeoEloquent has a fallback support for the `$table` variable that will be used if found and there was no `$label` defined on the model.
 
 ```php
 class User extends NeoEloquent {
@@ -39,7 +52,7 @@ class User extends NeoEloquent {
 }
 ```
 
-Do not worry about the labels formatting, You may specify them as `array('Label1', 'Label2')` or separate them by a column `:`. Prepending them with a `:` is optional.
+Do not worry about the labels formatting, You may specify them as `array('Label1', 'Label2')` or separate them by a column `:` and prepending them with a `:` is optional.
 
 ## Relationships
 
@@ -61,7 +74,8 @@ This represents an `OUTGOING` relationship direction from the `:User` node to a 
 
 ```php
 $phone = new Phone(['code' => 961, 'number' => '98765432'])
-$phone = $user->phone()->save($phone);
+$relation = $user->phone()->associate($phone);
+$relation->save();
 ```
 
 The Cypher performed by this statement will be as follows:
@@ -90,11 +104,9 @@ the `:User` node to this `:Phone` node.
 
 ##### Associating Models
 
-A very important thing to note here is that once you call `associate()` on a model
-it is directly saving the relationship, in contrast with `Eloquent` where you have to forcefully `save()` the model
-and this is due to the fact that we do not deal with **foreign keys**, in our case it is much
+Due to the fact that we do not deal with **foreign keys**, in our case it is much
 more than just setting the foreign key attribute on the parent model. In Neo4j (and Graph in general) a relationship is an entity itself that can also have attributes of its own, hence the introduction of
-[`Edges`](#Edges)
+[**Edges**](#Edges)
 
 ```php
 $account = Account::find(10);
@@ -128,6 +140,35 @@ The Cypher performed by this statement will be as follows:
 MATCH (phone:Phone) (phone)<-[:PHONE]-(user:User)
 WHERE id(phone) = 1006
 RETURN user;
+```
+
+##### Eager Loading
+
+```php
+class Book extends Eloquent {
+
+    public function author()
+    {
+        return $this->belongsTo('Author');
+    }
+}
+```
+
+Loading authors with their books with the least performance overhead possible.
+
+```php
+foreach (Book::with('author')->get() as $book)
+{
+    echo $book->author->name;
+}
+```
+
+Only two Cypher queries will be run in the loop above:
+
+```sql
+MATCH (book:`Book`) RETURN *;
+
+MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
 ```
 
 ### One-To-Many
