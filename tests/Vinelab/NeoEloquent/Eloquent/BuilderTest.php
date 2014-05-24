@@ -216,7 +216,7 @@ class EloquentBuilderTest extends TestCase {
         $records[] = array('id' => 1902, 'name' => 'taylor', 'age' => 26);
         $records[] = array('id' => 6252, 'name' => 'dayle', 'age' => 28);
 
-        $resultSet = $this->createNodeResultSet($records, array('name', 'age'));
+        $resultSet = $this->createNodeResultSet($records, array('n.name', 'n.age'));
 
         $builder->getQuery()->shouldReceive('get')->once()->with(array('foo'))->andReturn($resultSet);
         $model = M::mock('Vinelab\NeoEloquent\Eloquent\Model[getTable,getConnectionName,newInstance]');
@@ -424,7 +424,7 @@ class EloquentBuilderTest extends TestCase {
         );
 
         // the properties that we need returned of our model
-        $properties = array('id', 'name', 'email');
+        $properties = array('id(n)', 'n.name', 'n.email', 'n.somthing');
 
         $resultSet = $this->createNodeResultSet($result, $properties);
 
@@ -561,7 +561,13 @@ class EloquentBuilderTest extends TestCase {
 
         $this->builder->setModel($this->model);
 
-        $attributes = $this->builder->getProperties(array_keys($properties), $row);
+        $columns = array_map(function($property)
+            {
+                return 'n.'. $property;
+
+            }, array_keys($properties));
+
+        $attributes = $this->builder->getProperties($columns, $row);
 
         $this->assertEquals($properties, $attributes);
     }
@@ -594,6 +600,12 @@ class EloquentBuilderTest extends TestCase {
         $this->assertEquals($expected, $attributes);
     }
 
+    public function testCheckingIsRelationship()
+    {
+        $this->assertTrue($this->builder->isRelationship(['user', 'account']));
+        $this->assertFalse($this->builder->isRelationship(['user.name', 'account.id']));
+        $this->assertFalse($this->builder->isRelationship(['user', 'user.name', 'account.id']));
+    }
 
     /**
      *

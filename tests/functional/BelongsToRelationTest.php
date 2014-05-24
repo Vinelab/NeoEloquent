@@ -1,4 +1,4 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\Relations;
+<?php namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
@@ -17,13 +17,13 @@ class Location extends Model {
 
     public function user()
     {
-        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\Relations\User', 'LOCATED_AT');
+        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo\User', 'LOCATED_AT');
     }
 }
 
 class BelongsToRelationTest extends TestCase {
 
-     public function tearDown()
+    public function tearDown()
     {
         M::close();
 
@@ -45,6 +45,47 @@ class BelongsToRelationTest extends TestCase {
 
         User::setConnectionResolver($resolver);
         Location::setConnectionResolver($resolver);
+    }
+
+    public function testDynamicLoadingBelongsTo()
+    {
+        $location = Location::create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
+        $user = User::create(['name' => 'Daughter', 'alias' => 'daughter']);
+        $relation = $location->user()->associate($user);
+
+        $this->assertTrue($relation->save());
+        $this->assertEquals($user, $location->user);
+        $this->assertTrue($relation->delete());
+    }
+
+    public function testDynamicLoadingBelongsToFromFoundRecord()
+    {
+        $location = Location::create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
+        $user = User::create(['name' => 'Daughter', 'alias' => 'daughter']);
+        $relation = $location->user()->associate($user);
+
+        $this->assertTrue($relation->save());
+
+        $found = Location::find($location->id);
+
+        $this->assertEquals($user, $found->user);
+        $this->assertTrue($relation->delete());
+    }
+
+    public function testEagerLoadingBelongsTo()
+    {
+        $location = Location::create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
+        $user = User::create(['name' => 'Daughter', 'alias' => 'daughter']);
+        $relation = $location->user()->associate($user);
+
+        $this->assertTrue($relation->save());
+
+        $found = Location::with('user')->find($location->id);
+        $relations = $found->getRelations();
+
+        $this->assertArrayHasKey('user', $relations);
+        $this->assertEquals($user, $relations['user']);
+        $this->assertTrue($relation->delete());
     }
 
     public function testAssociatingBelongingModel()

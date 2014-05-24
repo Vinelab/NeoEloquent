@@ -140,12 +140,8 @@ class Builder extends IlluminateBuilder {
 
         $result = ($current instanceof Node) ? $current : $row;
 
-        if ($result instanceOf Node)
+        if ($this->isRelationship($resultColumns))
         {
-            $attributes = $this->getNodeAttributes($result);
-
-        } else {
-
             // You must have chosen certain properties (columns) to be returned
             // which means that we should map the values to their corresponding keys.
             foreach ($resultColumns as $key => $property)
@@ -177,11 +173,17 @@ class Builder extends IlluminateBuilder {
 
             // WARNING: Do this after setting all the attributes to avoid overriding it
             // with a null value or colliding it with something else, some Daenerys dragons maybe ?!
-            if (in_array('id', $columns))
+            if ( ! is_null($columns) and in_array('id', $columns))
             {
                 $attributes['id'] = $row['id(' . $this->query->modelAsNode() . ')'];
             }
 
+        } elseif ($result instanceof Node)
+        {
+            $attributes = $this->getNodeAttributes($result);
+        } elseif ($result instanceof Row)
+        {
+            $attributes = $this->getRowAttributes($result, $columns, $resultColumns);
         }
 
         return $attributes;
@@ -206,6 +208,18 @@ class Builder extends IlluminateBuilder {
         return $attributes;
     }
 
+    public function getRowAttributes(Row $row, $columns, $resultColumns)
+    {
+        $attributes = [];
+
+        foreach ($resultColumns as $key => $column)
+        {
+            $attributes[$columns[$key]] = $row[$column];
+        }
+
+        return $attributes;
+    }
+
     /**
      * Add an INCOMING "<-" relationship MATCH to the query.
      *
@@ -218,6 +232,13 @@ class Builder extends IlluminateBuilder {
     {
         // Add a MATCH clause for a relation to the query
         $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'in');
+
+        return $this;
+    }
+
+    public function matchOut($parent, $related, $relatedNode, $relationship, $property, $value = null)
+    {
+        $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'out');
 
         return $this;
     }
@@ -265,6 +286,32 @@ class Builder extends IlluminateBuilder {
     public function getMutations()
     {
         return $this->mutations;
+    }
+
+    /**
+     * Determine whether the intended result is a relationship result between nodes,
+     * we can tell by the format of the requested properties, in case the requested
+     * properties were in the form of 'user.name' we are pretty sure it is an attribute
+     * of a node, otherwise if they're plain strings like 'user' and they're more than one then
+     * the reference is assumed to be a Node placeholder rather than a property.
+     *
+     * @param  \Everyman\Neo4j\Query\Row $row
+     * @return boolean
+     */
+    public function isRelationship(array $columns)
+    {
+        $matched = array_filter($columns, function($column)
+        {
+            // As soon as we find that a property does not
+            // have a dot '.' in it we assume it is a relationship,
+            // unless it is the id of a node which is where we look
+            // at a pattern that matches id(any character here).
+            if (preg_match('/^([a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+)|(id\(.*\))$/', $column)) return false;
+
+            return true;
+        });
+
+        return  count($matched) > 1 ? true : false;
     }
 
 }

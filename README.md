@@ -294,7 +294,7 @@ As stated earlier **Edges** are entities to Graph unlike *SQL* where they are a 
 $relation = $location->associate($user);
 
 // $relation is now an instance of EdgeIn
-var_dump($relation); Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
+var_dump($relation); // Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
 
 // Save the relationship to the database
 $relation->save(); // true
@@ -372,3 +372,15 @@ User::create(['name' => 'Some Name', 'location' => ['lat' => 123, 'lng'=> -123 ]
 ```
 
 Check out [Relationships](#Relationships) and [Edges](#Edges) on how you can achieve this in a Graph way.
+
+## Tests
+
+Follow these steps to run the package's tests:
+
+- install a Neo4j instance and run it with the default configuration `localhost:7474`
+- make sure the database graph is empty to avoid conflicts
+- after running `composer install` there should be `/vendor/bin/phpunit`
+- run `./vendor/bin/phpunit` after making sure that the Neo4j instance is running
+
+> Tests marked as incomplete means they are either know issues or non-supported features,
+check included messages for more info.

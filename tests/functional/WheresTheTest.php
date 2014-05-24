@@ -76,6 +76,15 @@ class WheresTheTest extends TestCase {
         $this->assertEquals($this->ab, $u);
     }
 
+    public function testWhereIdSelectingProperties()
+    {
+        $u = User::where('id', $this->ab->id)->first(['id', 'name', 'email']);
+
+        $this->assertEquals($this->ab->id, $u->id);
+        $this->assertEquals($this->ab->name, $u->name);
+        $this->assertEquals($this->ab->email, $u->email);
+    }
+
     public function testWhereIdWithEqualsOperator()
     {
         $u = User::where('id', '=', $this->cd->id)->first();
