@@ -19,7 +19,7 @@ abstract class OneRelation extends BelongsTo {
      * Associate the model instance to the given parent.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $model
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Relation
      */
     public function associate(Model $model, $attributes = array())
     {

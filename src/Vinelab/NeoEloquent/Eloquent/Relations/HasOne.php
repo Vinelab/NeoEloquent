@@ -3,10 +3,6 @@
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-/**
- * For us this is a trick relationship since we are only converting the direction
- * of the edge towards the related model instead of the parent model.
- */
 class HasOne extends OneRelation {
 
     /**
