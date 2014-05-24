@@ -127,48 +127,12 @@ MERGE (account)<-[rel_user_account:ACCOUNT]-(user)
 RETURN rel_user_account;
 ```
 
-##### Dynamic Loading
-
-```php
-$phone = Phone::find(1006);
-$user = $phone->user;
-```
-
 The Cypher performed by this statement will be as follows:
 
 ```sql
 MATCH (phone:Phone) (phone)<-[:PHONE]-(user:User)
 WHERE id(phone) = 1006
 RETURN user;
-```
-
-##### Eager Loading
-
-```php
-class Book extends Eloquent {
-
-    public function author()
-    {
-        return $this->belongsTo('Author');
-    }
-}
-```
-
-Loading authors with their books with the least performance overhead possible.
-
-```php
-foreach (Book::with('author')->get() as $book)
-{
-    echo $book->author->name;
-}
-```
-
-Only two Cypher queries will be run in the loop above:
-
-```sql
-MATCH (book:`Book`) RETURN *;
-
-MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
 ```
 
 ### One-To-Many
@@ -216,21 +180,6 @@ class Post extends NeoEloquent {
 This represents an `INCOMING` relationship direction from
 the `:User` node to this `:Post` node.
 
-##### Dynamic Loading
-
-```php
-$post = Post::find(1011);
-$autor = $post->author;
-```
-
-The Cypher performed by this statement will be as follows:
-
-```sql
-MATCH (post:`Post`), (post)<-[rel_post_author:POSTED]-(author:`User`)
-WHERE id(post) = 1011
-RETURN author;
-```
-
 ### Manty-To-Many
 
 ```php
@@ -262,7 +211,7 @@ The Cypher performed by this statement will be as follows:
 ```sql
 MATCH (user:`User`), (followers:`User`)
 WHERE id(user) = 1012 AND id(followers) = 1013
-CREATE (user)-[rel_user_followers:FOLLOWS]->(followers)
+CREATE (user)-[:FOLLOWS]->(followers)
 RETURN rel_follows;
 ```
 
@@ -293,6 +242,53 @@ The Cypher performed by this statement will be as follows:
 MATCH (user:`User`), (followers:`User`), (user)-[rel_user_followers:FOLLOWS]-(followers)
 WHERE id(user) = 1012
 RETURN rel_follows;
+```
+
+### Dynamic Properties
+
+```php
+class Phone extends Eloquent {
+
+    public function user()
+    {
+        return $this->belongsTo('User');
+    }
+
+}
+
+$phone = Phone::find(1006);
+$user = $phone->user;
+// or getting an attribute out of the related model
+$name = $phone->user->name;
+```
+
+### Eager Loading
+
+```php
+class Book extends Eloquent {
+
+    public function author()
+    {
+        return $this->belongsTo('Author');
+    }
+}
+```
+
+Loading authors with their books with the least performance overhead possible.
+
+```php
+foreach (Book::with('author')->get() as $book)
+{
+    echo $book->author->name;
+}
+```
+
+Only two Cypher queries will be run in the loop above:
+
+```sql
+MATCH (book:`Book`) RETURN *;
+
+MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
 ```
 
 ## Edges
