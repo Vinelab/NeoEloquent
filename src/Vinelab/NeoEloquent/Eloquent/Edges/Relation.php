@@ -287,6 +287,13 @@ abstract class Relation {
         return false;
     }
 
+    /**
+     * Create a new Relation of the current instance
+     * from an existing database relation.
+     *
+     * @param  Everyman\Neo4j\Relationship $relation
+     * @return static
+     */
     public function newFromRelation(Relationship $relation)
     {
         $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);

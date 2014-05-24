@@ -208,6 +208,14 @@ class Builder extends IlluminateBuilder {
         return $attributes;
     }
 
+    /**
+     * Get the attributes of a result Row
+     *
+     * @param  \Everyman\Neo4j\Query\Row    $row
+     * @param  array $columns The query columns
+     * @param  array $resultColumns The result columns that can be extracted from a \Everyman\Neo4j\Query\ResultSet
+     * @return array
+     */
     public function getRowAttributes(Row $row, $columns, $resultColumns)
     {
         $attributes = [];

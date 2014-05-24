@@ -200,6 +200,13 @@ class BelongsTo extends IlluminateBelongsTo {
         return $this->getEdge($model, $attributes);
     }
 
+    /**
+     * Get the edge between the parent model and the given model or
+     * the related model determined by the relation function name.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model $model
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
+     */
     public function edge(EloquentModel $model = null)
     {
         return $this->getEdge($model)->current();

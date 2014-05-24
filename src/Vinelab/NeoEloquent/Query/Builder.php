@@ -29,6 +29,11 @@ class Builder extends IlluminateQueryBuilder {
      */
     public $matches = array();
 
+    /**
+     * The current query value bindings.
+     *
+     * @var array
+     */
     protected $bindings = array(
         'matches'=> [],
         'select' => [],

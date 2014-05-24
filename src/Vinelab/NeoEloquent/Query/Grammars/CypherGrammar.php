@@ -73,7 +73,15 @@ class CypherGrammar extends Grammar {
 		return $cypher;
 	}
 
-    protected function compileComponent($query, $components, $component)
+    /**
+     * Compile a single component.
+     *
+     * @param  \Illuminate\Database\Query\Builder $query
+     * @param  array $components
+     * @param  string $component
+     * @return string
+     */
+    protected function compileComponent(Builder $query, $components, $component)
     {
         $cypher = '';
 
@@ -96,6 +104,13 @@ class CypherGrammar extends Grammar {
         return $cypher;
     }
 
+    /**
+     * Compile the MATCH for a query with relationships.
+     *
+     * @param  \Illuminate\Database\Query\Builder $query
+     * @param  array  $matches
+     * @return string
+     */
     public function compileMatches(Builder $query, $matches)
     {
         if ( ! is_array($matches) or empty($matches)) return '';
@@ -277,7 +292,7 @@ class CypherGrammar extends Grammar {
 	}
 
     /**
-	 * Compile the "offset" portions of the query.
+	 * Compile the "SKIP" portions of the query.
 	 *
 	 * @param  \Vinelab\NeoEloquent\Query\Builder  $query
 	 * @param  int  $offset
@@ -288,6 +303,13 @@ class CypherGrammar extends Grammar {
 		return 'SKIP '.(int) $offset;
 	}
 
+    /**
+     * Compile the "RETURN *" portion of the query.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $columns
+     * @return string
+     */
     protected function compileColumns(Builder $query, $properties)
     {
         // In the case where the query has relationships
