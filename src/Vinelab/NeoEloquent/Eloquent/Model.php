@@ -1,6 +1,7 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
+use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
@@ -183,6 +184,35 @@ abstract class Model extends IlluminateModel {
         $otherKey = $otherKey ?: $instance->getKeyName();
 
         return new HasOne($query, $this, $foreignKey, $otherKey, $relation);
+    }
+
+    /**
+     * Define a one-to-many relationship.
+     *
+     * @param  string  $related
+     * @param  string  $type
+     * @param  string  $key
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function hasMany($related, $type = null, $key = null, $relation = null)
+    {
+        // If no relation name was given, we will use this debug backtrace to extract
+        // the calling method's name and use that as the relationship name as most
+        // of the time this will be what we desire to use for the relationships.
+        if (is_null($relation))
+        {
+            list(, $caller) = debug_backtrace(false);
+
+            $relation = $caller['function'];
+        }
+
+        $type = $type ?: $this->getForeignKey();
+
+        $instance = new $related;
+
+        $key = $key ?: $this->getKeyName();
+
+        return new HasMany($instance->newQuery(), $this, $type, $key, $relation);
     }
 
 }
