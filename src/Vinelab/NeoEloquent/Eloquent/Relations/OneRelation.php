@@ -72,7 +72,6 @@ abstract class OneRelation extends BelongsTo {
         return $this->getEdge($model)->current();
     }
 
-
     /**
      * Gather the keys from an array of related models.
      *
@@ -109,7 +108,7 @@ abstract class OneRelation extends BelongsTo {
         return array_values(array_unique($keys));
     }
 
-        /**
+    /**
      * Match the eagerly loaded results to their parents.
      *
      * @param  array   $models
