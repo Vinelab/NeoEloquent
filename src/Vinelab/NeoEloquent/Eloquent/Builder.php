@@ -82,18 +82,47 @@ class Builder extends IlluminateBuilder {
                     // Transform mutations back to their origin
                     foreach ($attributes as $mutation => $values)
                     {
-                        $mutated[$mutation] = $model = $this->mutations[$mutation]->newFromBuilder($values);
-                        $model->setConnection($connection);
+                        // First we should see whether this mutation can be resolved so that
+                        // we take it into consideration otherwise we skip to the next iteration.
+                        if ( ! $this->resolvableMutation($mutation)) continue;
+
+                        // Since this mutation should be resolved by us then we check whether it is
+                        // a Many or One mutation.
+                        if ($this->isManyMutation($mutation))
+                        {
+                            // In the case of Many mutations we need to return an associative array having both
+                            // relations as a single record so that when we match them back we know which result
+                            // belongs to which parent node.
+                            foreach ($this->getMutations() as $label => $info)
+                            {
+                                $mutationModel = $this->getMutationModel($label);
+                                $mutated[$label] = $model = $mutationModel->newFromBuilder($attributes[$label]);
+                                $model->setConnection($mutationModel->getConnectionName());
+                            }
+
+                        }
+                        // Dealing with One mutations is simply returning an associative array with the mutation
+                        // label being the $key and the related model is $value.
+                        else
+                        {
+                            $mutated[$mutation] = $model = $this->getMutationModel($mutation)->newFromBuilder($values);
+                            $model->setConnection($connection);
+                        }
+
                     }
 
                     $models[] = $mutated;
 
-                } else
-                {
-        			$models[] = $model = $this->model->newFromBuilder($attributes);
-        			$model->setConnection($connection);
                 }
-    		}
+                // This is a regular record that we should deal with the normal way, creating an instance
+                // of the model out of the fetched attributes.
+                else
+                {
+                    $models[] = $model = $this->model->newFromBuilder($attributes);
+
+                    $model->setConnection($connection);
+                }
+            }
         }
 
 		return $models;
@@ -110,7 +139,8 @@ class Builder extends IlluminateBuilder {
      */
     public function shouldMutate(array $attributes)
     {
-        return ! array_diff_key($attributes, $this->mutations);
+        $intersect = array_intersect_key($attributes, $this->mutations);
+        return ! empty($intersect);
     }
 
     /**
@@ -281,9 +311,57 @@ class Builder extends IlluminateBuilder {
      * @param \Vinelab\NeoEloquent\Eloquent\Model  $model
      * @return  void
      */
-    public function addMutation($holder, Model $model)
+    public function addMutation($holder, Model $model, $type = 'one')
     {
-        $this->mutations[$holder] = $model;
+        $this->mutations[$holder] = [
+            'type'  => $type,
+            'model' => $model
+        ];
+    }
+
+    /**
+     * Add a mutation of the type 'many' to the query.
+     *
+     * @param string $holder
+     * @param \Vinelab\NeoEloquent\Eloquent\Model  $model
+     */
+    public function addManyMutation($holder, Model $model)
+    {
+        $this->addMutation($holder, $model, 'many');
+    }
+
+    /**
+     * Determine whether a mutation is of the type 'many'.
+     *
+     * @param  string  $mutation
+     * @return boolean
+     */
+    public function isManyMutation($mutation)
+    {
+        return isset($this->mutations[$mutation]) and $this->mutations[$mutation]['type'] === 'many';
+    }
+
+    /**
+     * Get the mutation model.
+     *
+     * @param  string $mutation
+     * @return Vinelab\NeoEloquent\Eloquent\Model
+     */
+    public function getMutationModel($mutation)
+    {
+        return $this->mutations[$mutation]['model'];
+    }
+
+    /**
+     * Determine whether a mutation can be resolved
+     * by simply checking whether it exists in the $mutations.
+     *
+     * @param  string $mutation
+     * @return boolean
+     */
+    public function resolvableMutation($mutation)
+    {
+        return isset($this->mutations[$mutation]);
     }
 
     /**
