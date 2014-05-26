@@ -74,8 +74,7 @@ This represents an `OUTGOING` relationship direction from the `:User` node to a 
 
 ```php
 $phone = new Phone(['code' => 961, 'number' => '98765432'])
-$relation = $user->phone()->associate($phone);
-$relation->save();
+$relation = $user->phone()->save($phone);
 ```
 
 The Cypher performed by this statement will be as follows:
@@ -83,7 +82,7 @@ The Cypher performed by this statement will be as follows:
 ```sql
 MATCH (user:`User`)
 WHERE id(user) = 1
-MERGE (user)-[:PHONE]->(phone:`Phone` {code: 961, number: '98765432', created_at: 7543788, updated_at: 7543788})
+CREATE (user)-[:PHONE]->(phone:`Phone` {code: 961, number: '98765432', created_at: 7543788, updated_at: 7543788})
 RETURN phone;
 ```
 
@@ -107,6 +106,8 @@ the `:User` node to this `:Phone` node.
 Due to the fact that we do not deal with **foreign keys**, in our case it is much
 more than just setting the foreign key attribute on the parent model. In Neo4j (and Graph in general) a relationship is an entity itself that can also have attributes of its own, hence the introduction of
 [**Edges**](#Edges)
+
+> *Note:* Associated models does not persist relations automatically when calling `associate()`.
 
 ```php
 $account = Account::find(10);
@@ -153,8 +154,11 @@ from the `:User` node to the `:Post` node.
 ```php
 $user = User::find(1);
 $post = new Post(['title' => 'The Title', 'body' => 'Hot Body']);
-$post = $user->posts()->save($post);
+$user->posts()->save($post);
 ```
+
+Similar to `One-To-One` relationships the returned value from a `save()` statement is an
+`Edge[In|Out]`
 
 The Cypher performed by this statement will be as follows:
 
@@ -162,7 +166,7 @@ The Cypher performed by this statement will be as follows:
 MATCH (user:`User`)
 WHERE id(user) = 1
 CREATE (user)-[rel_user_post:POSTED]->(post:`Post` {title: 'The Title', body: 'Hot Body', created_at: '15-05-2014', updated_at: '15-05-2014'})
-RETURN post;
+RETURN rel_user_post;
 ```
 
 ##### Defining The Inverse Of This Relation
@@ -295,20 +299,22 @@ MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2,
 
 ### Introduction
 
-Due to the fact that relationships in Graph are much different than Relational and Document databases
+Due to the fact that relationships in Graph are much different than other database types so
 we will have to handle them accordingly. Relationships have directions that can vary between
-**In**, **Out** and **Bidirectional** or in NeoEloquent terms **InOut**. Directions respectively
-reference the parent node.
+**In** and **Out** respectively towards the parent node.
 
-*Example*: Consider this model
+#### EdgeIn
+
+Represents an `INCOMING` direction relationship from the related model towards the parent model.
 
 ```php
 class Location extends NeoEloquent {
+
     public function user()
     {
-        // Assign an INCOMING relationship towards this model
         return $this->belongsTo('User', 'LOCATED_AT');
     }
+
 }
 ```
 
@@ -317,21 +323,43 @@ To associate a `User` to a `Location`:
 ```php
 $location = Location::find(1922);
 $user = User::find(3876);
-$location->associate($user);
+$relation = $location->associate($user);
 ```
 
-which in Cypher land will map to `(:Location)<-[:LOCATED_AT]-(:User)`.
+which in Cypher land will map to `(:Location)<-[:LOCATED_AT]-(:User)` and `$relation`
+being an instance of `EdgeIn` representing an incoming relationship towards the parent.
+
+#### EdgeOut
+
+Represents an `OUTGOING` direction relationship from the parent model to the related model.
+
+```php
+class User extends NeoEloquent {
+
+    public function posts()
+    {
+        return $this->hasMany('Post', 'POSTED');
+    }
+
+}
+```
+
+To save an outgoing edge from `:User` to `:Post` it goes like:
+
+```php
+$post = new Post(['...']);
+$posted = $user->posts()->save($post);
+```
+
+Which in Cypher would be `(:User)-[:POSTED]->(:Post)` and `$posted` being the `EdgeOut` instance.
 
 ### Working With Edges
 
-As stated earlier **Edges** are entities to Graph unlike *SQL* where they are a matter of a foreign key having the value of the parent model as an attribute on the belonging model or in *Documents* where they are either embeds or ids as references. So we developed them to be *light models* which means you can work with them as if you were working with an Eloquent `Model` - to a certain extent.
+As stated earlier **Edges** are entities to Graph unlike *SQL* where they are a matter of a foreign key having the value of the parent model as an attribute on the belonging model or in *Documents* where they are either embeds or ids as references. So we developed them to be *light models* which means you can work with them as if you were working with an `Eloquent` instance - to a certain extent.
 
 ```php
 // Create a new relationship
-$relation = $location->associate($user);
-
-// $relation is now an instance of EdgeIn
-var_dump($relation); // Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
+$relation = $location->associate($user); // Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
 
 // Save the relationship to the database
 $relation->save(); // true
@@ -348,9 +376,8 @@ $located_at->since = 1966;
 $located_at->present = true;
 $located_at->save();
 
-// $created_at is a Carbon/Carbon instance holding the timestamp
+// $created_at and $updated_at are Carbon\Carbon instances
 $created_at = $located_at->created_at;
-// so is $updated_at
 $updated_at = $located_at->updated_at;
 ```
 
@@ -376,11 +403,6 @@ $location = Location::find(1892);
 $edge = $location->user()->edge($location->user);
 ```
 
-
-#### EdgeIn
-
-Represents an `INCOMING` direction relationship towards the parent model.
-
 ## Avoid
 
 Here are some constraints and Graph-specific gotchas.
@@ -400,7 +422,7 @@ by the Neo4j client.
 ### Nested Arrays and Objects
 
 - Due to the limitations imposed by the objects map types that can be stored in a single Node,
-you can never have nested *arrays* or *objects* in a single `Model`,
+you can never have nested *arrays* or *objects* in a single model,
 make sure it's flat. *Example:*
 
 ```php
@@ -408,16 +430,14 @@ make sure it's flat. *Example:*
 User::create(['name' => 'Some Name', 'location' => ['lat' => 123, 'lng'=> -123 ] ]);
 ```
 
-Check out [Relationships](#Relationships) and [Edges](#Edges) on how you can achieve this in a Graph way.
+Check out [Relationships](#relationships) and [Edges](#edges) on how you can achieve this in a Graph way.
 
 ## Tests
-
-Follow these steps to run the package's tests:
 
 - install a Neo4j instance and run it with the default configuration `localhost:7474`
 - make sure the database graph is empty to avoid conflicts
 - after running `composer install` there should be `/vendor/bin/phpunit`
 - run `./vendor/bin/phpunit` after making sure that the Neo4j instance is running
 
-> Tests marked as incomplete means they are either know issues or non-supported features,
+> Tests marked as incomplete means they are either known issues or non-supported features,
 check included messages for more info.
