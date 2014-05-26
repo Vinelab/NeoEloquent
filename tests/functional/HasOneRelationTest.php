@@ -53,9 +53,9 @@ class HasOneRelationTest extends TestCase {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->associate($profile);
+        $relation = $user->profile()->save($profile);
 
-        $this->assertTrue($relation->save());
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertEquals($profile, $user->profile);
         $this->assertTrue($relation->delete());
     }
@@ -65,12 +65,12 @@ class HasOneRelationTest extends TestCase {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->associate($profile);
+        $relation = $user->profile()->save($profile);
 
-        $this->assertTrue($relation->save());
 
         $found = User::find($user->id);
 
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertEquals($profile, $found->profile);
         $this->assertTrue($relation->delete());
     }
@@ -80,33 +80,27 @@ class HasOneRelationTest extends TestCase {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->associate($profile);
-
-        $this->assertTrue($relation->save());
+        $relation = $user->profile()->save($profile);
 
         $found = User::with('profile')->find($user->id);
         $relations = $found->getRelations();
 
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertArrayHasKey('profile', $relations);
         $this->assertEquals($profile, $relations['profile']);
         $this->assertTrue($relation->delete());
     }
 
-    public function testAssociatingRelatedModel()
+    public function testSavingRelatedHasOneModel()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->associate($profile);
+        $relation = $user->profile()->save($profile);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
 
-        $saved = $relation->save();
-
-        $this->assertTrue($saved);
         $this->assertInstanceOf('Carbon\Carbon', $relation->created_at, 'make sure we set the created_at timestamp');
         $this->assertInstanceOf('Carbon\Carbon', $relation->updated_at, 'make sure we set the updated_at timestamp');
-        $this->assertArrayHasKey('profile', $user->getRelations(), 'make sure the user has been set as relation in the model');
-        $this->assertArrayHasKey('profile', $user->toArray(), 'make sure it is also returned when dealing with the model');
         $this->assertEquals($user->profile, $profile);
 
         // Let's retrieve it to make sure that NeoEloquent is not lying about it.
@@ -123,7 +117,7 @@ class HasOneRelationTest extends TestCase {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->associate($profile);
+        $relation = $user->profile()->save($profile);
         $relation->active = true;
         $this->assertTrue($relation->save());
 
@@ -139,12 +133,12 @@ class HasOneRelationTest extends TestCase {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->associate($profile);
+        $relation = $user->profile()->save($profile);
         $relation->use = 'casual';
         $this->assertTrue($relation->save());
 
         $cv = Profile::create(['guid' => uniqid(), 'service' => 'linkedin']);
-        $linkedin = $user->profile()->associate($cv);
+        $linkedin = $user->profile()->save($cv);
         $linkedin->use = 'official';
         $this->assertTrue($linkedin->save());
 
@@ -162,7 +156,7 @@ class HasOneRelationTest extends TestCase {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->associate($profile);
+        $relation = $user->profile()->save($profile);
         $relation->active = true;
         $this->assertTrue($relation->save());
 

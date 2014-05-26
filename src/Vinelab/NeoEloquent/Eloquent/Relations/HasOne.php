@@ -1,9 +1,28 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
+use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-class HasOne extends OneRelation {
+class HasOne extends HasOneOrMany {
+
+    /**
+     * Initialize the relation on a set of models.
+     *
+     * @param  array   $models
+     * @param  string  $relation
+     * @return array
+     */
+    public function initRelation(array $models, $relation)
+    {
+        foreach ($models as $model)
+        {
+            $model->setRelation($relation, null);
+        }
+
+        return $models;
+    }
 
     /**
      * Set the base constraints on the relation query.
@@ -46,9 +65,9 @@ class HasOne extends OneRelation {
             // Set the parent node's placeholder as the RETURN key.
             $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()-[]->() Cypher clause.
-            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
+            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
-            $this->query->where($this->otherKey, '=', $this->parent->{$this->otherKey});
+            $this->query->where($this->localKey, '=', $this->parent->{$this->localKey});
         }
     }
 
@@ -79,9 +98,9 @@ class HasOne extends OneRelation {
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()-[]->() Cypher clause.
-        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
+        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
-        $this->query->whereIn($this->otherKey, $this->getEagerModelKeys($models));
+        $this->query->whereIn($this->localKey, $this->getKeys($models));
     }
 
     /**
@@ -96,5 +115,40 @@ class HasOne extends OneRelation {
         $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
 
         return new EdgeOut($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique = true);
+    }
+
+    /**
+     * Get the edge between the parent model and the given model or
+     * the related model determined by the relation function name.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model $model
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
+     */
+    public function edge(Model $model = null)
+    {
+        return $this->getEdge($model)->current();
+    }
+
+    /**
+     * Match the eagerly loaded results to their parents.
+     *
+     * @param  array   $models
+     * @param  \Illuminate\Database\Eloquent\Collection  $results
+     * @param  string  $relation
+     * @return array
+     */
+    public function match(array $models, Collection $results, $relation)
+    {
+        return $this->matchOne($models, $results, $relation);
+    }
+
+    /**
+     * Get the results of the relationship.
+     *
+     * @return mixed
+     */
+    public function getResults()
+    {
+        return $this->query->first();
     }
 }
