@@ -422,6 +422,9 @@ Here are some constraints and Graph-specific gotchas, a list of features that ar
 Which makes them unsupported on purpose. If migrating from an `SQL`-based app
 they will be your boogie monster.
 
+### Pivot Tables in Many-To-Many Relationships
+This is not supported, instead we will be using [Edges](#edges) to work with relationships between models.
+
 ### `_nodeId` property
 
 - The `_node_id` property is reserverd, do not assign a property `_nodeId` to a Node unless you would like it to actually be the Node id,
