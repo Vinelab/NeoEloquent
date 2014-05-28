@@ -62,7 +62,7 @@ class Grammar extends IlluminateGrammar {
      */
     public function prepareRelation($relation, $related)
     {
-        return "rel_". strtolower($relation) .'_'. $related .":{$relation}";
+        return "rel_". mb_strtolower($relation) .'_'. $related .":{$relation}";
     }
 
     /**
@@ -74,7 +74,7 @@ class Grammar extends IlluminateGrammar {
      */
     public function normalizeLabels($labels)
     {
-        return strtolower(str_replace(':', '_', $labels));
+        return mb_strtolower(str_replace(':', '_', $labels));
     }
 
     /**
@@ -145,10 +145,10 @@ class Grammar extends IlluminateGrammar {
             return 'n';
         } elseif (is_array($labels))
         {
-            return strtolower(reset($labels));
+            return mb_strtolower(reset($labels));
         }
 
-        return strtolower($labels);
+        return mb_strtolower($labels);
     }
 
     /**
