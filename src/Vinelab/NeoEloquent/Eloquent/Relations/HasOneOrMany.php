@@ -3,6 +3,7 @@
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany as IlluminateHasOneOrMany;
 
@@ -14,6 +15,13 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
      * @var string
      */
     protected $relation;
+
+    /**
+     * The relationships finder instance.
+     *
+     * @var \Vinelab\NeoEloquent\Eloquent\Edges\Finder
+     */
+    protected $finder;
 
     /**
      * Create a new has many relationship instance.
@@ -30,6 +38,8 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
         $this->type = $this->foreignKey = $type;
 
         parent::__construct($query, $parent, $type, $key);
+
+        $this->finder = $this->newFinder();
     }
 
     /**
@@ -67,7 +77,17 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
      */
     public function edge(Model $model = null)
     {
-        return $this->getEdge($model)->current();
+        return $this->finder->first($this->parent, $model, $this->type);
+    }
+
+    /**
+     * Get all the edges of the given type and direction.
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
+     */
+    public function edges()
+    {
+        return $this->finder->get($this->parent, $this->related, $this->type);
     }
 
     /**
@@ -249,5 +269,15 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
     public function getPlainForeignKey()
     {
        return $this->relation;
+    }
+
+    /**
+     * Get a new Finder instance.
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Finder
+     */
+    public function newFinder()
+    {
+        return new Finder($this->query);
     }
 }
