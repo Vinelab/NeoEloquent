@@ -131,29 +131,31 @@ class BelongsToMany extends HasOneOrMany {
      */
     public function attach($id, array $attributes = array(), $touch = true)
     {
+        $models = $id;
+
         if ($id instanceof Model)
         {
-            $id = [$id];
+            $models = [$id];
         } elseif ($id instanceof Collection)
         {
-            $id = $id->all();
+            $models = $id->all();
         } elseif ( ! $this->isArrayOfModels($id))
         {
-            $id = $this->modelsFromIds($id);
+            $models = $this->modelsFromIds($id);
             // In case someone is messing with us and passed a bunch of ids (or single id)
             // that do not exist we slap them in the face with a ModelNotFoundException.
             // There must be at least a record found as for the records that do not match
             // they will be ignored and forever forgotten, poor thing.
-            if (count($id) < 1) throw new ModelNotFoundException;
+            if (count($models) < 1) throw new ModelNotFoundException;
 
-            $id = $id->all();
+            $models = $models->all();
         }
 
-        $saved = $this->saveMany($id, $attributes);
+        $saved = $this->saveMany($models, $attributes);
 
         if ($touch) $this->touchIfTouching();
 
-        return (count($id) > 1) ? $saved : $saved->first();
+        return ( ! is_array($id)) ? $saved->first() : $saved;
     }
 
     /**
