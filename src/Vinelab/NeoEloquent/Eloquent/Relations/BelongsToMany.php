@@ -39,11 +39,6 @@ class BelongsToMany extends HasOneOrMany {
         $this->finder = $this->newFinder();
     }
 
-    public function addConstraints()
-    {
-
-    }
-
     /**
      * Initialize the relation on a set of models.
      *
@@ -68,7 +63,7 @@ class BelongsToMany extends HasOneOrMany {
      */
     public function getResults()
     {
-        return $this->get();
+        return $this->query->get();
     }
 
     /**
@@ -81,7 +76,7 @@ class BelongsToMany extends HasOneOrMany {
      */
     public function match(array $models, Collection $results, $relation)
     {
-        $this->matchOneOrMany($models, $results, $relation, 'many');
+        return $this->matchOneOrMany($models, $results, $relation, 'many');
     }
 
     /**
@@ -92,7 +87,28 @@ class BelongsToMany extends HasOneOrMany {
      */
     public function addEagerConstraints(array $models)
     {
-        $this->query->whereIn($this->getForeignKey(), $this->getKeys($models));
+        /**
+         * We'll grab the primary key name of the related models since it could be set to
+         * a non-standard name and not "id". We will then construct the constraint for
+         * our eagerly loading query so it returns the proper models from execution.
+         */
+
+        // Grab the parent node placeholder
+        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+
+        // Tell the builder to select both models of the relationship
+        $this->query->select($this->relation, $parentNode);
+
+        // Setup for their mutation so they don't breed weird stuff like... humans ?!
+        $this->query->addManyMutation($this->relation, $this->related, 'many');
+        $this->query->addManyMutation($parentNode, $this->parent, 'many');
+
+        // Set the parent node's placeholder as the RETURN key.
+        $this->query->getQuery()->from = array($parentNode);
+        // Build the MATCH ()-[]->() Cypher clause.
+        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+        // Add WHERE clause over the parent node's matching keys [values...].
+        $this->query->whereIn($this->localKey, $this->getKeys($models));
     }
 
     /**

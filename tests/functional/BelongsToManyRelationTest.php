@@ -170,8 +170,8 @@ class BelongsToManyRelationTest extends TestCase {
 
     public function testDetachingModelById()
     {
-        $user     = User::create(['name' => 'Creepy Dude']);
-        $role     = Role::create(['title' => 'Master']);
+        $user = User::create(['name' => 'Creepy Dude']);
+        $role = Role::create(['title' => 'Master']);
 
         $relation = $user->roles()->attach($role->id);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
@@ -209,12 +209,7 @@ class BelongsToManyRelationTest extends TestCase {
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $edges);
         $this->assertCount(3, $edges->toArray());
 
-        $edges->each(function($edge)
-        {
-
-            $edge->delete();
-        });
-
+        $edges->each(function($edge) { $edge->delete(); });
     }
 
     public function testSyncingModelIds()
@@ -304,6 +299,43 @@ class BelongsToManyRelationTest extends TestCase {
             $this->assertEquals($expectedEdgesTypes[$key], $edge->type);
             $edge->delete();
         }
+    }
+
+    public function testDynamicLoadingBelongsToManyRelatedModels()
+    {
+        $user   = User::create(['name' => 'Creepy Dude']);
+        $master = Role::create(['title' => 'Master']);
+        $admin  = Role::create(['title' => 'Admin']);
+
+        $user->roles()->attach([$master, $admin]);
+
+        foreach ($user->roles as $role)
+        {
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany\Role', $role);
+            $this->assertTrue($role->exists);
+            $this->assertGreaterThan(0, $role->id);
+        }
+
+        $user->roles()->edges()->each(function($edge){ $edge->delete(); });
+    }
+
+    public function testEagerLoadingBelongsToMany()
+    {
+        $user = User::create(['name' => 'Creepy Dude']);
+        $master = Role::create(['title' => 'Master']);
+        $admin  = Role::create(['title' => 'Admin']);
+        $editor = Role::create(['title' => 'Editor']);
+
+        $edges = $user->roles()->attach([$master, $admin, $editor]);
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $edges);
+
+        $creep = User::with('roles')->find($user->id);
+        $relations = $creep->getRelations();
+
+        $this->assertArrayHasKey('roles', $relations);
+        $this->assertCount(3, $relations['roles']);
+
+        $edges->each(function($relation) { $relation->delete(); });
     }
 
 }
