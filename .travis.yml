@@ -7,15 +7,15 @@ php:
   - hhvm
 
 before_script:
-  # install composer
-  - composer self-update
-  - composer install --prefer-source --no-interaction --dev
-
   # install Neo4j
   - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
   - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
   - neo4j-community-$NEO4J_VERSION/bin/neo4j start
   - sleep 3 # give neo4j some time to start
+
+  # install composer
+  - composer self-update
+  - composer install --prefer-source --no-interaction --dev
 
 script: phpunit
 

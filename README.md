@@ -48,7 +48,9 @@ NeoEloquent has a fallback support for the `$table` variable that will be used i
 
 ```php
 class User extends NeoEloquent {
+
     protected $table = 'User:Fan';
+
 }
 ```
 
@@ -110,7 +112,7 @@ more than just setting the foreign key attribute on the parent model. In Neo4j (
 > *Note:* Associated models does not persist relations automatically when calling `associate()`.
 
 ```php
-$account = Account::find(10);
+$account = Account::find(1986);
 
 // $relation will be Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
 $relation = $user->account()->associate($account);
@@ -184,7 +186,7 @@ class Post extends NeoEloquent {
 This represents an `INCOMING` relationship direction from
 the `:User` node to this `:Post` node.
 
-### Manty-To-Many
+### Many-To-Many
 
 ```php
 class User extends NeoEloquent {
@@ -196,8 +198,7 @@ class User extends NeoEloquent {
 }
 ```
 
-This represents a `BIDIRECTIONAL` relationship
-between the `:User` node itself.
+This represents an `OUTGOING` relationship between a `:User` node and another `:User`.
 
 ```php
 $jd = User::find(1012);
@@ -208,6 +209,14 @@ $mc = User::find(1013);
 
 ```php
 $jd->followers()->save($mc);
+```
+
+Or using the `attach()` method:
+
+```php
+$jd->followers()->attach($mc);
+// Or..
+$jd->followers()->attach(1); // 1 being the id of $mc ($mc->getKey())
 ```
 
 The Cypher performed by this statement will be as follows:
@@ -405,7 +414,7 @@ $edge = $location->user()->edge($location->user);
 
 ## Avoid
 
-Here are some constraints and Graph-specific gotchas.
+Here are some constraints and Graph-specific gotchas, a list of features that are either not supported or not recommended.
 
 ### JOINS :confounded:
 
