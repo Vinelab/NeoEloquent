@@ -62,7 +62,6 @@ class BelongsToManyRelationTest extends TestCase {
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertTrue($relation->exists());
-        $this->assertGreaterThan(0, $relation->id);
 
         $relation->delete();
     }
