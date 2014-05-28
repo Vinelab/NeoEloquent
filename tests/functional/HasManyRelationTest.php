@@ -251,4 +251,42 @@ class HasManyRelationTest extends TestCase {
         }
     }
 
+    public function testSavingManyRelationsWithRelationProperties()
+    {
+        $author = Author::create(['name' => 'George R. R. Martin']);
+
+        $novel = [
+            new Book([
+                'title'        => 'A Game of Thrones',
+                'pages'        => 704,
+                'release_date' => 'August 1996'
+            ]),
+            new Book([
+                'title'        => 'A Clash of Kings',
+                'pages'        => 768,
+                'release_date' => 'February 1999'
+            ]),
+            new Book([
+                'title'        => 'A Storm of Swords',
+                'pages'        => 992,
+                'release_date' => 'November 2000'
+            ]),
+            new Book([
+                'title'        => 'A Feast for Crows',
+                'pages'        => 753,
+                'release_date' => 'November 2005'
+            ])
+        ];
+
+        $edges = $author->books()->saveMany($novel, ['novel' => true]);
+        $this->assertCount(count($novel), $edges->toArray());
+
+        foreach ($edges as $edge)
+        {
+            $this->assertTrue($edge->novel);
+            $edge->delete();
+        }
+    }
+
+
 }

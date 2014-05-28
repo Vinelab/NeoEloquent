@@ -3,6 +3,7 @@
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
@@ -192,7 +193,7 @@ abstract class Model extends IlluminateModel {
      * @param  string  $related
      * @param  string  $type
      * @param  string  $key
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return \Vinelab\NeoEloquent\Eloquent\Relations\HasMany
      */
     public function hasMany($related, $type = null, $key = null, $relation = null)
     {
@@ -206,6 +207,7 @@ abstract class Model extends IlluminateModel {
             $relation = $caller['function'];
         }
 
+        // FIXME: the $type should be the UPPERCASE of the relation not the foreign key.
         $type = $type ?: $this->getForeignKey();
 
         $instance = new $related;
@@ -213,6 +215,49 @@ abstract class Model extends IlluminateModel {
         $key = $key ?: $this->getKeyName();
 
         return new HasMany($instance->newQuery(), $this, $type, $key, $relation);
+    }
+
+    /**
+     * Define a many-to-many relationship.
+     *
+     * @param  string  $related
+     * @param  string  $type
+     * @param  string  $key
+     * @param  string  $relation
+     * @return \Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany
+     */
+
+    public function belongsToMany($related, $type = null, $key = null, $relation = null)
+    {
+        // If no relation name was given, we will use this debug backtrace to extract
+        // the calling method's name and use that as the relationship name as most
+        // of the time this will be what we desire to use for the relationships.
+        if (is_null($relation))
+        {
+            list(, $caller) = debug_backtrace(false);
+
+            $relation = $caller['function'];
+        }
+
+        // If no $key was provided we will consider it the key name of this model.
+        $key = $key ?: $this->getKeyName();
+
+        // If no relationship type was provided, we can use the previously traced back
+        // $relation being the function name that called this method and using it in its
+        // all uppercase form.
+        if (is_null($type))
+        {
+            $type = strtoupper($relation);
+        }
+
+        $instance = new $related;
+
+        // Now we're ready to create a new query builder for the related model and
+        // the relationship instances for the relation. The relations will set
+        // appropriate query constraint and entirely manages the hydrations.
+        $query = $instance->newQuery();
+
+        return new BelongsToMany($query, $this, $type, $key, $relation);
     }
 
 }
