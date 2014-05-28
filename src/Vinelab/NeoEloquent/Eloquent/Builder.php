@@ -106,7 +106,7 @@ class Builder extends IlluminateBuilder {
                         else
                         {
                             $mutated[$mutation] = $model = $this->getMutationModel($mutation)->newFromBuilder($values);
-                            $model->setConnection($connection);
+                            $model->setConnection($model->getConnectionName());
                         }
 
                     }
