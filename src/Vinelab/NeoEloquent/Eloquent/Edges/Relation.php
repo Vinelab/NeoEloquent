@@ -135,6 +135,7 @@ abstract class Relation extends Delegate {
         $this->related    = $related;
         $this->unique     = $unique;
         $this->attributes = $attributes;
+        $this->finder     = $this->newFinder();
 
         $this->initRelation();
     }
@@ -148,8 +149,6 @@ abstract class Relation extends Delegate {
      */
     public function initRelation()
     {
-        $this->finder = $this->newFinder();
-
         switch ($this->direction)
         {
             case 'in':
@@ -212,12 +211,7 @@ abstract class Relation extends Delegate {
             }
         }
 
-        // Go through the properties and assign them
-        // to the relation.
-        foreach ($this->toArray() as $key => $value)
-        {
-            $this->relation->setProperty($key, $value);
-        }
+        $this->setRelationProperties($this->toArray());
 
         $saved = $this->relation->save();
 
@@ -322,6 +316,17 @@ abstract class Relation extends Delegate {
         $this->related->setConnection($this->related->getConnection());
     }
 
+    public function setRelationProperties(array $properties = array())
+    {
+        // Go through the properties and assign them
+        // to the relation.
+        foreach ($properties as $key => $value)
+        {
+            $this->relation->setProperty($key, $value);
+        }
+
+    }
+
     /**
      * Fill the model with an array of attributes.
      *
@@ -422,6 +427,17 @@ abstract class Relation extends Delegate {
     }
 
     /**
+     * Just a convenient method to get
+     * the parent model of this relation.
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Model
+     */
+    public function parent()
+    {
+        return $this->getParent();
+    }
+
+    /**
      * Get the parent model of this relation.
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Model
@@ -429,6 +445,17 @@ abstract class Relation extends Delegate {
     public function getParent()
     {
         return $this->parent;
+    }
+
+    /**
+     * Just a convenient function to get
+     * the related Model of this relation.
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Model
+     */
+    public function related()
+    {
+        return $this->getRelated();
     }
 
     /**
