@@ -74,53 +74,18 @@ class Builder extends IlluminateBuilder {
                 $attributes = $this->getProperties($columns, $result);
 
                 // Now that we have the attributes, we first check for mutations
-                // and if exists, we will need to mutate the attributes accordingly
+                // and if exists, we will need to mutate the attributes accordingly.
                 if ($this->shouldMutate($attributes))
                 {
-                    $mutated = array();
-
-                    // Transform mutations back to their origin
-                    foreach ($attributes as $mutation => $values)
-                    {
-                        // First we should see whether this mutation can be resolved so that
-                        // we take it into consideration otherwise we skip to the next iteration.
-                        if ( ! $this->resolvableMutation($mutation)) continue;
-
-                        // Since this mutation should be resolved by us then we check whether it is
-                        // a Many or One mutation.
-                        if ($this->isManyMutation($mutation))
-                        {
-                            // In the case of Many mutations we need to return an associative array having both
-                            // relations as a single record so that when we match them back we know which result
-                            // belongs to which parent node.
-                            foreach ($this->getMutations() as $label => $info)
-                            {
-                                $mutationModel = $this->getMutationModel($label);
-                                $mutated[$label] = $model = $mutationModel->newFromBuilder($attributes[$label]);
-                                $model->setConnection($mutationModel->getConnectionName());
-                            }
-
-                        }
-                        // Dealing with One mutations is simply returning an associative array with the mutation
-                        // label being the $key and the related model is $value.
-                        else
-                        {
-                            $mutated[$mutation] = $model = $this->getMutationModel($mutation)->newFromBuilder($values);
-                            $model->setConnection($model->getConnectionName());
-                        }
-
-                    }
-
-                    $models[] = $mutated;
-
+                    $models[] = $this->mutateToOrigin($result, $attributes);
                 }
                 // This is a regular record that we should deal with the normal way, creating an instance
                 // of the model out of the fetched attributes.
                 else
                 {
-                    $models[] = $model = $this->model->newFromBuilder($attributes);
-
+                    $model = $this->model->newFromBuilder($attributes);
                     $model->setConnection($connection);
+                    $models[] = $model;
                 }
             }
         }
@@ -129,8 +94,105 @@ class Builder extends IlluminateBuilder {
 	}
 
     /**
+     * Mutate a result back into its original Model.
+     *
+     * @param  mixed $result
+     * @param  array $attributes
+     * @return array
+     */
+    public function mutateToOrigin($result, $attributes)
+    {
+        $mutations = [];
+
+        // Transform mutations back to their origin
+        foreach ($attributes as $mutation => $values)
+        {
+            // First we should see whether this mutation can be resolved so that
+            // we take it into consideration otherwise we skip to the next iteration.
+            if ( ! $this->resolvableMutation($mutation)) continue;
+            // Since this mutation should be resolved by us then we check whether it is
+            // a Many or One mutation.
+            if ($this->isManyMutation($mutation))
+            {
+                return $this->mutateManyToOrigin($attributes);
+            }
+            // Dealing with Morphing relations requires that we determine the morph_type out of the relationship
+            // and mutating back to that class.
+            elseif ($this->isMorphMutation($mutation))
+            {
+                $mutant = $this->mutateMorphToOrigin($result, $attributes);
+
+                if ($this->getMutation($mutation)['type'] == 'morphEager')
+                {
+                    $mutations[$mutation] = $mutant;
+                } else {
+                    $mutations = reset($mutant);
+                }
+            }
+            // Dealing with One mutations is simply returning an associative array with the mutation
+            // label being the $key and the related model is $value.
+            else
+            {
+                $model = $this->getMutationModel($mutation)->newFromBuilder($values);
+                $model->setConnection($model->getConnectionName());
+                $mutations[$mutation] = $model;
+            }
+        }
+
+        return $mutations;
+    }
+
+    /**
+     * In the case of Many mutations we need to return an associative array having both
+     * relations as a single record so that when we match them back we know which result
+     * belongs to which parent node.
+     *
+     * @param  array $attributes
+     * @return void
+     */
+    public function mutateManyToOrigin($attributes)
+    {
+        $mutations = [];
+
+        foreach ($this->getMutations() as $label => $info)
+        {
+            $mutationModel = $this->getMutationModel($label);
+            $model = $mutationModel->newFromBuilder($attributes[$label]);
+            $model->setConnection($mutationModel->getConnectionName());
+            $mutations[$label] = $model;
+        }
+
+        return $mutations;
+    }
+
+    protected function mutateMorphToOrigin($result, $attributes)
+    {
+        $mutations = [];
+
+        foreach ($this->getMorphMutations() as $label => $info)
+        {
+            // Let's see where we should be getting the morph Class name from.
+            $mutationModelProperty = $this->getMutationModel($label);
+            // We need the relationship from the result since it has the mutation model property's
+            // value being the model that we should mutate to as set earlier by a HyperEdge.
+            // NOTE: 'r' is statically set in CypherGrammer to represent the relationship.
+            // Now we have an \Everyman\Neo4j\Relationship instance that has our morph class name.
+            $relationship = $result['r'];
+
+            // Get the morph class name.
+            $class = $relationship->getProperty($mutationModelProperty);
+            // Create a new instance of it from builder.
+            $model = (new $class)->newFromBuilder($attributes[$label]);
+            // And that my friend, is our mutations model =)
+            $mutations[] = $model;
+        }
+
+        return $mutations;
+    }
+
+    /**
      * Determine whether attributes are mutations
-     * and should be mutated back. It is considered
+     * and should be transformed back. It is considered
      * a mutation only when the attributes' keys
      * and mutations keys match.
      *
@@ -264,7 +326,7 @@ class Builder extends IlluminateBuilder {
      * @param  Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model
      * @param  Vinelab\NeoEloquent\Eloquent\Model $related      The related model
      * @param  string                             $relationship
-     * @return void
+     * @return Vinelab\NeoEloquent\Eloquent|static
      */
     public function matchIn($parent, $related, $relatedNode, $relationship, $property, $value = null)
     {
@@ -274,9 +336,35 @@ class Builder extends IlluminateBuilder {
         return $this;
     }
 
+    /**
+     * Add an OUTGOING "->" relationship MATCH to the query.
+     *
+     * @param  Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model
+     * @param  Vinelab\NeoEloquent\Eloquent\Model $related      The related model
+     * @param  string                             $relationship
+     * @return Vinelab\NeoEloquent\Eloquent|static
+     */
     public function matchOut($parent, $related, $relatedNode, $relationship, $property, $value = null)
     {
         $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'out');
+
+        return $this;
+    }
+
+    /**
+     * Add an outgoing morph relationship to the query,
+     * a morph relationship usually ignores the end node type since it doesn't know
+     * what it would be so we'll only set the start node and hope to get it right when we match it.
+     *
+     * @param  Vinelab\NeoEloquent\Eloquent\Model $parent
+     * @param  string $relatedNode
+     * @param  string $property
+     * @param  mixed $value
+     * @return Vinelab\NeoEloquent\Eloquent|static
+     */
+    public function matchMorphOut($parent, $relatedNode, $property, $value = null)
+    {
+        $this->query->matchMorphRelation($parent, $relatedNode, $property, $value);
 
         return $this;
     }
@@ -308,10 +396,11 @@ class Builder extends IlluminateBuilder {
      * Add a mutation to the query.
      *
      * @param string $holder
-     * @param \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model|string  $model String in the case of morphs where we do not know
+     *                                                           the morph model class name
      * @return  void
      */
-    public function addMutation($holder, Model $model, $type = 'one')
+    public function addMutation($holder, $model, $type = 'one')
     {
         $this->mutations[$holder] = [
             'type'  => $type,
@@ -331,6 +420,28 @@ class Builder extends IlluminateBuilder {
     }
 
     /**
+     * Add a mutation of the type 'morph' to the query.
+     *
+     * @param string $holder
+     * @param string $model
+     */
+    public function addMorphMutation($holder, $model = 'morph_type')
+    {
+        return $this->addMutation($holder, $model, 'morph');
+    }
+
+    /**
+     * Add a mutation of the type 'morph' to the query.
+     *
+     * @param string $holder
+     * @param string $model
+     */
+    public function addEagerMorphMutation($holder, $model = 'morph_type')
+    {
+        return $this->addMutation($holder, $model, 'morphEager');
+    }
+
+    /**
      * Determine whether a mutation is of the type 'many'.
      *
      * @param  string  $mutation
@@ -342,6 +453,22 @@ class Builder extends IlluminateBuilder {
     }
 
     /**
+     * Determine whether this mutation is of the typ 'morph'.
+     *
+     * @param  string  $mutation
+     * @return boolean
+     */
+    public function isMorphMutation($mutation)
+    {
+        if ( ! is_array($mutation) and isset($this->mutations[$mutation]))
+        {
+            $mutation = $this->getMutation($mutation);
+        }
+
+        return $mutation['type'] === 'morph' or $mutation['type'] === 'morphEager';
+    }
+
+    /**
      * Get the mutation model.
      *
      * @param  string $mutation
@@ -349,7 +476,7 @@ class Builder extends IlluminateBuilder {
      */
     public function getMutationModel($mutation)
     {
-        return $this->mutations[$mutation]['model'];
+        return $this->getMutation($mutation)['model'];
     }
 
     /**
@@ -372,6 +499,27 @@ class Builder extends IlluminateBuilder {
     public function getMutations()
     {
         return $this->mutations;
+    }
+
+    /**
+     * Get a single mutation.
+     *
+     * @param  string $mutation
+     * @return array
+     */
+    public function getMutation($mutation)
+    {
+        return $this->mutations[$mutation];
+    }
+
+    /**
+     * Get the mutations of type 'morph'.
+     *
+     * @return array
+     */
+    public function getMorphMutations()
+    {
+        return array_filter($this->getMutations(), function($mutation){ return $this->isMorphMutation($mutation); });
     }
 
     /**
