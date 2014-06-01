@@ -62,6 +62,7 @@ class BelongsToManyRelationTest extends TestCase {
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertTrue($relation->exists());
+        $this->assertGreaterThanOrEqual(0, $relation->id);
 
         $relation->delete();
     }
@@ -141,7 +142,7 @@ class BelongsToManyRelationTest extends TestCase {
     /**
      * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function testAttachingNonExistingModelIds()
+    public function testAttachingNonExistingModelId()
     {
         $user   = User::create(['name' => 'Creepy Dude']);
         $user->roles()->attach(10);
