@@ -119,7 +119,8 @@ class CypherGrammar extends Grammar {
 
         foreach ($matches as $match)
         {
-            $prepared[] = $this->prepareMatch($match);
+            $method = 'prepareMatch'. ucfirst($match['type']);
+            $prepared[] = $this->$method($match);
         }
 
         return "MATCH " . implode(', ', $prepared);
@@ -127,12 +128,12 @@ class CypherGrammar extends Grammar {
 
     /**
      * Prepare a query for MATCH using
-     * collected $matches
+     * collected $matches of type Relation
      *
      * @param  array $match
      * @return string
      */
-    public function prepareMatch(array $match)
+    public function prepareMatchRelation(array $match)
     {
         $parent        = $match['parent'];
         $related       = $match['related'];
@@ -153,6 +154,32 @@ class CypherGrammar extends Grammar {
 
         return '('. $parent['node'] . $parentLabels .'), '
                 . $this->craftRelation($parent['node'], $relationshipLabel, $related['node'], $relatedLabels, $direction);
+    }
+
+    /**
+     * Prepare a query for MATCH using
+     * collected $matches of Type MorphTo
+     *
+     * @param  array $match
+     * @return string
+     */
+    public function prepareMatchMorphTo(array $match)
+    {
+        $parent        = $match['parent'];
+        $related       = $match['related'];
+        $property      = $match['property'];
+        $direction     = $match['direction'];
+
+        // Prepare labels and node for query
+        $relatedNode = $related['node'];
+        $parentLabels  = $this->prepareLabels($parent['labels']);
+
+        // We treat node ids differently here in Cypher
+        // so we will have to turn it into something like id(node)
+        $property = $property == 'id' ? 'id('. $parent['node'] .')' : $parent['node'] .'.'. $property;
+
+        return '('. $parent['node'] . $parentLabels .'), '
+                . $this->craftRelation($parent['node'], 'r', $relatedNode, '', $direction);
     }
 
     /**
