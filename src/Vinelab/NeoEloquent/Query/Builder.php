@@ -302,6 +302,27 @@ class Builder extends IlluminateQueryBuilder {
         return $this;
     }
 
+    public function matchMorphRelation($parent, $relatedNode, $property, $value = null, $direction = 'out')
+    {
+        $parentLabels = $parent->getTable();
+        $parentNode = $this->modelAsNode($parentLabels);
+
+        $this->matches[] = array(
+            'type'      => 'MorphTo',
+            'property'  => $property,
+            'direction' => $direction,
+            'related'   => array('node' => $relatedNode),
+            'parent'    => array(
+                'node'   => $parentNode,
+                'labels' => $parentLabels
+            )
+        );
+
+        $this->addBinding(array($property => $value), 'matches');
+
+        return $this;
+    }
+
     /**
      * Add a binding to the query.
      *
