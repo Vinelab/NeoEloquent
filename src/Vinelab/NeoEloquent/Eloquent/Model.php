@@ -2,10 +2,11 @@
 
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
+use Vinelab\NeoEloquent\Eloquent\Relations\MorphTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
-use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HyperMorph;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
+use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 
@@ -303,6 +304,63 @@ abstract class Model extends IlluminateModel {
         $query = $instance->newQuery();
 
         return new HyperMorph($query, $this, $model, $type, $morphType, $key, $relation);
+    }
+
+    /**
+     * Define a polymorphic, inverse one-to-one or many relationship.
+     *
+     * @param  string  $name
+     * @param  string  $type
+     * @param  string  $id
+     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
+     */
+    public function morphTo($name = null, $type = null, $id = null)
+    {
+
+        // When the name and the type are specified we'll return a MorphedByOne
+        // relationship with the given arguments since we know the kind of Model
+        // and relationship type we're looking for.
+        if ($name and $type)
+        {
+            // Determine the relation function name out of the back trace
+            list(, $caller) = debug_backtrace(false);
+            $relation = $caller['function'];
+            return $this->morphedByOne($name, $type, $id, $relation);
+        }
+
+        // If no name is provided, we will use the backtrace to get the function name
+        // since that is most likely the name of the polymorphic interface. We can
+        // use that to get both the class and foreign key that will be utilized.
+        if (is_null($name))
+        {
+            list(, $caller) = debug_backtrace(false);
+
+            $name = snake_case($caller['function']);
+        }
+
+        list($type, $id) = $this->getMorphs($name, $type, $id);
+
+        // If the type value is null it is probably safe to assume we're eager loading
+        // the relationship. When that is the case we will pass in a dummy query as
+        // there are multiple types in the morph and we can't use single queries.
+        if (is_null($class = $this->$type))
+        {
+            return new MorphTo(
+                $this->newQuery(), $this, $id, null, $type, $name
+            );
+        }
+
+        // If we are not eager loading the relationship we will essentially treat this
+        // as a belongs-to style relationship since morph-to extends that class and
+        // we will pass in the appropriate values so that it behaves as expected.
+        else
+        {
+            $instance = new $class;
+
+            return new MorphTo(
+                with($instance)->newQuery(), $this, $id, $instance->getKeyName(), $type, $name
+            );
+        }
     }
 
 }
