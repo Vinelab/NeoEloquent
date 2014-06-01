@@ -110,6 +110,28 @@ class Finder extends Delegate {
     }
 
     /**
+     * Get the first HyperEdge between three models.
+     *
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $parent
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $morph
+     * @param  string $type
+     * @param  string $morphType
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge
+     */
+    public function hyperFirst($parent, $related, $morph, $type, $morphType)
+    {
+        $left  = $this->first($parent, $related, $type, 'out');
+        $right = $this->first($related, $morph, $morphType, 'out');
+
+        $edge = new HyperEdge($this->query, $parent, $type, $related, $morphType, $morph);
+        if ($left)  $edge->setLeft($left);
+        if ($right) $edge->setRight($right);
+
+        return $edge;
+    }
+
+    /**
      * Get the direction of a relationship out of a Relation instance.
      *
      * @param  \Everyman\Neo4j\Relationship $relation
