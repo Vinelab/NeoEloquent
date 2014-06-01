@@ -6,6 +6,7 @@ use Vinelab\NeoEloquent\Eloquent\Relations\MorphTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\HyperMorph;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
+use Vinelab\NeoEloquent\Eloquent\Relations\MorphMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
@@ -308,6 +309,47 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * Define a many-to-many relationship.
+     *
+     * @param  string  $related
+     * @param  string  $type
+     * @param  string  $key
+     * @param  string  $relation
+     * @return \Vinelab\NeoEloquent\Eloquent\Relations\MorphMany
+     */
+    public function morphMany($related, $type, $key = null, $relation = null)
+    {
+        // If no relation name was given, we will use this debug backtrace to extract
+        // the calling method's name and use that as the relationship name as most
+        // of the time this will be what we desire to use for the relationships.
+        if (is_null($relation))
+        {
+            list(, $caller) = debug_backtrace(false);
+
+            $relation = $caller['function'];
+        }
+
+        // If no $key was provided we will consider it the key name of this model.
+        $key = $key ?: $this->getKeyName();
+
+        // If no relationship type was provided, we can use the previously traced back
+        // $relation being the function name that called this method and using it in its
+        // all uppercase form.
+        if (is_null($type))
+        {
+            $type = mb_strtoupper($relation);
+        }
+
+        $instance = new $related;
+
+        // Now we're ready to create a new query builder for the related model and
+        // the relationship instances for the relation. The relations will set
+        // appropriate query constraint and entirely manages the hydrations.
+        $query = $instance->newQuery();
+
+        return new MorphMany($query, $this, $type, $key, $relation);
+    }
+
     /**
      * Create an inverse one-to-one polymorphic relationship with specified model and relation.
      *
