@@ -100,8 +100,8 @@ class BelongsToMany extends HasOneOrMany {
         $this->query->select($this->relation, $parentNode);
 
         // Setup for their mutation so they don't breed weird stuff like... humans ?!
-        $this->query->addManyMutation($this->relation, $this->related, 'many');
-        $this->query->addManyMutation($parentNode, $this->parent, 'many');
+        $this->query->addManyMutation($this->relation, $this->related);
+        $this->query->addManyMutation($parentNode, $this->parent);
 
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
@@ -186,6 +186,9 @@ class BelongsToMany extends HasOneOrMany {
         if ( ! $id instanceof Model and ! $id instanceof Collection)
         {
             $id = $this->modelsFromIds($id);
+        } elseif ( ! is_array($id))
+        {
+            $id = [$id];
         }
 
         // Prepare for a batch operation to take place so that we don't
