@@ -448,4 +448,20 @@ abstract class Model extends IlluminateModel {
         }
     }
 
+    /**
+     * Get the polymorphic relationship columns.
+     *
+     * @param  string  $name
+     * @param  string  $type
+     * @param  string  $id
+     * @return array
+     */
+    protected function getMorphs($name, $type, $id)
+    {
+        $type = $type ?: $name.'_type';
+
+        $id = $this->getkeyname();
+
+        return array($type, $id);
+    }
 }
