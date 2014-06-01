@@ -230,7 +230,6 @@ abstract class Model extends IlluminateModel {
      * @param  string  $relation
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany
      */
-
     public function belongsToMany($related, $type = null, $key = null, $relation = null)
     {
         // If no relation name was given, we will use this debug backtrace to extract
@@ -251,7 +250,7 @@ abstract class Model extends IlluminateModel {
         // all uppercase form.
         if (is_null($type))
         {
-            $type = strtoupper($relation);
+            $type = mb_strtoupper($relation);
         }
 
         $instance = new $related;
