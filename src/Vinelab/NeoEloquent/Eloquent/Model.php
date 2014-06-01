@@ -230,8 +230,15 @@ abstract class Model extends IlluminateModel {
      * @param  string  $relation
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany
      */
-    public function belongsToMany($related, $type = null, $key = null, $relation = null)
+    public function belongsToMany($related, $table = null, $foreignKey = null, $otherKey = null, $relation = null)
     {
+        // To escape the error:
+        // PHP Strict standards:  Declaration of Vinelab\NeoEloquent\Eloquent\Model::belongsToMany() should be
+        //      compatible with Illuminate\Database\Eloquent\Model::belongsToMany()
+        // We'll just map them in with the variables we want.
+        $type     = $table;
+        $key      = $foreignKey;
+        $relation = $otherKey;
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
@@ -316,8 +323,16 @@ abstract class Model extends IlluminateModel {
      * @param  string  $relation
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\MorphMany
      */
-    public function morphMany($related, $type, $key = null, $relation = null)
+    public function morphMany($related, $name, $type = null, $id = null, $localKey = null)
     {
+        // To escape the error:
+        // Strict standards: Declaration of Vinelab\NeoEloquent\Eloquent\Model::morphMany() should be
+        //          compatible with Illuminate\Database\Eloquent\Model::morphMany()
+        // We'll just map them in with the variables we want.
+        $relationType = $name;
+        $key          = $type;
+        $relation     = $id;
+
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
@@ -334,9 +349,9 @@ abstract class Model extends IlluminateModel {
         // If no relationship type was provided, we can use the previously traced back
         // $relation being the function name that called this method and using it in its
         // all uppercase form.
-        if (is_null($type))
+        if (is_null($relationType))
         {
-            $type = mb_strtoupper($relation);
+            $relationType = mb_strtoupper($relation);
         }
 
         $instance = new $related;
@@ -346,7 +361,7 @@ abstract class Model extends IlluminateModel {
         // appropriate query constraint and entirely manages the hydrations.
         $query = $instance->newQuery();
 
-        return new MorphMany($query, $this, $type, $key, $relation);
+        return new MorphMany($query, $this, $relationType, $key, $relation);
     }
 
     /**

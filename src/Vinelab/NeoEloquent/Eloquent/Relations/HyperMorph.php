@@ -43,7 +43,7 @@ class HyperMorph extends BelongsToMany {
         parent::__construct($query, $parent, $type, $key, $relation);
     }
 
-    public function edge($model = null)
+    public function edge(Model $model = null)
     {
         return $this->finder->hyperFirst($this->parent, $model, $this->morph, $this->type, $this->morphType);
     }
