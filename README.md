@@ -275,6 +275,188 @@ $user = $phone->user;
 $name = $phone->user->name;
 ```
 
+### Polymorphic
+
+The concept behind Polymocrphic relations is purely relational to the bone but when it comes
+to graph we are representing it as a [HyperEdge](http://docs.neo4j.org/chunked/stable/cypher-cookbook-hyperedges.html).
+
+Hyper edges involves three models, the **parent** model, **hyper** model and **related** model
+represented in the following figure:
+
+![HyperEdges](https://googledrive.com/host/0BznzZ2lBbT0cLW9YcjNldlJkcXc/HyperEdge.png "HyperEdges")
+
+Similarly in code this will be represented by three models `User` `Comment` and `Post`
+where a `User` with id 1 posts a `Post` and a `User` with id 6 `COMMENTED` a `Comment` `ON` that `Post`
+as follows:
+
+```php
+class User extends NeoEloquent {
+
+    public function comments($morph = null)
+    {
+        return $this->hyperMorph($morph, 'Comment', 'COMMENTED', 'ON');
+    }
+
+}
+```
+
+In order to keep things simple but still involving the three models we will have to pass the
+`$morph` which is any `commentable` model, in our case it's either a `Video` or a `Post` model.
+
+> **Note:** Make sure to have it defaulting to `null` so that we can Dynamicly or Eager load
+with `$user->comments` later on.
+
+Creating a `Comment` with the `create()` method.
+
+```php
+$user = User::find(6);
+$post = Post::find(2);
+
+$user->comments($post)->create(['text' => 'Totally agree!', 'likes' => 0, 'abuse' => 0]);
+```
+
+As usual we will have returned an Edge, but this time it's not directed it is an instance of
+`HyperEdge`, read more about [HyperEdges here](#hyperedge).
+
+Or you may save a Comment instance:
+
+```php
+$comment = new Comment(['text' => 'Magnificent', 'likes' => 0, 'abuse' => 0]);
+
+$user->comments($post)->save($comment);
+```
+
+Also all the functionalities found in a `BelongsToMany` relationship are supported like
+attaching models by Ids:
+
+```php
+$user->comments($post)->attach([$id, $otherId]);
+```
+
+Or detaching models:
+
+```php
+$user->comments($post)->detach($comment); // or $comment->id
+```
+
+Sync too:
+
+```php
+$user->comments($post)->sync([$id, $otherId, $someId]);
+```
+
+#### Retrieving Polymorphic Relations
+
+From our previous example we will use the `Video` model to retrieve their comments:
+
+```php
+class Video extends NeoEloquent {
+
+    public function comments()
+    {
+        return $this->morphMany('Comment', 'ON');
+    }
+
+}
+```
+
+##### Dynamicly Loading Morph Model
+
+```php
+$video = Video::find(3);
+$comments = $video->comments;
+```
+
+##### Eager Loading Morph Model
+
+```php
+$video = Video::with('comments')->find(3);
+foreach ($video->comments as $comment)
+{
+    //
+}
+```
+
+#### Retrieving The Inverse of a Polymorphic Relation
+
+```php
+class Comment extends NeoEloquent {
+
+    public function commentable()
+    {
+        return $this->morphTo();
+    }
+
+}
+```
+
+```php
+$postComment = Comment::find(7);
+$post = $comment->commentable;
+
+$videoComment = Comment::find(5);
+$video = $comment->commentable;
+
+// You can also eager load them
+Comment::with('commentable')->get();
+```
+
+You may also specify the type of morph you would like returned:
+
+```php
+class Comment extends NeoEloquent {
+
+    public function post()
+    {
+        return $this->morphTo('Post', 'ON');
+    }
+
+    public function video()
+    {
+        return $this->morphTo('Video', 'ON');
+    }
+
+}
+```
+
+#### Polymorphic Relations In Short
+
+To drill things down here's how our three models involved in a Polymorphic relationship connect:
+
+```php
+class User extends NeoEloquent {
+
+    public function comments($morph = null)
+    {
+        return $this->hyperMorph($morph, 'Comment', 'COMMENTED', 'ON');
+    }
+
+}
+```
+
+```php
+class Post extends NeoEloquent { // Video is the same as this one
+
+    public function comments()
+    {
+        return $this->morphMany('Comment', 'ON');
+    }
+
+}
+```
+
+```php
+class Comment extends NeoEloquent {
+
+    public function commentable()
+    {
+        return $this->morphTo();
+    }
+
+}
+
+```
+
 ### Eager Loading
 
 ```php
@@ -338,6 +520,14 @@ $relation = $location->associate($user);
 which in Cypher land will map to `(:Location)<-[:LOCATED_AT]-(:User)` and `$relation`
 being an instance of `EdgeIn` representing an incoming relationship towards the parent.
 
+And you can still access the models from the edge:
+
+```php
+$relation = $location->associate($user);
+$location = $relation->parent();
+$user = $relation->related();
+```
+
 #### EdgeOut
 
 Represents an `OUTGOING` direction relationship from the parent model to the related model.
@@ -362,9 +552,41 @@ $posted = $user->posts()->save($post);
 
 Which in Cypher would be `(:User)-[:POSTED]->(:Post)` and `$posted` being the `EdgeOut` instance.
 
+And fetch the related models:
+
+```php
+$edge = $user->posts()->save($post);
+$user = $edge->parent();
+$post = $edge->related();
+```
+
+#### HyperEdge
+
+This edge comes as a result of a [Polymorphic Relation](#polymorphic) representing an edge involving
+tow other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
+
+This edge is treated a bit different than the others since it is not a direct relationship
+between two models which means it has no specific direction.
+
+```php
+$edge = $user->comments($post)->attach($comment);
+// Access the left and right edges
+$left = $edge->left();
+$user = $left->parent();
+$comment = $left->related();
+
+$right = $edge->right();
+$comment = $right->parent();
+$post = $right->related();
+```
+
 ### Working With Edges
 
-As stated earlier **Edges** are entities to Graph unlike *SQL* where they are a matter of a foreign key having the value of the parent model as an attribute on the belonging model or in *Documents* where they are either embeds or ids as references. So we developed them to be *light models* which means you can work with them as if you were working with an `Eloquent` instance - to a certain extent.
+As stated earlier **Edges** are entities to Graph unlike *SQL* where they are a matter of a
+foreign key having the value of the parent model as an attribute on the belonging model or in
+*Documents* where they are either embeds or ids as references. So we developed them to be *light
+models* which means you can work with them as if you were working with an `Eloquent` instance - to a certain extent,
+except [HyperEdges](#hyperedges).
 
 ```php
 // Create a new relationship
@@ -372,6 +594,15 @@ $relation = $location->associate($user); // Vinelab\NeoEloquent\Eloquent\Edges\E
 
 // Save the relationship to the database
 $relation->save(); // true
+```
+
+In the case of a `HyperEdge` you can access all three models as follows:
+
+```php
+$edge    = $user->comments($post)->save($comment);
+$user    = $edge->parent();
+$comment = $edge->hyper();
+$post    = $edge->related();
 ```
 
 #### Edge Attributes
