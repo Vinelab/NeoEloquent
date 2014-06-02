@@ -256,7 +256,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
             */
 
             // Get the parent node's placeholder.
-            $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+            $parentNode = $this->getParentNode();
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
@@ -287,6 +287,67 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
     {
         return new Finder($this->query);
     }
+
+    /**
+     * Get the key for comparing against the parent key in "has" query.
+     *
+     * @return string
+     */
+    public function getHasCompareKey()
+    {
+        return $this->related->getKeyName();
+    }
+
+    /**
+     * Get the relation name.
+     *
+     * @return string
+     */
+    public function getRelation()
+    {
+        return $this->relation;
+    }
+
+    /**
+     * Get the localKey.
+     *
+     * @return string
+     */
+    public function getLocalKey()
+    {
+        return $this->localKey;
+    }
+
+    /**
+     * Get the parent model's value according to $localKey.
+     *
+     * @return mixed
+     */
+    public function getParentLocalKeyValue()
+    {
+        return $this->parent->{$this->localKey};
+    }
+
+    /**
+     * Get the parent model's Node placeholder.
+     *
+     * @return string
+     */
+    public function getParentNode()
+    {
+        return $this->query->getQuery()->modelAsNode($this->parent->getTable());
+    }
+
+    /**
+     * Get the related model's Node placeholder.
+     *
+     * @return string
+     */
+    public function getRelatedNode()
+    {
+        return $this->query->getQuery()->modelAsNode($this->related->getTable());
+    }
+
     /**
      * Get the edge direction for this relationship.
      *
