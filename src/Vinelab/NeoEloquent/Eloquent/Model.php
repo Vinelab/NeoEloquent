@@ -479,4 +479,14 @@ abstract class Model extends IlluminateModel {
 
         return array($type, $id);
     }
+
+    /**
+     * Get the table qualified key name.
+     *
+     * @return string
+     */
+    public function getQualifiedKeyName()
+    {
+        return $this->getKeyName();
+    }
 }
