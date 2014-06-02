@@ -6,6 +6,49 @@
 
 Neo4j Graph Eloquent Driver for Laravel 4
 
+## Installation
+
+Add the package to your `composer.json` and run `composer update`.
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "*"
+    }
+}
+```
+
+Add the service provider in `app/config/app.php`:
+
+```php
+'Vinelab\NeoEloquent\NeoEloquentServiceProvider',
+```
+
+The service provider will register all the required classes for this package and will also alias
+the `Model` class to `NeoEloquent` so you can simply `extend NeoEloquent` in your models.
+
+## Configuration
+in `app/config/database.php` or in case of an environment-based configuration `app/config/[env]/database.php`
+make `neo4j` your default connection:
+
+```php
+'default' => 'neo4j',
+```
+
+Add the connection defaults:
+
+```php
+'connections' => [
+    'neo4j' => [
+        'driver' => 'neo4j',
+        'host'   => 'localhost',
+        'port'   => '7474'
+    ]
+]
+```
+
+### Documentation
+
 ## Models
 
 ```php
