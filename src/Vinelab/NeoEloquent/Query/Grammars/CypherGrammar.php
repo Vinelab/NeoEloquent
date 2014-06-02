@@ -7,6 +7,7 @@ class CypherGrammar extends Grammar {
     protected $selectComponents = array(
         'matches',
         'from',
+        'with',
         'wheres',
         'unions',
         'orders',
@@ -307,6 +308,18 @@ class CypherGrammar extends Grammar {
 	}
 
     /**
+     * Compiled a WHERE clause with carried identifiers.
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereCarried(Builder $query, $where)
+    {
+        return $where['column'] .' '. $where['operator']. ' '.$where['value'];
+    }
+
+    /**
 	 * Compile the "limit" portions of the query.
 	 *
 	 * @param  \Vinelab\NeoEloquent\Query\Builder  $query
@@ -417,4 +430,18 @@ class CypherGrammar extends Grammar {
         return "$match $where DELETE " . $query->modelAsNode();
     }
 
+    public function compileWith(Builder $query, $with)
+    {
+        $parts = [];
+
+        if ( ! empty($with))
+        {
+            foreach ($with as $identifier => $part)
+            {
+                $parts[] = ( ! is_numeric($identifier)) ? "$identifier AS $part" : $part;
+            }
+
+            return 'WITH '. implode(', ', $parts);
+        }
+    }
 }
