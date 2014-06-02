@@ -98,6 +98,5 @@ class MorphMany extends BelongsToMany {
         $model = ( ! is_null($model)) ? $model : $this->related;
 
         $edge = new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes);
-        dd(get_class($this->related));
     }
 }
