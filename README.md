@@ -83,7 +83,7 @@ class User extends NeoEloquent {
     protected $fillable = ['name', 'email'];
 }
 
-$user = User::create(['name', 'email']);
+$user = User::create(['name' => 'Some Name', 'email' => 'some@email.com']);
 ```
 
 NeoEloquent has a fallback support for the `$table` variable that will be used if found and there was no `$label` defined on the model.
