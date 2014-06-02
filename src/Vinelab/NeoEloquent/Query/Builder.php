@@ -30,6 +30,13 @@ class Builder extends IlluminateQueryBuilder {
     public $matches = array();
 
     /**
+     * The WITH parts of the query.
+     *
+     * @var array
+     */
+    public $with = array();
+
+    /**
      * The current query value bindings.
      *
      * @var array
@@ -230,6 +237,31 @@ class Builder extends IlluminateQueryBuilder {
 
 		return $this;
 	}
+
+    public function whereCarried($column, $operator = null, $value = null, $boolean = 'and')
+    {
+        $type = 'Carried';
+
+        $this->wheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
+
+        return $this;
+    }
+
+    /**
+     * Add a WITH clause to the query.
+     *
+     * @param  array  $parts
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
+     */
+    public function with(array $parts)
+    {
+        foreach ($parts as $key => $part)
+        {
+            $this->with[$key] = $part;
+        }
+
+        return $this;
+    }
 
     /**
 	 * Execute the query as a fresh "select" statement.
