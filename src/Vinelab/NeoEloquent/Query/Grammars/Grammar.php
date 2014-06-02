@@ -25,7 +25,9 @@ class Grammar extends IlluminateGrammar {
         // a placeholder so we transform it to _nodeId instead
         $property = preg_match('/^id(\(.*\))?$/', $value['column']) ? '_nodeId' : $value['column'];
 
-		return $this->isExpression($property) ? $this->getValue($property) : '{' . $property . '}';
+        if (strpos($property, '.') != false) $property = explode('.', $property)[1];
+
+		return $this->isExpression($property) ? '{'. $this->getValue($property) .'}' : '{' . $property . '}';
 	}
 
     /**
@@ -86,8 +88,9 @@ class Grammar extends IlluminateGrammar {
     public function wrap($value)
     {
         // We will only wrap the value unless it has parentheses
-        // in it which is the case where we're matching a node by id
-        if (preg_match('/[(|)]/', $value) or $value == '*') return $value;
+        // in it which is the case where we're matching a node by id, or an *
+        // and last whether this is a pre-formatted key.
+        if (preg_match('/[(|)]/', $value) or $value == '*' or strpos($value, '.') != false) return $value;
 
         // In the case where the developer specifies the properties and not returning
         // everything, we need to check whether the primaryKey is meant to be returned

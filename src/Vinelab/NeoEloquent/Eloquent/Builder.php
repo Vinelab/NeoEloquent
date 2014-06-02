@@ -46,6 +46,20 @@ class Builder extends IlluminateBuilder {
 	}
 
     /**
+     * Declare identifiers to carry over to the next part of the query.
+     *
+     * @param  array  $parts Should be associative of the form ['value' => 'identifier']
+     *                       and will be mapped to 'WITH value as identifier'
+     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
+     */
+    public function carry(array $parts)
+    {
+        $this->query->with($parts);
+
+        return $this;
+    }
+
+    /**
 	 * Get the hydrated models without eager loading.
 	 *
 	 * @param  array  $properties
@@ -548,4 +562,92 @@ class Builder extends IlluminateBuilder {
         return  count($matched) > 1 ? true : false;
     }
 
+    /**
+     * Add a relationship query condition.
+     *
+     * @param  string  $relation
+     * @param  string  $operator
+     * @param  int     $count
+     * @param  string  $boolean
+     * @param  \Closure  $callback
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function has($relation, $operator = '>=', $count = 1, $boolean = 'and', $callback = null)
+    {
+        $prefix = $relation;
+        $relation = $this->getHasRelationQuery($relation);
+
+        $query = $relation->getRelated()->newQuery();
+
+        if ($callback) call_user_func($callback, $query);
+
+        /**
+         * In graph we do not need to act on the count of the relationships when dealing
+         * with a whereHas() since the database will not return the result unless a relationship
+         * exists between two nodes.
+         */
+        if ( ! $callback)
+        {
+            /**
+             * The Cypher we're trying to build here would look like this:
+             *
+             * MATCH (post:`Post`)-[r:COMMENT]-(comments:`Comment`)
+             * WITH count(comments) AS comments_count, post
+             * WHERE comments_count >= 10
+             * RETURN post;
+             *
+             * Which is the result of Post::has('comments', '>=', 10)->get();
+             */
+            $countPart = $prefix .'_count';
+            $this->carry([$relation->getParentNode(), "count($prefix)" => $countPart]);
+            $this->whereCarried($countPart, $operator, $count);
+        }
+
+        // Tell the query to select our parent node only.
+        $this->select($relation->getParentNode());
+        // Set the relationship match clause.
+        $method = 'match'. ucfirst(mb_strtolower($relation->getEdgeDirection()));
+        $this->$method($relation->getParent(),
+                        $relation->getRelated(),
+                        $relation->getRelation(),
+                        $relation->getForeignKey(),
+                        $relation->getLocalKey(),
+                        $relation->getParentLocalKeyValue());
+
+        // Prefix all the columns with the relation's node placeholder in the query.
+        $this->prefixAndMerge($query, $prefix);
+
+        return $this;
+    }
+
+    /**
+     * Prefix query bindings and wheres with the relation's model Node placeholder.
+     *
+     * @param  \Vinelab\NeoEloquent\Eloquent\Builder $query
+     * @param  string  $prefix
+     * @return void
+     */
+    protected function prefixAndMerge(Builder $query, $prefix)
+    {
+        $this->prefixWheres($query, $prefix);
+        $this->query->mergeWheres($query->getQuery()->wheres, $query->getQuery()->getBindings());
+    }
+
+    /**
+     * Prefix where clauses' columns.
+     * @param  \Vinelab\NeoEloquent\Eloquent\Builder $query
+     * @param  string  $prefix
+     * @return void
+     */
+    protected function prefixWheres(Builder $query, $prefix)
+    {
+        if (is_array($query->getQuery()->wheres))
+        {
+            $query->getQuery()->wheres = array_map(function($where) use($prefix)
+            {
+                $where['column'] = $prefix .'.'. $where['column'];
+                return $where;
+            }, $query->getQuery()->wheres);
+        }
+    }
 }

@@ -364,6 +364,18 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function addBinding($value, $type = 'where')
     {
+        if (is_array($value))
+        {
+            $key = array_keys($value)[0];
+            if (strpos($key, '.') != false)
+            {
+                $binding = $value[$key];
+                unset($value[$key]);
+                $key = explode('.', $key)[1];
+                $value[$key] = $binding;
+            }
+        }
+
         if ( ! array_key_exists($type, $this->bindings))
         {
             throw new \InvalidArgumentException("Invalid binding type: {$type}.");
@@ -408,6 +420,20 @@ class Builder extends IlluminateQueryBuilder {
         $labels = ( ! is_null($labels)) ? $labels : $this->from;
 
         return $this->grammar->modelAsNode($labels);
+    }
+
+    /**
+     * Merge an array of where clauses and bindings.
+     *
+     * @param  array  $wheres
+     * @param  array  $bindings
+     * @return void
+     */
+    public function mergeWheres($wheres, $bindings)
+    {
+        $this->wheres = array_merge((array) $this->wheres, (array) $wheres);
+
+        $this->bindings['where'] = array_merge_recursive($this->bindings['where'], (array) $bindings);
     }
 
 }
