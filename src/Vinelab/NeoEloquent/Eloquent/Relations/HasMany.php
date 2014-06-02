@@ -92,4 +92,14 @@ class HasMany extends HasOneOrMany {
     {
         return $this->matchMany($models, $results, $relation);
     }
+
+    /**
+     * Get the fully qualified parent key name.
+     *
+     * @return string
+     */
+    public function getQualifiedParentKeyName()
+    {
+        return $this->relation;
+    }
 }
