@@ -22,6 +22,8 @@ class NeoEloquentServiceProvider extends ServiceProvider {
 		Model::setConnectionResolver($this->app['db']);
 
 		Model::setEventDispatcher($this->app['events']);
+
+		$this->package('vinelab/neoeloquent');
 	}
 
 	/**
@@ -34,6 +36,11 @@ class NeoEloquentServiceProvider extends ServiceProvider {
 		$this->app['db']->extend('neo4j', function($config)
 		{
 			return new Connection($config);
+		});
+
+		$this->app->booting(function(){
+			$loader = \Illuminate\Foundation\AliasLoader::getInstance();
+			$loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
 		});
 	}
 
