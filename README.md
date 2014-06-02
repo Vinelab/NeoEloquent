@@ -78,12 +78,12 @@ case sensitive so they will be stored as put here.
 ```php
 class User extends NeoEloquent {
 
-    protected $label = 'User:Fan'; // or array('User', 'Fan')
+    protected $label = 'User'; // or array('User', 'Fan')
 
     protected $fillable = ['name', 'email'];
 }
 
-$user = User::craete(['name', 'email']);
+$user = User::create(['name', 'email']);
 ```
 
 NeoEloquent has a fallback support for the `$table` variable that will be used if found and there was no `$label` defined on the model.
@@ -91,7 +91,7 @@ NeoEloquent has a fallback support for the `$table` variable that will be used i
 ```php
 class User extends NeoEloquent {
 
-    protected $table = 'User:Fan';
+    protected $table = 'User';
 
 }
 ```
