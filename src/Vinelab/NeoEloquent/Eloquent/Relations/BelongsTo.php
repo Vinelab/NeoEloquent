@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Model as EloquentModel;
 class BelongsTo extends OneRelation {
 
     /**
+     * The edge direction for this relationship.
+     *
+     * @var string
+     */
+    protected $edgeDirection = 'in';
+
+    /**
      * Set the base constraints on the relation query.
      *
      * @return void
@@ -101,4 +108,5 @@ class BelongsTo extends OneRelation {
 
         return new EdgeIn($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique = true);
     }
+
 }

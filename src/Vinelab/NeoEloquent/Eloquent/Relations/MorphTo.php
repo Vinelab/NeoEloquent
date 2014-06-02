@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Model as EloquentModel;
 class MorphTo extends OneRelation {
 
     /**
+     * The edge direction of this relatioship.
+     *
+     * @var string
+     */
+    protected $edgeDirection = 'in';
+
+    /**
      * The type of the polymorphic relation (in graph this is the relationship label).
      *
      * @var string

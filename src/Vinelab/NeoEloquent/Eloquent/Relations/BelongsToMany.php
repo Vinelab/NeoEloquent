@@ -32,6 +32,13 @@ class BelongsToMany extends HasOneOrMany {
      */
     protected $key;
 
+    /**
+     * The edge direction of this relatioship.
+     *
+     * @var string
+     */
+    protected $edgeDirection = 'out';
+
     public function __construct(Builder $query, Model $parent, $type, $key, $relation)
     {
         parent::__construct($query, $parent, $type, $key, $relation);

@@ -24,6 +24,13 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
     protected $finder;
 
     /**
+     * The edge direction for this relationship.
+     *
+     * @var string
+     */
+    protected $edgeDirection = 'out';
+
+    /**
      * Create a new has many relationship instance.
      *
      * @param  \Vinelab\NeoEloquent\Eloquent\Builder  $query
@@ -279,5 +286,14 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
     public function newFinder()
     {
         return new Finder($this->query);
+    }
+    /**
+     * Get the edge direction for this relationship.
+     *
+     * @return string
+     */
+    public function getEdgeDirection()
+    {
+        return $this->edgeDirection;
     }
 }

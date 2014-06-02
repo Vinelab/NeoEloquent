@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 abstract class OneRelation extends BelongsTo {
 
     /**
+     * The edge direction for this relationship.
+     *
+     * @var string
+     */
+    protected $edgeDirection = 'out';
+
+    /**
      * Get an instance of the Edge[In, Out, etc.] relationship.
      *
      * @param  \Illuminate\Database\Eloquent\Model $model
@@ -14,6 +21,16 @@ abstract class OneRelation extends BelongsTo {
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
      */
     abstract function getEdge(Model $model = null, $attributes = array());
+
+    /**
+     * Get the direction of the edge for this relationship.
+     *
+     * @return string
+     */
+    public function getEdgeDirection()
+    {
+        return $this->edgeDirection;
+    }
 
     /**
      * Associate the model instance to the given parent.
