@@ -10,7 +10,9 @@ class QueryException extends Neo4jException {
         // relevant info from it and send a helpful decent exception.
         if ($exception instanceof Neo4jException)
         {
-            parent::__construct($exception->getMessage(), 0, $exception->getHeaders(), $exception->getData());
+            $message = $this->formatMessage($exception);
+
+            parent::__construct($message);
         }
         // In case this exception is an instance of any other exception that we should not be handling
         // then we throw it as is.
@@ -23,5 +25,17 @@ class QueryException extends Neo4jException {
         {
             parent::__construct($query);
         }
+    }
+
+    /**
+     * Format the message that should be printed out for devs.
+     *
+     * @param  \Everyman\Neo4j\Exception $exception
+     * @return string
+     */
+    protected function formatMessage(Neo4jException $exception)
+    {
+        $data = $exception->getData();
+        return $data['exception'] .': '. $data['message'];
     }
 }
