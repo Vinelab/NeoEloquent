@@ -3,8 +3,20 @@
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
 
 class Wiz extends Model {
+
+    protected $label = ':Wiz';
+
+    protected $fillable = ['fiz', 'biz', 'triz'];
+}
+
+class WizDel extends Model {
+
+    use SoftDeletingTrait;
+
+    protected $dates = ['deleted_at'];
 
     protected $label = ':Wiz';
 
@@ -196,5 +208,15 @@ class SimpleCRUDTest extends TestCase {
         $this->assertInternalType('int', $g->fiz);
         $this->assertInternalType('int', $g->triz);
         $this->assertInternalType('float', $g->biz);
+    }
+
+    public function testSoftDeletingModel()
+    {
+        $w = WizDel::create([]);
+
+        $g = WizDel::all()->first();
+        $g->delete();
+        $this->assertFalse($g->exists);
+        $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
     }
 }
