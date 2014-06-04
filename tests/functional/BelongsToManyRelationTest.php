@@ -60,7 +60,7 @@ class BelongsToManyRelationTest extends TestCase {
         $role = new Role(['title' => 'Master']);
         $relation = $user->roles()->save($role);
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
         $this->assertTrue($relation->exists());
         $this->assertGreaterThanOrEqual(0, $relation->id);
 
@@ -73,7 +73,7 @@ class BelongsToManyRelationTest extends TestCase {
         $role = Role::create(['title' => 'Master']);
         $relation = $user->roles()->attach($role->id);
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
         $this->assertTrue($relation->exists());
         $this->assertGreaterThan(0, $relation->id);
 
@@ -93,7 +93,7 @@ class BelongsToManyRelationTest extends TestCase {
 
         $relations->each(function($relation)
         {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
             $this->assertTrue($relation->exists());
             $this->assertGreaterThan(0, $relation->id);
 
@@ -107,7 +107,7 @@ class BelongsToManyRelationTest extends TestCase {
         $role = Role::create(['title' => 'Master']);
 
         $relation = $user->roles()->attach($role);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
         $this->assertTrue($relation->exists());
         $this->assertGreaterThan(0, $relation->id);
 
@@ -131,7 +131,7 @@ class BelongsToManyRelationTest extends TestCase {
 
         $relations->each(function($relation)
         {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
             $this->assertTrue($relation->exists());
             $this->assertGreaterThan(0, $relation->id);
 
@@ -154,14 +154,14 @@ class BelongsToManyRelationTest extends TestCase {
         $role     = Role::create(['title' => 'Master']);
         $relation = $user->roles()->attach($role->id);
 
-        $edgeOut = $user->roles()->edge($role);
+        $edgeIn = $user->roles()->edge($role);
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edgeOut);
-        $this->assertTrue($edgeOut->exists());
-        $this->assertGreaterThan(0, $edgeOut->id);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $edgeIn);
+        $this->assertTrue($edgeIn->exists());
+        $this->assertGreaterThan(0, $edgeIn->id);
 
         $edgeIn = $role->users()->edge($user);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $edgeIn);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edgeIn);
         $this->assertTrue($edgeIn->exists());
         $this->assertGreaterThan(0, $edgeIn->id);
 
@@ -174,7 +174,7 @@ class BelongsToManyRelationTest extends TestCase {
         $role = Role::create(['title' => 'Master']);
 
         $relation = $user->roles()->attach($role->id);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
         $this->assertTrue($relation->exists());
         $this->assertGreaterThan(0, $relation->id);
 
@@ -199,7 +199,7 @@ class BelongsToManyRelationTest extends TestCase {
         // make sure they were successfully saved
         $relations->each(function($relation)
         {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
             $this->assertTrue($relation->exists());
             $this->assertGreaterThan(0, $relation->id);
         });

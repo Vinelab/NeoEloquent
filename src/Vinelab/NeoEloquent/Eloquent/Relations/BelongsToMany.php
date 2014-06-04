@@ -37,7 +37,7 @@ class BelongsToMany extends HasOneOrMany {
      *
      * @var string
      */
-    protected $edgeDirection = 'out';
+    protected $edgeDirection = 'in';
 
     public function __construct(Builder $query, Model $parent, $type, $key, $relation)
     {
@@ -87,6 +87,53 @@ class BelongsToMany extends HasOneOrMany {
     }
 
     /**
+     * Set the base constraints on the relation query.
+     *
+     * @return void
+     */
+    public function addConstraints()
+    {
+        if (static::$constraints)
+        {
+            /**
+             * For has one relationships we need to actually query on the primary key
+             * of the parent model matching on the OUTGOING relationship by name.
+             *
+             * We are trying to achieve a Cypher that goes something like:
+             *
+             * MATCH (user:`User`), (user)-[:PHONE]->(phone:`Phone`)
+             * WHERE id(user) = 86234
+             * RETURN phone;
+             *
+             * (user:`User`) represents a matching statement where
+             * 'user' is the parent Node's placeholder and '`User`' is the parentLabel.
+             * All node placeholders must be lowercased letters and will be used
+             * throught the query to represent the actual Node.
+             *
+             * Resulting from:
+             * class User extends NeoEloquent {
+             *
+             *     public function phone()
+             *     {
+             *          return $this->hasOne('Phone', 'PHONE');
+             *     }
+             * }
+            */
+
+            // Get the parent node's placeholder.
+            $parentNode = $this->getParentNode();
+            // Tell the query that we only need the related model returned.
+            $this->query->select($this->relation);
+            // Set the parent node's placeholder as the RETURN key.
+            $this->query->getQuery()->from = array($parentNode);
+            // Build the MATCH ()-[]->() Cypher clause.
+            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+            // Add WHERE clause over the parent node's matching key = value.
+            $this->query->where($this->localKey, '=', $this->parent->{$this->localKey});
+        }
+    }
+
+    /**
      * Set the constraints for an eager load of the relation.
      *
      * @param  array  $models
@@ -113,7 +160,7 @@ class BelongsToMany extends HasOneOrMany {
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()-[]->() Cypher clause.
-        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models));
     }
@@ -141,7 +188,7 @@ class BelongsToMany extends HasOneOrMany {
     {
         $model = ( ! is_null($model)) ? $model : $this->related;
 
-        return new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes);
+        return new EdgeIn($this->query, $this->parent, $model, $this->type, $attributes);
     }
 
     /**
