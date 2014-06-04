@@ -5,6 +5,16 @@
 
 Neo4j Graph Eloquent Driver for Laravel 4
 
+## Quick Reference
+
+ - [Installation](#installation)
+ - [Configuration](#configuration)
+ - [Models](#models)
+ - [Relationships](#relationships)
+ - [Edges](#edges)
+ - [Only in Neo](#onlyinneo)
+ - [Things To Avoid](#avoid)
+
 ## Installation
 
 Add the package to your `composer.json` and run `composer update`.
@@ -49,6 +59,9 @@ Add the connection defaults:
 ### Documentation
 
 ## Models
+
+- [Node Labels](#namespaced-models)
+- [Soft Deleting](#soft-deleting)
 
 ```php
 class User extends NeoEloquent {}
@@ -98,7 +111,29 @@ class User extends NeoEloquent {
 
 Do not worry about the labels formatting, You may specify them as `array('Label1', 'Label2')` or separate them by a column `:` and prepending them with a `:` is optional.
 
+### Soft Deleting
+
+To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait`
+instead of `Illuminate\Database\Eloquent\SoftDeletingTrait` and just like Eloquent you'll need the `$dates` in your models as follows:
+
+```php
+use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
+
+class User extends NeoEloquent {
+
+    use SoftDeletingTrait;
+
+    protected $dates = ['deleted_at'];
+
+}
+```
+
 ## Relationships
+
+- [One-To-One](#one-to-one)
+- [One-To-Many](#one-to-many)
+- [Many-To-Many](#many-to-many)
+- [Polymorphic](#polymorphic)
 
 Let's go through some examples of relationships between Nodes.
 
