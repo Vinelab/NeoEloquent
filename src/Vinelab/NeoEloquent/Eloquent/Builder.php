@@ -645,7 +645,8 @@ class Builder extends IlluminateBuilder {
         {
             $query->getQuery()->wheres = array_map(function($where) use($prefix)
             {
-                $where['column'] = $prefix .'.'. $where['column'];
+                $column = $where['column'];
+                $where['column'] = ($column == 'id') ? 'id('. $prefix .')' : $prefix .'.'. $column;
                 return $where;
             }, $query->getQuery()->wheres);
         }

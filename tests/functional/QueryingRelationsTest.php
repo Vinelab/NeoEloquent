@@ -91,6 +91,22 @@ class QueryingRelationsTest extends TestCase {
         }
     }
 
+    public function testQueryingWhereHasById()
+    {
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
+
+        $user->roles()->save($role);
+
+        $found = User::whereHas('roles', function($q) use ($role)
+        {
+            $q->where('id', $role->getKey());
+        })->first();
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found);
+        $this->assertEquals($user->toArray(), $found->toArray());
+    }
+
 }
 
 class User extends Model {
