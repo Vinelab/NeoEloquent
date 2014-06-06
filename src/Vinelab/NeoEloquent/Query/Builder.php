@@ -226,13 +226,17 @@ class Builder extends IlluminateQueryBuilder {
 		// will be bound to each SQL statements when it is finally executed.
 		$type = 'Basic';
 
+        $property = $column;
+
+        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+
 		$this->wheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
 
-		if ( ! $value instanceof Expression)
-		{
-            if ($column == 'id('. $this->modelAsNode() .')') $column = 'id';
+        $property = $this->wrap($property);
 
-			$this->addBinding(array($column => $value), 'where');
+        if ( ! $value instanceof Expression)
+        {
+			$this->addBinding([$property => $value], 'where');
 		}
 
 		return $this;
@@ -329,7 +333,7 @@ class Builder extends IlluminateQueryBuilder {
             )
         );
 
-        $this->addBinding(array($property => $value), 'matches');
+        $this->addBinding(array($this->wrap($property) => $value), 'matches');
 
         return $this;
     }
@@ -434,6 +438,11 @@ class Builder extends IlluminateQueryBuilder {
         $this->wheres = array_merge((array) $this->wheres, (array) $wheres);
 
         $this->bindings['where'] = array_merge_recursive($this->bindings['where'], (array) $bindings);
+    }
+
+    public function wrap($property)
+    {
+        return $this->grammar->getIdReplacement($property);
     }
 
 }

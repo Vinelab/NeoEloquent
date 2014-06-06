@@ -22,8 +22,8 @@ class Grammar extends IlluminateGrammar {
 	{
         // Validate whether the requested field is the
         // node id, in that case id(n) doesn't work as
-        // a placeholder so we transform it to _nodeId instead
-        $property = preg_match('/^id(\(.*\))?$/', $value['column']) ? '_nodeId' : $value['column'];
+        // a placeholder so we transform it to the id replacement instead.
+        $property = $this->getIdReplacement($value['column']);
 
         if (strpos($property, '.') != false) $property = explode('.', $property)[1];
 
@@ -101,7 +101,6 @@ class Grammar extends IlluminateGrammar {
         {
             return 'id(' . $this->query->modelAsNode() . ')';
         }
-
         return $this->query->modelAsNode() . '.' . $value;
     }
 
@@ -148,7 +147,7 @@ class Grammar extends IlluminateGrammar {
             return 'n';
         } elseif (is_array($labels))
         {
-            return mb_strtolower(reset($labels));
+            $labels = reset($labels);
         }
 
         return mb_strtolower($labels);
@@ -162,5 +161,36 @@ class Grammar extends IlluminateGrammar {
     public function setQuery($query)
     {
         $this->query = $query;
+    }
+
+    /**
+     * Get the replacement of an id property.
+     *
+     * @return string
+     */
+    public function getIdReplacement($column)
+    {
+        // If we have id(n) we're removing () and keeping idn
+        $column = preg_replace('/[(|)]/', '', $column);
+        // Check whether the column is still id so that we transform it to the form id(n) and then
+        // recursively calling ourself to reformat accordingly.
+        if($column == 'id')
+        {
+            $from = ( ! is_null($this->query)) ? $this->query->from : null;
+            $column = $this->getIdReplacement('id('. $this->modelAsNode($from) .')');
+        }
+
+        return $column;
+    }
+
+    /**
+     * Set the replacement of the id property.]
+     *
+     * @param string $replacement
+     * @return  void
+     */
+    public function setIdReplacement($replacement)
+    {
+        $this->replaceId = $replacement;
     }
 }
