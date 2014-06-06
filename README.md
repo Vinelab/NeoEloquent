@@ -733,15 +733,9 @@ they will be your boogie monster.
 ### Pivot Tables in Many-To-Many Relationships
 This is not supported, instead we will be using [Edges](#edges) to work with relationships between models.
 
-### `_nodeId` property
-
-- The `_node_id` property is reserverd, do not assign a property `_nodeId` to a Node unless you would like it to actually be the Node id,
-`NeoEloquent` has a special case when dealing with node ids since it is treated differently
-by the Neo4j client.
-
 ### Nested Arrays and Objects
 
-- Due to the limitations imposed by the objects map types that can be stored in a single Node,
+- Due to the limitations imposed by the objects map types that can be stored in a single,
 you can never have nested *arrays* or *objects* in a single model,
 make sure it's flat. *Example:*
 
