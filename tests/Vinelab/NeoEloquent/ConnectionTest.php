@@ -178,7 +178,7 @@ class ConnectionTest extends TestCase {
 
         $c = $this->getConnectionWithConfig('default');
 
-        $expected = array('_nodeId' => 6);
+        $expected = array('idn' => 6);
 
         $prepared = $c->prepareBindings($bindings);
 
@@ -292,7 +292,7 @@ class ConnectionTest extends TestCase {
         );
 
         // Select the Node containing the User record by its id
-        $query = 'MATCH (n:`User`) WHERE id(n) = {_nodeId} RETURN * LIMIT 1';
+        $query = 'MATCH (n:`User`) WHERE id(n) = {idn} RETURN * LIMIT 1';
 
         $results = $c->select($query, $bindings);
 

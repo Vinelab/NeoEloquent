@@ -128,14 +128,34 @@ class QueryBuilderTest extends TestCase {
         $this->assertEquals(array(
             array(
                 'type'     => 'Basic',
-                'column'   => 'id',
+                'column'   => 'id(n)',
                 'operator' => '=',
                 'value'    => 19,
                 'boolean'  => 'and'
             )
         ), $this->builder->wheres, 'make sure the statement was atted to $wheres');
+        // When the '$from' attribute is not set on the query builder, the grammar
+        // will use 'n' as the default node identifier.
+        $this->assertEquals(array('idn' => 19), $this->builder->getBindings());
+    }
 
-        $this->assertEquals(array('id' => 19), $this->builder->getBindings());
+    public function testBasicWhereBindingsWithFromField()
+    {
+        $this->builder->from = array('user');
+        $this->builder->where('id', 19);
+
+        $this->assertEquals(array(
+            array(
+                'type'     => 'Basic',
+                'column'   => 'id(user)',
+                'operator' => '=',
+                'value'    => 19,
+                'boolean'  => 'and'
+            )
+        ), $this->builder->wheres, 'make sure the statement was atted to $wheres');
+        // When no query builder is passed to the grammar then it will return 'n'
+        // as node identifier by default.
+        $this->assertEquals(array('iduser' => 19), $this->builder->getBindings());
     }
 
     public function testNullWhereBindings()
@@ -170,7 +190,7 @@ class QueryBuilderTest extends TestCase {
             )
         ), $this->builder->wheres);
 
-        $this->assertEquals(array('id' => 200), $this->builder->getBindings());
+        $this->assertEquals(array('idn' => 200), $this->builder->getBindings());
     }
 
     public function testNestedWhere()
