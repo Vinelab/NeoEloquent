@@ -574,7 +574,6 @@ class Builder extends IlluminateBuilder {
      */
     public function has($relation, $operator = '>=', $count = 1, $boolean = 'and', $callback = null)
     {
-        $prefix = $relation;
         $relation = $this->getHasRelationQuery($relation);
 
         $query = $relation->getRelated()->newQuery();
@@ -586,6 +585,8 @@ class Builder extends IlluminateBuilder {
          * with a whereHas() since the database will not return the result unless a relationship
          * exists between two nodes.
          */
+        $prefix = $relation->getRelatedNode();
+
         if ( ! $callback)
         {
             /**
@@ -603,19 +604,33 @@ class Builder extends IlluminateBuilder {
             $this->whereCarried($countPart, $operator, $count);
         }
 
+        $parentNode = $relation->getParentNode();
+        $relatedNode = $relation->getRelatedNode();
         // Tell the query to select our parent node only.
-        $this->select($relation->getParentNode());
+        $this->select($parentNode);
         // Set the relationship match clause.
-        $method = 'match'. ucfirst(mb_strtolower($relation->getEdgeDirection()));
+        $method = $this->getMatchMethodName($relation);
+
         $this->$method($relation->getParent(),
                         $relation->getRelated(),
-                        $relation->getRelation(),
+                        $relatedNode,
                         $relation->getForeignKey(),
                         $relation->getLocalKey(),
                         $relation->getParentLocalKeyValue());
 
-        // Prefix all the columns with the relation's node placeholder in the query.
+        // Prefix all the columns with the relation's node placeholder in the query
+        // and merge the queries that needs to be merged.
         $this->prefixAndMerge($query, $prefix);
+
+        /**
+         * After that we've done everything we need with the Has() and related we need
+         * to reset the query for the grammar so that whenever we continu querying we make
+         * sure that we're using the correct grammar. i.e.
+         *
+         * $user->whereHas('roles', function(){})->where('id', $user->id)->first();
+         */
+        $grammar = $this->getQuery()->getGrammar();
+        $grammar->setQuery($this->getQuery());
 
         return $this;
     }
@@ -646,9 +661,31 @@ class Builder extends IlluminateBuilder {
             $query->getQuery()->wheres = array_map(function($where) use($prefix)
             {
                 $column = $where['column'];
-                $where['column'] = ($column == 'id') ? 'id('. $prefix .')' : $prefix .'.'. $column;
+                $where['column'] = ($this->isId($column)) ? $column : $prefix .'.'. $column;
                 return $where;
             }, $query->getQuery()->wheres);
         }
+    }
+
+    /**
+     * Determine whether a value is an Id attribute according to Neo4j.
+     *
+     * @param  string  $value
+     * @return boolean
+     */
+    public function isId($value)
+    {
+        return preg_match('/^id(\(.*\))?$/', $value);
+    }
+
+    /**
+     * Get the match[In|Out] method name out of a relation.
+     *
+     * @param  \Vinelab\NeoEloquent\Eloquent\Relations\* $relation
+     * @return [type]
+     */
+    protected function getMatchMethodName($relation)
+    {
+        return 'match'. ucfirst(mb_strtolower($relation->getEdgeDirection()));
     }
 }
