@@ -303,7 +303,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
      *
      * @return string
      */
-    public function getRelation()
+    public function getRelationName()
     {
         return $this->relation;
     }
