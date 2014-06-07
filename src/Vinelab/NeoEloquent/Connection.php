@@ -202,6 +202,8 @@ class Connection extends IlluminateConnection {
      */
     public function getCypherQuery($query, array $bindings)
     {
+        if (empty($bindings)) return new CypherQuery($this->getClient(), $query);
+
         return new CypherQuery($this->getClient(), $query, $this->prepareBindings($bindings));
     }
 
