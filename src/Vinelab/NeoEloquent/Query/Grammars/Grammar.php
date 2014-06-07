@@ -20,14 +20,26 @@ class Grammar extends IlluminateGrammar {
 	 */
 	public function parameter($value)
 	{
+
         // Validate whether the requested field is the
         // node id, in that case id(n) doesn't work as
         // a placeholder so we transform it to the id replacement instead.
-        $property = $this->getIdReplacement($value['column']);
+
+        // When coming from a WHERE statement we'll have to pluck out the column
+        // from the collected attributes.
+        if(is_array($value) and isset($value['column']))
+        {
+            $value = $value['column'];
+        } elseif ($this->isExpression($value))
+        {
+            $value = $this->getValue($value);
+        }
+
+        $property = $this->getIdReplacement($value);
 
         if (strpos($property, '.') != false) $property = explode('.', $property)[1];
 
-		return $this->isExpression($property) ? '{'. $this->getValue($property) .'}' : '{' . $property . '}';
+		return '{' . $property . '}';
 	}
 
     /**
@@ -53,7 +65,7 @@ class Grammar extends IlluminateGrammar {
     {
         // every label must begin with a ':' so we need to check
         // and reformat if need be.
-        return trim(':' . preg_replace('/^:/', '', "`$label`"));
+        return trim(':`'. preg_replace('/^:/', '', $label) .'`');
     }
 
     /**
@@ -76,7 +88,7 @@ class Grammar extends IlluminateGrammar {
      */
     public function normalizeLabels($labels)
     {
-        return mb_strtolower(str_replace(':', '_', $labels));
+        return mb_strtolower(str_replace(':', '_', preg_replace('/^:/', '', $labels)));
     }
 
     /**
@@ -111,8 +123,11 @@ class Grammar extends IlluminateGrammar {
      * @param  array $values
      * @return  string
      */
-    public function valufy(array $values)
+    public function valufy($values)
     {
+        // we'll only deal with arrays so let's turn it into one if it isn't
+        if ( ! is_array($values)) $values = (array) $values;
+
         // escape and wrap them with a quote.
         $values = array_map(function ($value)
         {
@@ -181,16 +196,5 @@ class Grammar extends IlluminateGrammar {
         }
 
         return $column;
-    }
-
-    /**
-     * Set the replacement of the id property.]
-     *
-     * @param string $replacement
-     * @return  void
-     */
-    public function setIdReplacement($replacement)
-    {
-        $this->replaceId = $replacement;
     }
 }
