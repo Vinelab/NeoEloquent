@@ -236,6 +236,6 @@ class Grammar extends IlluminateGrammar {
     public function propertize($property)
     {
         // Sanitize the string from all characters except alpha numeric.
-        return ereg_replace('[^A-Za-z0-9]', '', $property);
+        return preg_replace('[^A-Za-z0-9]', '', $property);
     }
 }
