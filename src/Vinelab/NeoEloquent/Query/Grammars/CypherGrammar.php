@@ -444,4 +444,38 @@ class CypherGrammar extends Grammar {
             return 'WITH '. implode(', ', $parts);
         }
     }
+
+    /**
+     * Compile an insert statement into Cypher.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    public function compileInsert(Builder $query, array $values)
+    {
+        /**
+         *  Essentially we will force every insert to be treated as a batch insert which
+         * simply makes creating the Cypher easier for us since we can utilize the same
+         * basic routine regardless of an amount of records given to us to insert.
+         *
+         * We are working on getting a Cypher like this:
+         * CREATE (:Wiz {fiz: 'foo', biz: 'boo'}). (:Wiz {fiz: 'morefoo', biz: 'moreboo'})
+         */
+        $label = $this->prepareLabels($query->from);
+
+        if ( ! is_array(reset($values)))
+        {
+            $values = array($values);
+        }
+
+        // Prepare the values to be sent into the entities factory as
+        // ['label' => ':Wiz', 'bindings' => ['fiz' => 'foo', 'biz' => 'boo']]
+        $values = array_map(function($entity) use($label)
+        {
+            return ['label' => $label, 'bindings' => $entity];
+        }, $values);
+        // We need to build a list of parameter place-holders of values that are bound to the query.
+        return "CREATE ". $this->prepareEntities($values);
+    }
 }

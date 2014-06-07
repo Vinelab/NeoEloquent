@@ -1,10 +1,11 @@
 <?php namespace Vinelab\NeoEloquent;
 
 use DateTime, Closure;
-use Everyman\Neo4j\Client as NeoClient;
-use Vinelab\NeoEloquent\QueryException;
-use Everyman\Neo4j\Cypher\Query as CypherQuery;
+use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Query\Builder;
+use Vinelab\NeoEloquent\QueryException;
+use Everyman\Neo4j\Client as NeoClient;
+use Everyman\Neo4j\Cypher\Query as CypherQuery;
 use Illuminate\Database\Connection as IlluminateConnection;
 
 class Connection extends IlluminateConnection {
@@ -170,6 +171,27 @@ class Connection extends IlluminateConnection {
 			return $statement->getResultSet();
 		});
 	}
+
+    /**
+     * Execute a Cypher statement and return the boolean result.
+     *
+     * @param  string  $query
+     * @param  array   $bindings
+     * @return bool
+     */
+    public function statement($query, $bindings = array())
+    {
+        return $this->run($query, $bindings, function($me, $query, $bindings)
+        {
+            if ($me->pretending()) return true;
+
+            $statement = $me->getCypherQuery($query, $bindings);
+
+            $result = $statement->getResultSet();
+
+            return $result instanceof ResultSet;
+        });
+    }
 
     /**
      * Make a query out of a Cypher statement

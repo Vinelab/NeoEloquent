@@ -197,4 +197,45 @@ class Grammar extends IlluminateGrammar {
 
         return $column;
     }
+
+    /**
+     * Prepare properties and values to be injected in a query.
+     *
+     * @param  array $values
+     * @return array
+     */
+    protected function prepareEntities(array $entities)
+    {
+        $prepared = [];
+
+        foreach ($entities as $entity)
+        {
+            $label    = $entity['label'];
+            $bindings = $entity['bindings'];
+
+            $properties = [];
+            foreach ($bindings as $key => $value)
+            {
+                $key  = $this->propertize($key);
+                $value = $this->valufy($value);
+                $properties[] = "$key: $value";
+            }
+
+            $prepared[] = "($label { ". implode(', ', $properties) .'})';
+        }
+
+        return implode(', ', $prepared);
+    }
+
+    /**
+     * Turn a string into a valid property for a query.
+     *
+     * @param  string $property
+     * @return string
+     */
+    public function propertize($property)
+    {
+        // Sanitize the string from all characters except alpha numeric.
+        return ereg_replace('[^A-Za-z0-9]', '', $property);
+    }
 }

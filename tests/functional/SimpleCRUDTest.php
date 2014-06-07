@@ -161,9 +161,7 @@ class SimpleCRUDTest extends TestCase {
 
     public function testInsertingBatch()
     {
-        $this->markTestIncomplete('Erronous and not supported yet!');
-
-        $inserted = Wiz::insert([
+        $batch = [
             [
                 'fiz' => 'foo',
                 'biz' => 'boo'
@@ -180,7 +178,24 @@ class SimpleCRUDTest extends TestCase {
                 'fiz' => 'somefoo',
                 'biz' => 'someboo'
             ]
-        ]);
+        ];
+
+        $inserted = Wiz::insert($batch);
+
+        $this->assertTrue($inserted);
+
+        // Let's fetch them to see if that's really true.
+        $wizzez = Wiz::all();
+
+        foreach ($wizzez as $key => $wizz)
+        {
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $wizz);
+            $values = $wizz->toArray();
+            $this->assertArrayHasKey('id', $values);
+            $this->assertGreaterThanOrEqual(0, $values['id']);
+            unset($values['id']);
+            $this->assertEquals($batch[$key], $values);
+        }
     }
 
     public function testInsertingSingleAndGettingId()

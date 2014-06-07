@@ -3,7 +3,7 @@
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Batch;
 use Vinelab\NeoEloquent\Connection;
-use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Illuminate\Database\Query\Builder as IlluminateQueryBuilder;
 
 class Builder extends IlluminateQueryBuilder {
@@ -70,7 +70,7 @@ class Builder extends IlluminateQueryBuilder {
      * @param Vinelab\NeoEloquent\Connection $connection
      * @return void
      */
-    public function __construct(Connection $connection, CypherGrammar $grammar)
+    public function __construct(Connection $connection, Grammar $grammar)
     {
         $this->grammar = $grammar;
         $this->grammar->setQuery($this);
@@ -265,6 +265,53 @@ class Builder extends IlluminateQueryBuilder {
         }
 
         return $this;
+    }
+
+    /**
+     * Insert a new record into the database.
+     *
+     * @param  array  $values
+     * @return bool
+     */
+    public function insert(array $values)
+    {
+        // Since every insert gets treated like a batch insert, we will make sure the
+        // bindings are structured in a way that is convenient for building these
+        // inserts statements by verifying the elements are actually an array.
+        if ( ! is_array(reset($values)))
+        {
+            $values = array($values);
+        }
+
+        // Since every insert gets treated like a batch insert, we will make sure the
+        // bindings are structured in a way that is convenient for building these
+        // inserts statements by verifying the elements are actually an array.
+        else
+        {
+            foreach ($values as $key => $value)
+            {
+                ksort($value); $values[$key] = $value;
+            }
+        }
+
+        // We'll treat every insert like a batch insert so we can easily insert each
+        // of the records into the database consistently. This will make it much
+        // easier on the grammars to just handle one type of record insertion.
+        $bindings = array();
+
+        foreach ($values as $record)
+        {
+            $bindings[] = $record;
+        }
+
+        $cypher = $this->grammar->compileInsert($this, $values);
+
+        // Once we have compiled the insert statement's Cypher we can execute it on the
+        // connection and return a result as a boolean success indicator as that
+        // is the same type of result returned by the raw connection instance.
+        $bindings = $this->cleanBindings($bindings);
+
+        return $this->connection->insert($cypher, $bindings);
     }
 
     /**
