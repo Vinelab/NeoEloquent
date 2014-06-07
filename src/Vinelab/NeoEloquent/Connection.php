@@ -202,8 +202,6 @@ class Connection extends IlluminateConnection {
      */
     public function getCypherQuery($query, array $bindings)
     {
-        if (empty($bindings)) return new CypherQuery($this->getClient(), $query);
-
         return new CypherQuery($this->getClient(), $query, $this->prepareBindings($bindings));
     }
 
@@ -241,7 +239,7 @@ class Connection extends IlluminateConnection {
 
             if ($value instanceof DateTime)
             {
-				$value = $value->format($grammar->getDateFormat());
+				$binding = $value->format($grammar->getDateFormat());
 			}
 			elseif ($value === false)
 			{
@@ -250,26 +248,29 @@ class Connection extends IlluminateConnection {
 
             $property = is_array($binding) ? key($binding) : $key;
 
-            if (is_array($binding))
+            // We will set the binding key and value, then
+            // we replace the binding property of the id (if found)
+            // with a _nodeId instead since the client
+            // will not accept replacing "id(n)" with a value
+            // which have been previously processed by the grammar
+            // to be _nodeId instead.
+            if ( ! is_array($binding))
             {
-                // We will set the binding key and value, then
-                // we replace the binding property of the id (if found)
-                // with a _nodeId instead since the client
-                // will not accept replacing "id(n)" with a value
-                // which have been previously processed by the grammar
-                // to be _nodeId instead.
-                foreach ($binding as $property => $real)
-                {
-                    if ($property == 'id') $property = $grammar->getIdReplacement($property);
+                $binding = (array) $binding;
+            }
 
-                    $prepared[$property] = $real;
+            foreach ($binding as $property => $real)
+            {
+                // We should not pass any numeric key-value items since the Neo4j client expects
+                // a JSON map parameters.
+                if (is_numeric($property))
+                {
+                    $property = (! is_numeric($key)) ? $key : 'id';
                 }
 
-            } else
-            {
                 if ($property == 'id') $property = $grammar->getIdReplacement($property);
 
-                $prepared[$property] = $value;
+                $prepared[$property] = $real;
             }
 		}
 
