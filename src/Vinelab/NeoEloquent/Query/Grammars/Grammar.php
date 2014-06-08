@@ -202,29 +202,36 @@ class Grammar extends IlluminateGrammar {
      * Prepare properties and values to be injected in a query.
      *
      * @param  array $values
-     * @return array
+     * @return string
      */
     protected function prepareEntities(array $entities)
     {
-        $prepared = [];
+        return implode(', ', array_map([$this, 'prepareEntity'], $entities));
+    }
 
-        foreach ($entities as $entity)
+    /**
+     * Prepare an entity's values to be used in a query, performs sanitization and reformatting.
+     *
+     * @param  array $entity
+     * @return string
+     */
+    protected function prepareEntity($entity, $identifier = false)
+    {
+        $label = (is_array($entity['label'])) ? $this->prepareLabels($entity['label']) : $entity['label'];
+
+        if ($identifier) $label = $this->modelAsNode($entity['label']).$label;
+
+        $bindings = $entity['bindings'];
+
+        $properties = [];
+        foreach ($bindings as $key => $value)
         {
-            $label    = $entity['label'];
-            $bindings = $entity['bindings'];
-
-            $properties = [];
-            foreach ($bindings as $key => $value)
-            {
-                $key  = $this->propertize($key);
-                $value = $this->valufy($value);
-                $properties[] = "$key: $value";
-            }
-
-            $prepared[] = "($label { ". implode(', ', $properties) .'})';
+            $key   = $this->propertize($key);
+            $value = $this->valufy($value);
+            $properties[] = "$key: $value";
         }
 
-        return implode(', ', $prepared);
+        return "($label { ". implode(', ', $properties) .'})';
     }
 
     /**
