@@ -3,7 +3,10 @@
 use Closure;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Vinelab\NeoEloquent\Connection;
+use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\QueryException;
 use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
 
 class Builder extends IlluminateBuilder {
@@ -72,13 +75,22 @@ class Builder extends IlluminateBuilder {
 		// that should be selected as well, which are typically just everything.
 		$results = $this->query->get($properties);
 
-		$connection = $this->model->getConnectionName();
-
-		$models = array();
-
 		// Once we have the results, we can spin through them and instantiate a fresh
 		// model instance for each records we retrieved from the database. We will
 		// also set the proper connection name for the model after we create it.
+        return $this->resultsToModels($this->model->getConnectionName(), $results);
+	}
+
+    /**
+     * Turn Neo4j result set into the corresponding model
+     * @param  string $connection
+     * @param  \Everyman\Neo4j\Query\ResultSet $results
+     * @return array
+     */
+    protected function resultsToModels($connection, ResultSet $results)
+    {
+        $models = [];
+
         if ($results->valid())
         {
             $columns = $results->getColumns();
@@ -104,8 +116,8 @@ class Builder extends IlluminateBuilder {
             }
         }
 
-		return $models;
-	}
+        return $models;
+    }
 
     /**
      * Mutate a result back into its original Model.
@@ -633,6 +645,76 @@ class Builder extends IlluminateBuilder {
         $grammar->setQuery($this->getQuery());
 
         return $this;
+    }
+
+    /**
+     * Create a new record from the parent Model and new related records with it.
+     *
+     * @param  array  $attributes
+     * @param  array  $relations
+     * @return \Vinelab\NeoEloquent\Eloquent\Model
+     */
+    public function createWith(array $attributes, array $relations)
+    {
+        // Collect the model attributes and label in the form of ['label' => $label, 'attributes' => $attributes]
+        // as expected by the Query Builder.
+        $model = ['label' => $this->model->getTable(), 'attributes' => $attributes];
+
+        /**
+         * Collect the related models in the following for as expected by the Query Builder:
+         *
+         *  [
+         *       'label' => ['Permission'],
+         *       'relation' => [
+         *           'name' => 'photos',
+         *           'type' => 'PHOTO',
+         *           'direction' => 'out',
+         *       ],
+         *       'values' => [
+         *           // A mix of models and attributes, doesn't matter really..
+         *           ['url' => '', 'caption' => ''],
+         *           ['url' => '', 'caption' => '']
+         *       ]
+         *  ]
+         */
+        $related = [];
+        foreach ($relations as $relation => $values)
+        {
+            $name = $relation;
+            // Get the relation by calling the model's relationship function.
+            if ( ! method_exists($this->model, $relation))
+                throw new QueryException("The relation method $relation() does not exist on ". get_class($this->model));
+
+            $relationship = $this->model->$relation();
+            // Bring the model from the relationship.
+            $relatedModel = $relationship->getRelated();
+
+            // We need to get the attributes of each $value from $values into
+            // an instance of the related model so that we make sure that it goes
+            // through the $fillable filter pipeline.
+            $values = array_map(function($attributes) use($relatedModel)
+            {
+                // This adds support for having model instances mixed with values
+                if ($attributes instanceof Model) return $attributes->toArray();
+                // Reaching here means the dev entered raw attributes (similar to insert())
+                // so we'll need to pass the attributes through the model to make sure
+                // the fillables are respected as expected by the dev.
+                $instance = new $relatedModel($attributes);
+                return $instance->toArray();
+            }, $values);
+
+            $label     = $relationship->getRelated()->getTable();
+            $direction = $relationship->getEdgeDirection();
+            $type      = $relationship->getRelationType();
+
+            $relation  = compact('name', 'type', 'direction');
+            $related[] = compact('relation', 'label', 'values');
+        }
+
+        $result = $this->query->createWith($model, $related);
+
+       $models = $this->resultsToModels($this->model->getConnectionName(), $result);
+       return ( ! empty($models)) ? reset($models) : null;
     }
 
     /**

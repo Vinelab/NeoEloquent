@@ -123,6 +123,88 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals($user->toArray(), $found->toArray());
     }
 
+    public function testCreatingModelWithRelations()
+    {
+        // Creating a role with its permissions.
+        $role = ['title' => 'Admin', 'alias' => 'admin'];
+
+        $permissions = [
+            new Permission(['title' => 'Create Records', 'alias' => 'create', 'dodid' => 'done']),
+            new Permission(['title' => 'Read Records', 'alias'   => 'read', 'dont be so' => 'down']),
+            ['title' => 'Update Records', 'alias' => 'update'],
+            ['title' => 'Delete Records', 'alias' => 'delete']
+        ];
+
+        $role = Role::createWith($role, compact('permissions'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $role);
+        $this->assertTrue($role->exists);
+        $this->assertGreaterThanOrEqual(0, $role->id);
+
+        foreach ($role->permissions as $key => $permission)
+        {
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Permission', $permission);
+            $this->assertGreaterThan(0, $permission->id);
+            $attrs = $permission->toArray();
+            unset($attrs['id']);
+            if ($permissions[$key] instanceof Permission)
+            {
+                $this->assertEquals($permissions[$key]->toArray(), $attrs);
+            } else
+            {
+                $this->assertEquals($permissions[$key], $attrs);
+            }
+        }
+    }
+
+    public function testCreatingModelWithMultipleRelationTypes()
+    {
+        $post = ['title' => 'Trip to Bedlam', 'body' => 'It was wonderful! Check the embedded media'];
+
+        $photos = [
+            [
+                'url'      => 'http://somewere.in.bedlam.net',
+                'caption'  => 'Gunatanamo',
+                'metadata' => '...'
+            ],
+            [
+                'url'      => 'http://another-place.in.bedlam.net',
+                'caption'  => 'Gunatanamo',
+                'metadata' => '...'
+            ],
+        ];
+
+        $videos = [
+            [
+                'title'       => 'Fun at the borders',
+                'description' => 'Once upon a time...',
+                'stream_url'  => 'http://stream.that.shit.io',
+                'thumbnail'   => 'http://sneak.peek.io'
+            ]
+        ];
+
+        $post = Post::createWith($post, compact('photos', 'videos'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+        $this->assertTrue($post->exists);
+        $this->assertGreaterThanOrEqual(0, $post->id);
+
+        foreach ($post->photos as $key => $photo)
+        {
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', $photo);
+            $this->assertGreaterThan(0, $photo->id);
+            $attrs = $photo->toArray();
+            unset($attrs['id']);
+            $this->assertEquals($photos[$key], $attrs);
+        }
+
+        $video = $post->videos->first();
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Video', $video);
+        $attrs = $video->toArray();
+        unset($attrs['id']);
+        $this->assertEquals($videos[0], $attrs);
+    }
+
 }
 
 class User extends Model {
@@ -141,11 +223,28 @@ class Role extends Model {
 
     protected $label = 'Role';
 
-    protected $fillable = ['alias'];
+    protected $fillable = ['title', 'alias'];
 
     public function user()
     {
         return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'PERMITTED');
+    }
+
+    public function permissions()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Permission', 'ALLOWS');
+    }
+}
+
+class Permission extends Model {
+
+    protected $label = 'Permission';
+
+    protected $fillable = ['title', 'alias'];
+
+    public function roles()
+    {
+        return $this->belongsToMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', 'ALLOWS');
     }
 }
 
@@ -155,10 +254,34 @@ class Post extends Model {
 
     protected $fillable = ['title', 'body'];
 
+    public function photos()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', 'PHOTO');
+    }
+
+    public function videos()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Video', 'VIDEO');
+    }
+
     public function comments()
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Comment', 'COMMENT');
     }
+}
+
+class Photo extends Model {
+
+    protected $label = 'Photo';
+
+    protected $fillable = ['url', 'caption', 'metadata'];
+}
+
+class Video extends Model {
+
+    protected $label = 'Video';
+
+    protected $fillable = ['title', 'description', 'stream_url', 'thumbnail'];
 }
 
 class Comment extends Model {

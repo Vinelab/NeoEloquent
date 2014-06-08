@@ -205,25 +205,26 @@ class CypherGrammar extends Grammar {
      * @param  string $direction     Where is it going?
      * @return string
      */
-    public function craftRelation($parentNode, $relationLabel, $relatedNode, $relatedLabels, $direction)
+    public function craftRelation($parentNode, $relationLabel, $relatedNode, $relatedLabels, $direction, $bare = false)
     {
         switch($direction)
         {
             case 'out':
             default:
-                $relation = '(%s)-[%s]->(%s)';
+                $relation = '(%s)-[%s]->%s';
             break;
 
             case 'in':
-                $relation = '(%s)<-[%s]-(%s)';
+                $relation = '(%s)<-[%s]-%s';
             break;
 
             case 'in-out':
-                $relation = '(%s)<-[%s]->(%s)';
+                $relation = '(%s)<-[%s]->%s';
             break;
         }
 
-        return sprintf($relation, $parentNode, $relationLabel, $relatedNode.$relatedLabels);
+        return ($bare) ? sprintf($relation, $parentNode, $relationLabel, $relatedNode)
+            : sprintf($relation, $parentNode, $relationLabel, '('. $relatedNode.$relatedLabels .')');
     }
 
 
@@ -477,5 +478,56 @@ class CypherGrammar extends Grammar {
         }, $values);
         // We need to build a list of parameter place-holders of values that are bound to the query.
         return "CREATE ". $this->prepareEntities($values);
+    }
+
+    /**
+     * Compile a query that creates multiple nodes of multiple model types related all together.
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder $query
+     * @param  array  $create
+     * @return string
+     */
+    public function compileCreateWith(Builder $query, $create)
+    {
+        $model   = $create['model'];
+        $related = $create['related'];
+
+        // Prepare the parent model as a query entity with an identifier to be
+        // later used when relating with the rest of the models, something like:
+        // (post:`Post` {title: '..', body: '...'})
+        $entity = $this->prepareEntity([
+            'label'    => $model['label'],
+            'bindings' => $model['attributes']
+        ], $identifier = true);
+
+        $parentNode = $this->modelAsNode($model['label']);
+
+        // Prepare the related models as entities for the query.
+        $relations = [];
+        foreach ($related as $with)
+        {
+            $label  = $with['label'];
+            $values = $with['values'];
+
+            if ( ! is_array($values)) $values = (array) $values;
+
+            // We need to craft a relationship between the parent model's node identifier
+            // and every single relationship record so that we get something like this:
+            // (post)-[:PHOTO]->(:Photo {url: '', caption: '..'})
+            foreach ($values as $bindings)
+            {
+                $relation = $with['relation'];
+                $relations[] = $this->craftRelation($parentNode,
+                                            ':'. $relation['type'],
+                                            $this->prepareEntity(compact('label', 'bindings')),
+                                            $this->modelAsNode($label),
+                                            $relation['direction'],
+                                            $bare = true);
+            }
+        }
+
+        // Return the Cypher representation of the query that would look something like:
+        // CREATE (post:`Post` {title: '..', body: '..'}), (post)-[:PHOTO]->(:`Photo` {url: ''});
+        return 'CREATE '. $entity .', '. implode(', ', $relations) .' RETURN '. $parentNode;
     }
 }

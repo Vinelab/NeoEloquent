@@ -463,6 +463,14 @@ abstract class Model extends IlluminateModel {
         }
     }
 
+    public static function createWith(array $attributes, array $relations)
+    {
+        $query = static::query();
+
+        $instance = new static($attributes);
+
+        return $query->createWith($attributes, $relations);
+    }
     /**
      * Get the polymorphic relationship columns.
      *

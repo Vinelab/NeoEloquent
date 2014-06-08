@@ -315,6 +315,20 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     /**
+     * Create a new node with related nodes with one database hit.
+     *
+     * @param  array  $model
+     * @param  array  $related
+     * @return \Vinelab\NeoEloquent\Eloquent\Model
+     */
+    public function createWith(array $model, array $related)
+    {
+        $cypher = $this->grammar->compileCreateWith($this, compact('model', 'related'));
+
+        return $this->connection->statement($cypher, [], $result = true);
+    }
+
+    /**
 	 * Execute the query as a fresh "select" statement.
 	 *
 	 * @param  array  $columns
