@@ -308,6 +308,11 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
         return $this->relation;
     }
 
+    public function getRelationType()
+    {
+        return $this->foreignKey;
+    }
+
     /**
      * Get the localKey.
      *
