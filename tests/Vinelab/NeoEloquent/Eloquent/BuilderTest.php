@@ -386,7 +386,7 @@ class EloquentBuilderTest extends TestCase {
 
     public function testFindingById()
     {
-        $resultSet = M::mock('Everyman\Query\ResultSet');
+        $resultSet = M::mock('Everyman\Neo4j\Query\ResultSet');
         $resultSet->shouldReceive('getColumns')->withNoArgs()->andReturn(array('id', 'name', 'age'));
 
         $this->query->shouldReceive('where')->once()->with('id(n)', '=', 1);
@@ -394,20 +394,20 @@ class EloquentBuilderTest extends TestCase {
         $this->query->shouldReceive('take')->once()->with(1)->andReturn($this->query);
         $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet);
 
-        $resultSet->shouldReceive('valid')->once()->andReturn(true);
+        $resultSet->shouldReceive('valid')->once()->andReturn(false);
 
         $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
         $this->model->shouldReceive('getTable')->once()->andReturn('Model');
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
-        $collection = new \Illuminate\Support\Collection(array(M::mock('Everyman\Query\ResultSet')));
+        $collection = new \Illuminate\Support\Collection(array(M::mock('Everyman\Neo4j\Query\ResultSet')));
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection);
 
         $this->builder->setModel($this->model);
 
         $result = $this->builder->find(1);
 
-        $this->assertInstanceOf('Everyman\Query\ResultSet', $result);
+        $this->assertInstanceOf('Everyman\Neo4j\Query\ResultSet', $result);
     }
 
     public function testFindingByIdWithProperties()
