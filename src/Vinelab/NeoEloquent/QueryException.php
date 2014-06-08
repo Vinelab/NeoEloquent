@@ -4,7 +4,7 @@ use Everyman\Neo4j\Exception as Neo4jException;
 
 class QueryException extends Neo4jException {
 
-    public function __construct($query, $bindings, $exception)
+    public function __construct($query, $bindings = array(), $exception = null)
     {
         // Let's handle Neo4j exceptions into the QueryException so that we extract
         // relevant info from it and send a helpful decent exception.
