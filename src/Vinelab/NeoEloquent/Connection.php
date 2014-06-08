@@ -177,11 +177,11 @@ class Connection extends IlluminateConnection {
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return bool
+     * @return bool|\Everyman\Neo4j\Query\ResultSet When $result is set to true.
      */
-    public function statement($query, $bindings = array())
+    public function statement($query, $bindings = array(), $rawResults = false)
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings)
+        return $this->run($query, $bindings, function($me, $query, $bindings) use($rawResults)
         {
             if ($me->pretending()) return true;
 
@@ -189,7 +189,7 @@ class Connection extends IlluminateConnection {
 
             $result = $statement->getResultSet();
 
-            return $result instanceof ResultSet;
+            return ($rawResults === true) ? $result : $result instanceof ResultSet;
         });
     }
 
