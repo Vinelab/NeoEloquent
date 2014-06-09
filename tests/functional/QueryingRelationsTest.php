@@ -221,16 +221,35 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals($videos[0], $attrs);
     }
 
-    public function testCreatingModelWithingleInverseRelation()
+    public function testCreatingModelWithSingleInverseRelation()
     {
-        $account = Account::createWith(['guid' => 'globalid'], ['user' => ['name' => 'Some Name']]);
-        var_dump(get_class($account));
+        $user = ['name' => 'Some Name'];
+        $account = Account::createWith(['guid' => 'globalid'], compact('user'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Account', $account);
+        $this->assertTrue($account->exists);
+        $this->assertGreaterThanOrEqual(0, $account->id);
+
+        $related = $account->user;
+        $attrs = $related->toArray();
+        unset($attrs['id']);
+        $this->assertEquals($attrs, $user);
     }
 
-    // public function testCreatingModelWithMultiInverseRelations()
-    // {
+    public function testCreatingModelWithMultiInverseRelations()
+    {
+        $users = new User(['name' => 'safastak']);
+        $role = Role::createWith(['alias'=>'admin'], compact('users'));
 
-    // }
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $role);
+        $this->assertTrue($role->exists);
+        $this->assertGreaterThanOrEqual(0, $role->id);
+
+        $related = $role->users->first();
+        $attrs = $related->toArray();
+        unset($attrs['id']);
+        $this->assertEquals($attrs, $users->toArray());
+    }
 
 }
 
@@ -269,9 +288,9 @@ class Role extends Model {
 
     protected $fillable = ['title', 'alias'];
 
-    public function user()
+    public function users()
     {
-        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'PERMITTED');
+        return $this->belongsToMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'PERMITTED');
     }
 
     public function permissions()

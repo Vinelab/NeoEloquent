@@ -725,7 +725,7 @@ $edge = $location->user()->edge($location->user);
 Here you will find NeoEloquent-specific methods and implementations that with the
 wonderful Eloquent methods would make working with Graph and Neo4j a blast!
 
-### CreateWith($attributes, $relations)
+### CreateWith
 
 This method will "kind of" fill the gap between relational and document databases,
 it allows the creation of multiple related models with one database hit.
@@ -806,7 +806,7 @@ class User extends NeoEloquent {
     }
 }
 
-User::createWith(['name' => 'foo'], ['account' => ['guid' => 'bar', 'email' => 'some@mail.net']])
+User::createWith(['name' => 'foo'], ['account' => ['guid' => 'bar', 'email' => 'some@mail.net']]);
 ```
 
 ## Avoid
@@ -833,7 +833,7 @@ make sure it's flat. *Example:*
 User::create(['name' => 'Some Name', 'location' => ['lat' => 123, 'lng'=> -123 ] ]);
 ```
 
-Check out [Relationships](#relationships) and [Edges](#edges) on how you can achieve this in a Graph way.
+Check out the [createWith()](#createwith) method on how you can achieve this in a Graph way.
 
 ## Tests
 

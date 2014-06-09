@@ -689,10 +689,10 @@ class Builder extends IlluminateBuilder {
             // Bring the model from the relationship.
             $relatedModel = $relationship->getRelated();
 
-            // In the case of an associative array it means that this is probably
-            // a One-To-One relationship or the dev decided not to add multiple records
-            // as relations so we'll wrap it up with an array.
-            if (is_assoc_array($values)) $values = [$values];
+            // In the case of an associative array or a Model instance it means that
+            // this is probably a One-To-One relationship or the dev decided not to add
+            // multiple records as relations so we'll wrap it up in an array.
+            if (is_assoc_array($values) or $values instanceof Model) $values = [$values];
 
             // We need to get the attributes of each $value from $values into
             // an instance of the related model so that we make sure that it goes
