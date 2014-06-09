@@ -12,7 +12,7 @@ Neo4j Graph Eloquent Driver for Laravel 4
  - [Models](#models)
  - [Relationships](#relationships)
  - [Edges](#edges)
- - [Only in Neo](#onlyinneo)
+ - [Only in Neo](#only-in-neo)
  - [Things To Avoid](#avoid)
 
 ## Installation
@@ -158,7 +158,7 @@ $relation = $user->phone()->save($phone);
 
 The Cypher performed by this statement will be as follows:
 
-```sql
+```
 MATCH (user:`User`)
 WHERE id(user) = 1
 CREATE (user)-[:PHONE]->(phone:`Phone` {code: 961, number: '98765432', created_at: 7543788, updated_at: 7543788})
@@ -200,7 +200,7 @@ $relation->save();
 
 The Cypher performed by this statement will be as follows:
 
-```sql
+```
 MATCH (account:`Account`), (user:`User`)
 WHERE id(account) = 1986 AND id(user) = 9862
 MERGE (account)<-[rel_user_account:ACCOUNT]-(user)
@@ -209,7 +209,7 @@ RETURN rel_user_account;
 
 The Cypher performed by this statement will be as follows:
 
-```sql
+```
 MATCH (phone:Phone) (phone)<-[:PHONE]-(user:User)
 WHERE id(phone) = 1006
 RETURN user;
@@ -241,7 +241,7 @@ Similar to `One-To-One` relationships the returned value from a `save()` stateme
 
 The Cypher performed by this statement will be as follows:
 
-```sql
+```
 MATCH (user:`User`)
 WHERE id(user) = 1
 CREATE (user)-[rel_user_post:POSTED]->(post:`Post` {title: 'The Title', body: 'Hot Body', created_at: '15-05-2014', updated_at: '15-05-2014'})
@@ -298,7 +298,7 @@ $jd->followers()->attach(1); // 1 being the id of $mc ($mc->getKey())
 
 The Cypher performed by this statement will be as follows:
 
-```sql
+```
 MATCH (user:`User`), (followers:`User`)
 WHERE id(user) = 1012 AND id(followers) = 1013
 CREATE (user)-[:FOLLOWS]->(followers)
@@ -313,7 +313,7 @@ $mc->followers()->save($jd);
 
 The Cypher performed by this statement will be as follows:
 
-```sql
+```
 MATCH (user:`User`), (followers:`User`)
 WHERE id(user) = 1013 AND id(followers) = 1012
 CREATE (user)-[rel_user_followers:FOLLOWS]->(followers)
@@ -328,7 +328,7 @@ $followers = $jd->followers;
 
 The Cypher performed by this statement will be as follows:
 
-```sql
+```
 MATCH (user:`User`), (followers:`User`), (user)-[rel_user_followers:FOLLOWS]-(followers)
 WHERE id(user) = 1012
 RETURN rel_follows;
@@ -557,7 +557,7 @@ foreach (Book::with('author')->get() as $book)
 
 Only two Cypher queries will be run in the loop above:
 
-```sql
+```
 MATCH (book:`Book`) RETURN *;
 
 MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
@@ -718,6 +718,81 @@ out the related side of the edge based on the relation function name, in this ca
 ```php
 $location = Location::find(1892);
 $edge = $location->user()->edge($location->user);
+```
+
+## Only in Neo
+
+Here you will find NeoEloquent-specific methods and implementations that with the
+wonderful Eloquent methods would make working with Graph and Neo4j a blast!
+
+### CreateWith($attributes, $relations)
+
+This method will "kind of" fill the gap between relational and document databases,
+it allows the creation of multiple related models with one database hit.
+
+Here's an example of creating a post with attached photos and videos:
+
+```php
+class Post extends NeoEloquent {
+
+    public function photos()
+    {
+        return $this->hasMany('Photo', 'PHOTO');
+    }
+
+    public function videos()
+    {
+        return $this->hasMany('Video', 'VIDEO');
+    }
+}
+```
+
+```php
+
+Post::createWith(['title' => 'the title', 'body' => 'the body'], [
+    'photos' => [
+        [
+            'url'      => 'http://url',
+            'caption'  => '...',
+            'metadata' => '...'
+        ],
+        [
+            'url' => 'http://other.url',
+            'caption' => 'the bay',
+            'metadata' => '...'
+        ]
+    ],
+
+    'videos' => [
+        'title' => 'Boats passing us by',
+        'description' => '...'
+    ]
+]);
+```
+
+> The keys `photos` and `videos` must be the same as the relation method names in the
+`Post` model.
+
+The Cypher query performed by the example above is:
+
+```
+CREATE (post:`Post` {title: 'the title', body: 'the body'}),
+(post)-[:PHOTO]->(:`Photo` {url: 'http://url', caption: '...', metadata: '...'}),
+(post)-[:PHOTO]->(:`Photo` {url: 'http://other', caption: 'the bay', metadata: '...'}),
+(post)-[:VIDEO]->(:`Video` {title: 'Boats passing us by', description: '...'});
+```
+
+We will get the nodes created with their relations as such:
+
+![CreateWith](https://googledrive.com/host/0BznzZ2lBbT0cLW9YcjNldlJkcXc/createWith-preview.db.png "CreateWith")
+
+You may also mix models and attributes as relation values but it is not necessary
+since NeoEloquent will pass the provided attributes through the `$fillable`
+filter pipeline:
+
+```php
+$videos = [new Video(['title' => 'foo', 'description' => 'bar'])];
+Post::createWith($info, compact('videos'));
 ```
 
 ## Avoid
