@@ -123,6 +123,22 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals($user->toArray(), $found->toArray());
     }
 
+    public function testCreatingModelWithSingleRelation()
+    {
+        $account = ['guid' => uniqid()];
+        $user = User::createWith(['name' => 'Misteek'], compact('account'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $user);
+        $this->assertTrue($user->exists);
+        $this->assertGreaterThanOrEqual(0, $user->id);
+
+        $related = $user->account;
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Account', $related);
+        $attrs = $related->toArray();
+        unset($attrs['id']);
+        $this->assertEquals($account, $attrs);
+    }
+
     public function testCreatingModelWithRelations()
     {
         // Creating a role with its permissions.
@@ -205,6 +221,17 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals($videos[0], $attrs);
     }
 
+    public function testCreatingModelWithingleInverseRelation()
+    {
+        $account = Account::createWith(['guid' => 'globalid'], ['user' => ['name' => 'Some Name']]);
+        var_dump(get_class($account));
+    }
+
+    // public function testCreatingModelWithMultiInverseRelations()
+    // {
+
+    // }
+
 }
 
 class User extends Model {
@@ -216,6 +243,23 @@ class User extends Model {
     public function roles()
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', 'PERMITTED');
+    }
+
+    public function account()
+    {
+        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Account', 'ACCOUNT');
+    }
+}
+
+class Account extends Model {
+
+    protected $label = 'Account';
+
+    protected $fillable = ['guid'];
+
+    public function user()
+    {
+        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'ACCOUNT');
     }
 }
 

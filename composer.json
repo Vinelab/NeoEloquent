@@ -29,7 +29,10 @@
         ],
         "psr-0": {
             "Vinelab\\NeoEloquent\\": "src/"
-        }
+        },
+        "files": [
+            "src/Vinelab/NeoEloquent/helpers.php"
+        ]
     },
     "minimum-stability": "stable"
 }

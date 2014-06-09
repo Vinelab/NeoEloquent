@@ -709,7 +709,7 @@ $location = Location::find(1892);
 $edge = $location->user()->edge();
 ```
 
-You may also specify the other side of the edge.
+You may also specify the model at the other side of the edge.
 
 > Note: By default NeoEloquent will try to pefrorm the `$location->user` internally to figure
 out the related side of the edge based on the relation function name, in this case it's
@@ -791,8 +791,22 @@ since NeoEloquent will pass the provided attributes through the `$fillable`
 filter pipeline:
 
 ```php
-$videos = [new Video(['title' => 'foo', 'description' => 'bar'])];
+$videos = new Video(['title' => 'foo', 'description' => 'bar']);
 Post::createWith($info, compact('videos'));
+```
+
+You may also use a single array of attributes as such:
+
+```php
+class User extends NeoEloquent {
+
+    public function account()
+    {
+        return $this->hasOne('Account');
+    }
+}
+
+User::createWith(['name' => 'foo'], ['account' => ['guid' => 'bar', 'email' => 'some@mail.net']])
 ```
 
 ## Avoid
