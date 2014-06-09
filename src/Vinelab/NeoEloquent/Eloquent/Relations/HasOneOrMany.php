@@ -7,7 +7,7 @@ use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany as IlluminateHasOneOrMany;
 
-abstract class HasOneOrMany extends IlluminateHasOneOrMany {
+abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationInterface {
 
     /**
      * The name of the relationship.
@@ -308,6 +308,12 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany {
         return $this->relation;
     }
 
+    /**
+     * Get the relationship type (label in other words),
+     * [:FOLLOWS] etc.
+     *
+     * @return string
+     */
     public function getRelationType()
     {
         return $this->foreignKey;

@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-abstract class OneRelation extends BelongsTo {
+abstract class OneRelation extends BelongsTo implements RelationInterface {
 
     /**
      * The edge direction for this relationship.
@@ -163,6 +163,26 @@ abstract class OneRelation extends BelongsTo {
         }
 
         return $models;
+    }
+
+    public function getRelationName()
+    {
+        return $this->relation;
+    }
+
+    public function getRelationType()
+    {
+        return $this->foreignKey;
+    }
+
+    public function getParentNode()
+    {
+        return $this->query->getQuery()->modelAsNode($this->parent->getTable());
+    }
+
+    public function getRelatedNode()
+    {
+        return $this->query->getQuery()->modelAsNode($this->related->getTable());
     }
 
 }
