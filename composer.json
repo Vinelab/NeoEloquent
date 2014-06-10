@@ -13,7 +13,7 @@
         "php": ">=5.4.0",
         "illuminate/support": "4.2.*",
         "illuminate/database": "4.2.*",
-        "everyman/neo4jphp": "@dev",
+        "everyman/neo4jphp": "dev-master",
         "nesbot/carbon": "~1.0"
     },
     "require-dev": {
