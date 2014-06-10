@@ -123,6 +123,23 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals($user->toArray(), $found->toArray());
     }
 
+    public function testQueryingParentWithMultipleWhereHas()
+    {
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
+        $account = Account::create(['guid' => uniqid()]);
+
+        $user->roles()->save($role);
+        $user->account()->save($account);
+
+        $found = User::whereHas('roles', function($q) use($role) { $q->where('id', $role->id); })
+            ->whereHas('account', function($q) use($account) { $q->where('id', $account->id); })
+            ->where('id', $user->id)->first();
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found);
+        $this->assertEquals($user->toArray(), $found->toArray());
+    }
+
     public function testCreatingModelWithSingleRelation()
     {
         $account = ['guid' => uniqid()];

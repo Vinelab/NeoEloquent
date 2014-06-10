@@ -590,6 +590,9 @@ class Builder extends IlluminateBuilder {
         $relation = $this->getHasRelationQuery($relation);
 
         $query = $relation->getRelated()->newQuery();
+        // This will make sure that any query we add here will consider the related
+        // model as our reference Node.
+        $this->getQuery()->from = $query->getModel()->getTable();
 
         if ($callback) call_user_func($callback, $query);
 
@@ -644,6 +647,7 @@ class Builder extends IlluminateBuilder {
          */
         $grammar = $this->getQuery()->getGrammar();
         $grammar->setQuery($this->getQuery());
+        $this->getQuery()->from = $this->getModel()->getTable();
 
         return $this;
     }
