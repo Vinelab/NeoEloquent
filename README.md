@@ -852,6 +852,9 @@ Or using the `id` of the model:
 Post::createWith(['title' => '...', 'body' => '...'], ['tags' => 1, 'privacy' => 2]);
 ```
 
+## Changelog
+Check the [Releases](https://github.com/Vinelab/NeoEloquent/releases) for details.
+
 ## Avoid
 
 Here are some constraints and Graph-specific gotchas, a list of features that are either not supported or not recommended.
