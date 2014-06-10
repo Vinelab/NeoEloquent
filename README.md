@@ -849,7 +849,17 @@ And we will get the `Post` related to the existing `Tag` nodes.
 Or using the `id` of the model:
 
 ```php
-Post::createWith(['title' => '...', 'body' => '...'], ['tags' => 1, 'privacy' => 2]);
+Post::createWith(['title' => 'foo', 'body' => 'bar'], ['tags' => 1, 'privacy' => 2]);
+```
+
+The Cypher for the query that attaches records would be:
+
+```
+CREATE (post:`Post` {title: 'foo', 'body' => 'bar'})
+WITH post
+MATCH (tag:`Tag`)
+WHERE id(tag) IN [1, 2]
+CREATE (post)-[:TAG]->(tag);
 ```
 
 ## Changelog
