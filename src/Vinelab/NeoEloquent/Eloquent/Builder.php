@@ -7,6 +7,7 @@ use Vinelab\NeoEloquent\Connection;
 use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
 
 class Builder extends IlluminateBuilder {
@@ -714,10 +715,19 @@ class Builder extends IlluminateBuilder {
                 {
                     $attach[] = $value->getKey();
                 }
+                // Next we will check whether we got a Collection in so that we deal with it
+                // accordingly, which guarantees sending an Eloquent result straight in would work.
+                elseif ($value instanceof Collection)
+                {
+                    $attach = array_merge($attach, $value->lists('id'));
+                }
                 // Or in the case where the attributes are neither an array nor a model instance
                 // then this is assumed to be the model Id that the dev means to attach and since
                 // Neo4j node Ids are always an int then we take that as a value.
-                elseif ( ! is_array($value) and ! $value instanceof Model) $attach[] = intval($value);
+                elseif ( ! is_array($value) and ! $value instanceof Model)
+                {
+                    $attach[] = intval($value);
+                }
                 // In this case the record is considered to be new to the market so let's create it.
                 else $create[] = $this->prepareForCreation($relatedModel, $value);
             }
