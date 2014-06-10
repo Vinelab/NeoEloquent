@@ -751,7 +751,7 @@ class Builder extends IlluminateBuilder {
         // Reaching here means the dev entered raw attributes (similar to insert())
         // so we'll need to pass the attributes through the model to make sure
         // the fillables are respected as expected by the dev.
-        $instance = new $relatedModel($attributes);
+        $instance = new $class($attributes);
         return $instance->toArray();
     }
 
