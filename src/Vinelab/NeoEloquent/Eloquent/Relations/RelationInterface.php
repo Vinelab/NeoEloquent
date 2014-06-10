@@ -37,4 +37,18 @@ interface RelationInterface {
      * @return string
      */
     public function getRelatedNode();
+
+    /**
+     * Get the localKey.
+     *
+     * @return string
+     */
+    public function getLocalKey();
+
+    /**
+     * Get the parent model's value according to $localKey.
+     *
+     * @return mixed
+     */
+    public function getParentLocalKeyValue();
 }
