@@ -504,10 +504,13 @@ class CypherGrammar extends Grammar {
 
         // Prepare the related models as entities for the query.
         $relations = [];
+        $attachments = [];
         foreach ($related as $with)
         {
-            $label  = $with['label'];
-            $values = $with['values'];
+            $label    = $with['label'];
+            $values   = $with['create'];
+            $attach   = $with['attach'];
+            $relation = $with['relation'];
 
             if ( ! is_array($values)) $values = (array) $values;
 
@@ -516,7 +519,6 @@ class CypherGrammar extends Grammar {
             // (post)-[:PHOTO]->(:Photo {url: '', caption: '..'})
             foreach ($values as $bindings)
             {
-                $relation = $with['relation'];
                 $relations[] = $this->craftRelation($parentNode,
                                             ':'. $relation['type'],
                                             $this->prepareEntity(compact('label', 'bindings')),
@@ -524,10 +526,51 @@ class CypherGrammar extends Grammar {
                                             $relation['direction'],
                                             $bare = true);
             }
+
+            // Set up the query parts that are required to attach two nodes.
+            if ( ! empty($attach))
+            {
+                // Now we deal with our attachments so that we create the conditional
+                // queries for each relation that we need to attach.
+                $node = $this->modelAsNode($label);
+                $nodeLabel = $this->prepareLabels($label);
+
+                // An attachment query is a combination of MATCH, WHERE and CREATE where
+                // we MATCH the nodes that we need to attach, set the conditions
+                // on the records that we need to attach with WHERE and then
+                // CREATE these relationships.
+                $attachments['matches'][] = "({$node}{$nodeLabel})";
+                $attachments['wheres'][]  = "id($node) IN [". implode(', ', $attach) .']';
+                $attachments['relations'][] = $this->craftRelation($parentNode,
+                                                                ':'. $relation['type'],
+                                                                "($node)",
+                                                                $nodeLabel,
+                                                                $relation['direction'],
+                                                                $bare = true);
+            }
         }
 
         // Return the Cypher representation of the query that would look something like:
-        // CREATE (post:`Post` {title: '..', body: '..'}), (post)-[:PHOTO]->(:`Photo` {url: ''});
-        return 'CREATE '. $entity .', '. implode(', ', $relations) .' RETURN '. $parentNode;
+        // CREATE (post:`Post` {title: '..', body: '..'})
+        $cypher = 'CREATE '. $entity;
+        // Then we add the records that we need to create as such:
+        // (post)-[:PHOTO]->(:`Photo` {url: ''}), (post)-[:VIDEO]->(:`Video` {title: '...'})
+        if ( ! empty($relations)) $cypher .= ', '. implode(', ', $relations);
+        // Now we add the attaching Cypher
+        if ( ! empty($attach))
+        {
+            // Bring the parent node along with us to be used in the query further.
+            $cypher .= " WITH $parentNode ";
+            // MATCH the related nodes that we are attaching.
+            $cypher .= ' MATCH '. implode(', ', $attachments['matches']);
+            // Set the WHERE conditions for the heart of the query.
+            $cypher .= ' WHERE '. implode(' AND ', $attachments['wheres']);
+            // CREATE the relationships between matched nodes
+            $cypher .= ' CREATE '. implode(', ', $attachments['relations']);
+        }
+
+        $cypher .= " RETURN $parentNode";
+
+        return $cypher;
     }
 }

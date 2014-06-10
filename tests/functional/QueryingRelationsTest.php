@@ -251,6 +251,73 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals($attrs, $users->toArray());
     }
 
+    public function testCreatingModelWithAttachedRelatedModels()
+    {
+        $tag1 = Tag::create(['title' => 'php']);
+        $tag2 = Tag::create(['title' => 'development']);
+
+        $tags = [$tag1, $tag2];
+        $post = Post::createWith(['title' => '...', 'body' => '...'], compact('tags'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(2, count($related));
+
+        foreach ($related as $key => $tag)
+        {
+            $this->assertEquals($tags[$key], $tag);
+        }
+    }
+
+    public function testCreatingModeWithAttachedModelIds()
+    {
+        $tag1 = Tag::create(['title' => 'php']);
+        $tag2 = Tag::create(['title' => 'development']);
+
+        $tags = [$tag1->getKey(), $tag2->getKey()];
+        $post = Post::createWith(['title' => '...', 'body' => '...'], compact('tags'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(2, count($related));
+
+        foreach ($related as $key => $tag)
+        {
+            $expected = 'tag'. ($key + 1);
+            $this->assertEquals($$expected, $tag);
+        }
+    }
+
+    public function testCreatingModelWithAttachedSingleId()
+    {
+        $tag  = Tag::create(['title' => 'php']);
+        $post = Post::createWith(['title' => '...', 'body' => '...'], ['tags' => $tag->getKey()]);
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(1, count($related));
+        $this->assertEquals($tag, $related->first());
+    }
+
+    public function testCreatingModelWithAttachedSingleModel()
+    {
+        $tag  = Tag::create(['title' => 'php']);
+        $post = Post::createWith(['title' => '...', 'body' => '...'], ['tags' => $tag]);
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(1, count($related));
+        $this->assertEquals($tag, $related->first());
+    }
+
 }
 
 class User extends Model {
@@ -331,6 +398,18 @@ class Post extends Model {
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Comment', 'COMMENT');
     }
+
+    public function tags()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Tag', 'TAG');
+    }
+}
+
+class Tag extends Model {
+
+    protected $label = 'Tag';
+
+    protected $fillable = ['title'];
 }
 
 class Photo extends Model {

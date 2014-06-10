@@ -689,37 +689,70 @@ class Builder extends IlluminateBuilder {
             // Bring the model from the relationship.
             $relatedModel = $relationship->getRelated();
 
-            // In the case of an associative array or a Model instance it means that
+            // We will first check to see what the dev have passed as values
+            // so that we make sure that we have an array moving forward
+            // In the case of a model Id or an associative array or a Model instance it means that
             // this is probably a One-To-One relationship or the dev decided not to add
             // multiple records as relations so we'll wrap it up in an array.
-            if (is_assoc_array($values) or $values instanceof Model) $values = [$values];
-
-            // We need to get the attributes of each $value from $values into
-            // an instance of the related model so that we make sure that it goes
-            // through the $fillable filter pipeline.
-            $values = array_map(function($attributes) use($relatedModel)
-            {
-                // This adds support for having model instances mixed with values
-                if ($attributes instanceof Model) return $attributes->toArray();
-                // Reaching here means the dev entered raw attributes (similar to insert())
-                // so we'll need to pass the attributes through the model to make sure
-                // the fillables are respected as expected by the dev.
-                $instance = new $relatedModel($attributes);
-                return $instance->toArray();
-            }, $values);
+            if ( ! is_array($values) or is_assoc_array($values) or $values instanceof Model) $values = [$values];
 
             $label     = $relationship->getRelated()->getTable();
             $direction = $relationship->getEdgeDirection();
             $type      = $relationship->getRelationType();
 
+            // Hold the models that we need to attach
+            $attach = [];
+            // Hold the models that we need to create
+            $create = [];
+            // Separate the models that needs to be attached from the ones that needs
+            // to be created.
+            foreach ($values as $value)
+            {
+                // If this is a Model then the $exists property will indicate what we need
+                // so we'll add its id to be attached.
+                if ($value instanceof Model and $value->exists === true)
+                {
+                    $attach[] = $value->getKey();
+                }
+                // Or in the case where the attributes are neither an array nor a model instance
+                // then this is assumed to be the model Id that the dev means to attach and since
+                // Neo4j node Ids are always an int then we take that as a value.
+                elseif ( ! is_array($value) and ! $value instanceof Model) $attach[] = intval($value);
+                // In this case the record is considered to be new to the market so let's create it.
+                else $create[] = $this->prepareForCreation($relatedModel, $value);
+            }
+
             $relation  = compact('name', 'type', 'direction');
-            $related[] = compact('relation', 'label', 'values');
+            $related[] = compact('relation', 'label', 'create', 'attach');
         }
 
         $result = $this->query->createWith($model, $related);
 
        $models = $this->resultsToModels($this->model->getConnectionName(), $result);
        return ( ! empty($models)) ? reset($models) : null;
+    }
+
+    /**
+     * Prepare model's attributes or instance for creation in a query.
+     *
+     * @param  string $class
+     * @param  mixed $attributes
+     * @return array
+     */
+    protected function prepareForCreation($class, $attributes)
+    {
+        // We need to get the attributes of each $value from $values into
+        // an instance of the related model so that we make sure that it goes
+        // through the $fillable filter pipeline.
+
+        // This adds support for having model instances mixed with values
+        if ($attributes instanceof Model) return $attributes->toArray();
+
+        // Reaching here means the dev entered raw attributes (similar to insert())
+        // so we'll need to pass the attributes through the model to make sure
+        // the fillables are respected as expected by the dev.
+        $instance = new $relatedModel($attributes);
+        return $instance->toArray();
     }
 
     /**

@@ -565,6 +565,12 @@ MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2,
 
 ## Edges
 
+- [EdgeIn](#edgein)
+- [EdgeOut](#edgeout)
+- [HyperEdge](#hyperedge)
+- [Working with Edges](#working-with-edges)
+- [Edge Attributes](#edge-attributes)
+
 ### Introduction
 
 Due to the fact that relationships in Graph are much different than other database types so
@@ -722,13 +728,20 @@ $edge = $location->user()->edge($location->user);
 
 ## Only in Neo
 
+- [CreateWith](#createwith)
+
 Here you will find NeoEloquent-specific methods and implementations that with the
 wonderful Eloquent methods would make working with Graph and Neo4j a blast!
 
 ### CreateWith
 
+- [Creating Relations](#creating-new-records-and-relations)
+- [Attaching Relations](#attaching-existing-records-as-relations)
+
 This method will "kind of" fill the gap between relational and document databases,
 it allows the creation of multiple related models with one database hit.
+
+#### Creating New Records and Relations
 
 Here's an example of creating a post with attached photos and videos:
 
@@ -807,6 +820,36 @@ class User extends NeoEloquent {
 }
 
 User::createWith(['name' => 'foo'], ['account' => ['guid' => 'bar', 'email' => 'some@mail.net']]);
+```
+
+#### Attaching Existing Records as Relations
+
+`createWith` is intelligent enough to know the difference when you pass an existing model,
+a model Id or new records that you need to create which allows mixing new records with existing ones.
+
+```php
+class Post extends NeoEloquent {
+
+    public function tags()
+    {
+        return $this->hasMany('Tag', 'TAG');
+    }
+}
+```
+
+```php
+$tag1 = Tag::create(['title' => 'php']);
+$tag2 = Tag::create(['title' => 'dev']);
+
+$post = Post::createWith(['title' => 'foo', 'body' => 'bar'], ['tags' => [$tag1, $tag2]]);
+```
+
+And we will get the `Post` related to the existing `Tag` nodes.
+
+Or using the `id` of the model:
+
+```php
+Post::createWith(['title' => '...', 'body' => '...'], ['tags' => 1, 'privacy' => 2]);
 ```
 
 ## Avoid
