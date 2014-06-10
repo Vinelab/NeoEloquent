@@ -755,13 +755,22 @@ class Builder extends IlluminateBuilder {
         // an instance of the related model so that we make sure that it goes
         // through the $fillable filter pipeline.
 
-        // This adds support for having model instances mixed with values
-        if ($attributes instanceof Model) return $attributes->toArray();
-
+        // This adds support for having model instances mixed with values, so whenever
+        // we encounter a Model we take it as our instance
+        if ($attributes instanceof Model)
+        {
+            $instance = $attributes;
+        }
         // Reaching here means the dev entered raw attributes (similar to insert())
         // so we'll need to pass the attributes through the model to make sure
         // the fillables are respected as expected by the dev.
-        $instance = new $class($attributes);
+        else
+        {
+            $instance = new $class($attributes);
+        }
+        // Add timestamps to model by touching it.
+        $instance->touch();
+
         return $instance->toArray();
     }
 

@@ -134,8 +134,13 @@ class QueryingRelationsTest extends TestCase {
 
         $related = $user->account;
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Account', $related);
+        $this->assertNotNull($related->created_at);
+        $this->assertNotNull($related->updated_at);
+
         $attrs = $related->toArray();
         unset($attrs['id']);
+        unset($attrs['created_at']);
+        unset($attrs['updated_at']);
         $this->assertEquals($account, $attrs);
     }
 
@@ -161,11 +166,20 @@ class QueryingRelationsTest extends TestCase {
         {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Permission', $permission);
             $this->assertGreaterThan(0, $permission->id);
+            $this->assertNotNull($permission->created_at);
+            $this->assertNotNull($permission->updated_at);
             $attrs = $permission->toArray();
             unset($attrs['id']);
+            unset($attrs['created_at']);
+            unset($attrs['updated_at']);
             if ($permissions[$key] instanceof Permission)
             {
-                $this->assertEquals($permissions[$key]->toArray(), $attrs);
+                $permission = $permissions[$key];
+                $permission = $permission->toArray();
+                unset($permission['id']);
+                unset($permission['created_at']);
+                unset($permission['updated_at']);
+                $this->assertEquals($permission, $attrs);
             } else
             {
                 $this->assertEquals($permissions[$key], $attrs);
@@ -209,15 +223,23 @@ class QueryingRelationsTest extends TestCase {
         {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', $photo);
             $this->assertGreaterThan(0, $photo->id);
+            $this->assertNotNull($photo->created_at);
+            $this->assertNotNull($photo->updated_at);
             $attrs = $photo->toArray();
             unset($attrs['id']);
+            unset($attrs['created_at']);
+            unset($attrs['updated_at']);
             $this->assertEquals($photos[$key], $attrs);
         }
 
         $video = $post->videos->first();
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Video', $video);
+        $this->assertNotNull($video->created_at);
+        $this->assertNotNull($video->updated_at);
         $attrs = $video->toArray();
         unset($attrs['id']);
+        unset($attrs['created_at']);
+        unset($attrs['updated_at']);
         $this->assertEquals($videos[0], $attrs);
     }
 
@@ -231,8 +253,12 @@ class QueryingRelationsTest extends TestCase {
         $this->assertGreaterThanOrEqual(0, $account->id);
 
         $related = $account->user;
+        $this->assertNotNull($related->created_at);
+        $this->assertNotNull($related->updated_at);
         $attrs = $related->toArray();
         unset($attrs['id']);
+        unset($attrs['created_at']);
+        unset($attrs['updated_at']);
         $this->assertEquals($attrs, $user);
     }
 
@@ -246,9 +272,17 @@ class QueryingRelationsTest extends TestCase {
         $this->assertGreaterThanOrEqual(0, $role->id);
 
         $related = $role->users->first();
+        $this->assertNotNull($related->created_at);
+        $this->assertNotNull($related->updated_at);
         $attrs = $related->toArray();
         unset($attrs['id']);
-        $this->assertEquals($attrs, $users->toArray());
+        unset($attrs['created_at']);
+        unset($attrs['updated_at']);
+        $usersArray = $users->toArray();
+        unset($usersArray['id']);
+        unset($usersArray['created_at']);
+        unset($usersArray['updated_at']);
+        $this->assertEquals($attrs, $usersArray);
     }
 
     public function testCreatingModelWithAttachedRelatedModels()
@@ -316,6 +350,29 @@ class QueryingRelationsTest extends TestCase {
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
         $this->assertEquals(1, count($related));
         $this->assertEquals($tag, $related->first());
+    }
+
+    public function testCreatingModelWithMixedRelationsAndPassingCollection()
+    {
+        $tag = Tag::create(['title' => 'php']);
+        $tags = [
+                $tag,
+                ['title' => 'developer'],
+                new Tag(['title' => 'laravel'])
+        ];
+
+        $post = Post::createWith(['title' => 'foo', 'body' => 'bar'], compact('tags'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(3, count($related));
+
+        $tags = Tag::all();
+
+        $another = Post::createWith(['title' => 'foo', 'body' => 'bar'], compact('tags'));
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $another);
+        $this->assertEquals(3, count($related));
     }
 
 }
