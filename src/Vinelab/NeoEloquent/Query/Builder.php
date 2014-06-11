@@ -242,6 +242,92 @@ class Builder extends IlluminateQueryBuilder {
 		return $this;
 	}
 
+    /**
+     * Add a "where in" clause to the query.
+     *
+     * @param  string  $column
+     * @param  mixed   $values
+     * @param  string  $boolean
+     * @param  bool    $not
+     * @return \Illuminate\Database\Query\Builder|static
+     */
+    public function whereIn($column, $values, $boolean = 'and', $not = false)
+    {
+        $type = $not ? 'NotIn' : 'In';
+
+        // If the value of the where in clause is actually a Closure, we will assume that
+        // the developer is using a full sub-select for this "in" statement, and will
+        // execute those Closures, then we can re-construct the entire sub-selects.
+        if ($values instanceof Closure)
+        {
+            return $this->whereInSub($column, $values, $boolean, $not);
+        }
+
+        $property = $column;
+
+        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+
+        $this->wheres[] = compact('type', 'column', 'values', 'boolean');
+
+        $property = $this->wrap($property);
+
+        $this->addBinding([$property => $values], 'where');
+
+        return $this;
+    }
+
+    /**
+     * Add a where between statement to the query.
+     *
+     * @param  string  $column
+     * @param  array   $values
+     * @param  string  $boolean
+     * @param  bool  $not
+     * @return \Illuminate\Database\Query\Builder|static
+     */
+    public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+    {
+        $type = 'between';
+
+        $property = $column;
+
+        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+
+        $this->wheres[] = compact('column', 'type', 'boolean', 'not');
+
+        $this->addBinding([$property => $values], 'where');
+
+        return $this;
+    }
+
+    /**
+     * Add a "where null" clause to the query.
+     *
+     * @param  string  $column
+     * @param  string  $boolean
+     * @param  bool    $not
+     * @return \Illuminate\Database\Query\Builder|static
+     */
+    public function whereNull($column, $boolean = 'and', $not = false)
+    {
+        $type = $not ? 'NotNull' : 'Null';
+
+        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+
+        $this->wheres[] = compact('type', 'column', 'boolean');
+
+        return $this;
+    }
+
+    /**
+     * Add a WHERE statement with carried identifier to the query.
+     *
+     * @param  string $column
+     * @param  string $operator
+     * @param  string $value
+     * @param  string $boolean
+     * @return \Illuminate\Database\Query\Builder|static
+     */
     public function whereCarried($column, $operator = null, $value = null, $boolean = 'and')
     {
         $type = 'Carried';
