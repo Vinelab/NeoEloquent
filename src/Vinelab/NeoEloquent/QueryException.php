@@ -36,6 +36,8 @@ class QueryException extends Neo4jException {
     protected function formatMessage(Neo4jException $exception)
     {
         $data = $exception->getData();
-        return $data['exception'] .': '. $data['message'];
+        $exceptionName = isset($data['exception']) ? $data['exception'] .': ' : '';
+        $message = isset($data['message']) ? $data['message'] : $exception->getMessage();
+        return $exceptionName.$message;
     }
 }
