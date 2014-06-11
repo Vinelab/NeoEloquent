@@ -772,9 +772,10 @@ class Builder extends IlluminateBuilder {
         {
             $instance = new $class($attributes);
         }
-        // Add timestamps to model by touching it.
-        $instance->touch();
-
+        // Update timestamps on the instance, this will only affect newly
+        // created models by adding timestamps to them, otherwise it has no effect
+        // on existing models.
+        if ($instance->usesTimestamps()) $instance->addTimestamps();
         return $instance->toArray();
     }
 

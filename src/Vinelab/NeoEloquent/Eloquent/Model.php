@@ -497,4 +497,9 @@ abstract class Model extends IlluminateModel {
     {
         return $this->getKeyName();
     }
+
+    public function addTimestamps()
+    {
+        $this->updateTimestamps();
+    }
 }
