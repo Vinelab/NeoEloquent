@@ -288,5 +288,81 @@ class HasManyRelationTest extends TestCase {
         }
     }
 
+    public function testSyncingModelIds()
+    {
+        $author = Author::create(['name' => 'George R.R. Martin']);
+        $bk     = Book::create(['title' => 'foo']);
+        $got    = Book::create(['title' => 'A Game of Thrones', 'pages' => '704', 'release_date' => 'August 1996']);
+        $cok    = Book::create(['title' => 'A Clash of Kings', 'pages' => '768', 'release_date' => 'February 1999']);
+
+        $author->books()->attach($bk);
+
+        $author->books()->sync([$got->id, $cok->id]);
+
+        $edges = $author->books()->edges();
+
+        $edgesIds = array_map(function($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
+
+        $this->assertTrue(in_array($got->id, $edgesIds));
+        $this->assertTrue(in_array($cok->id, $edgesIds));
+        $this->assertFalse(in_array($bk->id, $edgesIds));
+    }
+
+    public function testSyncingWithIdsUpdatesModels()
+    {
+        $author = Author::create(['name' => 'George R.R. Martin']);
+        $got    = Book::create(['title' => 'A Game of Thrones', 'pages' => '704', 'release_date' => 'August 1996']);
+        $cok    = Book::create(['title' => 'A Clash of Kings', 'pages' => '768', 'release_date' => 'February 1999']);
+        $sos    = Book::create(['title' => 'A Storm of Swords', 'pages' => 992, 'release_date' => 'November 2000']);
+
+        $author->books()->attach($got);
+
+        $author->books()->sync([$got->id, $cok->id, $sos->id]);
+
+        $edges = $author->books()->edges();
+
+        $edgesIds = array_map(function($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
+
+        $this->assertTrue(in_array($got->id, $edgesIds));
+        $this->assertTrue(in_array($cok->id, $edgesIds));
+        $this->assertTrue(in_array($sos->id, $edgesIds));
+    }
+
+    public function testSyncingWithAttributes()
+    {
+        $author = Author::create(['name' => 'George R.R. Martin']);
+        $got    = Book::create(['title' => 'A Game of Thrones', 'pages' => '704', 'release_date' => 'August 1996']);
+        $cok    = Book::create(['title' => 'A Clash of Kings', 'pages' => '768', 'release_date' => 'February 1999']);
+        $sos    = Book::create(['title' => 'A Storm of Swords', 'pages' => 992, 'release_date' => 'November 2000']);
+
+        $author->books()->attach($got);
+
+        $author->books()->sync([
+            $got->id => ['series' => 'Game'],
+            $cok->id => ['series' => 'Clash'],
+            $sos->id => ['series' => 'Storm']
+        ]);
+
+        $edges = $author->books()->edges();
+
+        $edgesIds = array_map(function($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
+
+        $count = array_count_values((array) $got->id);
+
+        $this->assertEquals(1, $count[$got->id]);
+        $this->assertTrue(in_array($cok->id, $edgesIds));
+        $this->assertTrue(in_array($sos->id, $edgesIds));
+        $this->assertTrue(in_array($got->id, $edgesIds));
+
+        $expectedEdgesTypes = array('Game', 'Clash', 'Storm');
+
+        foreach ($edges as $key => $edge)
+        {
+            $attributes = $edge->toArray();
+            $this->assertArrayHasKey('series', $attributes);
+            $this->assertEquals($expectedEdgesTypes[$key], $edge->series);
+            $edge->delete();
+        }
+    }
 
 }
