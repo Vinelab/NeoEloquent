@@ -230,4 +230,14 @@ class SimpleCRUDTest extends TestCase {
         $this->assertFalse($g->exists);
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
     }
+
+    public function testGettingModelCount()
+    {
+        $count = WizDel::count();
+        $this->assertEquals(0, $count);
+
+        WizDel::create([]);
+        $countAfter = WizDel::count();
+        $this->assertEquals(1, $countAfter);
+    }
 }
