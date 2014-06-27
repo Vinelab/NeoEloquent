@@ -3,6 +3,7 @@
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Batch;
 use Vinelab\NeoEloquent\Connection;
+use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Illuminate\Database\Query\Builder as IlluminateQueryBuilder;
 
@@ -504,6 +505,118 @@ class Builder extends IlluminateQueryBuilder {
         $this->addBinding(array($property => $value), 'matches');
 
         return $this;
+    }
+
+    /**
+     * the percentile of a given value over a group,
+     * with a percentile from 0.0 to 1.0.
+     * It uses a rounding method, returning the nearest value to the percentile.
+     *
+     * @param  string $column
+     * @return mixed
+     */
+    public function percentileDisc($column, $percentile = 0.0)
+    {
+        return $this->aggregate(__FUNCTION__, array($column), $percentile);
+    }
+
+    /**
+     * Retrieve the percentile of a given value over a group,
+     * with a percentile from 0.0 to 1.0. It uses a linear interpolation method,
+     * calculating a weighted average between two values,
+     * if the desired percentile lies between them.
+     *
+     * @param  string $column
+     * @return mixed
+     */
+    public function percentileCont($column, $percentile = 0.0)
+    {
+        return $this->aggregate(__FUNCTION__, array($column), $percentile);
+    }
+
+    /**
+     * Retrieve the standard deviation for a given column.
+     *
+     * @param  string $column
+     * @return mixed
+     */
+    public function stdev($column)
+    {
+        return $this->aggregate(__FUNCTION__, array($column));
+    }
+
+    /**
+     * Retrieve the standard deviation of an entire group for a given column.
+     *
+     * @param  string $column
+     * @return mixed
+     */
+    public function stdevp($column)
+    {
+        return $this->aggregate(__FUNCTION__, array($column));
+    }
+
+    /**
+     * Get the collected values of the give column.
+     *
+     * @param  string $column
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function collect($column)
+    {
+        $row = $this->aggregate(__FUNCTION__, array($column));
+
+        $collected = [];
+
+        foreach ($row as $value)
+        {
+            $collected[] = $value;
+        }
+
+        return new Collection($collected);
+    }
+
+    /**
+     * Get the count of the disctinct values of a given column.
+     *
+     * @param  string $column
+     * @return int
+     */
+    public function countDistinct($column)
+    {
+        return (int) $this->aggregate(__FUNCTION__, array($column));
+    }
+
+    /**
+     * Execute an aggregate function on the database.
+     *
+     * @param  string  $function
+     * @param  array   $columns
+     * @return mixed
+     */
+    public function aggregate($function, $columns = array('*'), $percentile = null)
+    {
+        $this->aggregate = array_merge([
+            'label' => $this->from
+        ], compact('function', 'columns', 'percentile'));
+
+        $previousColumns = $this->columns;
+
+        $cypher = $this->grammar->compileAggregate($this, $this->aggregate);
+
+        $results = $this->connection->statement($cypher, [], true);
+
+        // Once we have executed the query, we will reset the aggregate property so
+        // that more select queries can be executed against the database without
+        // the aggregate value getting in the way when the grammar builds it.
+        $this->aggregate = null;
+
+        $this->columns = $previousColumns;
+
+        if ($results->valid())
+        {
+            return $results->current()[0];
+        }
     }
 
     /**
