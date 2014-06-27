@@ -573,4 +573,33 @@ class CypherGrammar extends Grammar {
 
         return $cypher;
     }
+
+    public function compileAggregate(Builder $query, $aggregate)
+    {
+        $distinct = null;
+        $function = $aggregate['function'];
+        // When calling for the distinct count we'll set the distinct flag.
+        if ($function == 'countDistinct')
+        {
+            $function = 'count';
+            $distinct = 'DISTINCT ';
+        }
+
+        $node     = $this->modelAsNode($aggregate['label']);
+        $label    = $this->prepareLabels((array) $aggregate['label']);
+
+        // We need to format the columns to be in the form of n.property unless it is a *.
+        $columns  = implode(', ', array_map(function($column) use($node) {
+            return $column == '*' ? $column : "$node.$column";
+        }, $aggregate['columns']));
+
+        if ( ! is_null($aggregate['percentile']))
+        {
+            $percentile = $aggregate['percentile'];
+            return 'MATCH ('. $node.$label.") RETURN $function($columns, $percentile)";
+        }
+
+
+        return 'MATCH ('. $node.$label.") RETURN $function($distinct$columns)";
+    }
 }
