@@ -892,6 +892,8 @@ $cont = DB::table('User')->percentileCont('votes', 0.8);
 $deviation = DB::table('User')->stdev('sex');
 
 $population = DB::table('User')->stdevp('sex');
+
+$emails = DB::table('User')->collect('email');
 ```
 
 ## Changelog
