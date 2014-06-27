@@ -120,8 +120,6 @@ class SimpleCRUDTest extends TestCase {
             'biz' => 'boo'
         ]);
 
-        $this->assertTrue($w->save());
-
         $found = Wiz::find($w->id);
         $this->assertNull($found->nectar, 'make sure it is not there first, just in case some alien invasion put it or something');
 
@@ -144,8 +142,6 @@ class SimpleCRUDTest extends TestCase {
             'fiz' => 'foo',
             'biz' => 'boo'
         ]);
-
-        $this->assertTrue($w->save());
 
         $found = Wiz::find($w->id);
         $this->assertNull($found->hurry, 'make sure it is not there first, just in case some alien invasion put it or something');
