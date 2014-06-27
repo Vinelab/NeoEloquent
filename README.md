@@ -13,6 +13,7 @@ Neo4j Graph Eloquent Driver for Laravel 4
  - [Relationships](#relationships)
  - [Edges](#edges)
  - [Only in Neo](#only-in-neo)
+ - [Aggregates](#aggregates)
  - [Things To Avoid](#avoid)
 
 ## Installation
@@ -860,6 +861,37 @@ WITH post
 MATCH (tag:`Tag`)
 WHERE id(tag) IN [1, 2]
 CREATE (post)-[:TAG]->(tag);
+```
+
+## Aggregates
+
+In addition to the Eloquent builder aggregates, NeoEloquent also has support for
+Neo4j specific aggregates like *percentile* and *standard deviation*, keeping the same
+function names for convenience.
+Check [the docs](http://docs.neo4j.org/chunked/stable/query-aggregation.html) for more.
+
+> `table()` represents the label of the model
+
+```
+$users = DB::table('User')->count();
+
+$distinct = DB::table('User')->countDistinct('points');
+
+$price = DB::table('Order')->max('price');
+
+$price = DB::table('Order')->min('price');
+
+$price = DB::table('Order')->avg('price');
+
+$total = DB::table('User')->sum('votes');
+
+$disc = DB::table('User')->percentileDisc('votes', 0.2);
+
+$cont = DB::table('User')->percentileCont('votes', 0.8);
+
+$deviation = DB::table('User')->stdev('sex');
+
+$population = DB::table('User')->stdevp('sex');
 ```
 
 ## Changelog
