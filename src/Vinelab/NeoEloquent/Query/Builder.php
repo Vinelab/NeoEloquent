@@ -602,9 +602,7 @@ class Builder extends IlluminateQueryBuilder {
 
         $previousColumns = $this->columns;
 
-        $cypher = $this->grammar->compileAggregate($this, $this->aggregate);
-
-        $results = $this->connection->statement($cypher, [], true);
+        $results = $this->get($columns);
 
         // Once we have executed the query, we will reset the aggregate property so
         // that more select queries can be executed against the database without

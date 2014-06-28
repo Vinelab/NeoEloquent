@@ -353,13 +353,17 @@ class CypherGrammar extends Grammar {
      */
     protected function compileColumns(Builder $query, $properties)
     {
+        // When we have an aggregate we will have to return it instead of the plain columns
+        // since aggregates for Cypher are not calculated at the beginning of the query like SQL
+        // instead we'll have to return in a form such as: RETURN max(user.logins).
+        if ( ! is_null($query->aggregate)) return $this->compileAggregate($query, $query->aggregate);
+
         // In the case where the query has relationships
         // we need to return the requested properties as is
         // since they are considered node placeholders.
         if ( ! empty($query->matches))
         {
             $properties = implode(', ', array_values($properties));
-
         } else
         {
             $properties = $this->columnize($properties);
@@ -578,15 +582,14 @@ class CypherGrammar extends Grammar {
     {
         $distinct = null;
         $function = $aggregate['function'];
-        // When calling for the distinct count we'll set the distinct flag.
+        // When calling for the distinct count we'll set the distinct flag and ask for the count function.
         if ($function == 'countDistinct')
         {
             $function = 'count';
             $distinct = 'DISTINCT ';
         }
 
-        $node     = $this->modelAsNode($aggregate['label']);
-        $label    = $this->prepareLabels((array) $aggregate['label']);
+        $node  = $this->modelAsNode($aggregate['label']);
 
         // We need to format the columns to be in the form of n.property unless it is a *.
         $columns  = implode(', ', array_map(function($column) use($node) {
@@ -596,10 +599,9 @@ class CypherGrammar extends Grammar {
         if ( ! is_null($aggregate['percentile']))
         {
             $percentile = $aggregate['percentile'];
-            return 'MATCH ('. $node.$label.") RETURN $function($columns, $percentile)";
+            return "RETURN $function($columns, $percentile)";
         }
 
-
-        return 'MATCH ('. $node.$label.") RETURN $function($distinct$columns)";
+        return "RETURN $function($distinct$columns)";
     }
 }
