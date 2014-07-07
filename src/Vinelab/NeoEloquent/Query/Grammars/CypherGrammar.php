@@ -561,7 +561,7 @@ class CypherGrammar extends Grammar {
         // (post)-[:PHOTO]->(:`Photo` {url: ''}), (post)-[:VIDEO]->(:`Video` {title: '...'})
         if ( ! empty($relations)) $cypher .= ', '. implode(', ', $relations);
         // Now we add the attaching Cypher
-        if ( ! empty($attach))
+        if ( ! empty($attachments))
         {
             // Bring the parent node along with us to be used in the query further.
             $cypher .= " WITH $parentNode ";
