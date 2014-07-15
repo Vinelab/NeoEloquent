@@ -22,7 +22,7 @@ class OrdersAndLimitsTest extends TestCase {
         parent::tearDown();
     }
 
-    public function test_fetching_ordered_records()
+    public function testFetchingOrderedRecords()
     {
         $c1 = Click::create(['num' => 1]);
         $c2 = Click::create(['num' => 2]);
@@ -44,7 +44,7 @@ class OrdersAndLimitsTest extends TestCase {
         $this->assertEquals($c3->toArray(), $asc[2]->toArray());
     }
 
-    public function test_fetching_limited_records()
+    public function testFetchingLimitedOrderedRecords()
     {
         $c1 = Click::create(['num' => 1]);
         $c2 = Click::create(['num' => 2]);
