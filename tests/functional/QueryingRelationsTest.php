@@ -392,6 +392,23 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals(3, count($related));
     }
 
+    /**
+     * Regression test for creating recursively connected models.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/7
+     */
+    public function testCreatingModelWithExistingRecursivelyRelatedModel()
+    {
+        $jon = User::create(['name' => 'Jon Ronson']);
+        $morgan = User::create(['name' => 'Morgan Spurlock']);
+
+        $user = User::createWith(['name' => 'Ken Robinson'],[
+            'colleagues' => [$morgan, $jon]
+        ]);
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $user);
+    }
+
 }
 
 class User extends Model {
@@ -408,6 +425,11 @@ class User extends Model {
     public function account()
     {
         return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Account', 'ACCOUNT');
+    }
+
+    public function colleagues()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'COLLEAGUE_OF');
     }
 }
 

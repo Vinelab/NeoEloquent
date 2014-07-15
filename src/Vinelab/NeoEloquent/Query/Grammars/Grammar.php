@@ -153,9 +153,10 @@ class Grammar extends IlluminateGrammar {
      * i.e. in "MATCH (user:`User`)"... "user" is what this method returns
      *
      * @param  string|array $labels The labels we're choosing from
+     * @param  boolean $related Tells whether this is a related node so that we append a 'with_' to label.
      * @return string
      */
-    public function modelAsNode($labels = null)
+    public function modelAsNode($labels = null, $related = false)
     {
         if (is_null($labels))
         {
@@ -164,6 +165,11 @@ class Grammar extends IlluminateGrammar {
         {
             $labels = reset($labels);
         }
+
+        // When this is a related node we'll just prepend it with 'with_' that way we avoid
+        // clashing node models in the cases like using recursive model relations.
+        // @see https://github.com/Vinelab/NeoEloquent/issues/7
+        if ($related) $labels = 'with_'. $labels;
 
         return mb_strtolower($labels);
     }

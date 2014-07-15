@@ -558,7 +558,7 @@ class CypherGrammar extends Grammar {
             {
                 // Now we deal with our attachments so that we create the conditional
                 // queries for each relation that we need to attach.
-                $node = $this->modelAsNode($label);
+                $node = $this->modelAsNode($label, true);
                 $nodeLabel = $this->prepareLabels($label);
 
                 // An attachment query is a combination of MATCH, WHERE and CREATE where
