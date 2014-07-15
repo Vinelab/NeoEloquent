@@ -240,4 +240,23 @@ class SimpleCRUDTest extends TestCase {
         $countAfter = WizDel::count();
         $this->assertEquals(1, $countAfter);
     }
+
+    public function testFirstOrCreate()
+    {
+        $w = Wiz::firstOrCreate([
+            'fiz' => 'foo',
+            'biz' => 'boo',
+            'triz' => 'troo'
+        ]);
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
+
+        $found = Wiz::firstOrCreate([
+            'fiz' => 'foo',
+            'biz' => 'boo',
+            'triz' => 'troo'
+        ]);
+
+        $this->assertEquals($w, $found);
+    }
 }

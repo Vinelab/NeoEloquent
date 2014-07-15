@@ -181,6 +181,20 @@ class Builder extends IlluminateQueryBuilder {
 	 */
 	public function where($column, $operator = null, $value = null, $boolean = 'and')
 	{
+        // If the column is an array, we will assume it is an array of key-value pairs
+		// and can add them each as a where clause. We will maintain the boolean we
+		// received when the method was called and pass it into the nested where.
+		if (is_array($column))
+		{
+			return $this->whereNested(function($query) use ($column)
+			{
+				foreach ($column as $key => $value)
+				{
+					$query->where($key, '=', $value);
+				}
+			}, $boolean);
+		}
+
 		if (func_num_args() == 2)
 		{
 			list($value, $operator) = array($operator, '=');
@@ -703,4 +717,13 @@ class Builder extends IlluminateQueryBuilder {
         return $this->grammar->getIdReplacement($property);
     }
 
+	/**
+	 * Get a new instance of the query builder.
+	 *
+	 * @return \Illuminate\Database\Query\Builder
+	 */
+	public function newQuery()
+	{
+		return new Builder($this->connection, $this->grammar);
+	}
 }
