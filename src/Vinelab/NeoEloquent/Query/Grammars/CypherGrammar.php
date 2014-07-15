@@ -10,8 +10,8 @@ class CypherGrammar extends Grammar {
         'with',
         'wheres',
         'unions',
-        'orders',
         'columns',
+        'orders',
         'offset',
         'limit',
     );
@@ -347,7 +347,7 @@ class CypherGrammar extends Grammar {
     /**
      * Compile the "RETURN *" portion of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Vinelab\NeoEloquent\Query\Builder  $query
      * @param  array  $columns
      * @return string
      */
@@ -370,9 +370,31 @@ class CypherGrammar extends Grammar {
         }
 
         $distinct = ($query->distinct) ? 'DISTINCT ' : '';
+
         return 'RETURN ' . $distinct . $properties;
     }
 
+    /**
+	 * Compile the "order by" portions of the query.
+	 *
+	 * @param  \Vinelab\NeoEloquent\Query\Builder $query
+	 * @param  array  $orders
+	 * @return string
+	 */
+    public function compileOrders(Builder $query, $orders)
+    {
+        return 'ORDER BY '. implode(', ', array_map(function($order){
+                return $this->wrap($order['column']).' '.mb_strtoupper($order['direction']);
+        }, $orders));
+    }
+
+    /**
+	 * Compile an update statement into SQL.
+	 *
+	 * @param  \Vinelab\NeoEloquent\Query\Builder  $query
+	 * @param  array  $values
+	 * @return string
+	 */
     public function compileUpdate(Builder $query, $values)
     {
         // Each one of the columns in the update statements needs to be wrapped in the
