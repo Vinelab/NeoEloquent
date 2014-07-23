@@ -592,7 +592,7 @@ class CypherGrammar extends Grammar {
             // Set the WHERE conditions for the heart of the query.
             $cypher .= ' WHERE '. implode(' AND ', $attachments['wheres']);
             // CREATE the relationships between matched nodes
-            $cypher .= ' CREATE '. implode(', ', $attachments['relations']);
+            $cypher .= ' CREATE UNIQUE'. implode(', ', $attachments['relations']);
         }
 
         $cypher .= " RETURN $parentNode";
