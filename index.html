@@ -4,7 +4,7 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Neoeloquent : A Neo4j Graph Eloquent Driver">
+    <meta name="description" content="Neoeloquent : An Eloquent Neo4j Graph Driver">
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -19,7 +19,7 @@
           <a id="forkme_banner" href="https://github.com/Vinelab/NeoEloquent">View on GitHub</a>
 
           <h1 id="project_title">Neoeloquent</h1>
-          <h2 id="project_tagline">A Neo4j Graph Eloquent Driver</h2>
+          <h2 id="project_tagline">An Eloquent Neo4j Graph Driver</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/Vinelab/NeoEloquent/zipball/master">Download this project as a .zip file</a>
@@ -31,37 +31,935 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <h1>
+<a name="neoeloquent" class="anchor" href="#neoeloquent"><span class="octicon octicon-link"></span></a>NeoEloquent</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p><a href="https://travis-ci.org/Vinelab/NeoEloquent"><img src="https://travis-ci.org/Vinelab/NeoEloquent.svg?branch=master" alt="Build Status"></a></p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>Neo4j Graph Eloquent Driver for Laravel 4</p>
+
+<h2>
+<a name="quick-reference" class="anchor" href="#quick-reference"><span class="octicon octicon-link"></span></a>Quick Reference</h2>
+
+<ul>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#models">Models</a></li>
+<li><a href="#relationships">Relationships</a></li>
+<li><a href="#edges">Edges</a></li>
+<li><a href="#only-in-neo">Only in Neo</a></li>
+<li><a href="#aggregates">Aggregates</a></li>
+<li><a href="#avoid">Things To Avoid</a></li>
+</ul><h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Add the package to your <code>composer.json</code> and run <code>composer update</code>.</p>
+
+<div class="highlight highlight-json"><pre><span class="p">{</span>
+    <span class="nt">"require"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">"vinelab/neoeloquent"</span><span class="p">:</span> <span class="s2">"*"</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Add the service provider in <code>app/config/app.php</code>:</p>
+
+<div class="highlight highlight-php"><pre><span class="s1">'Vinelab\NeoEloquent\NeoEloquentServiceProvider'</span><span class="p">,</span>
+</pre></div>
+
+<p>The service provider will register all the required classes for this package and will also alias
+the <code>Model</code> class to <code>NeoEloquent</code> so you can simply <code>extend NeoEloquent</code> in your models.</p>
+
+<h2>
+<a name="configuration" class="anchor" href="#configuration"><span class="octicon octicon-link"></span></a>Configuration</h2>
+
+<p>in <code>app/config/database.php</code> or in case of an environment-based configuration <code>app/config/[env]/database.php</code>
+make <code>neo4j</code> your default connection:</p>
+
+<div class="highlight highlight-php"><pre><span class="s1">'default'</span> <span class="o">=&gt;</span> <span class="s1">'neo4j'</span><span class="p">,</span>
+</pre></div>
+
+<p>Add the connection defaults:</p>
+
+<div class="highlight highlight-php"><pre><span class="s1">'connections'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+    <span class="s1">'neo4j'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+        <span class="s1">'driver'</span> <span class="o">=&gt;</span> <span class="s1">'neo4j'</span><span class="p">,</span>
+        <span class="s1">'host'</span>   <span class="o">=&gt;</span> <span class="s1">'localhost'</span><span class="p">,</span>
+        <span class="s1">'port'</span>   <span class="o">=&gt;</span> <span class="s1">'7474'</span>
+    <span class="p">]</span>
+<span class="p">]</span>
+</pre></div>
+
+<h3>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h3>
+
+<h2>
+<a name="models" class="anchor" href="#models"><span class="octicon octicon-link"></span></a>Models</h2>
+
+<ul>
+<li><a href="#namespaced-models">Node Labels</a></li>
+<li><a href="#soft-deleting">Soft Deleting</a></li>
+</ul><div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{}</span>
+</pre></div>
+
+<p>As simple as it is, NeoEloquent will generate the default node label from the class name,
+in this case it will be <code>:User</code>. Read about <a href="http://docs.neo4j.org/chunked/stable/rest-api-node-labels.html">node labels here</a></p>
+
+<h3>
+<a name="namespaced-models" class="anchor" href="#namespaced-models"><span class="octicon octicon-link"></span></a>Namespaced Models</h3>
+
+<p>When you use namespaces with your models the label will consider the full namespace.</p>
+
+<div class="highlight highlight-php"><pre><span class="k">namespace</span> <span class="nx">Vinelab\Cms</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Admin</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span> <span class="p">}</span>
+</pre></div>
+
+<p>The generated label from that relationship will be <code>VinelabCmsAdmin</code>, this is necessary to make sure
+that labels do not clash in cases where we introduce another  <code>Admin</code> instance like
+<code>Vinelab\Blog\Admin</code> then things gets messy with <code>:Admin</code> in the database.</p>
+
+<h3>
+<a name="custom-node-labels" class="anchor" href="#custom-node-labels"><span class="octicon octicon-link"></span></a>Custom Node Labels</h3>
+
+<p>You may specify the label(s) you wish to be used instead of the default generated, they are also
+case sensitive so they will be stored as put here.</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">protected</span> <span class="nv">$label</span> <span class="o">=</span> <span class="s1">'User'</span><span class="p">;</span> <span class="c1">// or array('User', 'Fan')</span>
+
+    <span class="k">protected</span> <span class="nv">$fillable</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'email'</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="nv">$user</span> <span class="o">=</span> <span class="nx">User</span><span class="o">::</span><span class="na">create</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'Some Name'</span><span class="p">,</span> <span class="s1">'email'</span> <span class="o">=&gt;</span> <span class="s1">'some@email.com'</span><span class="p">]);</span>
+</pre></div>
+
+<p>NeoEloquent has a fallback support for the <code>$table</code> variable that will be used if found and there was no <code>$label</code> defined on the model.</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">protected</span> <span class="nv">$table</span> <span class="o">=</span> <span class="s1">'User'</span><span class="p">;</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<p>Do not worry about the labels formatting, You may specify them as <code>array('Label1', 'Label2')</code> or separate them by a column <code>:</code> and prepending them with a <code>:</code> is optional.</p>
+
+<h3>
+<a name="soft-deleting" class="anchor" href="#soft-deleting"><span class="octicon octicon-link"></span></a>Soft Deleting</h3>
+
+<p>To enable soft deleting you'll need to <code>use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait</code>
+instead of <code>Illuminate\Database\Eloquent\SoftDeletingTrait</code> and just like Eloquent you'll need the <code>$dates</code> in your models as follows:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">use</span> <span class="nx">Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">use</span> <span class="nx">SoftDeletingTrait</span><span class="p">;</span>
+
+    <span class="k">protected</span> <span class="nv">$dates</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'deleted_at'</span><span class="p">];</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<h2>
+<a name="relationships" class="anchor" href="#relationships"><span class="octicon octicon-link"></span></a>Relationships</h2>
+
+<ul>
+<li><a href="#one-to-one">One-To-One</a></li>
+<li><a href="#one-to-many">One-To-Many</a></li>
+<li><a href="#many-to-many">Many-To-Many</a></li>
+<li><a href="#polymorphic">Polymorphic</a></li>
+</ul><p>Let's go through some examples of relationships between Nodes.</p>
+
+<h3>
+<a name="one-to-one" class="anchor" href="#one-to-one"><span class="octicon octicon-link"></span></a>One-To-One</h3>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">phone</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hasOne</span><span class="p">(</span><span class="s1">'Phone'</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div>
+
+<p>This represents an <code>OUTGOING</code> relationship direction from the <code>:User</code> node to a <code>:Phone</code>.</p>
+
+<h5>
+<a name="saving" class="anchor" href="#saving"><span class="octicon octicon-link"></span></a>Saving</h5>
+
+<div class="highlight highlight-php"><pre><span class="nv">$phone</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Phone</span><span class="p">([</span><span class="s1">'code'</span> <span class="o">=&gt;</span> <span class="mi">961</span><span class="p">,</span> <span class="s1">'number'</span> <span class="o">=&gt;</span> <span class="s1">'98765432'</span><span class="p">])</span>
+<span class="nv">$relation</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">phone</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$phone</span><span class="p">);</span>
+</pre></div>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<pre><code>MATCH (user:`User`)
+WHERE id(user) = 1
+CREATE (user)-[:PHONE]-&gt;(phone:`Phone` {code: 961, number: '98765432', created_at: 7543788, updated_at: 7543788})
+RETURN phone;
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<h5>
+<a name="defining-the-inverse-of-this-relation" class="anchor" href="#defining-the-inverse-of-this-relation"><span class="octicon octicon-link"></span></a>Defining The Inverse Of This Relation</h5>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Phone</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">user</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">belongsTo</span><span class="p">(</span><span class="s1">'User'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This represents an <code>INCOMING</code> relationship direction from
+the <code>:User</code> node to this <code>:Phone</code> node.</p>
+
+<h5>
+<a name="associating-models" class="anchor" href="#associating-models"><span class="octicon octicon-link"></span></a>Associating Models</h5>
+
+<p>Due to the fact that we do not deal with <strong>foreign keys</strong>, in our case it is much
+more than just setting the foreign key attribute on the parent model. In Neo4j (and Graph in general) a relationship is an entity itself that can also have attributes of its own, hence the introduction of
+<a href="#Edges"><strong>Edges</strong></a></p>
+
+<blockquote>
+<p><em>Note:</em> Associated models does not persist relations automatically when calling <code>associate()</code>.</p>
+</blockquote>
+
+<div class="highlight highlight-php"><pre><span class="nv">$account</span> <span class="o">=</span> <span class="nx">Account</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1986</span><span class="p">);</span>
+
+<span class="c1">// $relation will be Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn</span>
+<span class="nv">$relation</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">account</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">associate</span><span class="p">(</span><span class="nv">$account</span><span class="p">);</span>
+
+<span class="c1">// Save the relation</span>
+<span class="nv">$relation</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+</pre></div>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<pre><code>MATCH (account:`Account`), (user:`User`)
+WHERE id(account) = 1986 AND id(user) = 9862
+MERGE (account)&lt;-[rel_user_account:ACCOUNT]-(user)
+RETURN rel_user_account;
+</code></pre>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<pre><code>MATCH (phone:Phone) (phone)&lt;-[:PHONE]-(user:User)
+WHERE id(phone) = 1006
+RETURN user;
+</code></pre>
 
 <h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a name="one-to-many" class="anchor" href="#one-to-many"><span class="octicon octicon-link"></span></a>One-To-Many</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">posts</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hasMany</span><span class="p">(</span><span class="s1">'Post'</span><span class="p">,</span> <span class="s1">'POSTED'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This represents an <code>OUTGOING</code> relationship direction
+from the <code>:User</code> node to the <code>:Post</code> node.</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$user</span> <span class="o">=</span> <span class="nx">User</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="nv">$post</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Post</span><span class="p">([</span><span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'The Title'</span><span class="p">,</span> <span class="s1">'body'</span> <span class="o">=&gt;</span> <span class="s1">'Hot Body'</span><span class="p">]);</span>
+<span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$post</span><span class="p">);</span>
+</pre></div>
+
+<p>Similar to <code>One-To-One</code> relationships the returned value from a <code>save()</code> statement is an
+<code>Edge[In|Out]</code></p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<pre><code>MATCH (user:`User`)
+WHERE id(user) = 1
+CREATE (user)-[rel_user_post:POSTED]-&gt;(post:`Post` {title: 'The Title', body: 'Hot Body', created_at: '15-05-2014', updated_at: '15-05-2014'})
+RETURN rel_user_post;
+</code></pre>
+
+<h5>
+<a name="defining-the-inverse-of-this-relation-1" class="anchor" href="#defining-the-inverse-of-this-relation-1"><span class="octicon octicon-link"></span></a>Defining The Inverse Of This Relation</h5>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Post</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">author</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">belongsTo</span><span class="p">(</span><span class="s1">'User'</span><span class="p">,</span> <span class="s1">'POSTED'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This represents an <code>INCOMING</code> relationship direction from
+the <code>:User</code> node to this <code>:Post</code> node.</p>
 
 <h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<a name="many-to-many" class="anchor" href="#many-to-many"><span class="octicon octicon-link"></span></a>Many-To-Many</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">followers</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">belongsToMany</span><span class="p">(</span><span class="s1">'User'</span><span class="p">,</span> <span class="s1">'FOLLOWS'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This represents an <code>OUTGOING</code> relationship between a <code>:User</code> node and another <code>:User</code>.</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$jd</span> <span class="o">=</span> <span class="nx">User</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1012</span><span class="p">);</span>
+<span class="nv">$mc</span> <span class="o">=</span> <span class="nx">User</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1013</span><span class="p">);</span>
+</pre></div>
+
+<p><code>$jd</code> follows <code>$mc</code>:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$jd</span><span class="o">-&gt;</span><span class="na">followers</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$mc</span><span class="p">);</span>
+</pre></div>
+
+<p>Or using the <code>attach()</code> method:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$jd</span><span class="o">-&gt;</span><span class="na">followers</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">attach</span><span class="p">(</span><span class="nv">$mc</span><span class="p">);</span>
+<span class="c1">// Or..</span>
+<span class="nv">$jd</span><span class="o">-&gt;</span><span class="na">followers</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">attach</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// 1 being the id of $mc ($mc-&gt;getKey())</span>
+</pre></div>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<pre><code>MATCH (user:`User`), (followers:`User`)
+WHERE id(user) = 1012 AND id(followers) = 1013
+CREATE (user)-[:FOLLOWS]-&gt;(followers)
+RETURN rel_follows;
+</code></pre>
+
+<p><code>$mc</code> follows <code>$jd</code> back:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$mc</span><span class="o">-&gt;</span><span class="na">followers</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$jd</span><span class="p">);</span>
+</pre></div>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<pre><code>MATCH (user:`User`), (followers:`User`)
+WHERE id(user) = 1013 AND id(followers) = 1012
+CREATE (user)-[rel_user_followers:FOLLOWS]-&gt;(followers)
+RETURN rel_follows;
+</code></pre>
+
+<p>get the followers of <code>$jd</code></p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$followers</span> <span class="o">=</span> <span class="nv">$jd</span><span class="o">-&gt;</span><span class="na">followers</span><span class="p">;</span>
+</pre></div>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<pre><code>MATCH (user:`User`), (followers:`User`), (user)-[rel_user_followers:FOLLOWS]-(followers)
+WHERE id(user) = 1012
+RETURN rel_follows;
+</code></pre>
 
 <h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a name="dynamic-properties" class="anchor" href="#dynamic-properties"><span class="octicon octicon-link"></span></a>Dynamic Properties</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Phone</span> <span class="k">extends</span> <span class="nx">Eloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">user</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">belongsTo</span><span class="p">(</span><span class="s1">'User'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+
+<span class="nv">$phone</span> <span class="o">=</span> <span class="nx">Phone</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1006</span><span class="p">);</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="nv">$phone</span><span class="o">-&gt;</span><span class="na">user</span><span class="p">;</span>
+<span class="c1">// or getting an attribute out of the related model</span>
+<span class="nv">$name</span> <span class="o">=</span> <span class="nv">$phone</span><span class="o">-&gt;</span><span class="na">user</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
+</pre></div>
 
 <h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<a name="polymorphic" class="anchor" href="#polymorphic"><span class="octicon octicon-link"></span></a>Polymorphic</h3>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>The concept behind Polymocrphic relations is purely relational to the bone but when it comes
+to graph we are representing it as a <a href="http://docs.neo4j.org/chunked/stable/cypher-cookbook-hyperedges.html">HyperEdge</a>.</p>
+
+<p>Hyper edges involves three models, the <strong>parent</strong> model, <strong>hyper</strong> model and <strong>related</strong> model
+represented in the following figure:</p>
+
+<p><img src="https://googledrive.com/host/0BznzZ2lBbT0cLW9YcjNldlJkcXc/HyperEdge.png" alt="HyperEdges" title="HyperEdges"></p>
+
+<p>Similarly in code this will be represented by three models <code>User</code> <code>Comment</code> and <code>Post</code>
+where a <code>User</code> with id 1 posts a <code>Post</code> and a <code>User</code> with id 6 <code>COMMENTED</code> a <code>Comment</code> <code>ON</code> that <code>Post</code>
+as follows:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">comments</span><span class="p">(</span><span class="nv">$morph</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hyperMorph</span><span class="p">(</span><span class="nv">$morph</span><span class="p">,</span> <span class="s1">'Comment'</span><span class="p">,</span> <span class="s1">'COMMENTED'</span><span class="p">,</span> <span class="s1">'ON'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<p>In order to keep things simple but still involving the three models we will have to pass the
+<code>$morph</code> which is any <code>commentable</code> model, in our case it's either a <code>Video</code> or a <code>Post</code> model.</p>
+
+<blockquote>
+<p><strong>Note:</strong> Make sure to have it defaulting to <code>null</code> so that we can Dynamicly or Eager load
+with <code>$user-&gt;comments</code> later on.</p>
+</blockquote>
+
+<p>Creating a <code>Comment</code> with the <code>create()</code> method.</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$user</span> <span class="o">=</span> <span class="nx">User</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">6</span><span class="p">);</span>
+<span class="nv">$post</span> <span class="o">=</span> <span class="nx">Post</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+<span class="nv">$user</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">(</span><span class="nv">$post</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">create</span><span class="p">([</span><span class="s1">'text'</span> <span class="o">=&gt;</span> <span class="s1">'Totally agree!'</span><span class="p">,</span> <span class="s1">'likes'</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'abuse'</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">]);</span>
+</pre></div>
+
+<p>As usual we will have returned an Edge, but this time it's not directed it is an instance of
+<code>HyperEdge</code>, read more about <a href="#hyperedge">HyperEdges here</a>.</p>
+
+<p>Or you may save a Comment instance:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$comment</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Comment</span><span class="p">([</span><span class="s1">'text'</span> <span class="o">=&gt;</span> <span class="s1">'Magnificent'</span><span class="p">,</span> <span class="s1">'likes'</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'abuse'</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">]);</span>
+
+<span class="nv">$user</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">(</span><span class="nv">$post</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span>
+</pre></div>
+
+<p>Also all the functionalities found in a <code>BelongsToMany</code> relationship are supported like
+attaching models by Ids:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">(</span><span class="nv">$post</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">attach</span><span class="p">([</span><span class="nv">$id</span><span class="p">,</span> <span class="nv">$otherId</span><span class="p">]);</span>
+</pre></div>
+
+<p>Or detaching models:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">(</span><span class="nv">$post</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">detach</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span> <span class="c1">// or $comment-&gt;id</span>
+</pre></div>
+
+<p>Sync too:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">(</span><span class="nv">$post</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">sync</span><span class="p">([</span><span class="nv">$id</span><span class="p">,</span> <span class="nv">$otherId</span><span class="p">,</span> <span class="nv">$someId</span><span class="p">]);</span>
+</pre></div>
+
+<h4>
+<a name="retrieving-polymorphic-relations" class="anchor" href="#retrieving-polymorphic-relations"><span class="octicon octicon-link"></span></a>Retrieving Polymorphic Relations</h4>
+
+<p>From our previous example we will use the <code>Video</code> model to retrieve their comments:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Video</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">comments</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">morphMany</span><span class="p">(</span><span class="s1">'Comment'</span><span class="p">,</span> <span class="s1">'ON'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<h5>
+<a name="dynamicly-loading-morph-model" class="anchor" href="#dynamicly-loading-morph-model"><span class="octicon octicon-link"></span></a>Dynamicly Loading Morph Model</h5>
+
+<div class="highlight highlight-php"><pre><span class="nv">$video</span> <span class="o">=</span> <span class="nx">Video</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+<span class="nv">$comments</span> <span class="o">=</span> <span class="nv">$video</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">;</span>
+</pre></div>
+
+<h5>
+<a name="eager-loading-morph-model" class="anchor" href="#eager-loading-morph-model"><span class="octicon octicon-link"></span></a>Eager Loading Morph Model</h5>
+
+<div class="highlight highlight-php"><pre><span class="nv">$video</span> <span class="o">=</span> <span class="nx">Video</span><span class="o">::</span><span class="na">with</span><span class="p">(</span><span class="s1">'comments'</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">find</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+<span class="k">foreach</span> <span class="p">(</span><span class="nv">$video</span><span class="o">-&gt;</span><span class="na">comments</span> <span class="k">as</span> <span class="nv">$comment</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">//</span>
+<span class="p">}</span>
+</pre></div>
+
+<h4>
+<a name="retrieving-the-inverse-of-a-polymorphic-relation" class="anchor" href="#retrieving-the-inverse-of-a-polymorphic-relation"><span class="octicon octicon-link"></span></a>Retrieving The Inverse of a Polymorphic Relation</h4>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Comment</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">commentable</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">morphTo</span><span class="p">();</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<div class="highlight highlight-php"><pre><span class="nv">$postComment</span> <span class="o">=</span> <span class="nx">Comment</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+<span class="nv">$post</span> <span class="o">=</span> <span class="nv">$comment</span><span class="o">-&gt;</span><span class="na">commentable</span><span class="p">;</span>
+
+<span class="nv">$videoComment</span> <span class="o">=</span> <span class="nx">Comment</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+<span class="nv">$video</span> <span class="o">=</span> <span class="nv">$comment</span><span class="o">-&gt;</span><span class="na">commentable</span><span class="p">;</span>
+
+<span class="c1">// You can also eager load them</span>
+<span class="nx">Comment</span><span class="o">::</span><span class="na">with</span><span class="p">(</span><span class="s1">'commentable'</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">();</span>
+</pre></div>
+
+<p>You may also specify the type of morph you would like returned:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Comment</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">post</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">morphTo</span><span class="p">(</span><span class="s1">'Post'</span><span class="p">,</span> <span class="s1">'ON'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">video</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">morphTo</span><span class="p">(</span><span class="s1">'Video'</span><span class="p">,</span> <span class="s1">'ON'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<h4>
+<a name="polymorphic-relations-in-short" class="anchor" href="#polymorphic-relations-in-short"><span class="octicon octicon-link"></span></a>Polymorphic Relations In Short</h4>
+
+<p>To drill things down here's how our three models involved in a Polymorphic relationship connect:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">comments</span><span class="p">(</span><span class="nv">$morph</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hyperMorph</span><span class="p">(</span><span class="nv">$morph</span><span class="p">,</span> <span class="s1">'Comment'</span><span class="p">,</span> <span class="s1">'COMMENTED'</span><span class="p">,</span> <span class="s1">'ON'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Post</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span> <span class="c1">// Video is the same as this one</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">comments</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">morphMany</span><span class="p">(</span><span class="s1">'Comment'</span><span class="p">,</span> <span class="s1">'ON'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Comment</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">commentable</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">morphTo</span><span class="p">();</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+
+</pre></div>
+
+<h3>
+<a name="eager-loading" class="anchor" href="#eager-loading"><span class="octicon octicon-link"></span></a>Eager Loading</h3>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Book</span> <span class="k">extends</span> <span class="nx">Eloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">author</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">belongsTo</span><span class="p">(</span><span class="s1">'Author'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Loading authors with their books with the least performance overhead possible.</p>
+
+<div class="highlight highlight-php"><pre><span class="k">foreach</span> <span class="p">(</span><span class="nx">Book</span><span class="o">::</span><span class="na">with</span><span class="p">(</span><span class="s1">'author'</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">()</span> <span class="k">as</span> <span class="nv">$book</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">echo</span> <span class="nv">$book</span><span class="o">-&gt;</span><span class="na">author</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Only two Cypher queries will be run in the loop above:</p>
+
+<pre><code>MATCH (book:`Book`) RETURN *;
+
+MATCH (book:`Book`), (book)&lt;-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
+</code></pre>
+
+<h2>
+<a name="edges" class="anchor" href="#edges"><span class="octicon octicon-link"></span></a>Edges</h2>
+
+<ul>
+<li><a href="#edgein">EdgeIn</a></li>
+<li><a href="#edgeout">EdgeOut</a></li>
+<li><a href="#hyperedge">HyperEdge</a></li>
+<li><a href="#working-with-edges">Working with Edges</a></li>
+<li><a href="#edge-attributes">Edge Attributes</a></li>
+</ul><h3>
+<a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction</h3>
+
+<p>Due to the fact that relationships in Graph are much different than other database types so
+we will have to handle them accordingly. Relationships have directions that can vary between
+<strong>In</strong> and <strong>Out</strong> respectively towards the parent node.</p>
+
+<h4>
+<a name="edgein" class="anchor" href="#edgein"><span class="octicon octicon-link"></span></a>EdgeIn</h4>
+
+<p>Represents an <code>INCOMING</code> direction relationship from the related model towards the parent model.</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Location</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">user</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">belongsTo</span><span class="p">(</span><span class="s1">'User'</span><span class="p">,</span> <span class="s1">'LOCATED_AT'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<p>To associate a <code>User</code> to a <code>Location</code>:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$location</span> <span class="o">=</span> <span class="nx">Location</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1922</span><span class="p">);</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="nx">User</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">3876</span><span class="p">);</span>
+<span class="nv">$relation</span> <span class="o">=</span> <span class="nv">$location</span><span class="o">-&gt;</span><span class="na">associate</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span>
+</pre></div>
+
+<p>which in Cypher land will map to <code>(:Location)&lt;-[:LOCATED_AT]-(:User)</code> and <code>$relation</code>
+being an instance of <code>EdgeIn</code> representing an incoming relationship towards the parent.</p>
+
+<p>And you can still access the models from the edge:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$relation</span> <span class="o">=</span> <span class="nv">$location</span><span class="o">-&gt;</span><span class="na">associate</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span>
+<span class="nv">$location</span> <span class="o">=</span> <span class="nv">$relation</span><span class="o">-&gt;</span><span class="na">parent</span><span class="p">();</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="nv">$relation</span><span class="o">-&gt;</span><span class="na">related</span><span class="p">();</span>
+</pre></div>
+
+<h4>
+<a name="edgeout" class="anchor" href="#edgeout"><span class="octicon octicon-link"></span></a>EdgeOut</h4>
+
+<p>Represents an <code>OUTGOING</code> direction relationship from the parent model to the related model.</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">posts</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hasMany</span><span class="p">(</span><span class="s1">'Post'</span><span class="p">,</span> <span class="s1">'POSTED'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+
+<p>To save an outgoing edge from <code>:User</code> to <code>:Post</code> it goes like:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$post</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Post</span><span class="p">([</span><span class="s1">'...'</span><span class="p">]);</span>
+<span class="nv">$posted</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$post</span><span class="p">);</span>
+</pre></div>
+
+<p>Which in Cypher would be <code>(:User)-[:POSTED]-&gt;(:Post)</code> and <code>$posted</code> being the <code>EdgeOut</code> instance.</p>
+
+<p>And fetch the related models:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$edge</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$post</span><span class="p">);</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="nv">$edge</span><span class="o">-&gt;</span><span class="na">parent</span><span class="p">();</span>
+<span class="nv">$post</span> <span class="o">=</span> <span class="nv">$edge</span><span class="o">-&gt;</span><span class="na">related</span><span class="p">();</span>
+</pre></div>
+
+<h4>
+<a name="hyperedge" class="anchor" href="#hyperedge"><span class="octicon octicon-link"></span></a>HyperEdge</h4>
+
+<p>This edge comes as a result of a <a href="#polymorphic">Polymorphic Relation</a> representing an edge involving
+tow other edges <strong>left</strong> and <strong>right</strong> that can be accessed through the <code>left()</code> and <code>right()</code> methods.</p>
+
+<p>This edge is treated a bit different than the others since it is not a direct relationship
+between two models which means it has no specific direction.</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$edge</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">(</span><span class="nv">$post</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">attach</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span>
+<span class="c1">// Access the left and right edges</span>
+<span class="nv">$left</span> <span class="o">=</span> <span class="nv">$edge</span><span class="o">-&gt;</span><span class="na">left</span><span class="p">();</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="nv">$left</span><span class="o">-&gt;</span><span class="na">parent</span><span class="p">();</span>
+<span class="nv">$comment</span> <span class="o">=</span> <span class="nv">$left</span><span class="o">-&gt;</span><span class="na">related</span><span class="p">();</span>
+
+<span class="nv">$right</span> <span class="o">=</span> <span class="nv">$edge</span><span class="o">-&gt;</span><span class="na">right</span><span class="p">();</span>
+<span class="nv">$comment</span> <span class="o">=</span> <span class="nv">$right</span><span class="o">-&gt;</span><span class="na">parent</span><span class="p">();</span>
+<span class="nv">$post</span> <span class="o">=</span> <span class="nv">$right</span><span class="o">-&gt;</span><span class="na">related</span><span class="p">();</span>
+</pre></div>
+
+<h3>
+<a name="working-with-edges" class="anchor" href="#working-with-edges"><span class="octicon octicon-link"></span></a>Working With Edges</h3>
+
+<p>As stated earlier <strong>Edges</strong> are entities to Graph unlike <em>SQL</em> where they are a matter of a
+foreign key having the value of the parent model as an attribute on the belonging model or in
+<em>Documents</em> where they are either embeds or ids as references. So we developed them to be <em>light
+models</em> which means you can work with them as if you were working with an <code>Eloquent</code> instance - to a certain extent,
+except <a href="#hyperedges">HyperEdges</a>.</p>
+
+<div class="highlight highlight-php"><pre><span class="c1">// Create a new relationship</span>
+<span class="nv">$relation</span> <span class="o">=</span> <span class="nv">$location</span><span class="o">-&gt;</span><span class="na">associate</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span> <span class="c1">// Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn</span>
+
+<span class="c1">// Save the relationship to the database</span>
+<span class="nv">$relation</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span> <span class="c1">// true</span>
+</pre></div>
+
+<p>In the case of a <code>HyperEdge</code> you can access all three models as follows:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$edge</span>    <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">comments</span><span class="p">(</span><span class="nv">$post</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span>
+<span class="nv">$user</span>    <span class="o">=</span> <span class="nv">$edge</span><span class="o">-&gt;</span><span class="na">parent</span><span class="p">();</span>
+<span class="nv">$comment</span> <span class="o">=</span> <span class="nv">$edge</span><span class="o">-&gt;</span><span class="na">hyper</span><span class="p">();</span>
+<span class="nv">$post</span>    <span class="o">=</span> <span class="nv">$edge</span><span class="o">-&gt;</span><span class="na">related</span><span class="p">();</span>
+</pre></div>
+
+<h4>
+<a name="edge-attributes" class="anchor" href="#edge-attributes"><span class="octicon octicon-link"></span></a>Edge Attributes</h4>
+
+<p>By default, edges will have the timestamps <code>created_at</code> and <code>updated_at</code> automatically set and updated <strong>only if</strong> timestamps are enabled by setting <code>$timestamps</code> to <code>true</code>
+on the parent model.</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$located_at</span> <span class="o">=</span> <span class="nv">$location</span><span class="o">-&gt;</span><span class="na">associate</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span>
+<span class="nv">$located_at</span><span class="o">-&gt;</span><span class="na">since</span> <span class="o">=</span> <span class="mi">1966</span><span class="p">;</span>
+<span class="nv">$located_at</span><span class="o">-&gt;</span><span class="na">present</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>
+<span class="nv">$located_at</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+
+<span class="c1">// $created_at and $updated_at are Carbon\Carbon instances</span>
+<span class="nv">$created_at</span> <span class="o">=</span> <span class="nv">$located_at</span><span class="o">-&gt;</span><span class="na">created_at</span><span class="p">;</span>
+<span class="nv">$updated_at</span> <span class="o">=</span> <span class="nv">$located_at</span><span class="o">-&gt;</span><span class="na">updated_at</span><span class="p">;</span>
+</pre></div>
+
+<h5>
+<a name="retrieve-an-edge-from-a-relation" class="anchor" href="#retrieve-an-edge-from-a-relation"><span class="octicon octicon-link"></span></a>Retrieve an Edge from a Relation</h5>
+
+<p>The same way an association will create an <code>EdgeIn</code> relationship we can retrieve
+the edge between two models by calling the <code>edge($model)</code> method on the <code>belongsTo</code>
+relationship.</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$location</span> <span class="o">=</span> <span class="nx">Location</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1892</span><span class="p">);</span>
+<span class="nv">$edge</span> <span class="o">=</span> <span class="nv">$location</span><span class="o">-&gt;</span><span class="na">user</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">edge</span><span class="p">();</span>
+</pre></div>
+
+<p>You may also specify the model at the other side of the edge.</p>
+
+<blockquote>
+<p>Note: By default NeoEloquent will try to pefrorm the <code>$location-&gt;user</code> internally to figure
+out the related side of the edge based on the relation function name, in this case it's
+<code>user()</code>.</p>
+</blockquote>
+
+<div class="highlight highlight-php"><pre><span class="nv">$location</span> <span class="o">=</span> <span class="nx">Location</span><span class="o">::</span><span class="na">find</span><span class="p">(</span><span class="mi">1892</span><span class="p">);</span>
+<span class="nv">$edge</span> <span class="o">=</span> <span class="nv">$location</span><span class="o">-&gt;</span><span class="na">user</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">edge</span><span class="p">(</span><span class="nv">$location</span><span class="o">-&gt;</span><span class="na">user</span><span class="p">);</span>
+</pre></div>
+
+<h2>
+<a name="only-in-neo" class="anchor" href="#only-in-neo"><span class="octicon octicon-link"></span></a>Only in Neo</h2>
+
+<ul>
+<li><a href="#createwith">CreateWith</a></li>
+</ul><p>Here you will find NeoEloquent-specific methods and implementations that with the
+wonderful Eloquent methods would make working with Graph and Neo4j a blast!</p>
+
+<h3>
+<a name="createwith" class="anchor" href="#createwith"><span class="octicon octicon-link"></span></a>CreateWith</h3>
+
+<ul>
+<li><a href="#creating-new-records-and-relations">Creating Relations</a></li>
+<li><a href="#attaching-existing-records-as-relations">Attaching Relations</a></li>
+</ul><p>This method will "kind of" fill the gap between relational and document databases,
+it allows the creation of multiple related models with one database hit.</p>
+
+<h4>
+<a name="creating-new-records-and-relations" class="anchor" href="#creating-new-records-and-relations"><span class="octicon octicon-link"></span></a>Creating New Records and Relations</h4>
+
+<p>Here's an example of creating a post with attached photos and videos:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Post</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">photos</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hasMany</span><span class="p">(</span><span class="s1">'Photo'</span><span class="p">,</span> <span class="s1">'PHOTO'</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">videos</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hasMany</span><span class="p">(</span><span class="s1">'Video'</span><span class="p">,</span> <span class="s1">'VIDEO'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<div class="highlight highlight-php"><pre>
+<span class="nx">Post</span><span class="o">::</span><span class="na">createWith</span><span class="p">([</span><span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'the title'</span><span class="p">,</span> <span class="s1">'body'</span> <span class="o">=&gt;</span> <span class="s1">'the body'</span><span class="p">],</span> <span class="p">[</span>
+    <span class="s1">'photos'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+        <span class="p">[</span>
+            <span class="s1">'url'</span>      <span class="o">=&gt;</span> <span class="s1">'http://url'</span><span class="p">,</span>
+            <span class="s1">'caption'</span>  <span class="o">=&gt;</span> <span class="s1">'...'</span><span class="p">,</span>
+            <span class="s1">'metadata'</span> <span class="o">=&gt;</span> <span class="s1">'...'</span>
+        <span class="p">],</span>
+        <span class="p">[</span>
+            <span class="s1">'url'</span> <span class="o">=&gt;</span> <span class="s1">'http://other.url'</span><span class="p">,</span>
+            <span class="s1">'caption'</span> <span class="o">=&gt;</span> <span class="s1">'the bay'</span><span class="p">,</span>
+            <span class="s1">'metadata'</span> <span class="o">=&gt;</span> <span class="s1">'...'</span>
+        <span class="p">]</span>
+    <span class="p">],</span>
+
+    <span class="s1">'videos'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+        <span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'Boats passing us by'</span><span class="p">,</span>
+        <span class="s1">'description'</span> <span class="o">=&gt;</span> <span class="s1">'...'</span>
+    <span class="p">]</span>
+<span class="p">]);</span>
+</pre></div>
+
+<blockquote>
+<p>The keys <code>photos</code> and <code>videos</code> must be the same as the relation method names in the
+<code>Post</code> model.</p>
+</blockquote>
+
+<p>The Cypher query performed by the example above is:</p>
+
+<pre><code>CREATE (post:`Post` {title: 'the title', body: 'the body'}),
+(post)-[:PHOTO]-&gt;(:`Photo` {url: 'http://url', caption: '...', metadata: '...'}),
+(post)-[:PHOTO]-&gt;(:`Photo` {url: 'http://other', caption: 'the bay', metadata: '...'}),
+(post)-[:VIDEO]-&gt;(:`Video` {title: 'Boats passing us by', description: '...'});
+</code></pre>
+
+<p>We will get the nodes created with their relations as such:</p>
+
+<p><img src="https://googledrive.com/host/0BznzZ2lBbT0cLW9YcjNldlJkcXc/createWith-preview.db.png" alt="CreateWith" title="CreateWith"></p>
+
+<p>You may also mix models and attributes as relation values but it is not necessary
+since NeoEloquent will pass the provided attributes through the <code>$fillable</code>
+filter pipeline:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$videos</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Video</span><span class="p">([</span><span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'description'</span> <span class="o">=&gt;</span> <span class="s1">'bar'</span><span class="p">]);</span>
+<span class="nx">Post</span><span class="o">::</span><span class="na">createWith</span><span class="p">(</span><span class="nv">$info</span><span class="p">,</span> <span class="nb">compact</span><span class="p">(</span><span class="s1">'videos'</span><span class="p">));</span>
+</pre></div>
+
+<p>You may also use a single array of attributes as such:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">account</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hasOne</span><span class="p">(</span><span class="s1">'Account'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nx">User</span><span class="o">::</span><span class="na">createWith</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'foo'</span><span class="p">],</span> <span class="p">[</span><span class="s1">'account'</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="s1">'guid'</span> <span class="o">=&gt;</span> <span class="s1">'bar'</span><span class="p">,</span> <span class="s1">'email'</span> <span class="o">=&gt;</span> <span class="s1">'some@mail.net'</span><span class="p">]]);</span>
+</pre></div>
+
+<h4>
+<a name="attaching-existing-records-as-relations" class="anchor" href="#attaching-existing-records-as-relations"><span class="octicon octicon-link"></span></a>Attaching Existing Records as Relations</h4>
+
+<p><code>createWith</code> is intelligent enough to know the difference when you pass an existing model,
+a model Id or new records that you need to create which allows mixing new records with existing ones.</p>
+
+<div class="highlight highlight-php"><pre><span class="k">class</span> <span class="nc">Post</span> <span class="k">extends</span> <span class="nx">NeoEloquent</span> <span class="p">{</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">tags</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">hasMany</span><span class="p">(</span><span class="s1">'Tag'</span><span class="p">,</span> <span class="s1">'TAG'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<div class="highlight highlight-php"><pre><span class="nv">$tag1</span> <span class="o">=</span> <span class="nx">Tag</span><span class="o">::</span><span class="na">create</span><span class="p">([</span><span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'php'</span><span class="p">]);</span>
+<span class="nv">$tag2</span> <span class="o">=</span> <span class="nx">Tag</span><span class="o">::</span><span class="na">create</span><span class="p">([</span><span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'dev'</span><span class="p">]);</span>
+
+<span class="nv">$post</span> <span class="o">=</span> <span class="nx">Post</span><span class="o">::</span><span class="na">createWith</span><span class="p">([</span><span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'body'</span> <span class="o">=&gt;</span> <span class="s1">'bar'</span><span class="p">],</span> <span class="p">[</span><span class="s1">'tags'</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="nv">$tag1</span><span class="p">,</span> <span class="nv">$tag2</span><span class="p">]]);</span>
+</pre></div>
+
+<p>And we will get the <code>Post</code> related to the existing <code>Tag</code> nodes.</p>
+
+<p>Or using the <code>id</code> of the model:</p>
+
+<div class="highlight highlight-php"><pre><span class="nx">Post</span><span class="o">::</span><span class="na">createWith</span><span class="p">([</span><span class="s1">'title'</span> <span class="o">=&gt;</span> <span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'body'</span> <span class="o">=&gt;</span> <span class="s1">'bar'</span><span class="p">],</span> <span class="p">[</span><span class="s1">'tags'</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'privacy'</span> <span class="o">=&gt;</span> <span class="mi">2</span><span class="p">]);</span>
+</pre></div>
+
+<p>The Cypher for the query that attaches records would be:</p>
+
+<pre><code>CREATE (post:`Post` {title: 'foo', 'body' =&gt; 'bar'})
+WITH post
+MATCH (tag:`Tag`)
+WHERE id(tag) IN [1, 2]
+CREATE (post)-[:TAG]-&gt;(tag);
+</code></pre>
+
+<h2>
+<a name="aggregates" class="anchor" href="#aggregates"><span class="octicon octicon-link"></span></a>Aggregates</h2>
+
+<p>In addition to the Eloquent builder aggregates, NeoEloquent also has support for
+Neo4j specific aggregates like <em>percentile</em> and <em>standard deviation</em>, keeping the same
+function names for convenience.
+Check <a href="http://docs.neo4j.org/chunked/stable/query-aggregation.html">the docs</a> for more.</p>
+
+<blockquote>
+<p><code>table()</code> represents the label of the model</p>
+</blockquote>
+
+<pre><code>$users = DB::table('User')-&gt;count();
+
+$distinct = DB::table('User')-&gt;countDistinct('points');
+
+$price = DB::table('Order')-&gt;max('price');
+
+$price = DB::table('Order')-&gt;min('price');
+
+$price = DB::table('Order')-&gt;avg('price');
+
+$total = DB::table('User')-&gt;sum('votes');
+
+$disc = DB::table('User')-&gt;percentileDisc('votes', 0.2);
+
+$cont = DB::table('User')-&gt;percentileCont('votes', 0.8);
+
+$deviation = DB::table('User')-&gt;stdev('sex');
+
+$population = DB::table('User')-&gt;stdevp('sex');
+
+$emails = DB::table('User')-&gt;collect('email');
+</code></pre>
+
+<h2>
+<a name="changelog" class="anchor" href="#changelog"><span class="octicon octicon-link"></span></a>Changelog</h2>
+
+<p>Check the <a href="https://github.com/Vinelab/NeoEloquent/releases">Releases</a> for details.</p>
+
+<h2>
+<a name="avoid" class="anchor" href="#avoid"><span class="octicon octicon-link"></span></a>Avoid</h2>
+
+<p>Here are some constraints and Graph-specific gotchas, a list of features that are either not supported or not recommended.</p>
+
+<h3>
+<a name="joins-confounded" class="anchor" href="#joins-confounded"><span class="octicon octicon-link"></span></a>JOINS <img class="emoji" title=":confounded:" alt=":confounded:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f616.png" height="20" width="20" align="absmiddle">
+</h3>
+
+<ul>
+<li>They make no sense for Graph, plus Graph hates them!
+Which makes them unsupported on purpose. If migrating from an <code>SQL</code>-based app
+they will be your boogie monster.</li>
+</ul><h3>
+<a name="pivot-tables-in-many-to-many-relationships" class="anchor" href="#pivot-tables-in-many-to-many-relationships"><span class="octicon octicon-link"></span></a>Pivot Tables in Many-To-Many Relationships</h3>
+
+<p>This is not supported, instead we will be using <a href="#edges">Edges</a> to work with relationships between models.</p>
+
+<h3>
+<a name="nested-arrays-and-objects" class="anchor" href="#nested-arrays-and-objects"><span class="octicon octicon-link"></span></a>Nested Arrays and Objects</h3>
+
+<ul>
+<li>Due to the limitations imposed by the objects map types that can be stored in a single,
+you can never have nested <em>arrays</em> or <em>objects</em> in a single model,
+make sure it's flat. <em>Example:</em>
+</li>
+</ul><div class="highlight highlight-php"><pre><span class="c1">// Don't</span>
+<span class="nx">User</span><span class="o">::</span><span class="na">create</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'Some Name'</span><span class="p">,</span> <span class="s1">'location'</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="s1">'lat'</span> <span class="o">=&gt;</span> <span class="mi">123</span><span class="p">,</span> <span class="s1">'lng'</span><span class="o">=&gt;</span> <span class="o">-</span><span class="mi">123</span> <span class="p">]</span> <span class="p">]);</span>
+</pre></div>
+
+<p>Check out the <a href="#createwith">createWith()</a> method on how you can achieve this in a Graph way.</p>
+
+<h2>
+<a name="tests" class="anchor" href="#tests"><span class="octicon octicon-link"></span></a>Tests</h2>
+
+<ul>
+<li>install a Neo4j instance and run it with the default configuration <code>localhost:7474</code>
+</li>
+<li>make sure the database graph is empty to avoid conflicts</li>
+<li>after running <code>composer install</code> there should be <code>/vendor/bin/phpunit</code>
+</li>
+<li>run <code>./vendor/bin/phpunit</code> after making sure that the Neo4j instance is running</li>
+</ul><blockquote>
+<p>Tests marked as incomplete means they are either known issues or non-supported features,
+check included messages for more info.</p>
+</blockquote>
       </section>
     </div>
 
@@ -73,7 +971,17 @@ $ git checkout gh-pages
       </footer>
     </div>
 
-    
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-54103471-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
 
   </body>
 </html>
