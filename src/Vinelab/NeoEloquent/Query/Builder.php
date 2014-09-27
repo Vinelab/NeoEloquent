@@ -132,11 +132,31 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function update(array $values)
     {
-        $bindings = array_merge($values, $this->getBindings());
-
         $cypher = $this->grammar->compileUpdate($this, $values);
 
+        $bindings = $this->getBindingsMergedWithValues($values);
+
         return $this->connection->update($cypher, $bindings);
+    }
+
+    /**
+     *  Bindings should have the keys postfixed with _update as used
+     *  in the CypherGrammar so that we differentiate them from
+     *  query bindings avoiding clashing values.
+     *
+     * @param  array $values
+     * @return array
+     */
+    protected function getBindingsMergedWithValues(array $values)
+    {
+        $bindings = [];
+
+        foreach ($values as $key => $value)
+        {
+            $bindings[$key .'_update'] = $value;
+        }
+
+        return array_merge($this->getBindings(), $bindings);
     }
 
     /**

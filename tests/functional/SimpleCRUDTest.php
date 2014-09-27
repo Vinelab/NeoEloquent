@@ -155,6 +155,32 @@ class SimpleCRUDTest extends TestCase {
         $this->assertEquals('up', $after->hurry);
     }
 
+    /**
+     * Regression test for issue #18 where querying and updating the same
+     * attributes messes up the values and keeps the old ones resulting in a failed update.
+     *
+     * @see  https://github.com/Vinelab/NeoEloquent/issues/18
+     * @return [type] [description]
+     */
+    public function testUpdatingRecordwithUpdateOnQuery()
+    {
+        $w = Wiz::create([
+            'fiz' => 'foo',
+            'biz' => 'boo'
+        ]);
+
+        Wiz::where('fiz', '=', 'foo')
+            ->where('biz', '=', 'boo')
+            ->update(['fiz' => 'notfooanymore', 'biz' => 'noNotBoo!', 'triz' => 'newhere']);
+
+        $found = Wiz::where('fiz', '=', 'notfooanymore')
+            ->orWhere('biz', '=', 'noNotBoo!')
+            ->orWhere('triz', '=', 'newhere')
+            ->first();
+
+        $this->assertEquals($w->getKey(), $found->getKey());
+    }
+
     public function testInsertingBatch()
     {
         $batch = [

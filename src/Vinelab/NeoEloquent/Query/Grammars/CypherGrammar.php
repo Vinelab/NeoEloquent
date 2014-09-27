@@ -403,7 +403,9 @@ class CypherGrammar extends Grammar {
 
         foreach ($values as $key => $value)
 		{
-			$columns[] = $this->wrap($key) . ' = ' . $this->parameter(array('column' => $key));
+            // Update bindings are differentiated with an _update postfix to make sure the don't clash
+            // with query bindings.
+			$columns[] = $this->wrap($key) . ' = ' . $this->parameter(array('column' => $key .'_update'));
 		}
 
 		$columns = implode(', ', $columns);
