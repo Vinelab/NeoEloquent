@@ -245,9 +245,11 @@ class Builder extends IlluminateQueryBuilder {
 
         if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
 
-		$this->wheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
+        $binding = $this->prepareBindingColumn($column);
 
-        $property = $this->wrap($property);
+        $this->wheres[] = compact('type', 'binding', 'column', 'operator', 'value', 'boolean');
+
+        $property = $this->wrap($binding);
 
         if ( ! $value instanceof Expression)
         {
@@ -256,6 +258,33 @@ class Builder extends IlluminateQueryBuilder {
 
 		return $this;
 	}
+
+    /**
+     * Increment the value of an existing column on a where clause.
+     * Used to allow querying on the same attribute with different values.
+     *
+     * @param  string $column
+     * @return string
+     */
+    protected function prepareBindingColumn($column)
+    {
+        $count = $this->columnCountForWhereClause($column);
+        return ($count > 0) ? $column .'_'. ($count + 1) : $column;
+    }
+
+    /**
+     * Get the number of occurrences of a column in where clauses.
+     *
+     * @param  string $column
+     * @return int
+     */
+    protected function columnCountForWhereClause($column)
+    {
+        if (is_array($this->wheres))
+            return count(array_filter($this->wheres, function($where) use($column) {
+                return $where['column'] = $column;
+            }));
+    }
 
     /**
      * Add a "where in" clause to the query.
@@ -329,7 +358,9 @@ class Builder extends IlluminateQueryBuilder {
 
         if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
 
-        $this->wheres[] = compact('type', 'column', 'boolean');
+        $binding = $this->prepareBindingColumn($column);
+
+        $this->wheres[] = compact('type', 'column', 'boolean', 'binding');
 
         return $this;
     }
@@ -643,6 +674,7 @@ class Builder extends IlluminateQueryBuilder {
         if (is_array($value))
         {
             $key = array_keys($value)[0];
+
             if (strpos($key, '.') != false)
             {
                 $binding = $value[$key];
@@ -659,6 +691,24 @@ class Builder extends IlluminateQueryBuilder {
 
         if (is_array($value))
         {
+            // // We will check to see whether a binding for the same attribtue exists already
+            // // so that we merge the values.
+            // if (in_array(array_keys($value)[0], array_keys($this->bindings[$type])))
+            // {
+            //     // Find the attribute we're working with
+            //     $attribute = array_keys($value);
+            //     // If the values of the existing attribute is not an array, make it an array so that we can merge
+            //     // the new value.
+            //     if ( ! is_array($this->bindings[$type][$key]))
+            //         $this->bindings[$type][$key] = [$this->bindings[$type][$key]];
+            //     // Merge values.
+            //     $this->bindings[$type][$key] = array_merge($this->bindings[$type][$key], array_values($value));
+            // }
+            // // It's a new attribute that we're adding a binding for so we'll just add it as is.
+            // else
+            // {
+            //     $this->bindings[$type] = array_merge($this->bindings[$type], $value);
+            // }
             $this->bindings[$type] = array_merge($this->bindings[$type], $value);
         }
         else

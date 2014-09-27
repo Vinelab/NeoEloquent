@@ -266,4 +266,18 @@ class WheresTheTest extends TestCase {
         $u2 = User::where('glasses', 'always on')->first();
         $this->assertNull($u2);
     }
+
+    /**
+     * Regression test for issue #19
+     *
+     * @see  https://github.com/Vinelab/NeoEloquent/issues/19
+     */
+    public function testWhereMultipleValuesForSameColumn()
+    {
+        $u = User::where('alias', '=', 'ab')->orWhere('alias', '=', 'cd')->get();
+        $this->assertCount(2, $u);
+
+        $this->assertEquals('ab', $u[0]->alias);
+        $this->assertEquals('cd', $u[1]->alias);
+    }
 }

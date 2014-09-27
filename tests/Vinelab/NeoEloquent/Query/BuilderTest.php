@@ -131,7 +131,8 @@ class QueryBuilderTest extends TestCase {
                 'column'   => 'id(n)',
                 'operator' => '=',
                 'value'    => 19,
-                'boolean'  => 'and'
+                'boolean'  => 'and',
+                'binding'  => 'id(n)'
             )
         ), $this->builder->wheres, 'make sure the statement was atted to $wheres');
         // When the '$from' attribute is not set on the query builder, the grammar
@@ -150,7 +151,8 @@ class QueryBuilderTest extends TestCase {
                 'column'   => 'id(user)',
                 'operator' => '=',
                 'value'    => 19,
-                'boolean'  => 'and'
+                'boolean'  => 'and',
+                'binding'  => 'id(user)'
             )
         ), $this->builder->wheres, 'make sure the statement was atted to $wheres');
         // When no query builder is passed to the grammar then it will return 'n'
@@ -166,7 +168,8 @@ class QueryBuilderTest extends TestCase {
             array(
                 'type'    => 'Null',
                 'boolean' => 'and',
-                'column'  => 'farted'
+                'column'  => 'farted',
+                'binding' => 'farted'
             )
         ), $this->builder->wheres);
 
@@ -186,7 +189,8 @@ class QueryBuilderTest extends TestCase {
                 'column'   => 'id(n)',
                 'boolean'  => 'and',
                 'operator' => '=',
-                'value'    => 200
+                'value'    => 200,
+                'binding' => 'id(n)'
             )
         ), $this->builder->wheres);
 

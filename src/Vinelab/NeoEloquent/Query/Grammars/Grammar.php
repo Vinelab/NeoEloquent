@@ -27,10 +27,15 @@ class Grammar extends IlluminateGrammar {
 
         // When coming from a WHERE statement we'll have to pluck out the column
         // from the collected attributes.
-        if(is_array($value) and isset($value['column']))
+        if(is_array($value) and isset($value['binding']))
+        {
+            $value = $value['binding'];
+        }
+        elseif (is_array($value) and isset($value['column']))
         {
             $value = $value['column'];
-        } elseif ($this->isExpression($value))
+        }
+        elseif ($this->isExpression($value))
         {
             $value = $this->getValue($value);
         }
@@ -39,6 +44,7 @@ class Grammar extends IlluminateGrammar {
 
         if (strpos($property, '.') != false) $property = explode('.', $property)[1];
 
+        if(is_array($property)) dd($property);
 		return '{' . $property . '}';
 	}
 
