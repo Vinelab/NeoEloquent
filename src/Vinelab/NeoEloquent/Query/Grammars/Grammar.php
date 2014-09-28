@@ -132,7 +132,7 @@ class Grammar extends IlluminateGrammar {
     public function valufy($values)
     {
         // we'll only deal with arrays so let's turn it into one if it isn't
-        if ( ! is_array($values)) $values = (array) $values;
+        if ( ! is_array($values)) $values = [$values];
 
         // escape and wrap them with a quote.
         $values = array_map(function ($value)
@@ -143,6 +143,16 @@ class Grammar extends IlluminateGrammar {
             if (is_string($value))
             {
                 $value = "'" . addslashes($value) . "'";
+            }
+            // In order to support different value types and not have PHP convert them to their
+            // corresponding string values, we'll have to handle boolean and null values and add them as strings.
+            elseif (is_bool($value))
+            {
+                $value = ($value) ? 'true' : 'false';
+            }
+            elseif(is_null($value))
+            {
+                $value = 'null';
             }
 
             return $value;

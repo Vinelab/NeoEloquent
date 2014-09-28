@@ -377,6 +377,33 @@ class QueryingRelationsTest extends TestCase {
         }
     }
 
+    public function testCreatingModelWithNullAndBooleanValues()
+    {
+        $tag1 = Tag::create(['title' => 'php']);
+        $tag2 = Tag::create(['title' => 'development']);
+        $tags = [$tag1->getKey(), $tag2->getKey()];
+
+        $post = Post::createWith(['title' => false, 'body' => true, 'summary' => null], compact('tags'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $this->assertFalse($post->title);
+        $this->assertTrue($post->body);
+        $this->assertNull($post->summary);
+        $this->assertNotNull($post->created_at);
+        $this->assertNotNull($post->updated_at);
+
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(2, count($related));
+
+        foreach ($related as $key => $tag)
+        {
+            $expected = 'tag'. ($key + 1);
+            $this->assertEquals($$expected, $tag);
+        }
+    }
+
     public function testCreatingModeWithAttachedModelIds()
     {
         $tag1 = Tag::create(['title' => 'php']);
@@ -533,7 +560,7 @@ class Post extends Model {
 
     protected $label = 'Post';
 
-    protected $fillable = ['title', 'body'];
+    protected $fillable = ['title', 'body', 'summary'];
 
     public function photos()
     {
