@@ -708,6 +708,7 @@ class EloquentBuilderTest extends TestCase {
         $model = m::mock('Vinelab\NeoEloquent\Eloquent\Model');
         $model->shouldReceive('getKeyName')->andReturn('foo');
         $model->shouldReceive('getTable')->andReturn('foo_table');
+        $model->shouldReceive('getQualifiedKeyName')->andReturn('foo');
         return $model;
     }
 
