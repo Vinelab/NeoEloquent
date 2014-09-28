@@ -144,15 +144,11 @@ class Grammar extends IlluminateGrammar {
             {
                 $value = "'" . addslashes($value) . "'";
             }
-            // In order to support different value types and not have PHP convert them to their
-            // corresponding string values, we'll have to handle boolean and null values and add them as strings.
+            // In order to support boolean value types and not have PHP convert them to their
+            // corresponding string values, we'll have to handle boolean values and add their literal string representation.
             elseif (is_bool($value))
             {
                 $value = ($value) ? 'true' : 'false';
-            }
-            elseif(is_null($value))
-            {
-                $value = 'null';
             }
 
             return $value;
@@ -248,6 +244,11 @@ class Grammar extends IlluminateGrammar {
         $properties = [];
         foreach ($bindings as $key => $value)
         {
+            // From the Neo4j docs:
+            //  "NULL is not a valid property value. NULLs can instead be modeled by the absence of a key."
+            // So we'll just ignore null keys if they occur.
+            if (is_null($value)) continue;
+
             $key   = $this->propertize($key);
             $value = $this->valufy($value);
             $properties[] = "$key: $value";
