@@ -241,10 +241,6 @@ class Connection extends IlluminateConnection {
             {
 				$binding = $value->format($grammar->getDateFormat());
 			}
-			elseif ($value === false)
-			{
-				$bindings[$key] = 0;
-			}
 
             $property = is_array($binding) ? key($binding) : $key;
 
@@ -256,7 +252,7 @@ class Connection extends IlluminateConnection {
             // to be _nodeId instead.
             if ( ! is_array($binding))
             {
-                $binding = (array) $binding;
+                $binding = [$binding];
             }
 
             foreach ($binding as $property => $real)

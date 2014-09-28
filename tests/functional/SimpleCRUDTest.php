@@ -285,4 +285,41 @@ class SimpleCRUDTest extends TestCase {
 
         $this->assertEquals($w, $found);
     }
+
+    public function testCreatingNullAndBooleanValues()
+    {
+        $w = Wiz::create([
+            'fiz'  => null,
+            'biz'  => false,
+            'triz' => true
+        ]);
+
+        $this->assertNotNull($w->getKey());
+
+        $found = Wiz::where('fiz', '=', null)->where('biz', '=', false)->where('triz', '=', true)->first();
+
+        $this->assertNull($found->fiz);
+        $this->assertFalse($found->biz);
+        $this->assertTrue($found->triz);
+    }
+
+    public function testUpdatingNullAndBooleanValues()
+    {
+        $w = Wiz::create([
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
+            'triz' => 'troo'
+        ]);
+
+        $this->assertNotNull($w->getKey());
+
+        $updated = Wiz::where('fiz', 'foo')->where('biz', 'boo')->where('triz', 'troo')->update([
+            'fiz'  => null,
+            'biz'  => false,
+            'triz' => true
+        ]);
+
+        $this->assertGreaterThan(0, $updated);
+    }
+
 }
