@@ -136,7 +136,9 @@ class Builder extends IlluminateQueryBuilder {
 
         $bindings = $this->getBindingsMergedWithValues($values);
 
-        return $this->connection->update($cypher, $bindings);
+        $updated = $this->connection->update($cypher, $bindings);
+
+        return (isset($updated[0]) and isset($updated[0][0])) ? $updated[0][0] : 0;
     }
 
     /**
