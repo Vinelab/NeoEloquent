@@ -322,6 +322,61 @@ class QueryingRelationsTest extends TestCase {
         }
     }
 
+    /**
+     * Regression test for issue where createWith ignores creating timestamps for record.
+     *
+     * @see  https://github.com/Vinelab/NeoEloquent/issues/17
+     */
+    public function testCreateWithAddsTimestamps()
+    {
+        $tag1 = Tag::create(['title' => 'php']);
+        $tag2 = Tag::create(['title' => 'development']);
+        $tags = [$tag1->getKey(), $tag2->getKey()];
+
+        $post = Post::createWith(['title' => '...', 'body' => '...'], compact('tags'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $this->assertNotNull($post->created_at);
+        $this->assertNotNull($post->updated_at);
+
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(2, count($related));
+
+        foreach ($related as $key => $tag)
+        {
+            $expected = 'tag'. ($key + 1);
+            $this->assertEquals($$expected, $tag);
+        }
+    }
+
+    public function testCreatWithPassesThroughFillables()
+    {
+        $tag1 = Tag::create(['title' => 'php']);
+        $tag2 = Tag::create(['title' => 'development']);
+        $tags = [$tag1->getKey(), $tag2->getKey()];
+
+        $post = Post::createWith(['title' => '...', 'body' => '...', 'mother' => 'something', 'father' => 'wanted'], compact('tags'));
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $this->assertNull($post->mother);
+        $this->assertNull($post->father);
+        $this->assertNotNull($post->created_at);
+        $this->assertNotNull($post->updated_at);
+
+        $related = $post->tags;
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertEquals(2, count($related));
+
+        foreach ($related as $key => $tag)
+        {
+            $expected = 'tag'. ($key + 1);
+            $this->assertEquals($$expected, $tag);
+        }
+    }
+
     public function testCreatingModeWithAttachedModelIds()
     {
         $tag1 = Tag::create(['title' => 'php']);

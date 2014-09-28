@@ -663,6 +663,7 @@ class Builder extends IlluminateBuilder {
     {
         // Collect the model attributes and label in the form of ['label' => $label, 'attributes' => $attributes]
         // as expected by the Query Builder.
+        $attributes = $this->prepareForCreation($this->model, $attributes);
         $model = ['label' => $this->model->getTable(), 'attributes' => $attributes];
 
         /**
