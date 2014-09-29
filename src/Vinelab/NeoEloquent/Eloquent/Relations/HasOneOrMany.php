@@ -61,10 +61,33 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     {
         foreach ($models as $model)
         {
+            // In the case of fetching nested relations, we will get an array
+            // with the first key being the model we need, and the other being
+            // the related model so we'll just take the first model out of the array.
+            if (is_array($model)) $model = reset($model);
+
             $model->setRelation($relation, $this->related->newCollection());
         }
 
         return $models;
+    }
+
+    /**
+     * Get all of the primary keys for an array of models.
+     *
+     * @param  array   $models
+     * @param  string  $key
+     * @return array
+     */
+    protected function getKeys(array $models, $key = null)
+    {
+        return array_unique(array_values(array_map(function($value) use ($key)
+        {
+            if (is_array($value)) $value = reset($value);
+
+            return $key ? $value->getAttribute($key) : $value->getKey();
+
+        }, $models)));
     }
 
     /**
@@ -123,6 +146,11 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
             {
                 if ($result[$parent] instanceof Model)
                 {
+                    // In the case of fetching nested relations, we will get an array
+                    // with the first key being the model we need, and the other being
+                    // the related model so we'll just take the first model out of the array.
+                    if (is_array($model)) $model = reset($model);
+
                     return $model->getKey() == $result[$parent]->getKey();
                 }
             });
@@ -131,6 +159,11 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
             // Sometimes we have more than a match so we gotta catch them all!
             foreach ($matched as $match)
             {
+                // In the case of fetching nested relations, we will get an array
+                // with the first key being the model we need, and the other being
+                // the related model so we'll just take the first model out of the array.
+                if (is_array($model)) $model = reset($model);
+
                 if ($type == 'many')
                 {
                     $collection = $model->getRelation($relation);

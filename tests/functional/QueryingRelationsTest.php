@@ -491,6 +491,65 @@ class QueryingRelationsTest extends TestCase {
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $user);
     }
 
+    public function testEagerLoadingNestedRelationship()
+    {
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
+
+        $user->roles()->save($role);
+        // Eager load so that when we assert we make sure they're there
+        $user->roles->first()->permissions;
+
+        $found = User::with('roles.permissions')
+            ->whereHas('roles', function($q) use($role) { $q->where('id', $role->id); })
+            ->first();
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found);
+        $this->assertArrayHasKey('roles', $found->getRelations());
+        $this->assertArrayHasKey('permissions', $found->roles->first()->getRelations());
+        $this->assertEquals($user->toArray(), $found->toArray());
+    }
+
+    public function testInverseEagerLoadingOneNestedRelationship()
+    {
+        $user = User::createWith(['name' => 'cappuccino'], ['account' => ['guid' => 'anID']]);
+        $role = Role::create(['alias' => 'pikachu']);
+
+        $user->roles()->save($role);
+        // Eager load so that when we assert we make sure they're there
+        $acc = $role->users->first()->account;
+
+        $roleFound = Role::with('users.account')
+            ->whereHas('users', function($q) use($user) { $q->where('id', $user->getKey()); })
+            ->first();
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $roleFound);
+        $this->assertArrayHasKey('users', $roleFound->getRelations());
+        $this->assertArrayHasKey('account', $roleFound->users->first()->getRelations());
+        $this->assertEquals('anID', $roleFound->users->first()->account->guid);
+        $this->assertEquals($role->toArray(), $roleFound->toArray());
+    }
+
+    public function testDoubleInverseEagerLoadingBelongsToRelationship()
+    {
+        $user = User::createWith(['name' => 'cappuccino'], ['organization' => ['name' => 'Pokemon']]);
+        // Eager load so that when we assert we make sure they're there
+        $role = Role::create(['alias' => 'pikachu']);
+
+        $user->roles()->save($role);
+        // Eager load so that when we assert we make sure they're there
+        $org = $role->users->first()->organization;
+
+        $roleFound = Role::with('users.organization')
+            ->whereHas('users', function($q) use($user) { $q->where('id', $user->getKey()); })
+            ->first();
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $roleFound);
+        $this->assertArrayHasKey('users', $roleFound->getRelations());
+        $this->assertArrayHasKey('organization', $roleFound->users->first()->getRelations());
+        $this->assertEquals('Pokemon', $roleFound->users->first()->organization->name);
+        $this->assertEquals($role->toArray(), $roleFound->toArray());
+    }
 }
 
 class User extends Model {
@@ -513,6 +572,11 @@ class User extends Model {
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'COLLEAGUE_OF');
     }
+
+    public function organization()
+    {
+        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Organization', 'MEMBER_OF');
+    }
 }
 
 class Account extends Model {
@@ -524,6 +588,18 @@ class Account extends Model {
     public function user()
     {
         return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'ACCOUNT');
+    }
+}
+
+class Organization extends Model {
+
+    protected $label = 'Organization';
+
+    protected $fillable = ['name'];
+
+    public function members()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'MEMBER_OF');
     }
 }
 

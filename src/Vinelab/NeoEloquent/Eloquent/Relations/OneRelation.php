@@ -14,6 +14,28 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
     protected $edgeDirection = 'out';
 
     /**
+     * Initialize the relation on a set of models.
+     *
+     * @param  array   $models
+     * @param  string  $relation
+     * @return array
+     */
+    public function initRelation(array $models, $relation)
+    {
+        foreach ($models as $model)
+        {
+            // In the case of fetching nested relations, we will get an array
+            // with the first key being the model we need, and the other being
+            // the related model so we'll just take the first model out of the array.
+            if (is_array($model)) $model = reset($model);
+
+            $model->setRelation($relation, null);
+        }
+
+        return $models;
+    }
+
+    /**
      * Get an instance of the Edge[In, Out, etc.] relationship.
      *
      * @param  \Illuminate\Database\Eloquent\Model $model
@@ -106,6 +128,11 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
          */
         foreach ($models as $model)
         {
+            // In the case of fetching nested relations, we will get an array
+            // with the first key being the model we need, and the other being
+            // the related model so we'll just take the first model out of the array.
+            if (is_array($model)) $model = reset($model);
+
             if ( ! is_null($value = $model->{$this->otherKey}))
             {
                 $keys[] = $value;
@@ -150,6 +177,11 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
             {
                 if ($result[$parent] instanceof Model)
                 {
+                    // In the case of fetching nested relations, we will get an array
+                    // with the first key being the model we need, and the other being
+                    // the related model so we'll just take the first model out of the array.
+                    if (is_array($model)) $model = reset($model);
+
                     return $model->getKey() == $result[$parent]->getKey();
                 }
             });
@@ -158,6 +190,11 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
             // Sometimes we have more than a match so we gotta catch them all!
             foreach ($matched as $match)
             {
+                // In the case of fetching nested relations, we will get an array
+                // with the first key being the model we need, and the other being
+                // the related model so we'll just take the first model out of the array.
+                if (is_array($model)) $model = reset($model);
+
                 $model->setRelation($relation, $match[$relation]);
             }
         }
