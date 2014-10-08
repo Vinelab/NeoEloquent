@@ -31,7 +31,9 @@ class Connection extends IlluminateConnection {
      */
     protected $defaults = array(
         'host' => 'localhost',
-        'port' => 7474
+        'port' => 7474,
+        'username' => null,
+        'password' => null
     );
 
     /**
@@ -61,7 +63,9 @@ class Connection extends IlluminateConnection {
      */
     public function createConnection()
     {
-        return new NeoClient($this->getHost(), $this->getPort());
+        $client = new NeoClient($this->getHost(), $this->getPort());
+        $client->getTransport()->setAuth($this->getUsername(), $this->getPassword());
+        return $client;
     }
 
     /**
@@ -107,12 +111,30 @@ class Connection extends IlluminateConnection {
     }
 
     /**
-	 * Get an option from the configuration options.
-	 *
-	 * @param  string   $option
+     * Get the connection username
+     * @return int|string
+     */
+    public function getUsername()
+    {
+        return $this->getConfig('username', $this->defaults['username']);
+    }
+
+    /**
+     * Get the connection password
+     * @return int|strings
+     */
+    public function getPassword()
+    {
+        return $this->getConfig('password', $this->defaults['password']);
+    }
+
+    /**
+     * Get an option from the configuration options.
+     *
+     * @param  string   $option
      * @param  mixed    $default
-	 * @return mixed
-	 */
+     * @return mixed
+     */
     public function getConfig($option, $default = null)
     {
         return array_get($this->config, $option, $default);
@@ -129,48 +151,48 @@ class Connection extends IlluminateConnection {
     }
 
     /**
-	 * Run a select statement against the database.
-	 *
-	 * @param  string  $query
-	 * @param  array   $bindings
-	 * @return array
-	 */
+     * Run a select statement against the database.
+     *
+     * @param  string  $query
+     * @param  array   $bindings
+     * @return array
+     */
     public function select($query, $bindings = array())
     {
         return $this->run($query, $bindings, function($me, $query, $bindings)
-		{
-			if ($me->pretending()) return array();
+        {
+            if ($me->pretending()) return array();
 
-			// For select statements, we'll simply execute the query and return an array
-			// of the database result set. Each element in the array will be a single
-			// node from the database, and will either be an array or objects.
+            // For select statements, we'll simply execute the query and return an array
+            // of the database result set. Each element in the array will be a single
+            // node from the database, and will either be an array or objects.
             $statement = $me->getCypherQuery($query, $bindings);
 
             return $statement->getResultSet();
-		});
+        });
     }
 
     /**
-	 * Run a Cypher statement and get the number of nodes affected.
-	 *
-	 * @param  string  $query
-	 * @param  array   $bindings
-	 * @return int
-	 */
-	public function affectingStatement($query, $bindings = array())
-	{
-		return $this->run($query, $bindings, function($me, $query, $bindings)
-		{
-			if ($me->pretending()) return 0;
+     * Run a Cypher statement and get the number of nodes affected.
+     *
+     * @param  string  $query
+     * @param  array   $bindings
+     * @return int
+     */
+    public function affectingStatement($query, $bindings = array())
+    {
+        return $this->run($query, $bindings, function($me, $query, $bindings)
+        {
+            if ($me->pretending()) return 0;
 
-			// For update or delete statements, we want to get the number of rows affected
-			// by the statement and return that back to the developer. We'll first need
-			// to execute the statement and then we'll use CypherQuery to fetch the affected.
+            // For update or delete statements, we want to get the number of rows affected
+            // by the statement and return that back to the developer. We'll first need
+            // to execute the statement and then we'll use CypherQuery to fetch the affected.
             $statement = $me->getCypherQuery($query, $bindings);
 
-			return $statement->getResultSet();
-		});
-	}
+            return $statement->getResultSet();
+        });
+    }
 
     /**
      * Execute a Cypher statement and return the boolean result.
@@ -206,19 +228,19 @@ class Connection extends IlluminateConnection {
     }
 
     /**
-	 * Prepare the query bindings for execution.
-	 *
-	 * @param  array  $bindings
-	 * @return array
-	 */
-	public function prepareBindings(array $bindings)
-	{
-		$grammar = $this->getQueryGrammar();
+     * Prepare the query bindings for execution.
+     *
+     * @param  array  $bindings
+     * @return array
+     */
+    public function prepareBindings(array $bindings)
+    {
+        $grammar = $this->getQueryGrammar();
 
         $prepared = array();
 
-		foreach ($bindings as $key => $binding)
-		{
+        foreach ($bindings as $key => $binding)
+        {
             // The bindings are collected in a little bit different way than
             // Eloquent, we will need the key name in order to know where to replace
             // the value using the Neo4j client.
@@ -233,14 +255,14 @@ class Connection extends IlluminateConnection {
                 $value = array_values($value);
             }
 
-			// We need to transform all instances of the DateTime class into an actual
-			// date string. Each query grammar maintains its own date string format
-			// so we'll just ask the grammar for the format to get from the date.
+            // We need to transform all instances of the DateTime class into an actual
+            // date string. Each query grammar maintains its own date string format
+            // so we'll just ask the grammar for the format to get from the date.
 
             if ($value instanceof DateTime)
             {
-				$binding = $value->format($grammar->getDateFormat());
-			}
+                $binding = $value->format($grammar->getDateFormat());
+            }
 
             $property = is_array($binding) ? key($binding) : $key;
 
@@ -268,10 +290,10 @@ class Connection extends IlluminateConnection {
 
                 $prepared[$property] = $real;
             }
-		}
+        }
 
-		return $prepared;
-	}
+        return $prepared;
+    }
 
     /**
      * Get the query grammar used by the connection.
@@ -408,9 +430,9 @@ class Connection extends IlluminateConnection {
             $result = $callback($this, $query, $bindings);
         }
 
-        // If an exception occurs when attempting to run a query, we'll format the error
-        // message to include the bindings with Cypher, which will make this exception a
-        // lot more helpful to the developer instead of just the database's errors.
+            // If an exception occurs when attempting to run a query, we'll format the error
+            // message to include the bindings with Cypher, which will make this exception a
+            // lot more helpful to the developer instead of just the database's errors.
         catch (\Exception $e)
         {
             throw new QueryException($query, $bindings, $e);
