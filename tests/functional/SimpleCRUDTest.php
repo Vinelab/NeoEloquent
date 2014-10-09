@@ -53,6 +53,21 @@ class SimpleCRUDTest extends TestCase {
         User::findOrFail(0);
     }
 
+    /**
+     * Regression test for issue #27
+     * @see https://github.com/Vinelab/NeoEloquent/issues/27
+     */
+    public function testDoesntCrashOnNonIntIds()
+    {
+        $u = User::create([]);
+        $id = (string) $u->id;
+        $found = User::where('id', "$id")->first();
+        $this->assertEquals($found, $u);
+
+        $foundAgain = User::where('id(individual)', "$id")->first();
+        $this->assertEquals($foundAgain, $u);
+    }
+
     public function testCreatingRecord()
     {
         $w = new Wiz(['fiz' => 'foo', 'biz' => 'boo']);

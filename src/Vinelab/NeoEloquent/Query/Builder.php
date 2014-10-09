@@ -265,7 +265,15 @@ class Builder extends IlluminateQueryBuilder {
 
         $property = $column;
 
-        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+        // When the column is an id we need to treat it as a graph db id and transform it
+        // into the form of id(n) and the typecast the value into int.
+        if ($column == 'id')
+        {
+            $column = 'id('. $this->modelAsNode() .')';
+            $value = intval($value);
+        }
+        // Also if the $column is already a form of id(n) we'd have to type-cast the value into int.
+        elseif (preg_match('/^id\(.*\)$/', $column)) $value = intval($value);
 
         $binding = $this->prepareBindingColumn($column);
 
