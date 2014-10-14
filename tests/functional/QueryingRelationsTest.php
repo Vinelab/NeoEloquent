@@ -550,6 +550,38 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals('Pokemon', $roleFound->users->first()->organization->name);
         $this->assertEquals($role->toArray(), $roleFound->toArray());
     }
+
+    public function testQueryingRelatedModel()
+    {
+        $user = User::createWith(['name' => 'Beluga'], [
+            'roles' => [
+                ['title' => 'Read Things', 'alias' => 'read'],
+                ['title' => 'Write Things', 'alias' => 'write']
+            ]
+        ]);
+
+        $read = Role::where('alias', 'read')->first();
+        $this->assertEquals('read', $read->alias);
+        $readFound = $user->roles()->where('alias', 'read')->first();
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $readFound);
+        $this->assertEquals($read, $readFound);
+
+        $write = Role::where('alias', 'write')->first();
+        $this->assertEquals('write', $write->alias);
+        $writeFound = $user->roles()->where('alias', 'write')->first();
+        $this->assertEquals($write, $writeFound);
+    }
+
+    public function testDirectRecursiveRelationQuery()
+    {
+        $user = User::createWith(['name' => 'captain'], ['colleagues' => ['name' => 'acme']]);
+        $acme = User::where('name', 'acme')->first();
+        $found = $user->colleagues()->where('name', 'acme')->first();
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found);
+
+        $this->assertEquals($acme, $found);
+    }
+
 }
 
 class User extends Model {

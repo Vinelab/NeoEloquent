@@ -212,6 +212,12 @@ class Grammar extends IlluminateGrammar {
             $from = ( ! is_null($this->query)) ? $this->query->from : null;
             $column = $this->getIdReplacement('id('. $this->modelAsNode($from) .')');
         }
+        // When it's a form of node.attribute we'll just remove the '.' so that
+        // we get a consistent form of binding key/value pairs.
+        elseif (strpos($column, '.'))
+        {
+            return str_replace('.', '', $column);
+        }
 
         return $column;
     }

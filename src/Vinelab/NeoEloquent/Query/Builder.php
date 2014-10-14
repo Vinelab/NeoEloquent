@@ -272,6 +272,14 @@ class Builder extends IlluminateQueryBuilder {
             $column = 'id('. $this->modelAsNode() .')';
             $value = intval($value);
         }
+        // When it's been already passed in the form of NodeLabel.id we'll have to
+        // re-format it into id(NodeLabel)
+        elseif (preg_match('/^.*\.id$/', $column))
+        {
+            $parts = explode('.', $column);
+            $column = sprintf('%s(%s)', $parts[1], $parts[0]);
+            $value = intval($value);
+        }
         // Also if the $column is already a form of id(n) we'd have to type-cast the value into int.
         elseif (preg_match('/^id\(.*\)$/', $column)) $value = intval($value);
 
