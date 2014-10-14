@@ -52,7 +52,9 @@ Add the connection defaults:
     'neo4j' => [
         'driver' => 'neo4j',
         'host'   => 'localhost',
-        'port'   => '7474'
+        'port'   => '7474',
+        'username' => null,
+        'password' => null
     ]
 ]
 ```
