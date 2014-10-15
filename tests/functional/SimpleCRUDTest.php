@@ -272,6 +272,22 @@ class SimpleCRUDTest extends TestCase {
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
     }
 
+    public function testRestoringSoftDeletedModel()
+    {
+        $w = WizDel::create([]);
+
+        $g = WizDel::first();
+        $g->delete();
+
+        $this->assertFalse($g->exists);
+        $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
+
+        $h = WizDel::onlyTrashed()->where('id', $g->getKey())->first();
+        $this->assertInstanceOf('Carbon\Carbon', $h->deleted_at);
+        $this->assertTrue($h->restore());
+        $this->assertNull($h->deleted_at);
+    }
+
     public function testGettingModelCount()
     {
         $count = WizDel::count();
