@@ -502,4 +502,15 @@ abstract class Model extends IlluminateModel {
     {
         $this->updateTimestamps();
     }
+
+    public function getDirty()
+    {
+        $dirty = parent::getDirty();
+
+        // We need to remove the primary key from the dirty attributes since primary keys
+        // never change and when updating it shouldn't be part of the attribtues.
+        if (isset($dirty[$this->primaryKey])) unset($dirty[$this->primaryKey]);
+
+        return $dirty;
+    }
 }
