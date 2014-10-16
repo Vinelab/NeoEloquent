@@ -475,6 +475,23 @@ class QueryingRelationsTest extends TestCase {
     }
 
     /**
+     * Regression for issue #9
+     * @see https://github.com/Vinelab/NeoEloquent/issues/9
+     */
+    public function testCreateModelWithMultiRelationOfSameRelatedModel()
+    {
+        $post = Post::createWith(['title' => 'tayta', 'body' => 'one hot bowy'], [
+            'photos' => ['url' => 'my.photo.url'],
+            'cover'  => ['url' => 'my.cover.url']
+        ]);
+
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
+
+        $this->assertEquals('my.photo.url', $post->photos->first()->url);
+        $this->assertEquals('my.cover.url', $post->cover->url);
+    }
+
+    /**
      * Regression test for creating recursively connected models.
      *
      * @see https://github.com/Vinelab/NeoEloquent/issues/7
@@ -673,6 +690,11 @@ class Post extends Model {
     public function photos()
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', 'PHOTO');
+    }
+
+    public function cover()
+    {
+        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', 'COVER');
     }
 
     public function videos()

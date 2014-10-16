@@ -168,7 +168,7 @@ class Grammar extends IlluminateGrammar {
      * @param  boolean $related Tells whether this is a related node so that we append a 'with_' to label.
      * @return string
      */
-    public function modelAsNode($labels = null, $related = false)
+    public function modelAsNode($labels = null, $relation = null)
     {
         if (is_null($labels))
         {
@@ -181,7 +181,7 @@ class Grammar extends IlluminateGrammar {
         // When this is a related node we'll just prepend it with 'with_' that way we avoid
         // clashing node models in the cases like using recursive model relations.
         // @see https://github.com/Vinelab/NeoEloquent/issues/7
-        if ($related) $labels = 'with_'. $labels;
+        if ( ! is_null($relation)) $labels = 'with_'. $relation .'_'. $labels;
 
         return mb_strtolower($labels);
     }
