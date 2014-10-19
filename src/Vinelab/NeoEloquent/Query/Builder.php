@@ -322,7 +322,7 @@ class Builder extends IlluminateQueryBuilder {
     {
         if (is_array($this->wheres))
             return count(array_filter($this->wheres, function($where) use($column) {
-                return $where['column'] = $column;
+                return $where['column'] == $column;
             }));
     }
 
@@ -497,7 +497,9 @@ class Builder extends IlluminateQueryBuilder {
     {
         $cypher = $this->grammar->compileCreateWith($this, compact('model', 'related'));
 
-        return $this->connection->statement($cypher, [], $result = true);
+        // Indicate that we need the result returned as is.
+        $result = true;
+        return $this->connection->statement($cypher, [], $result);
     }
 
     /**

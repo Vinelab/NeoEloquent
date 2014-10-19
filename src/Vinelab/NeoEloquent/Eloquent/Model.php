@@ -467,8 +467,6 @@ abstract class Model extends IlluminateModel {
     {
         $query = static::query();
 
-        $instance = new static($attributes);
-
         return $query->createWith($attributes, $relations);
     }
     /**

@@ -173,7 +173,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
          */
         foreach ($models as $model)
         {
-            $matched = $results->filter(function($result) use($parent, $relation, $model)
+            $matched = $results->filter(function($result) use($parent, $model)
             {
                 if ($result[$parent] instanceof Model)
                 {

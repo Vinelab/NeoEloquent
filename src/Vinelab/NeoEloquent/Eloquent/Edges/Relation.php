@@ -313,7 +313,9 @@ abstract class Relation extends Delegate {
         $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;
         $attributes = array_merge(['id' => $relatedNode->getId()], $relatedNode->getProperties());
 
-        $this->related = $this->related->newFromBuilder($attributes, $exists = true);
+        // This is an existing relationship.
+        $exists = true;
+        $this->related = $this->related->newFromBuilder($attributes, $exists);
         $this->related->setConnection($this->related->getConnection());
     }
 

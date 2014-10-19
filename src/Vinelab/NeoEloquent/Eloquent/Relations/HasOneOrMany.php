@@ -143,7 +143,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
          */
         foreach ($models as $model)
         {
-            $matched = $results->filter(function($result) use($parent, $relation, $model)
+            $matched = $results->filter(function($result) use($parent, $model)
             {
                 if ($result[$parent] instanceof Model)
                 {
@@ -469,7 +469,6 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      */
     public function updateEdge($id, array $properties)
     {
-        $related = $this->related->findOrFail($id);
         $edge = $this->finder->first($this->parent, $this->related->findOrFail($id), $this->type);
         $edge->fill($properties);
         return $edge->save();

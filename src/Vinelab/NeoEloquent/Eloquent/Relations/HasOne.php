@@ -119,7 +119,9 @@ class HasOne extends HasOneOrMany {
     {
         $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
 
-        return new EdgeOut($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique = true);
+       // Indicate a unique relation since this only involves one other model.
+        $unique = true;
+        return new EdgeOut($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
     }
 
     /**

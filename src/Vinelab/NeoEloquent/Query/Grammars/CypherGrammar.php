@@ -520,6 +520,7 @@ class CypherGrammar extends Grammar {
     {
         $model   = $create['model'];
         $related = $create['related'];
+        $identifier = true; // indicates that we this entity requires an identifier for prepareEntity.
 
         // Prepare the parent model as a query entity with an identifier to be
         // later used when relating with the rest of the models, something like:
@@ -527,7 +528,7 @@ class CypherGrammar extends Grammar {
         $entity = $this->prepareEntity([
             'label'    => $model['label'],
             'bindings' => $model['attributes']
-        ], $identifier = true);
+        ], $identifier);
 
         $parentNode = $this->modelAsNode($model['label']);
 
@@ -543,6 +544,10 @@ class CypherGrammar extends Grammar {
 
             if ( ! is_array($values)) $values = (array) $values;
 
+            // Indicate a bare new relation when being crafted so that we distinguish it from relations
+            // b/w existing records.
+            $bare = true;
+
             // We need to craft a relationship between the parent model's node identifier
             // and every single relationship record so that we get something like this:
             // (post)-[:PHOTO]->(:Photo {url: '', caption: '..'})
@@ -553,7 +558,7 @@ class CypherGrammar extends Grammar {
                                             $this->prepareEntity(compact('label', 'bindings')),
                                             $this->modelAsNode($label),
                                             $relation['direction'],
-                                            $bare = true);
+                                            $bare);
             }
 
             // Set up the query parts that are required to attach two nodes.
@@ -575,7 +580,7 @@ class CypherGrammar extends Grammar {
                                                                 "($node)",
                                                                 $nodeLabel,
                                                                 $relation['direction'],
-                                                                $bare = true);
+                                                                $bare);
             }
         }
 

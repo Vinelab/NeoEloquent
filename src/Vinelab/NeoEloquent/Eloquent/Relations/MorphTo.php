@@ -119,7 +119,9 @@ class MorphTo extends OneRelation {
     {
         $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
 
-        return new EdgeOut($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique = true);
+        // Indicate a unique relationship since this involves one other model.
+        $unique = true;
+        return new EdgeOut($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
     }
 
 }

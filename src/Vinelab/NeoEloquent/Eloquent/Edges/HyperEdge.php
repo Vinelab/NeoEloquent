@@ -60,7 +60,10 @@ class HyperEdge extends Relation {
         $this->morph = $morph;
         $this->morphType = $morphType;
 
-        parent::__construct($query, $parent, $related, $type, $attributes, $unique = false);
+        // This is not a unique relationship since it involves multiple models.
+        $unique = false;
+
+        parent::__construct($query, $parent, $related, $type, $attributes, $unique);
     }
 
      /**
@@ -77,9 +80,12 @@ class HyperEdge extends Relation {
         $this->hyper = $this->asNode($this->related);
         $this->end   = $this->asNode($this->morph);
 
+        // Not a unique relationship since it involves multiple models.
+        $unique = false;
+
         // Setup left and right edges
-        $this->left  = new EdgeOut($this->query, $this->parent, $this->related, $this->type, $this->attributes, $unique = false);
-        $this->right = new EdgeOut($this->query, $this->related, $this->morph, $this->morphType, $this->attributes, $unique = false);
+        $this->left  = new EdgeOut($this->query, $this->parent, $this->related, $this->type, $this->attributes, $unique);
+        $this->right = new EdgeOut($this->query, $this->related, $this->morph, $this->morphType, $this->attributes, $unique);
         // Set the morph type to the relationship so that we know who we're talking to.
         $this->right->morph_type = get_class($this->morph);
     }
