@@ -2,7 +2,6 @@
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 

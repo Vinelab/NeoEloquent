@@ -1,8 +1,5 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Builder;
-use Illuminate\Database\Query\Expression;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 

@@ -5,8 +5,6 @@ use Everyman\Neo4j\Relationship;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 
 class Finder extends Delegate {
 

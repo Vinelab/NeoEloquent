@@ -1,10 +1,8 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
-use Closure;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
 use Vinelab\NeoEloquent\Helpers;
-use Vinelab\NeoEloquent\Connection;
 use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;

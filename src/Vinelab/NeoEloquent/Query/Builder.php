@@ -1,8 +1,6 @@
 <?php namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
-use Everyman\Neo4j\Node;
-use Everyman\Neo4j\Batch;
 use Vinelab\NeoEloquent\Connection;
 use Illuminadte\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;

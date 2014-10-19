@@ -3,7 +3,6 @@
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
-use Illuminate\Database\Eloquent\Relations\HasMany as IlluminateHasMany;
 
 class HasMany extends HasOneOrMany {
 

@@ -2,13 +2,11 @@
 
 use DateTime;
 use Carbon\Carbon;
-use Everyman\Neo4j\Path;
 use Everyman\Neo4j\Relationship;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\NoEdgeDirectionException;
-use Vinelab\NeoEloquent\UnknownDirectionException;
 
 abstract class Relation extends Delegate {
 

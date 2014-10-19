@@ -1,6 +1,5 @@
 <?php namespace Vinelab\NeoEloquent\Query\Grammars;
 
-use Illuminate\Database\Query\Builder as Builder;
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar {
