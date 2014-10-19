@@ -1,14 +1,14 @@
-<?php
+<?php namespace Vinelab\NeoEloquent;
 
-if ( ! function_exists('is_assoc_array'))
-{
+class Helpers {
+
 	/**
 	 * Determine whether an array is associative.
 	 *
 	 * @param  array  $array
 	 * @return boolean
 	 */
-	function is_assoc_array($array)
+	public static function is_assoc_array($array)
 	{
 		return is_array($array) and array_keys($array) !== range(0, count($array) - 1);
 	}

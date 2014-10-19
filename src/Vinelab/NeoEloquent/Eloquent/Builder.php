@@ -3,6 +3,7 @@
 use Closure;
 use Everyman\Neo4j\Node;
 use Everyman\Neo4j\Query\Row;
+use Vinelab\NeoEloquent\Helpers;
 use Vinelab\NeoEloquent\Connection;
 use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Eloquent\Model;
@@ -700,7 +701,7 @@ class Builder extends IlluminateBuilder {
             // In the case of a model Id or an associative array or a Model instance it means that
             // this is probably a One-To-One relationship or the dev decided not to add
             // multiple records as relations so we'll wrap it up in an array.
-            if ( ! is_array($values) or is_assoc_array($values) or $values instanceof Model) $values = [$values];
+            if ( ! is_array($values) or Helpers::is_assoc_array($values) or $values instanceof Model) $values = [$values];
 
             $label     = $relationship->getRelated()->getTable();
             $direction = $relationship->getEdgeDirection();
