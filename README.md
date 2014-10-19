@@ -1,7 +1,8 @@
-
-# NeoEloquent
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/46d632f8-6b3c-4446-a2d4-c227ba4cf373/big.png)](https://insight.sensiolabs.com/projects/46d632f8-6b3c-4446-a2d4-c227ba4cf373)
 
 [![Build Status](https://travis-ci.org/Vinelab/NeoEloquent.svg?branch=master)](https://travis-ci.org/Vinelab/NeoEloquent)
+
+# NeoEloquent
 
 Neo4j Graph Eloquent Driver for Laravel 4
 
