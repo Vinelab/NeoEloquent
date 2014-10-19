@@ -210,7 +210,7 @@ class Builder extends IlluminateQueryBuilder {
 		// received when the method was called and pass it into the nested where.
 		if (is_array($column))
 		{
-			return $this->whereNested(function($query) use ($column)
+			return $this->whereNested(function(IlluminateQueryBuilder $query) use ($column)
 			{
 				foreach ($column as $key => $value)
 				{

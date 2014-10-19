@@ -159,7 +159,7 @@ class Connection extends IlluminateConnection {
      */
     public function select($query, $bindings = array())
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings)
+        return $this->run($query, $bindings, function(self $me, $query, array $bindings)
         {
             if ($me->pretending()) return array();
 
@@ -181,7 +181,7 @@ class Connection extends IlluminateConnection {
      */
     public function affectingStatement($query, $bindings = array())
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings)
+        return $this->run($query, $bindings, function(self $me, $query, array $bindings)
         {
             if ($me->pretending()) return 0;
 
@@ -203,7 +203,7 @@ class Connection extends IlluminateConnection {
      */
     public function statement($query, $bindings = array(), $rawResults = false)
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings) use($rawResults)
+        return $this->run($query, $bindings, function(self $me, $query, array $bindings) use($rawResults)
         {
             if ($me->pretending()) return true;
 
