@@ -699,7 +699,7 @@ class Builder extends IlluminateBuilder {
             // In the case of a model Id or an associative array or a Model instance it means that
             // this is probably a One-To-One relationship or the dev decided not to add
             // multiple records as relations so we'll wrap it up in an array.
-            if ( ! is_array($values) || Helpers::is_assoc_array($values) || $values instanceof Model) $values = [$values];
+            if ( ! is_array($values) || Helpers::isAssocArray($values) || $values instanceof Model) $values = [$values];
 
             $label     = $relationship->getRelated()->getTable();
             $direction = $relationship->getEdgeDirection();

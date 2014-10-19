@@ -8,7 +8,7 @@ class Helpers {
 	 * @param  array  $array
 	 * @return boolean
 	 */
-	public static function is_assoc_array($array)
+	public static function isAssocArray($array)
 	{
 		return is_array($array) && array_keys($array) !== range(0, count($array) - 1);
 	}
