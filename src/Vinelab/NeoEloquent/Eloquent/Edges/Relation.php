@@ -495,7 +495,7 @@ abstract class Relation extends Delegate {
      */
     public function exists()
     {
-        if ($this->relation and $this->relation->hasId())
+        if ($this->relation && $this->relation->hasId())
         {
             return true;
         }

@@ -79,7 +79,7 @@ abstract class Model extends IlluminateModel {
 
         // The label is accepted as an array for a convenience so we need to
         // convert it to a string separated by ':' following Neo4j's labels
-        if (is_array($label) and ! empty($label)) return $label;
+        if (is_array($label) && ! empty($label)) return $label;
 
         // since this is not an array, it is assumed to be a string
         // we check to see if it follows neo4j's labels naming (User:Fan)
@@ -420,7 +420,7 @@ abstract class Model extends IlluminateModel {
         // When the name and the type are specified we'll return a MorphedByOne
         // relationship with the given arguments since we know the kind of Model
         // and relationship type we're looking for.
-        if ($name and $type)
+        if ($name && $type)
         {
             // Determine the relation function name out of the back trace
             list(, $caller) = debug_backtrace(false);

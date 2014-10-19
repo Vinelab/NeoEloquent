@@ -146,7 +146,7 @@ class HyperEdge extends Relation {
         $savedLeft  = $this->left->save();
         $savedRight = $this->right->save();
 
-        return $savedLeft and $savedRight;
+        return $savedLeft && $savedRight;
     }
 
     /**
@@ -161,7 +161,7 @@ class HyperEdge extends Relation {
             $deletedLeft = $this->left->delete();
             $deletedRight = $this->right->delete();
 
-            return $deletedLeft and $deletedRight;
+            return $deletedLeft && $deletedRight;
         }
 
         return false;
@@ -174,7 +174,7 @@ class HyperEdge extends Relation {
      */
     public function exists()
     {
-        return $this->left->exists() and $this->right->exists();
+        return $this->left->exists() && $this->right->exists();
     }
 
 }

@@ -27,11 +27,11 @@ class Grammar extends IlluminateGrammar {
 
         // When coming from a WHERE statement we'll have to pluck out the column
         // from the collected attributes.
-        if(is_array($value) and isset($value['binding']))
+        if(is_array($value) && isset($value['binding']))
         {
             $value = $value['binding'];
         }
-        elseif (is_array($value) and isset($value['column']))
+        elseif (is_array($value) && isset($value['column']))
         {
             $value = $value['column'];
         }
@@ -44,7 +44,6 @@ class Grammar extends IlluminateGrammar {
 
         if (strpos($property, '.') != false) $property = explode('.', $property)[1];
 
-        if(is_array($property)) dd($property);
 		return '{' . $property . '}';
 	}
 
@@ -108,7 +107,7 @@ class Grammar extends IlluminateGrammar {
         // We will only wrap the value unless it has parentheses
         // in it which is the case where we're matching a node by id, or an *
         // and last whether this is a pre-formatted key.
-        if (preg_match('/[(|)]/', $value) or $value == '*' or strpos($value, '.') != false) return $value;
+        if (preg_match('/[(|)]/', $value) || $value == '*' || strpos($value, '.') != false) return $value;
 
         // In the case where the developer specifies the properties and not returning
         // everything, we need to check whether the primaryKey is meant to be returned

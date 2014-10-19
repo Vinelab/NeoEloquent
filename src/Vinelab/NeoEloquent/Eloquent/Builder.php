@@ -293,7 +293,7 @@ class Builder extends IlluminateBuilder {
 
             // WARNING: Do this after setting all the attributes to avoid overriding it
             // with a null value or colliding it with something else, some Daenerys dragons maybe ?!
-            if ( ! is_null($columns) and in_array('id', $columns))
+            if ( ! is_null($columns) && in_array('id', $columns))
             {
                 $attributes['id'] = $row['id(' . $this->query->modelAsNode() . ')'];
             }
@@ -477,7 +477,7 @@ class Builder extends IlluminateBuilder {
      */
     public function isManyMutation($mutation)
     {
-        return isset($this->mutations[$mutation]) and $this->mutations[$mutation]['type'] === 'many';
+        return isset($this->mutations[$mutation]) && $this->mutations[$mutation]['type'] === 'many';
     }
 
     /**
@@ -488,12 +488,12 @@ class Builder extends IlluminateBuilder {
      */
     public function isMorphMutation($mutation)
     {
-        if ( ! is_array($mutation) and isset($this->mutations[$mutation]))
+        if ( ! is_array($mutation) && isset($this->mutations[$mutation]))
         {
             $mutation = $this->getMutation($mutation);
         }
 
-        return $mutation['type'] === 'morph' or $mutation['type'] === 'morphEager';
+        return $mutation['type'] === 'morph' || $mutation['type'] === 'morphEager';
     }
 
     /**
@@ -701,7 +701,7 @@ class Builder extends IlluminateBuilder {
             // In the case of a model Id or an associative array or a Model instance it means that
             // this is probably a One-To-One relationship or the dev decided not to add
             // multiple records as relations so we'll wrap it up in an array.
-            if ( ! is_array($values) or Helpers::is_assoc_array($values) or $values instanceof Model) $values = [$values];
+            if ( ! is_array($values) || Helpers::is_assoc_array($values) || $values instanceof Model) $values = [$values];
 
             $label     = $relationship->getRelated()->getTable();
             $direction = $relationship->getEdgeDirection();
@@ -730,7 +730,7 @@ class Builder extends IlluminateBuilder {
                 // Or in the case where the attributes are neither an array nor a model instance
                 // then this is assumed to be the model Id that the dev means to attach and since
                 // Neo4j node Ids are always an int then we take that as a value.
-                elseif ( ! is_array($value) and ! $value instanceof Model)
+                elseif ( ! is_array($value) && ! $value instanceof Model)
                 {
                     $attach[] = intval($value);
                 }

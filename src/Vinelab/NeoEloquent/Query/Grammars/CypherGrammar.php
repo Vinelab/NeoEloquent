@@ -114,7 +114,7 @@ class CypherGrammar extends Grammar {
      */
     public function compileMatches(Builder $query, $matches)
     {
-        if ( ! is_array($matches) or empty($matches)) return '';
+        if ( ! is_array($matches) || empty($matches)) return '';
 
         $prepared = array();
 

@@ -138,7 +138,7 @@ class Builder extends IlluminateQueryBuilder {
 
         $updated = $this->connection->update($cypher, $bindings);
 
-        return (isset($updated[0]) and isset($updated[0][0])) ? $updated[0][0] : 0;
+        return (isset($updated[0]) && isset($updated[0][0])) ? $updated[0][0] : 0;
     }
 
     /**

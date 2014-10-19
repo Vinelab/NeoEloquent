@@ -98,7 +98,7 @@ class MorphTo extends OneRelation {
 
         return array_map(function($match) use ($relation)
         {
-            if (isset($match[$relation]) and isset($match[$relation][0]))
+            if (isset($match[$relation]) && isset($match[$relation][0]))
             {
                 $match->setRelation($relation, $match[$relation][0]);
             }
