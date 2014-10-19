@@ -42,7 +42,7 @@ class Grammar extends IlluminateGrammar {
 
         $property = $this->getIdReplacement($value);
 
-        if (strpos($property, '.') != false) $property = explode('.', $property)[1];
+        if (strpos($property, '.') !== false) $property = explode('.', $property)[1];
 
 		return '{' . $property . '}';
 	}
@@ -107,7 +107,7 @@ class Grammar extends IlluminateGrammar {
         // We will only wrap the value unless it has parentheses
         // in it which is the case where we're matching a node by id, or an *
         // and last whether this is a pre-formatted key.
-        if (preg_match('/[(|)]/', $value) || $value == '*' || strpos($value, '.') != false) return $value;
+        if (preg_match('/[(|)]/', $value) || $value == '*' || strpos($value, '.') !== false) return $value;
 
         // In the case where the developer specifies the properties and not returning
         // everything, we need to check whether the primaryKey is meant to be returned

@@ -715,7 +715,7 @@ class Builder extends IlluminateQueryBuilder {
         {
             $key = array_keys($value)[0];
 
-            if (strpos($key, '.') != false)
+            if (strpos($key, '.') !== false)
             {
                 $binding = $value[$key];
                 unset($value[$key]);
