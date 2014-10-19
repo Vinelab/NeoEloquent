@@ -390,8 +390,6 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
         // get them as collection
         if ($ids instanceof Collection) $ids = $ids->modelKeys();
 
-        // $this->attach($ids, [], $touch = false);
-
         // First we need to attach the relationships that do not exist
         // for this model so we'll spin throuhg the edges of this model
         // for the specified type regardless of the direction and create

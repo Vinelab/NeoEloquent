@@ -731,24 +731,6 @@ class Builder extends IlluminateQueryBuilder {
 
         if (is_array($value))
         {
-            // // We will check to see whether a binding for the same attribtue exists already
-            // // so that we merge the values.
-            // if (in_array(array_keys($value)[0], array_keys($this->bindings[$type])))
-            // {
-            //     // Find the attribute we're working with
-            //     $attribute = array_keys($value);
-            //     // If the values of the existing attribute is not an array, make it an array so that we can merge
-            //     // the new value.
-            //     if ( ! is_array($this->bindings[$type][$key]))
-            //         $this->bindings[$type][$key] = [$this->bindings[$type][$key]];
-            //     // Merge values.
-            //     $this->bindings[$type][$key] = array_merge($this->bindings[$type][$key], array_values($value));
-            // }
-            // // It's a new attribute that we're adding a binding for so we'll just add it as is.
-            // else
-            // {
-            //     $this->bindings[$type] = array_merge($this->bindings[$type], $value);
-            // }
             $this->bindings[$type] = array_merge($this->bindings[$type], $value);
         }
         else
