@@ -1,6 +1,7 @@
 <?php namespace Vinelab\NeoEloquent\Query\Grammars;
 
 use Illuminate\Database\Query\Builder;
+use Vinelab\NeoEloquent\Exceptions\InvalidCypherGrammarComponentException;
 
 class CypherGrammar extends Grammar {
 

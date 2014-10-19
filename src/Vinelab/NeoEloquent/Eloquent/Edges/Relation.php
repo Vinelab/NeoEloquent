@@ -1,5 +1,6 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
+use DateTime;
 use Carbon\Carbon;
 use Everyman\Neo4j\Path;
 use Everyman\Neo4j\Relationship;
