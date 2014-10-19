@@ -211,7 +211,7 @@ abstract class Model extends IlluminateModel {
             $relation = $caller['function'];
         }
 
-        // FIXME: the $type should be the UPPERCASE of the relation not the foreign key.
+        // the $type should be the UPPERCASE of the relation not the foreign key.
         $type = $type ?: mb_strtoupper($relation);
 
         $instance = new $related;
