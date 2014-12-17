@@ -11,6 +11,8 @@ use Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
+use Everyman\Neo4j\Cypher\Query;
+use Everyman\Neo4j\Client as Client;
 
 abstract class Model extends IlluminateModel {
 
@@ -510,5 +512,30 @@ abstract class Model extends IlluminateModel {
         if (isset($dirty[$this->primaryKey])) unset($dirty[$this->primaryKey]);
 
         return $dirty;
+    }
+    
+            public function isReleationshipExists($queryString) {
+        try {
+            $client = new Client('localhost', 7474);
+            $query = new Query($client, $queryString);
+            $result = $query->getResultSet();
+            if ($result->count())
+                return true;
+        } catch (Exception $ex) {
+            throw new Exception("Query Exception");
+        }
+        return false;
+    }
+
+    public function runCypherQuery($queryString) {
+        try {
+            $client = new Client('localhost', 7474);
+            $query = new Query($client, $queryString);
+            $result = $query->getResultSet();
+            return $result;
+        } catch (Exception $ex) {
+            throw new Exception("Query Exception");
+        }
+        return false;
     }
 }
