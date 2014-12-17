@@ -33,6 +33,35 @@ class NeoEloquentServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
+		$this->app['UserInterface'] = $this->app->share(function($app) {
+            return new \User();
+        });
+
+        $this->app['CaseStudyInterface'] = $this->app->share(function($app) {
+            return new \CaseStudy();
+        });
+
+        $this->app['PublisherInterface'] = $this->app->share(function($app) {
+            return new \Publisher();
+        });
+
+        $this->app['JournalInterface'] = $this->app->share(function($app) {
+            return new \Journal();
+        });
+
+        $this->app['UserEventInterface'] = $this->app->share(function($app) {
+            return new \UserEvent();
+        });
+
+        $this->app['\Repository\Event\EventRepositaryInterface'] = $this->app->share(function($app) {
+            return new \Repository\Event\EventRepositary(new \UserEvent());
+        });
+       
+        $this->app['db']->extend('neo4j', function($config) {
+            return new Connection($config);
+        });
+        
+        
 		$this->app['db']->extend('neo4j', function($config)
 		{
 			return new Connection($config);
