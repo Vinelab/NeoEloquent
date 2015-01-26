@@ -32,6 +32,16 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * Get the node label for this model.
+     *
+     * @return string|array
+     */
+    public function getLabel()
+    {
+        return $this->label;
+    }
+
+    /**
      * Create a new Eloquent query builder for the model.
      *
      * @param  Vinelab\NeoEloquent\Query\Builder $query
