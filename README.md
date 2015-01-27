@@ -979,8 +979,8 @@ Command                           | Description
 ------------                      | -------------
 `$label->index('name')`           | Adding a unique constraint on a property
 `$label->dropUnique('email')`     | Dropping a unique constraint from property
-`$label->index('uuid')`           | Adding a index on property
-`$label->dropUnique('uuid')`      | Dropping a index from property
+`$label->index('uuid')`           | Adding index on property
+`$label->dropIndex('uuid')`       | Dropping index from property
 
 ### Droping Labels
 
