@@ -1,6 +1,8 @@
 <?php namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
+use DateTime;
+use Carbon\Carbon;
 use Vinelab\NeoEloquent\Connection;
 use Illuminadte\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
@@ -109,6 +111,8 @@ class Builder extends IlluminateQueryBuilder {
         // set its properties
         foreach ($values as $key => $value)
         {
+            $value = $this->formatValue($value);
+
             $node->setProperty($key, $value);
         }
 
@@ -460,6 +464,7 @@ class Builder extends IlluminateQueryBuilder {
         {
             foreach ($values as $key => $value)
             {
+                $value = $this->formatValue($value);
                 ksort($value); $values[$key] = $value;
             }
         }
@@ -798,4 +803,23 @@ class Builder extends IlluminateQueryBuilder {
 	{
 		return new Builder($this->connection, $this->grammar);
 	}
+
+    /**
+     * Fromat the value into its string representation.
+     *
+     * @param  mixed $value
+     *
+     * @return string
+     */
+    protected function formatValue($value)
+    {
+        // If the value is a date we'll format it according to the specified
+        // date format.
+        if ($value instanceof DateTime || $value instanceof Carbon)
+        {
+            $value = $value->format($this->grammar->getDateFormat());
+        }
+
+        return $value;
+    }
 }
