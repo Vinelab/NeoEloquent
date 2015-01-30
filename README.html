@@ -1,0 +1,1007 @@
+<p><a href="https://insight.sensiolabs.com/projects/46d632f8-6b3c-4446-a2d4-c227ba4cf373"><img src="https://insight.sensiolabs.com/projects/46d632f8-6b3c-4446-a2d4-c227ba4cf373/big.png" alt="SensioLabsInsight" title="" /></a></p>
+
+<p><a href="https://travis-ci.org/Vinelab/NeoEloquent"><img src="https://travis-ci.org/Vinelab/NeoEloquent.svg?branch=master" alt="Build Status" title="" /></a></p>
+
+<h1>NeoEloquent</h1>
+
+<p>Neo4j Graph Eloquent Driver for Laravel 4</p>
+
+<h2>Quick Reference</h2>
+
+<ul>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#models">Models</a></li>
+<li><a href="#relationships">Relationships</a></li>
+<li><a href="#edges">Edges</a></li>
+<li><a href="#only-in-neo">Only in Neo</a></li>
+<li><a href="#aggregates">Aggregates</a></li>
+<li><a href="#avoid">Things To Avoid</a></li>
+</ul>
+
+<h2>Installation</h2>
+
+<p>Add the package to your <code>composer.json</code> and run <code>composer update</code>.</p>
+
+<p><code>json
+{
+    "require": {
+        "vinelab/neoeloquent": "*"
+    }
+}
+</code></p>
+
+<p>Add the service provider in <code>app/config/app.php</code>:</p>
+
+<p><code>php
+'Vinelab\NeoEloquent\NeoEloquentServiceProvider',
+</code></p>
+
+<p>The service provider will register all the required classes for this package and will also alias
+the <code>Model</code> class to <code>NeoEloquent</code> so you can simply <code>extend NeoEloquent</code> in your models.</p>
+
+<h2>Configuration</h2>
+
+<p>in <code>app/config/database.php</code> or in case of an environment-based configuration <code>app/config/[env]/database.php</code>
+make <code>neo4j</code> your default connection:</p>
+
+<p><code>php
+'default' =&gt; 'neo4j',
+</code></p>
+
+<p>Add the connection defaults:</p>
+
+<p><code>php
+'connections' =&gt; [
+    'neo4j' =&gt; [
+        'driver' =&gt; 'neo4j',
+        'host'   =&gt; 'localhost',
+        'port'   =&gt; '7474',
+        'username' =&gt; null,
+        'password' =&gt; null
+    ]
+]
+</code></p>
+
+<h3>Documentation</h3>
+
+<h2>Models</h2>
+
+<ul>
+<li><a href="#namespaced-models">Node Labels</a></li>
+<li><a href="#soft-deleting">Soft Deleting</a></li>
+</ul>
+
+<p><code>php
+class User extends NeoEloquent {}
+</code></p>
+
+<p>As simple as it is, NeoEloquent will generate the default node label from the class name,
+in this case it will be <code>:User</code>. Read about <a href="http://docs.neo4j.org/chunked/stable/rest-api-node-labels.html">node labels here</a></p>
+
+<h3>Namespaced Models</h3>
+
+<p>When you use namespaces with your models the label will consider the full namespace.</p>
+
+<p>```php
+namespace Vinelab\Cms;</p>
+
+<p>class Admin extends NeoEloquent { }
+```</p>
+
+<p>The generated label from that relationship will be <code>VinelabCmsAdmin</code>, this is necessary to make sure
+that labels do not clash in cases where we introduce another  <code>Admin</code> instance like
+<code>Vinelab\Blog\Admin</code> then things gets messy with <code>:Admin</code> in the database.</p>
+
+<h3>Custom Node Labels</h3>
+
+<p>You may specify the label(s) you wish to be used instead of the default generated, they are also
+case sensitive so they will be stored as put here.</p>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>protected $label = 'User'; // or array('User', 'Fan')
+
+protected $fillable = ['name', 'email'];
+</code></pre>
+
+<p>}</p>
+
+<p>$user = User::create(['name' => 'Some Name', 'email' => 'some@email.com']);
+```</p>
+
+<p>NeoEloquent has a fallback support for the <code>$table</code> variable that will be used if found and there was no <code>$label</code> defined on the model.</p>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>protected $table = 'User';
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Do not worry about the labels formatting, You may specify them as <code>array('Label1', 'Label2')</code> or separate them by a column <code>:</code> and prepending them with a <code>:</code> is optional.</p>
+
+<h3>Soft Deleting</h3>
+
+<p>To enable soft deleting you'll need to <code>use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait</code>
+instead of <code>Illuminate\Database\Eloquent\SoftDeletingTrait</code> and just like Eloquent you'll need the <code>$dates</code> in your models as follows:</p>
+
+<p>```php
+use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;</p>
+
+<p>class User extends NeoEloquent {</p>
+
+<pre><code>use SoftDeletingTrait;
+
+protected $dates = ['deleted_at'];
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>Relationships</h2>
+
+<ul>
+<li><a href="#one-to-one">One-To-One</a></li>
+<li><a href="#one-to-many">One-To-Many</a></li>
+<li><a href="#many-to-many">Many-To-Many</a></li>
+<li><a href="#polymorphic">Polymorphic</a></li>
+</ul>
+
+<p>Let's go through some examples of relationships between Nodes.</p>
+
+<h3>One-To-One</h3>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>public function phone()
+{
+    return $this-&gt;hasOne('Phone');
+}
+</code></pre>
+
+<p><code>``
+This represents an</code>OUTGOING<code>relationship direction from the</code>:User<code>node to a</code>:Phone`.</p>
+
+<h5>Saving</h5>
+
+<p><code>php
+$phone = new Phone(['code' =&gt; 961, 'number' =&gt; '98765432'])
+$relation = $user-&gt;phone()-&gt;save($phone);
+</code></p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<p><code>
+MATCH (user:`User`)
+WHERE id(user) = 1
+CREATE (user)-[:PHONE]-&gt;(phone:`Phone` {code: 961, number: '98765432', created_at: 7543788, updated_at: 7543788})
+RETURN phone;
+</code></p>
+
+<h5>Defining The Inverse Of This Relation</h5>
+
+<p>```php
+class Phone extends NeoEloquent {</p>
+
+<pre><code>public function user()
+{
+    return $this-&gt;belongsTo('User');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>This represents an <code>INCOMING</code> relationship direction from
+the <code>:User</code> node to this <code>:Phone</code> node.</p>
+
+<h5>Associating Models</h5>
+
+<p>Due to the fact that we do not deal with <strong>foreign keys</strong>, in our case it is much
+more than just setting the foreign key attribute on the parent model. In Neo4j (and Graph in general) a relationship is an entity itself that can also have attributes of its own, hence the introduction of
+<a href="#Edges"><strong>Edges</strong></a></p>
+
+<blockquote>
+  <p><em>Note:</em> Associated models does not persist relations automatically when calling <code>associate()</code>.</p>
+</blockquote>
+
+<p>```php
+$account = Account::find(1986);</p>
+
+<p>// $relation will be Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
+$relation = $user->account()->associate($account);</p>
+
+<p>// Save the relation
+$relation->save();
+```</p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<p><code>
+MATCH (account:`Account`), (user:`User`)
+WHERE id(account) = 1986 AND id(user) = 9862
+MERGE (account)&lt;-[rel_user_account:ACCOUNT]-(user)
+RETURN rel_user_account;
+</code></p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<p><code>
+MATCH (phone:Phone) (phone)&lt;-[:PHONE]-(user:User)
+WHERE id(phone) = 1006
+RETURN user;
+</code></p>
+
+<h3>One-To-Many</h3>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>public function posts()
+{
+    return $this-&gt;hasMany('Post', 'POSTED');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>This represents an <code>OUTGOING</code> relationship direction
+from the <code>:User</code> node to the <code>:Post</code> node.</p>
+
+<p><code>php
+$user = User::find(1);
+$post = new Post(['title' =&gt; 'The Title', 'body' =&gt; 'Hot Body']);
+$user-&gt;posts()-&gt;save($post);
+</code></p>
+
+<p>Similar to <code>One-To-One</code> relationships the returned value from a <code>save()</code> statement is an
+<code>Edge[In|Out]</code></p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<p><code>
+MATCH (user:`User`)
+WHERE id(user) = 1
+CREATE (user)-[rel_user_post:POSTED]-&gt;(post:`Post` {title: 'The Title', body: 'Hot Body', created_at: '15-05-2014', updated_at: '15-05-2014'})
+RETURN rel_user_post;
+</code></p>
+
+<h5>Defining The Inverse Of This Relation</h5>
+
+<p>```php
+class Post extends NeoEloquent {</p>
+
+<pre><code>public function author()
+{
+    return $this-&gt;belongsTo('User', 'POSTED');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>This represents an <code>INCOMING</code> relationship direction from
+the <code>:User</code> node to this <code>:Post</code> node.</p>
+
+<h3>Many-To-Many</h3>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>public function followers()
+{
+    return $this-&gt;belongsToMany('User', 'FOLLOWS');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>This represents an <code>OUTGOING</code> relationship between a <code>:User</code> node and another <code>:User</code>.</p>
+
+<p><code>php
+$jd = User::find(1012);
+$mc = User::find(1013);
+</code></p>
+
+<p><code>$jd</code> follows <code>$mc</code>:</p>
+
+<p><code>php
+$jd-&gt;followers()-&gt;save($mc);
+</code></p>
+
+<p>Or using the <code>attach()</code> method:</p>
+
+<p><code>php
+$jd-&gt;followers()-&gt;attach($mc);
+// Or..
+$jd-&gt;followers()-&gt;attach(1); // 1 being the id of $mc ($mc-&gt;getKey())
+</code></p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<p><code>
+MATCH (user:`User`), (followers:`User`)
+WHERE id(user) = 1012 AND id(followers) = 1013
+CREATE (user)-[:FOLLOWS]-&gt;(followers)
+RETURN rel_follows;
+</code></p>
+
+<p><code>$mc</code> follows <code>$jd</code> back:</p>
+
+<p><code>php
+$mc-&gt;followers()-&gt;save($jd);
+</code></p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<p><code>
+MATCH (user:`User`), (followers:`User`)
+WHERE id(user) = 1013 AND id(followers) = 1012
+CREATE (user)-[rel_user_followers:FOLLOWS]-&gt;(followers)
+RETURN rel_follows;
+</code></p>
+
+<p>get the followers of <code>$jd</code></p>
+
+<p><code>php
+$followers = $jd-&gt;followers;
+</code></p>
+
+<p>The Cypher performed by this statement will be as follows:</p>
+
+<p><code>
+MATCH (user:`User`), (followers:`User`), (user)-[rel_user_followers:FOLLOWS]-(followers)
+WHERE id(user) = 1012
+RETURN rel_follows;
+</code></p>
+
+<h3>Dynamic Properties</h3>
+
+<p>```php
+class Phone extends Eloquent {</p>
+
+<pre><code>public function user()
+{
+    return $this-&gt;belongsTo('User');
+}
+</code></pre>
+
+<p>}</p>
+
+<p>$phone = Phone::find(1006);
+$user = $phone->user;
+// or getting an attribute out of the related model
+$name = $phone->user->name;
+```</p>
+
+<h3>Polymorphic</h3>
+
+<p>The concept behind Polymocrphic relations is purely relational to the bone but when it comes
+to graph we are representing it as a <a href="http://docs.neo4j.org/chunked/stable/cypher-cookbook-hyperedges.html">HyperEdge</a>.</p>
+
+<p>Hyper edges involves three models, the <strong>parent</strong> model, <strong>hyper</strong> model and <strong>related</strong> model
+represented in the following figure:</p>
+
+<p><img src="https://googledrive.com/host/0BznzZ2lBbT0cLW9YcjNldlJkcXc/HyperEdge.png" alt="HyperEdges" title="HyperEdges" /></p>
+
+<p>Similarly in code this will be represented by three models <code>User</code> <code>Comment</code> and <code>Post</code>
+where a <code>User</code> with id 1 posts a <code>Post</code> and a <code>User</code> with id 6 <code>COMMENTED</code> a <code>Comment</code> <code>ON</code> that <code>Post</code>
+as follows:</p>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>public function comments($morph = null)
+{
+    return $this-&gt;hyperMorph($morph, 'Comment', 'COMMENTED', 'ON');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>In order to keep things simple but still involving the three models we will have to pass the
+<code>$morph</code> which is any <code>commentable</code> model, in our case it's either a <code>Video</code> or a <code>Post</code> model.</p>
+
+<blockquote>
+  <p><strong>Note:</strong> Make sure to have it defaulting to <code>null</code> so that we can Dynamicly or Eager load
+with <code>$user-&gt;comments</code> later on.</p>
+</blockquote>
+
+<p>Creating a <code>Comment</code> with the <code>create()</code> method.</p>
+
+<p>```php
+$user = User::find(6);
+$post = Post::find(2);</p>
+
+<p>$user->comments($post)->create(['text' => 'Totally agree!', 'likes' => 0, 'abuse' => 0]);
+```</p>
+
+<p>As usual we will have returned an Edge, but this time it's not directed it is an instance of
+<code>HyperEdge</code>, read more about <a href="#hyperedge">HyperEdges here</a>.</p>
+
+<p>Or you may save a Comment instance:</p>
+
+<p>```php
+$comment = new Comment(['text' => 'Magnificent', 'likes' => 0, 'abuse' => 0]);</p>
+
+<p>$user->comments($post)->save($comment);
+```</p>
+
+<p>Also all the functionalities found in a <code>BelongsToMany</code> relationship are supported like
+attaching models by Ids:</p>
+
+<p><code>php
+$user-&gt;comments($post)-&gt;attach([$id, $otherId]);
+</code></p>
+
+<p>Or detaching models:</p>
+
+<p><code>php
+$user-&gt;comments($post)-&gt;detach($comment); // or $comment-&gt;id
+</code></p>
+
+<p>Sync too:</p>
+
+<p><code>php
+$user-&gt;comments($post)-&gt;sync([$id, $otherId, $someId]);
+</code></p>
+
+<h4>Retrieving Polymorphic Relations</h4>
+
+<p>From our previous example we will use the <code>Video</code> model to retrieve their comments:</p>
+
+<p>```php
+class Video extends NeoEloquent {</p>
+
+<pre><code>public function comments()
+{
+    return $this-&gt;morphMany('Comment', 'ON');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h5>Dynamicly Loading Morph Model</h5>
+
+<p><code>php
+$video = Video::find(3);
+$comments = $video-&gt;comments;
+</code></p>
+
+<h5>Eager Loading Morph Model</h5>
+
+<p><code>php
+$video = Video::with('comments')-&gt;find(3);
+foreach ($video-&gt;comments as $comment)
+{
+    //
+}
+</code></p>
+
+<h4>Retrieving The Inverse of a Polymorphic Relation</h4>
+
+<p>```php
+class Comment extends NeoEloquent {</p>
+
+<pre><code>public function commentable()
+{
+    return $this-&gt;morphTo();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>```php
+$postComment = Comment::find(7);
+$post = $comment->commentable;</p>
+
+<p>$videoComment = Comment::find(5);
+$video = $comment->commentable;</p>
+
+<p>// You can also eager load them
+Comment::with('commentable')->get();
+```</p>
+
+<p>You may also specify the type of morph you would like returned:</p>
+
+<p>```php
+class Comment extends NeoEloquent {</p>
+
+<pre><code>public function post()
+{
+    return $this-&gt;morphTo('Post', 'ON');
+}
+
+public function video()
+{
+    return $this-&gt;morphTo('Video', 'ON');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h4>Polymorphic Relations In Short</h4>
+
+<p>To drill things down here's how our three models involved in a Polymorphic relationship connect:</p>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>public function comments($morph = null)
+{
+    return $this-&gt;hyperMorph($morph, 'Comment', 'COMMENTED', 'ON');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>```php
+class Post extends NeoEloquent { // Video is the same as this one</p>
+
+<pre><code>public function comments()
+{
+    return $this-&gt;morphMany('Comment', 'ON');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>```php
+class Comment extends NeoEloquent {</p>
+
+<pre><code>public function commentable()
+{
+    return $this-&gt;morphTo();
+}
+</code></pre>
+
+<p>}</p>
+
+<p>```</p>
+
+<h3>Eager Loading</h3>
+
+<p>```php
+class Book extends Eloquent {</p>
+
+<pre><code>public function author()
+{
+    return $this-&gt;belongsTo('Author');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Loading authors with their books with the least performance overhead possible.</p>
+
+<p><code>php
+foreach (Book::with('author')-&gt;get() as $book)
+{
+    echo $book-&gt;author-&gt;name;
+}
+</code></p>
+
+<p>Only two Cypher queries will be run in the loop above:</p>
+
+<p><code>``
+MATCH (book:</code>Book`) RETURN *;</p>
+
+<p>MATCH (book:<code>Book</code>), (book)&lt;-[:WROTE]-(author:<code>Author</code>) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
+```</p>
+
+<h2>Edges</h2>
+
+<ul>
+<li><a href="#edgein">EdgeIn</a></li>
+<li><a href="#edgeout">EdgeOut</a></li>
+<li><a href="#hyperedge">HyperEdge</a></li>
+<li><a href="#working-with-edges">Working with Edges</a></li>
+<li><a href="#edge-attributes">Edge Attributes</a></li>
+</ul>
+
+<h3>Introduction</h3>
+
+<p>Due to the fact that relationships in Graph are much different than other database types so
+we will have to handle them accordingly. Relationships have directions that can vary between
+<strong>In</strong> and <strong>Out</strong> respectively towards the parent node.</p>
+
+<h4>EdgeIn</h4>
+
+<p>Represents an <code>INCOMING</code> direction relationship from the related model towards the parent model.</p>
+
+<p>```php
+class Location extends NeoEloquent {</p>
+
+<pre><code>public function user()
+{
+    return $this-&gt;belongsTo('User', 'LOCATED_AT');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>To associate a <code>User</code> to a <code>Location</code>:</p>
+
+<p><code>php
+$location = Location::find(1922);
+$user = User::find(3876);
+$relation = $location-&gt;associate($user);
+</code></p>
+
+<p>which in Cypher land will map to <code>(:Location)&lt;-[:LOCATED_AT]-(:User)</code> and <code>$relation</code>
+being an instance of <code>EdgeIn</code> representing an incoming relationship towards the parent.</p>
+
+<p>And you can still access the models from the edge:</p>
+
+<p><code>php
+$relation = $location-&gt;associate($user);
+$location = $relation-&gt;parent();
+$user = $relation-&gt;related();
+</code></p>
+
+<h4>EdgeOut</h4>
+
+<p>Represents an <code>OUTGOING</code> direction relationship from the parent model to the related model.</p>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>public function posts()
+{
+    return $this-&gt;hasMany('Post', 'POSTED');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>To save an outgoing edge from <code>:User</code> to <code>:Post</code> it goes like:</p>
+
+<p><code>php
+$post = new Post(['...']);
+$posted = $user-&gt;posts()-&gt;save($post);
+</code></p>
+
+<p>Which in Cypher would be <code>(:User)-[:POSTED]-&gt;(:Post)</code> and <code>$posted</code> being the <code>EdgeOut</code> instance.</p>
+
+<p>And fetch the related models:</p>
+
+<p><code>php
+$edge = $user-&gt;posts()-&gt;save($post);
+$user = $edge-&gt;parent();
+$post = $edge-&gt;related();
+</code></p>
+
+<h4>HyperEdge</h4>
+
+<p>This edge comes as a result of a <a href="#polymorphic">Polymorphic Relation</a> representing an edge involving
+two other edges <strong>left</strong> and <strong>right</strong> that can be accessed through the <code>left()</code> and <code>right()</code> methods.</p>
+
+<p>This edge is treated a bit different than the others since it is not a direct relationship
+between two models which means it has no specific direction.</p>
+
+<p>```php
+$edge = $user->comments($post)->attach($comment);
+// Access the left and right edges
+$left = $edge->left();
+$user = $left->parent();
+$comment = $left->related();</p>
+
+<p>$right = $edge->right();
+$comment = $right->parent();
+$post = $right->related();
+```</p>
+
+<h3>Working With Edges</h3>
+
+<p>As stated earlier <strong>Edges</strong> are entities to Graph unlike <em>SQL</em> where they are a matter of a
+foreign key having the value of the parent model as an attribute on the belonging model or in
+<em>Documents</em> where they are either embeds or ids as references. So we developed them to be <em>light
+models</em> which means you can work with them as if you were working with an <code>Eloquent</code> instance - to a certain extent,
+except <a href="#hyperedges">HyperEdges</a>.</p>
+
+<p>```php
+// Create a new relationship
+$relation = $location->associate($user); // Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn</p>
+
+<p>// Save the relationship to the database
+$relation->save(); // true
+```</p>
+
+<p>In the case of a <code>HyperEdge</code> you can access all three models as follows:</p>
+
+<p><code>php
+$edge    = $user-&gt;comments($post)-&gt;save($comment);
+$user    = $edge-&gt;parent();
+$comment = $edge-&gt;hyper();
+$post    = $edge-&gt;related();
+</code></p>
+
+<h4>Edge Attributes</h4>
+
+<p>By default, edges will have the timestamps <code>created_at</code> and <code>updated_at</code> automatically set and updated <strong>only if</strong> timestamps are enabled by setting <code>$timestamps</code> to <code>true</code>
+on the parent model.</p>
+
+<p>```php
+$located<em>at = $location->associate($user);
+$located</em>at->since = 1966;
+$located<em>at->present = true;
+$located</em>at->save();</p>
+
+<p>// $created<em>at and $updated</em>at are Carbon\Carbon instances
+$created<em>at = $located</em>at->created<em>at;
+$updated</em>at = $located<em>at->updated</em>at;
+```</p>
+
+<h5>Retrieve an Edge from a Relation</h5>
+
+<p>The same way an association will create an <code>EdgeIn</code> relationship we can retrieve
+the edge between two models by calling the <code>edge($model)</code> method on the <code>belongsTo</code>
+relationship.</p>
+
+<p><code>php
+$location = Location::find(1892);
+$edge = $location-&gt;user()-&gt;edge();
+</code></p>
+
+<p>You may also specify the model at the other side of the edge.</p>
+
+<blockquote>
+  <p>Note: By default NeoEloquent will try to pefrorm the <code>$location-&gt;user</code> internally to figure
+out the related side of the edge based on the relation function name, in this case it's
+<code>user()</code>.</p>
+</blockquote>
+
+<p><code>php
+$location = Location::find(1892);
+$edge = $location-&gt;user()-&gt;edge($location-&gt;user);
+</code></p>
+
+<h2>Only in Neo</h2>
+
+<ul>
+<li><a href="#createwith">CreateWith</a></li>
+</ul>
+
+<p>Here you will find NeoEloquent-specific methods and implementations that with the
+wonderful Eloquent methods would make working with Graph and Neo4j a blast!</p>
+
+<h3>CreateWith</h3>
+
+<ul>
+<li><a href="#creating-new-records-and-relations">Creating Relations</a></li>
+<li><a href="#attaching-existing-records-as-relations">Attaching Relations</a></li>
+</ul>
+
+<p>This method will "kind of" fill the gap between relational and document databases,
+it allows the creation of multiple related models with one database hit.</p>
+
+<h4>Creating New Records and Relations</h4>
+
+<p>Here's an example of creating a post with attached photos and videos:</p>
+
+<p>```php
+class Post extends NeoEloquent {</p>
+
+<pre><code>public function photos()
+{
+    return $this-&gt;hasMany('Photo', 'PHOTO');
+}
+
+public function videos()
+{
+    return $this-&gt;hasMany('Video', 'VIDEO');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>```php</p>
+
+<p>Post::createWith(['title' => 'the title', 'body' => 'the body'], [
+    'photos' => [
+        [
+            'url'      => 'http://url',
+            'caption'  => '...',
+            'metadata' => '...'
+        ],
+        [
+            'url' => 'http://other.url',
+            'caption' => 'the bay',
+            'metadata' => '...'
+        ]
+    ],</p>
+
+<pre><code>'videos' =&gt; [
+    'title' =&gt; 'Boats passing us by',
+    'description' =&gt; '...'
+]
+</code></pre>
+
+<p>]);
+```</p>
+
+<blockquote>
+  <p>The keys <code>photos</code> and <code>videos</code> must be the same as the relation method names in the
+<code>Post</code> model.</p>
+</blockquote>
+
+<p>The Cypher query performed by the example above is:</p>
+
+<p><code>
+CREATE (post:`Post` {title: 'the title', body: 'the body'}),
+(post)-[:PHOTO]-&gt;(:`Photo` {url: 'http://url', caption: '...', metadata: '...'}),
+(post)-[:PHOTO]-&gt;(:`Photo` {url: 'http://other', caption: 'the bay', metadata: '...'}),
+(post)-[:VIDEO]-&gt;(:`Video` {title: 'Boats passing us by', description: '...'});
+</code></p>
+
+<p>We will get the nodes created with their relations as such:</p>
+
+<p><img src="https://googledrive.com/host/0BznzZ2lBbT0cLW9YcjNldlJkcXc/createWith-preview.db.png" alt="CreateWith" title="CreateWith" /></p>
+
+<p>You may also mix models and attributes as relation values but it is not necessary
+since NeoEloquent will pass the provided attributes through the <code>$fillable</code>
+filter pipeline:</p>
+
+<p><code>php
+$videos = new Video(['title' =&gt; 'foo', 'description' =&gt; 'bar']);
+Post::createWith($info, compact('videos'));
+</code></p>
+
+<p>You may also use a single array of attributes as such:</p>
+
+<p>```php
+class User extends NeoEloquent {</p>
+
+<pre><code>public function account()
+{
+    return $this-&gt;hasOne('Account');
+}
+</code></pre>
+
+<p>}</p>
+
+<p>User::createWith(['name' => 'foo'], ['account' => ['guid' => 'bar', 'email' => 'some@mail.net']]);
+```</p>
+
+<h4>Attaching Existing Records as Relations</h4>
+
+<p><code>createWith</code> is intelligent enough to know the difference when you pass an existing model,
+a model Id or new records that you need to create which allows mixing new records with existing ones.</p>
+
+<p>```php
+class Post extends NeoEloquent {</p>
+
+<pre><code>public function tags()
+{
+    return $this-&gt;hasMany('Tag', 'TAG');
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>```php
+$tag1 = Tag::create(['title' => 'php']);
+$tag2 = Tag::create(['title' => 'dev']);</p>
+
+<p>$post = Post::createWith(['title' => 'foo', 'body' => 'bar'], ['tags' => [$tag1, $tag2]]);
+```</p>
+
+<p>And we will get the <code>Post</code> related to the existing <code>Tag</code> nodes.</p>
+
+<p>Or using the <code>id</code> of the model:</p>
+
+<p><code>php
+Post::createWith(['title' =&gt; 'foo', 'body' =&gt; 'bar'], ['tags' =&gt; 1, 'privacy' =&gt; 2]);
+</code></p>
+
+<p>The Cypher for the query that attaches records would be:</p>
+
+<p><code>
+CREATE (post:`Post` {title: 'foo', 'body' =&gt; 'bar'})
+WITH post
+MATCH (tag:`Tag`)
+WHERE id(tag) IN [1, 2]
+CREATE (post)-[:TAG]-&gt;(tag);
+</code></p>
+
+<h2>Aggregates</h2>
+
+<p>In addition to the Eloquent builder aggregates, NeoEloquent also has support for
+Neo4j specific aggregates like <em>percentile</em> and <em>standard deviation</em>, keeping the same
+function names for convenience.
+Check <a href="http://docs.neo4j.org/chunked/stable/query-aggregation.html">the docs</a> for more.</p>
+
+<blockquote>
+  <p><code>table()</code> represents the label of the model</p>
+</blockquote>
+
+<p>```
+$users = DB::table('User')->count();</p>
+
+<p>$distinct = DB::table('User')->countDistinct('points');</p>
+
+<p>$price = DB::table('Order')->max('price');</p>
+
+<p>$price = DB::table('Order')->min('price');</p>
+
+<p>$price = DB::table('Order')->avg('price');</p>
+
+<p>$total = DB::table('User')->sum('votes');</p>
+
+<p>$disc = DB::table('User')->percentileDisc('votes', 0.2);</p>
+
+<p>$cont = DB::table('User')->percentileCont('votes', 0.8);</p>
+
+<p>$deviation = DB::table('User')->stdev('sex');</p>
+
+<p>$population = DB::table('User')->stdevp('sex');</p>
+
+<p>$emails = DB::table('User')->collect('email');
+```</p>
+
+<h2>Changelog</h2>
+
+<p>Check the <a href="https://github.com/Vinelab/NeoEloquent/releases">Releases</a> for details.</p>
+
+<h2>Avoid</h2>
+
+<p>Here are some constraints and Graph-specific gotchas, a list of features that are either not supported or not recommended.</p>
+
+<h3>JOINS :confounded:</h3>
+
+<ul>
+<li>They make no sense for Graph, plus Graph hates them!
+Which makes them unsupported on purpose. If migrating from an <code>SQL</code>-based app
+they will be your boogie monster.</li>
+</ul>
+
+<h3>Pivot Tables in Many-To-Many Relationships</h3>
+
+<p>This is not supported, instead we will be using <a href="#edges">Edges</a> to work with relationships between models.</p>
+
+<h3>Nested Arrays and Objects</h3>
+
+<ul>
+<li>Due to the limitations imposed by the objects map types that can be stored in a single,
+you can never have nested <em>arrays</em> or <em>objects</em> in a single model,
+make sure it's flat. <em>Example:</em></li>
+</ul>
+
+<p><code>php
+// Don't
+User::create(['name' =&gt; 'Some Name', 'location' =&gt; ['lat' =&gt; 123, 'lng'=&gt; -123 ] ]);
+</code></p>
+
+<p>Check out the <a href="#createwith">createWith()</a> method on how you can achieve this in a Graph way.</p>
+
+<h2>Tests</h2>
+
+<ul>
+<li>install a Neo4j instance and run it with the default configuration <code>localhost:7474</code></li>
+<li>make sure the database graph is empty to avoid conflicts</li>
+<li>after running <code>composer install</code> there should be <code>/vendor/bin/phpunit</code></li>
+<li>run <code>./vendor/bin/phpunit</code> after making sure that the Neo4j instance is running</li>
+</ul>
+
+<blockquote>
+  <p>Tests marked as incomplete means they are either known issues or non-supported features,
+check included messages for more info.</p>
+</blockquote>

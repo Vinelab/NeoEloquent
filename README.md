@@ -211,14 +211,6 @@ MERGE (account)<-[rel_user_account:ACCOUNT]-(user)
 RETURN rel_user_account;
 ```
 
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (phone:Phone) (phone)<-[:PHONE]-(user:User)
-WHERE id(phone) = 1006
-RETURN user;
-```
-
 ### One-To-Many
 
 ```php
