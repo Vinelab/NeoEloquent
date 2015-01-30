@@ -289,15 +289,15 @@ Or using the `attach()` method:
 ```php
 $jd->followers()->attach($mc);
 // Or..
-$jd->followers()->attach(1); // 1 being the id of $mc ($mc->getKey())
+$jd->followers()->attach(1013); // 1013 being the id of $mc ($mc->getKey())
 ```
 
 The Cypher performed by this statement will be as follows:
 
 ```
-MATCH (user:`User`), (followers:`User`)
-WHERE id(user) = 1012 AND id(followers) = 1013
-CREATE (user)-[:FOLLOWS]->(followers)
+MATCH (user:`User`), (follower:`User`)
+WHERE id(user) = 1012 AND id(follower) = 1013
+CREATE (follower)-[:FOLLOWS]->(user)
 RETURN rel_follows;
 ```
 
