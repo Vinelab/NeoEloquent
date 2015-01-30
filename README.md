@@ -650,7 +650,7 @@ $post = $edge->related();
 #### HyperEdge
 
 This edge comes as a result of a [Polymorphic Relation](#polymorphic) representing an edge involving
-tow other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
+two other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
 
 This edge is treated a bit different than the others since it is not a direct relationship
 between two models which means it has no specific direction.
