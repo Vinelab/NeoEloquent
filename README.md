@@ -295,9 +295,9 @@ $jd->followers()->attach(1013); // 1013 being the id of $mc ($mc->getKey())
 The Cypher performed by this statement will be as follows:
 
 ```
-MATCH (user:`User`), (follower:`User`)
-WHERE id(user) = 1012 AND id(follower) = 1013
-CREATE (follower)-[:FOLLOWS]->(user)
+MATCH (user:`User`), (followers:`User`)
+WHERE id(user) = 1012 AND id(followers) = 1013
+CREATE (followers)-[:FOLLOWS]->(user)
 RETURN rel_follows;
 ```
 
