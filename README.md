@@ -211,14 +211,6 @@ MERGE (account)<-[rel_user_account:ACCOUNT]-(user)
 RETURN rel_user_account;
 ```
 
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (phone:Phone) (phone)<-[:PHONE]-(user:User)
-WHERE id(phone) = 1006
-RETURN user;
-```
-
 ### One-To-Many
 
 ```php
@@ -279,7 +271,7 @@ class User extends NeoEloquent {
 }
 ```
 
-This represents an `OUTGOING` relationship between a `:User` node and another `:User`.
+This represents an `INCOMING` relationship between a `:User` node and another `:User`.
 
 ```php
 $jd = User::find(1012);
@@ -297,7 +289,7 @@ Or using the `attach()` method:
 ```php
 $jd->followers()->attach($mc);
 // Or..
-$jd->followers()->attach(1); // 1 being the id of $mc ($mc->getKey())
+$jd->followers()->attach(1013); // 1013 being the id of $mc ($mc->getKey())
 ```
 
 The Cypher performed by this statement will be as follows:
@@ -305,7 +297,7 @@ The Cypher performed by this statement will be as follows:
 ```
 MATCH (user:`User`), (followers:`User`)
 WHERE id(user) = 1012 AND id(followers) = 1013
-CREATE (user)-[:FOLLOWS]->(followers)
+CREATE (followers)-[:FOLLOWS]->(user)
 RETURN rel_follows;
 ```
 
@@ -341,7 +333,7 @@ RETURN rel_follows;
 ### Dynamic Properties
 
 ```php
-class Phone extends Eloquent {
+class Phone extends NeoEloquent {
 
     public function user()
     {
@@ -541,7 +533,7 @@ class Comment extends NeoEloquent {
 ### Eager Loading
 
 ```php
-class Book extends Eloquent {
+class Book extends NeoEloquent {
 
     public function author()
     {
@@ -650,7 +642,7 @@ $post = $edge->related();
 #### HyperEdge
 
 This edge comes as a result of a [Polymorphic Relation](#polymorphic) representing an edge involving
-tow other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
+two other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
 
 This edge is treated a bit different than the others since it is not a direct relationship
 between two models which means it has no specific direction.
