@@ -271,7 +271,7 @@ class User extends NeoEloquent {
 }
 ```
 
-This represents an `OUTGOING` relationship between a `:User` node and another `:User`.
+This represents an `INCOMING` relationship between a `:User` node and another `:User`.
 
 ```php
 $jd = User::find(1012);
