@@ -333,7 +333,7 @@ RETURN rel_follows;
 ### Dynamic Properties
 
 ```php
-class Phone extends Eloquent {
+class Phone extends NeoEloquent {
 
     public function user()
     {
@@ -533,7 +533,7 @@ class Comment extends NeoEloquent {
 ### Eager Loading
 
 ```php
-class Book extends Eloquent {
+class Book extends NeoEloquent {
 
     public function author()
     {
