@@ -511,4 +511,59 @@ abstract class Model extends IlluminateModel {
 
         return $dirty;
     }
+
+    /*
+     * Adds more labels
+     * @param $labels array of strings containing labels to be added
+     * @return bull true if success, false if failure
+     */
+    function addLabels( $labels ){
+        return $this->updateLabels( $labels, 'ADD' );
+    }
+
+    /*
+     * Drops labels
+     * @param $labels array of strings containing labels to be dropped
+     * @return bull true if success, false if failure
+     */
+    function dropLabels( $labels ){
+        return $this->updateLabels( $labels, 'DROP' );
+    }
+
+    /*
+     * Adds or Drops labels
+     * @param $labels array of strings containing labels to be dropped
+     * @param $operation string can be 'ADD' or 'DROP'
+     * @return bull true if success, false if failure
+     */
+    function updateLabels( $labels, $operation = 'ADD' ){
+        $query = $this->newQueryWithoutScopes();
+
+        // If the "saving" event returns false we'll bail out of the save and return
+        // false, indicating that the save failed. This gives an opportunities to
+        // listeners to cancel save operations if validations fail or whatever.
+        if ($this->fireModelEvent('saving') === false){
+            return false;
+        }
+
+        if( !is_array( $labels ) || count( $labels ) == 0 ){
+            return false;
+        }
+
+        foreach( $labels as $label){
+            if( !preg_match( '/^[a-z]([a-z0-9]+)$/i', $label ) ){
+                return false;
+            }
+        }
+
+        // If the model already exists in the database we can just update our record
+        // that is already in this database using the current IDs in this "where"
+        // clause to only update this model. Otherwise, we'll return false.
+        if( $this->exists ){
+            $saved = $this->setKeysForSaveQuery($query)->updateLabels( $labels, $operation );
+            $this->fireModelEvent('updated', false);
+        }else{
+            return false;
+        }
+    }
 }
