@@ -61,9 +61,9 @@ class Builder extends IlluminateQueryBuilder {
     protected $operators = array(
         '+', '-', '*', '/', '%', '^',    // Mathematical
         '=', '<>', '<', '>', '<=', '>=', // Comparison
-        'IS NULL', 'IS NOT NULL',
-        'AND', 'OR', 'XOR', 'NOT',       // Boolean
-        'IN, [x], [x .. y]',             // Collection
+        'is null', 'is not null',
+        'and', 'or', 'xor', 'not',       // Boolean
+        'in', '[x]', '[x .. y]',         // Collection
         '=~'                             // Regular Expression
     );
 
@@ -207,6 +207,13 @@ class Builder extends IlluminateQueryBuilder {
 	 */
 	public function where($column, $operator = null, $value = null, $boolean = 'and')
 	{
+        // First we check whether the operator is 'IN' so that we call whereIn() on it
+        // as a helping hand and centralization strategy, whereIn knows what to do with the IN operator.
+        if (mb_strtolower($operator) == 'in')
+        {
+            return $this->whereIn($column, $value, $boolean);
+        }
+
         // If the column is an array, we will assume it is an array of key-value pairs
 		// and can add them each as a where clause. We will maintain the boolean we
 		// received when the method was called and pass it into the nested where.
