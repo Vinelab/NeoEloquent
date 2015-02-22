@@ -969,8 +969,8 @@ Currently Neo4j supports `UNIQUE` constraint and `INDEX` on properties. You can 
 
 Command                           | Description
 ------------                      | -------------
-`$label->index('name')`           | Adding a unique constraint on a property
-`$label->dropUnique('email')`     | Dropping a unique constraint from property
+`$label->unique('email')`           | Adding a unique constraint on a property
+`$label->dropUnique('email')`       | Dropping a unique constraint from property
 `$label->index('uuid')`           | Adding index on property
 `$label->dropIndex('uuid')`       | Dropping index from property
 
