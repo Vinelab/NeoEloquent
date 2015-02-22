@@ -1,6 +1,6 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
-use Illuminate\Database\Eloquent\SoftDeletingTrait as IlluminateSoftDeletingTrait;
+use Illuminate\Database\Eloquent\SoftDeletes as IlluminateSoftDeletingTrait;
 
 trait SoftDeletingTrait {
 
