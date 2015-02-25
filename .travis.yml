@@ -1,0 +1,31 @@
+language: php
+
+php:
+  - 5.4
+  - 5.5
+  - 5.6
+  - hhvm
+
+before_script:
+  # install Neo4j
+  - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
+  - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
+  - neo4j-community-$NEO4J_VERSION/bin/neo4j start
+  - sleep 3 # give neo4j some time to start
+
+  # install composer
+  - composer self-update
+  - composer install --prefer-source --no-interaction --dev
+
+script: phpunit
+
+jdk:
+  - oraclejdk7  # needed for local Neo4j 2.0+
+
+env:
+  - NEO4J_VERSION="2.0.3"
+
+notifications:
+  slack:
+    rooms:
+      - vinelab:52MiVOHdct34FRg2o9sPBlJJ#graphdb
