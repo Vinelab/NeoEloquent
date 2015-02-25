@@ -276,8 +276,26 @@ class WheresTheTest extends TestCase {
     {
         $u = User::where('alias', '=', 'ab')->orWhere('alias', '=', 'cd')->get();
         $this->assertCount(2, $u);
-
         $this->assertEquals('ab', $u[0]->alias);
         $this->assertEquals('cd', $u[1]->alias);
+    }
+
+    /**
+     * Regression test for issue #41
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/41
+     */
+    public function testWhereWithIn()
+    {
+        $ab = User::where('alias', 'IN', ['ab'])->first();
+
+        $this->assertEquals($this->ab, $ab);
+
+        $users = User::where('alias', 'IN', ['cd', 'ef'])->get();
+
+        $l = (new User)->getConnection()->getQueryLog();
+
+        $this->assertEquals($this->cd->toArray(), $users[0]->toArray());
+        $this->assertEquals($this->ef->toArray(), $users[1]->toArray());
     }
 }

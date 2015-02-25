@@ -1,6 +1,8 @@
 <?php namespace Vinelab\NeoEloquent\Tests\Functional\QueryingRelations;
 
+use DateTime;
 use Mockery as M;
+use Carbon\Carbon;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
@@ -599,13 +601,48 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals($acme, $found);
     }
 
+    public function testSavingCreateWithRelationWithDateTimeAndCarbonInstances()
+    {
+        $yesterday = Carbon::now()->subDay();
+        $dt = new DateTime();
+
+        $user = User::createWith(['name' => 'Some Name', 'dob' => $yesterday],
+            ['colleagues' => ['name' => 'Protectron', 'dob' => $dt]
+        ]);
+
+        $houwe = User::first();
+        $colleague = $houwe->colleagues()->first();
+
+        $this->assertEquals($yesterday->format(User::getDateFormat()), $houwe->dob);
+        $this->assertEquals($dt->format(User::getDateFormat()), $colleague->dob);
+    }
+
+    public function testSavingRelationWithDateTimeAndCarbonInstances()
+    {
+        $user = User::create(['name' => 'Andrew Hale']);
+        $yesterday = Carbon::now()->subDay();
+        $brother = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
+
+        $dt = new DateTime();
+        $someone = User::create(['name' => 'Producer', 'dob' => $dt]);
+
+        $user->colleagues()->save($someone);
+        $user->colleagues()->save($brother);
+
+        $andrew = User::first();
+
+        $colleagues = $andrew->colleagues()->get();
+        $this->assertEquals($dt->format(User::getDateFormat()), $colleagues[0]->dob);
+        $this->assertEquals($yesterday->format(User::getDateFormat()), $colleagues[1]->dob);
+    }
+
 }
 
 class User extends Model {
 
     protected $label = 'User';
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'dob'];
 
     public function roles()
     {

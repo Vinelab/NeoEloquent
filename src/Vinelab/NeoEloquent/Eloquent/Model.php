@@ -34,6 +34,18 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
+     * Get the node label for this model.
+     *
+     * @return string|array
+     */
+    public function getLabel()
+    {
+        return $this->label;
+    }
+
+    /**
+     * @override
      * Create a new Eloquent query builder for the model.
      *
      * @param  Vinelab\NeoEloquent\Query\Builder $query
@@ -45,6 +57,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
 	 * Get a new query builder instance for the connection.
 	 *
 	 * @return Vinelab\NeoEloquent\Query\Builder
@@ -59,6 +72,7 @@ abstract class Model extends IlluminateModel {
 	}
 
     /**
+     * @override
 	 * Get the format for database stored dates.
 	 *
 	 * @return string
@@ -103,6 +117,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
 	 * Get the table associated with the model.
 	 *
 	 * @return string
@@ -113,6 +128,7 @@ abstract class Model extends IlluminateModel {
 	}
 
     /**
+     * @override
      * Define an inverse one-to-one or many relationship.
      *
      * @param  string  $related
@@ -154,6 +170,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a one-to-one relationship.
      *
      * @param  string  $related
@@ -194,6 +211,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a one-to-many relationship.
      *
      * @param  string  $related
@@ -224,6 +242,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a many-to-many relationship.
      *
      * @param  string  $related
@@ -273,6 +292,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Create a new HyperMorph relationship.
      *
      * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
@@ -317,6 +337,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a many-to-many relationship.
      *
      * @param  string  $related
@@ -367,6 +388,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Create an inverse one-to-one polymorphic relationship with specified model and relation.
      *
      * @param  \Vinelab\NeoEloquent\Eloquent\Model $related
@@ -409,6 +431,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a polymorphic, inverse one-to-one or many relationship.
      *
      * @param  string  $name
@@ -489,6 +512,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Get the table qualified key name.
      *
      * @return string
@@ -498,11 +522,22 @@ abstract class Model extends IlluminateModel {
         return $this->getKeyName();
     }
 
+    /**
+     * Add timestamps to this model.
+     *
+     * @return void
+     */
     public function addTimestamps()
     {
         $this->updateTimestamps();
     }
 
+    /**
+     * @override
+     * Get the attributes that have been changed since last sync.
+     *
+     * @return array
+     */
     public function getDirty()
     {
         $dirty = parent::getDirty();

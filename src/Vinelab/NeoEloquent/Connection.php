@@ -7,6 +7,7 @@ use Vinelab\NeoEloquent\QueryException;
 use Everyman\Neo4j\Client as NeoClient;
 use Everyman\Neo4j\Cypher\Query as CypherQuery;
 use Illuminate\Database\Connection as IlluminateConnection;
+use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
 
 class Connection extends IlluminateConnection {
 
@@ -448,4 +449,45 @@ class Connection extends IlluminateConnection {
         return $result;
     }
 
+        /**
+     * Set the schema grammar used by the connection.
+     *
+     * @param  \Illuminate\Database\Schema\Grammars\Grammar
+     * @return void
+     */
+    public function setSchemaGrammar(IlluminateSchemaGrammar $grammar)
+    {
+        $this->schemaGrammar = $grammar;
+    }
+
+    /**
+     * Get the schema grammar used by the connection.
+     *
+     * @return \Illuminate\Database\Query\Grammars\Grammar
+     */
+    public function getSchemaGrammar()
+    {
+        return $this->schemaGrammar;
+    }
+
+    /**
+     * Get the default schema grammar instance.
+     *
+     * @return \Illuminate\Database\Schema\Grammars\Grammar
+     */
+    protected function getDefaultSchemaGrammar() {}
+
+    /**
+     * Get a schema builder instance for the connection.
+     *
+     * @return \Vinelab\NeoEloquent\Schema\Builder
+     */
+    public function getSchemaBuilder()
+    {
+        if (is_null($this->schemaGrammar)) {
+            $this->useDefaultSchemaGrammar();
+        }
+
+        return new Schema\Builder($this);
+    }
 }

@@ -1,5 +1,7 @@
 <?php namespace Vinelab\NeoEloquent\Query\Grammars;
 
+use DateTime;
+use Carbon\Carbon;
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar {
@@ -135,6 +137,13 @@ class Grammar extends IlluminateGrammar {
         // escape and wrap them with a quote.
         $values = array_map(function ($value)
         {
+            // First, we check whether we have a date instance so that
+            // we take its string representation instead.
+            if ($value instanceof DateTime || $value instanceof Carbon)
+            {
+                $value = $value->format($this->getDateFormat());
+            }
+
             // We need to keep the data type of values
             // except when they're strings, we need to
             // escape wrap them.
@@ -270,6 +279,6 @@ class Grammar extends IlluminateGrammar {
     public function propertize($property)
     {
         // Sanitize the string from all characters except alpha numeric.
-        return preg_replace('[^A-Za-z0-9]', '', $property);
+        return preg_replace('/[^A-Za-z0-9_]+/i', '', $property);
     }
 }
