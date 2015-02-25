@@ -634,4 +634,16 @@ class CypherGrammar extends Grammar {
 
         return "RETURN $function($distinct$columns)";
     }
+    
+    /**
+     * Prepare a relationship label.
+     *
+     * @param  string $relation
+     * @return string
+     */
+    public function prepareRelationLabel($relation, $related)
+    {
+        
+        return "rel_". mb_strtolower($relation) .'_'. $related;
+    }
 }

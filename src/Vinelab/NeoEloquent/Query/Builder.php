@@ -829,4 +829,12 @@ class Builder extends IlluminateQueryBuilder {
 
         return $value;
     }
+    
+    // Function : To get Realtionship as label
+     public function relationshipAsLabel($relation, $related)
+     {
+        $this->from($this->grammar->prepareRelationLabel($relation, $related));
+        return true;
+       
+     }
 }

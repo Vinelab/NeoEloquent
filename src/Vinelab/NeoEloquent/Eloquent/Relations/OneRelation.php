@@ -231,5 +231,12 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
     {
         return $this->parent->{$this->otherKey};
     }
+    
+    
+    public function where($column, $operator = null, $value = null, $boolean = 'and') {
+        $this->getQuery()->relationshipAsLabel($this->foreignKey, $this->relation);
+        $this->query->where($column, $operator, $value, $boolean);
+        return $this->getBaseQuery();
+    }
 
 }
