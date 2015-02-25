@@ -549,7 +549,26 @@ abstract class Model extends IlluminateModel {
         return $dirty;
     }
     
-            public function isReleationshipExists($queryString) {
+        
+    // Function : To check if relationship exist between two node
+    // Input : From Node Id, To node Id, Relationship name
+    // Return : Boolean
+    public function isReleationshipAlreadyExist($labelFrom, $labelTo, $relationship) {
+        try {
+            $client = new Client('localhost', 7474);
+            $queryString = "START n=node(" . $labelFrom . ") , f=node(" . $labelTo . ") Match (n)-[r:" . $relationship . "]->(f) return r limit 1";
+            $query = new Query($client, $queryString);
+            $result = $query->getResultSet();
+            if ($result->count())
+                return false;
+        } catch (Exception $ex) {
+            throw new Exception("Invalid Query Exception");
+            
+        }
+        return true;
+    }
+    
+        public function isReleationshipExists($queryString) {
         try {
             $client = new Client('localhost', 7474);
             $query = new Query($client, $queryString);
@@ -573,4 +592,20 @@ abstract class Model extends IlluminateModel {
         }
         return false;
     }
+    
+    public function getCountByManualQuery($queryString, $param) {
+        try {
+            $client = new Client('localhost', 7474);
+            $query = new Query($client, $queryString);
+            $result = $query->getResultSet();
+            if ($result->count()) {
+                return $result[0][$param];
+            }
+        } catch (Exception $ex) {
+            throw new Exception("Query Exception");
+        }
+        return false;
+    }
+ 
+
 }
