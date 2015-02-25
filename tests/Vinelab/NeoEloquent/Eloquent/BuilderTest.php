@@ -52,6 +52,18 @@ class EloquentBuilderTest extends TestCase {
     /**
      * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
      */
+    public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
+    {
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
+        $builder->setModel($this->getMockModel());
+        $builder->getQuery()->shouldReceive('whereIn')->once()->with('foo', [1, 2]);
+        $builder->shouldReceive('get')->with(array('column'))->andReturn(new Collection([1]));
+        $result = $builder->findOrFail([1, 2], array('column'));
+    }
+
+    /**
+     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     */
     public function testFirstOrFailMethodThrowsModelNotFoundException()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
@@ -163,47 +175,6 @@ class EloquentBuilderTest extends TestCase {
         $builder->getModel()->shouldReceive('hasGetMutator')->with('name')->andReturn(false);
 
         $this->assertEquals(array('bar', 'baz'), $builder->lists('name'));
-    }
-
-    public function testPaginateMethod()
-    {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
-        $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('getPerPage')->once()->andReturn(15);
-        $builder->getQuery()->shouldReceive('getPaginationCount')->once()->andReturn(10);
-        $conn = m::mock('stdClass');
-        $paginator = m::mock('stdClass');
-        $paginator->shouldReceive('getCurrentPage')->once()->andReturn(1);
-        $conn->shouldReceive('getPaginator')->once()->andReturn($paginator);
-        $builder->getQuery()->shouldReceive('getConnection')->once()->andReturn($conn);
-        $builder->getQuery()->shouldReceive('forPage')->once()->with(1, 15);
-        $builder->shouldReceive('get')->with(array('*'))->andReturn(new Collection(array('results')));
-        $paginator->shouldReceive('make')->once()->with(array('results'), 10, 15)->andReturn(array('results'));
-
-        $this->assertEquals(array('results'), $builder->paginate());
-    }
-
-    public function testQuickPaginateMethod()
-    {
-        $query = $this->getMock('Vinelab\NeoEloquent\Query\Builder', array('from', 'getConnection', 'skip', 'take'), array(
-            m::mock('Vinelab\NeoEloquent\Connection', function($mock){ $mock->shouldReceive('getClient'); }),
-            m::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial(),
-        ));
-        $query->expects($this->once())->method('from')->will($this->returnValue('foo_table'));
-        $builder = $this->getMock('Vinelab\NeoEloquent\Eloquent\Builder', array('get'), array($query));
-        $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('getPerPage')->once()->andReturn(15);
-        $conn = m::mock('stdClass');
-        $paginator = m::mock('stdClass');
-        $paginator->shouldReceive('getCurrentPage')->once()->andReturn(1);
-        $conn->shouldReceive('getPaginator')->once()->andReturn($paginator);
-        $query->expects($this->once())->method('getConnection')->will($this->returnValue($conn));
-        $query->expects($this->once())->method('skip')->with(0)->will($this->returnValue($query));
-        $query->expects($this->once())->method('take')->with(16)->will($this->returnValue($query));
-        $builder->expects($this->once())->method('get')->with($this->equalTo(array('*')))->will($this->returnValue(new Collection(array('results'))));
-        $paginator->shouldReceive('make')->once()->with(array('results'), 15)->andReturn(array('results'));
-
-        $this->assertEquals(array('results'), $builder->simplePaginate());
     }
 
     public function testGetModelsProperlyHydratesModels()
