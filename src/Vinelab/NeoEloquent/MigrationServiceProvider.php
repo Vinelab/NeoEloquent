@@ -59,7 +59,7 @@ class MigrationServiceProvider extends ServiceProvider {
 
             return new DatabaseMigrationRepository(
                 $app['db'],
-                $app['db']->connection()->getSchemaBuilder(),
+                $app['db']->connection('neo4j')->getSchemaBuilder(),
                 $model
             );
         });
