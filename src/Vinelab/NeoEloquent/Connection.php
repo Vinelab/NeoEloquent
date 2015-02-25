@@ -1,5 +1,6 @@
 <?php namespace Vinelab\NeoEloquent;
 
+use Exception;
 use DateTime, Closure;
 use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Query\Builder;
@@ -434,7 +435,7 @@ class Connection extends IlluminateConnection {
             // If an exception occurs when attempting to run a query, we'll format the error
             // message to include the bindings with Cypher, which will make this exception a
             // lot more helpful to the developer instead of just the database's errors.
-        catch (\Exception $e)
+        catch (Exception $e)
         {
             throw new QueryException($query, $bindings, $e);
         }
