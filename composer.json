@@ -1,0 +1,35 @@
+{
+    "name": "sgpatil/neoeloquent",
+    "description": "Laravel wrapper for the Neo4j graph database REST interface",
+    "keywords": ["laravel", "neo4j", "graph", "database", "neoeloquent"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Abed Halawi",
+            "email": "abed.halawi@vinelab.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "illuminate/support": "4.2.*",
+        "illuminate/database": "4.2.*",
+        "vinelab/neo4jphp": "0.1.*",
+        "nesbot/carbon": "~1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.2.*",
+        "mockery/mockery": "0.9.*"
+    },
+    "repositories": [
+
+    ],
+    "autoload": {
+        "classmap": [
+            "tests/TestCase.php"
+        ],
+        "psr-0": {
+            "Vinelab\\NeoEloquent\\": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
