@@ -103,7 +103,7 @@ class Grammar extends IlluminateGrammar {
      * @param  string  $value
      * @return string
      */
-    public function wrap($value)
+    public function wrap($value, $prefixAlias = false)
     {
         // We will only wrap the value unless it has parentheses
         // in it which is the case where we're matching a node by id, or an *
