@@ -5,7 +5,7 @@ use Carbon\Carbon;
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
+use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
 
 class Wiz extends Model {
 
@@ -16,7 +16,7 @@ class Wiz extends Model {
 
 class WizDel extends Model {
 
-    use SoftDeletingTrait;
+    use SoftDeletes;
 
     protected $dates = ['deleted_at'];
 

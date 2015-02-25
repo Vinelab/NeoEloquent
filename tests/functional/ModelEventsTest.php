@@ -3,7 +3,7 @@
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
+use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
 
 class ModelEventsTest extends TestCase {
 
@@ -68,7 +68,7 @@ class ModelEventsTest extends TestCase {
 
 class User extends Model {
 
-    use SoftDeletingTrait;
+    use SoftDeletes;
 
     protected $dates = ['deleted_at'];
 
@@ -163,7 +163,7 @@ class User extends Model {
 
 class OBOne extends Model {
 
-    use SoftDeletingTrait;
+    use SoftDeletes;
 
     protected $dates = ['deleted_at'];
 
