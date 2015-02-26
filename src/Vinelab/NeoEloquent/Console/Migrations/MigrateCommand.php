@@ -60,6 +60,7 @@ class MigrateCommand extends BaseCommand {
 
         $path = $this->getMigrationPath();
 
+        $this->migrator->setConnection($this->input->getOption('database'));
         $this->migrator->run($path, $pretend);
 
         // Once the migrator has run we will grab the note output and send it out to
