@@ -33,8 +33,6 @@ class NeoEloquentServiceProvider extends ServiceProvider {
 		Model::setConnectionResolver($this->app['db']);
 
 		Model::setEventDispatcher($this->app['events']);
-
-		$this->package('vinelab/neoeloquent');
 	}
 
 	/**
