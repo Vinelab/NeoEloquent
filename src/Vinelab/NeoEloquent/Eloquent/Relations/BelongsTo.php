@@ -108,4 +108,14 @@ class BelongsTo extends OneRelation {
         return new EdgeIn($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
     }
 
+<<<<<<< HEAD
+=======
+     public function avg($column, $onRelation=false)
+    {   
+         if($onRelation)
+         $this->getQuery()->relationshipAsLabel($this->foreignKey, $this->relation);
+        return $this->getBaseQuery()->aggregate(__FUNCTION__, array($column));
+
+    }
+>>>>>>> 9089816b79b4bc063ebc2e1856dab97225211bf6
 }
