@@ -12,7 +12,7 @@ class MigrateMakeCommand extends BaseCommand
     /**
      * {@inheritDoc}
      */
-    protected $name = 'neo4j:migrate:make';
+    protected $name = 'neo4j:make:migration';
 
     /**
      * {@inheritDoc}
