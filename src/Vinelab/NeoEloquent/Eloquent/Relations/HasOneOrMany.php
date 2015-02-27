@@ -43,7 +43,10 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     public function __construct(Builder $query, Model $parent, $type, $key, $relation)
     {
         $this->localKey = $key;
-        $this->relation = $relation;
+        // mb_strtolower added to make relation ship label in small case
+        $this->relation = mb_strtolower($relation);
+        
+        
         $this->type = $this->foreignKey = $type;
 
         parent::__construct($query, $parent, $type, $key);
@@ -659,5 +662,11 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     public function getEdgeDirection()
     {
         return $this->edgeDirection;
+    }
+    
+     public function where($column, $operator = null, $value = null, $boolean = 'and') {
+        $this->getQuery()->relationshipAsLabel($this->foreignKey, $this->relation);
+        $this->query->where($column, $operator, $value, $boolean);
+        return $this->getBaseQuery();
     }
 }
