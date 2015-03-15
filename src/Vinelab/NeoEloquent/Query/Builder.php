@@ -833,16 +833,17 @@ class Builder extends IlluminateQueryBuilder {
     /*
      * Add/Drop labels
      * @param $labels array array of strings(labels)
-     * @param $operation string 'ADD' or 'DROP'
+     * @param $operation string 'add' or 'drop'
      * @return bool true if success, otherwise false
      */
-    public function updateLabels( $labels, $operation = 'ADD' ){
+    public function updateLabels($labels, $operation = 'add')
+	{
 
-        $cypher = $this->grammar->compileUpdateLabels( $this, $labels, $operation );
+        $cypher = $this->grammar->compileUpdateLabels($this, $labels, $operation);
 
-        $updated = $this->connection->update( $cypher, $this->getBindings() );
+        $updated = $this->connection->update($cypher, $this->getBindings());
 
-        return (isset($updated[0]) && isset( $updated[0][0]) ) ? $updated[0][0] : 0;
+        return (isset($updated[0]) && isset($updated[0][0])) ? $updated[0][0] : 0;
 
     }
 

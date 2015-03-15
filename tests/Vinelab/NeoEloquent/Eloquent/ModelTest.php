@@ -92,7 +92,8 @@ class ModelTest extends TestCase {
         parent::tearDown();
     }
 
-    public function testAddLabels(){
+    public function testAddLabels()
+	{
         //create a new model object
         $m = new Labeled;
         $m->setLabel(array('User', 'Fan')); //set some labels
@@ -101,27 +102,29 @@ class ModelTest extends TestCase {
         $id = $m->id;
 
         //add the label
-        $m->addLabels( array( 'Superuniqelabel1' ) );
+        $m->addLabels(array('Superuniqelabel1'));
 
         //get the Node for $id using Everyman lib
         $connection = $this->getConnectionWithConfig('neo4j');
         $client = $connection->getClient();
-        $node = $client->getNode( $id );
+        $node = $client->getNode($id);
 
-        $this->assertNotNull( $node ); //it should exist
+        $this->assertNotNull($node); //it should exist
 
         $labels = $node->getLabels(); //get labels as array on the Everyman nodes
 
         $strLabels = array();
-        foreach( $labels as $lbl ){
+        foreach($labels as $lbl)
+		{
             $strLabels[] = $lbl->getName();
         }
 
-        $this->assertTrue( in_array( 'Superuniqelabel1', $strLabels ) );
+        $this->assertTrue(in_array('Superuniqelabel1', $strLabels));
 
     }
 
-    public function testDropLabels(){
+    public function testDropLabels()
+	{
         //create a new model object
         $m = new Labeled;
         $m->setLabel(array('User', 'Fan', 'Superuniqelabel2')); //set some labels
@@ -130,23 +133,24 @@ class ModelTest extends TestCase {
         $id = $m->id;
 
         //drop the label
-        $m->dropLabels( array( 'Superuniqelabel2' ) );
+        $m->dropLabels(array('Superuniqelabel2'));
 
 
         //get the Node for $id using Everyman lib
         $connection = $this->getConnectionWithConfig('neo4j');
         $client = $connection->getClient();
-        $node = $client->getNode( $id );
+        $node = $client->getNode($id);
 
-        $this->assertNotNull( $node ); //it should exist
+        $this->assertNotNull($node); //it should exist
 
         $labels = $node->getLabels(); //get labels as array on the Everyman nodes
         $strLabels = array();
-        foreach( $labels as $lbl ){
+        foreach($labels as $lbl)
+		{
             $strLabels[] = $lbl->getName();
         }
 
-        $this->assertFalse( in_array( 'Superuniqelabel2', $strLabels ) );
+        $this->assertFalse(in_array('Superuniqelabel2', $strLabels));
 
     }
 }

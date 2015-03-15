@@ -640,13 +640,16 @@ class CypherGrammar extends Grammar {
      *
      * @param  \Vinelab\NeoEloquent\Query\Builder  $query
      * @param  array $labels labels as string like :label1:label2 etc
+	 * @param  array $operation type of operation 'add' or 'drop'
      * @return string
      */
-    public function compileUpdateLabels(Builder $query, $labels, $operation = 'ADD' )
+    public function compileUpdateLabels(Builder $query, $labels, $operation = 'add' )
     {
-        if( trim( strtolower( $operation ) ) == 'add' ){
+        if(trim(strtolower($operation)) == 'add')
+		{
             $updateType = 'SET';
-        }else{
+        } else
+		{
             $updateType = 'REMOVE';
         }
         // Each one of the columns in the update statements needs to be wrapped in the
