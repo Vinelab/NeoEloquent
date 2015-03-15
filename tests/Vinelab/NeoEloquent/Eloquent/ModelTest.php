@@ -93,7 +93,7 @@ class ModelTest extends TestCase {
     }
 
     public function testAddLabels()
-	{
+    {
         //create a new model object
         $m = new Labeled;
         $m->setLabel(array('User', 'Fan')); //set some labels
@@ -115,7 +115,7 @@ class ModelTest extends TestCase {
 
         $strLabels = array();
         foreach($labels as $lbl)
-		{
+        {
             $strLabels[] = $lbl->getName();
         }
 
@@ -146,7 +146,7 @@ class ModelTest extends TestCase {
         $labels = $node->getLabels(); //get labels as array on the Everyman nodes
         $strLabels = array();
         foreach($labels as $lbl)
-		{
+        {
             $strLabels[] = $lbl->getName();
         }
 

@@ -553,7 +553,7 @@ abstract class Model extends IlluminateModel {
      * @return bull true if success, false if failure
      */
     function addLabels($labels)
-	{
+    {
         return $this->updateLabels($labels, 'add');
     }
 
@@ -563,7 +563,7 @@ abstract class Model extends IlluminateModel {
      * @return bull true if success, false if failure
      */
     function dropLabels($labels)
-	{
+    {
         return $this->updateLabels($labels, 'drop');
     }
 
@@ -574,26 +574,26 @@ abstract class Model extends IlluminateModel {
      * @return bull true if success, false if failure
      */
     function updateLabels($labels, $operation = 'add')
-	{
+    {
         $query = $this->newQueryWithoutScopes();
 
         // If the "saving" event returns false we'll bail out of the save and return
         // false, indicating that the save failed. This gives an opportunities to
         // listeners to cancel save operations if validations fail or whatever.
         if ($this->fireModelEvent('saving') === false)
-		{
+        {
             return false;
         }
 
         if( ! is_array($labels) || count($labels) == 0)
-		{
+        {
             return false;
         }
 
         foreach($labels as $label)
-		{
+        {
             if( ! preg_match( '/^[a-z]([a-z0-9]+)$/i', $label))
-			{
+            {
                 return false;
             }
         }
@@ -602,11 +602,11 @@ abstract class Model extends IlluminateModel {
         // that is already in this database using the current IDs in this "where"
         // clause to only update this model. Otherwise, we'll return false.
         if($this->exists)
-		{
+        {
             $saved = $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
             $this->fireModelEvent('updated', false);
         } else
-		{
+        {
             return false;
         }
     }

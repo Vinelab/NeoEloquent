@@ -646,10 +646,10 @@ class CypherGrammar extends Grammar {
     public function compileUpdateLabels(Builder $query, $labels, $operation = 'add' )
     {
         if(trim(strtolower($operation)) == 'add')
-		{
+        {
             $updateType = 'SET';
         } else
-		{
+        {
             $updateType = 'REMOVE';
         }
         // Each one of the columns in the update statements needs to be wrapped in the
