@@ -190,6 +190,9 @@ class EloquentBuilderTest extends TestCase {
         $resultSet = $this->createNodeResultSet($records, array('n.name', 'n.age'));
 
         $builder->getQuery()->shouldReceive('get')->once()->with(array('foo'))->andReturn($resultSet);
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
+        $builder->getQuery()->shouldReceive('getGrammar')->andReturn($grammar);
+
         $model = M::mock('Vinelab\NeoEloquent\Eloquent\Model[getTable,getConnectionName,newInstance]');
         $model->shouldReceive('getTable')->once()->andReturn('foo_table');
 
@@ -422,10 +425,10 @@ class EloquentBuilderTest extends TestCase {
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()->with($attributes)->andReturn($user);
 
-
         // assign the builder's $model to our mock
         $this->builder->setModel($this->model);
-
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
+        $this->query->shouldReceive('getGrammar')->andReturn($grammar);
         // put things to the test
         $found = $this->builder->find($id, $properties);
 
@@ -455,8 +458,10 @@ class EloquentBuilderTest extends TestCase {
 
         $resultSet = $this->createNodeResultSet($results);
 
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet)
-                    ->shouldReceive('from')->once()->andReturn('User');
+                    ->shouldReceive('from')->once()->andReturn('User')
+                    ->shouldReceive('getGrammar')->andReturn($grammar);
 
         // our User object that we expect to have returned
         $user = M::mock('User');
@@ -492,8 +497,10 @@ class EloquentBuilderTest extends TestCase {
 
         $resultSet = $this->createNodeResultSet($results);
 
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->query->shouldReceive('get')->once()->with($properties)->andReturn($resultSet)
-                    ->shouldReceive('from')->once()->andReturn('User');
+                    ->shouldReceive('from')->once()->andReturn('User')
+                    ->shouldReceive('getGrammar')->andReturn($grammar);
 
         // our User object that we expect to have returned
         $user = M::mock('User');

@@ -15,6 +15,20 @@ class ConnectionTest extends TestCase {
         );
     }
 
+    public function tearDown()
+    {
+        $query = 'MATCH (n:User) WHERE n.username = {username} DELETE n RETURN count(n)';
+
+        $c = $this->getConnectionWithConfig('default');
+
+        $cypher = $c->getCypherQuery($query, array(array('username' => $this->user['username'])));
+        $cypher->getResultSet();
+
+        M::close();
+
+        parent::tearDown();
+    }
+
     public function testConnection()
     {
         $c = $this->getConnectionWithConfig('neo4j');
@@ -362,18 +376,6 @@ class ConnectionTest extends TestCase {
             $count = $result[0];
             $this->assertEquals(0, $count);
         }
-    }
-
-    public function tearDown()
-    {
-        $query = 'MATCH (n:User) WHERE n.username = {username} DELETE n RETURN count(n)';
-
-        $c = $this->getConnectionWithConfig('default');
-
-        $cypher = $c->getCypherQuery($query, array(array('username' => $this->user['username'])));
-        $cypher->getResultSet();
-
-        parent::tearDown();
     }
 
     public function testSettingDefaultCallsGetDefaultGrammar()

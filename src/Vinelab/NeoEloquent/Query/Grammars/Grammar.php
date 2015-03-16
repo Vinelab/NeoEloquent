@@ -13,14 +13,16 @@ class Grammar extends IlluminateGrammar {
      */
     protected $query;
 
+    protected $labelPostfix = '_neoeloquent_';
+
     /**
-	 * Get the appropriate query parameter place-holder for a value.
-	 *
-	 * @param  mixed   $value
-	 * @return string
-	 */
-	public function parameter($value)
-	{
+     * Get the appropriate query parameter place-holder for a value.
+     *
+     * @param  mixed   $value
+     * @return string
+     */
+    public function parameter($value)
+    {
 
         // Validate whether the requested field is the
         // node id, in that case id(n) doesn't work as
@@ -45,8 +47,8 @@ class Grammar extends IlluminateGrammar {
 
         if (strpos($property, '.') !== false) $property = explode('.', $property)[1];
 
-		return '{' . $property . '}';
-	}
+        return '{' . $property . '}';
+    }
 
     /**
      * Prepare a label by formatting it as expected,
@@ -250,7 +252,13 @@ class Grammar extends IlluminateGrammar {
     {
         $label = (is_array($entity['label'])) ? $this->prepareLabels($entity['label']) : $entity['label'];
 
-        if ($identifier) $label = $this->modelAsNode($entity['label']).$label;
+        if ($identifier)
+        {
+            // when the $identifier is used as a flag, we'll take care of generating it.
+            if ($identifier === true) $identifier = $this->modelAsNode($entity['label']);
+
+            $label = $identifier.$label;
+        }
 
         $bindings = $entity['bindings'];
 
@@ -280,5 +288,43 @@ class Grammar extends IlluminateGrammar {
     {
         // Sanitize the string from all characters except alpha numeric.
         return preg_replace('/[^A-Za-z0-9_]+/i', '', $property);
+    }
+
+    /**
+     * Get the unique identifier for the given label.
+     *
+     * @param  array   $label  The normalized label(s)
+     * @param  integer $number Will be appended for uniqueness (must be handled on the client side)
+     *
+     * @return string
+     */
+    public function getLabelIdentifier(array $label)
+    {
+        return $this->getUniqueLabel(reset($label));
+    }
+
+    /**
+     * Get a unique label for the given label.
+     *
+     * @param  string $label
+     *
+     * @return string
+     */
+    public function getUniqueLabel($label)
+    {
+        return $label.$this->labelPostfix.uniqid();
+    }
+
+    /**
+     * Crop the postfixed part of the label removes the part that
+     * gets added by getUniqueLabel.
+     *
+     * @param  string $id
+     *
+     * @return string
+     */
+    public function cropLabelIdentifier($id)
+    {
+        return preg_replace('/_neoeloquent_.*/', '', $id);
     }
 }

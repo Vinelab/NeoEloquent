@@ -1,12 +1,14 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
+use Vinelab\NeoEloquent\Helpers;
+use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\MorphTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Eloquent\Relations\MorphMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HyperMorph;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
-use Vinelab\NeoEloquent\Eloquent\Relations\MorphMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
@@ -56,25 +58,25 @@ abstract class Model extends IlluminateModel {
 
     /**
      * @override
-	 * Get a new query builder instance for the connection.
-	 *
-	 * @return Vinelab\NeoEloquent\Query\Builder
-	 */
-	protected function newBaseQueryBuilder()
-	{
-		$conn = $this->getConnection();
+     * Get a new query builder instance for the connection.
+     *
+     * @return Vinelab\NeoEloquent\Query\Builder
+     */
+    protected function newBaseQueryBuilder()
+    {
+        $conn = $this->getConnection();
 
         $grammar = $conn->getQueryGrammar();
 
-		return new QueryBuilder($conn, $grammar);
-	}
+        return new QueryBuilder($conn, $grammar);
+    }
 
     /**
      * @override
-	 * Get the format for database stored dates.
-	 *
-	 * @return string
-	 */
+     * Get the format for database stored dates.
+     *
+     * @return string
+     */
     protected function getDateFormat()
     {
         return 'Y-m-d H:i:s';
@@ -116,14 +118,14 @@ abstract class Model extends IlluminateModel {
 
     /**
      * @override
-	 * Get the table associated with the model.
-	 *
-	 * @return string
-	 */
-	public function getTable()
-	{
-		return $this->getDefaultNodeLabel();
-	}
+     * Get the table associated with the model.
+     *
+     * @return string
+     */
+    public function getTable()
+    {
+        return $this->getDefaultNodeLabel();
+    }
 
     /**
      * @override
@@ -486,11 +488,92 @@ abstract class Model extends IlluminateModel {
         }
     }
 
-    public static function createWith(array $attributes, array $relations)
+    public static function createWith(array $attributes, array $relations, array $options = [])
     {
-        $query = static::query();
+        // we need to fire model events on all the models that are involved with our operaiton,
+        // including the ones from the relations, starting with this model.
+        $me = new static();
+        $models = [$me];
 
-        return $query->createWith($attributes, $relations);
+        $query = static::query();
+        $grammar = $query->getQuery()->getGrammar();
+
+        // add parent model's mutation constraints
+        $label = $grammar->modelAsNode($me->getDefaultNodeLabel());
+        $query->addManyMutation($label, $me);
+
+        // setup relations
+        foreach ($relations as $relation => $values)
+        {
+            $related = $me->$relation()->getRelated();
+            // if the relation holds the attributes directly instead of an array
+            // of attributes, we transform it into an array of attributes.
+            if (! is_array($values) || Helpers::isAssocArray($values))
+            {
+                $values = [$values];
+            }
+
+            // create instances with the related attributes so that we fire model
+            // events on each of them.
+            foreach ($values as $relatedModel)
+            {
+                // one may pass in either instances or arrays of attributes, when we get
+                // attributes we will dynamically fill a new model instance of the related model.
+                if (is_array($relatedModel))
+                {
+                    $relatedModel = $related->fill($relatedModel);
+                }
+
+                $models[] = $relatedModel;
+                $query->addManyMutation($relation, $related);
+            }
+        }
+
+        // fire 'creating' and 'saving' events on all models.
+        foreach ($models as $model)
+        {
+            // we will fire model events on actual models, however attached models using IDs will not be considered.
+            if ($model instanceof Model)
+            {
+                if ($model->fireModelEvent('creating') === false) return false;
+                if ($model->fireModelEvent('saving') === false) return false;
+            }
+        }
+
+        // run the query and create the records.
+        $result = $query->createWith($attributes, $relations);
+        // take the parent model that was created out of the results array based on
+        // this model's label.
+        $created = reset($result[$label]);
+
+        // fire 'saved' and 'created' events on parent model.
+        $created->finishSave($options);
+        $created->fireModelEvent('created', false);
+
+        // set related models as relations on the parent model.
+        foreach ($relations as $method => $values)
+        {
+            $relation = $created->$method();
+            // is this a one-to-one relation ? If so then we add the model directly,
+            // otherwise we create a collection of the loaded models.
+            $related = new Collection($result[$method]);
+            // fire model events 'created' and 'saved' on related models.
+            $related->each(function ($model) use ($options) {
+                $model->finishSave($options);
+                $model->fireModelEvent('created', false);
+            });
+
+            // when the relation is 'One' instead of 'Many' we will only return the retrieved instance
+            // instead of colletion.
+            if ($relation instanceof OneRelation || $relation instanceof HasOne || $relation instanceof BelongsTo)
+            {
+                $related = $related->first();
+            }
+
+            $created->setRelation($method, $related);
+        }
+
+        return $created;
     }
     /**
      * Get the polymorphic relationship columns.

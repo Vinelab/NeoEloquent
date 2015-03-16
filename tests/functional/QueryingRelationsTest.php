@@ -8,6 +8,13 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 
 class QueryingRelationsTest extends TestCase {
 
+    public function tearDown()
+    {
+        M::close();
+
+        parent::tearDown();
+    }
+
     public function testQueryingHasCount()
     {
         $postNoComment   = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
@@ -634,6 +641,31 @@ class QueryingRelationsTest extends TestCase {
         $colleagues = $andrew->colleagues()->get();
         $this->assertEquals($dt->format(User::getDateFormat()), $colleagues[0]->dob);
         $this->assertEquals($yesterday->format(User::getDateFormat()), $colleagues[1]->dob);
+    }
+
+    public function testCreateWithReturnsRelatedModelsAsRelations()
+    {
+        $user = Post::createWith(
+            ['title' => 'foo tit', 'body' => 'some body'],
+            [
+                'cover' => ['url' => 'http://url'],
+                'tags' => ['title' => 'theTag'],
+            ]
+        );
+
+        $relations = $user->getRelations();
+
+        $this->assertArrayHasKey('cover', $relations);
+        $cover = $user->toArray()['cover'];
+        $this->assertArrayHasKey('id', $cover);
+        $this->assertEquals('http://url', $cover['url']);
+
+        $this->assertArrayHasKey('tags', $relations);
+        $tags = $user->toArray()['tags'];
+        $this->assertCount(1, $tags);
+
+        $this->assertNotEmpty($tags[0]['id']);
+        $this->assertEquals('theTag', $tags[0]['title']);
     }
 
 }
