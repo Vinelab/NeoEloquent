@@ -603,7 +603,7 @@ abstract class Model extends IlluminateModel {
         // clause to only update this model. Otherwise, we'll return false.
         if($this->exists)
         {
-            $saved = $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
+            $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
             $this->fireModelEvent('updated', false);
         } else
         {
