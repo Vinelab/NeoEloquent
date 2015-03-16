@@ -91,4 +91,66 @@ class ModelTest extends TestCase {
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Builder', $builder);
     }
+
+    public function testAddLabels()
+    {
+        //create a new model object
+        $m = new Labeled;
+        $m->setLabel(array('User', 'Fan')); //set some labels
+        $m->save();
+        //get the node id, we need it to verify if the label is actually added in graph
+        $id = $m->id;
+
+        //add the label
+        $m->addLabels(array('Superuniqelabel1'));
+
+        //get the Node for $id using Everyman lib
+        $connection = $this->getConnectionWithConfig('neo4j');
+        $client = $connection->getClient();
+        $node = $client->getNode($id);
+
+        $this->assertNotNull($node); //it should exist
+
+        $labels = $node->getLabels(); //get labels as array on the Everyman nodes
+
+        $strLabels = array();
+        foreach($labels as $lbl)
+        {
+            $strLabels[] = $lbl->getName();
+        }
+
+        $this->assertTrue(in_array('Superuniqelabel1', $strLabels));
+
+    }
+
+    public function testDropLabels()
+	{
+        //create a new model object
+        $m = new Labeled;
+        $m->setLabel(array('User', 'Fan', 'Superuniqelabel2')); //set some labels
+        $m->save();
+        //get the node id, we need it to verify if the label is actually added in graph
+        $id = $m->id;
+
+        //drop the label
+        $m->dropLabels(array('Superuniqelabel2'));
+
+
+        //get the Node for $id using Everyman lib
+        $connection = $this->getConnectionWithConfig('neo4j');
+        $client = $connection->getClient();
+        $node = $client->getNode($id);
+
+        $this->assertNotNull($node); //it should exist
+
+        $labels = $node->getLabels(); //get labels as array on the Everyman nodes
+        $strLabels = array();
+        foreach($labels as $lbl)
+        {
+            $strLabels[] = $lbl->getName();
+        }
+
+        $this->assertFalse(in_array('Superuniqelabel2', $strLabels));
+
+    }
 }

@@ -653,4 +653,41 @@ class CypherGrammar extends Grammar {
 
         return "RETURN $function($distinct$columns)";
     }
+
+    /**
+     * Compile an statement to add or drop node labels
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder  $query
+     * @param  array $labels labels as string like :label1:label2 etc
+	 * @param  array $operation type of operation 'add' or 'drop'
+     * @return string
+     */
+    public function compileUpdateLabels(Builder $query, $labels, $operation = 'add' )
+    {
+        if(trim(strtolower($operation)) == 'add')
+        {
+            $updateType = 'SET';
+        } else
+        {
+            $updateType = 'REMOVE';
+        }
+        // Each one of the columns in the update statements needs to be wrapped in the
+        // keyword identifiers, also a place-holder needs to be created for each of
+        // the values in the list of bindings so we can make the sets statements.
+
+        $labels = $query->modelAsNode().$this->prepareLabels( $labels );
+
+        // Of course, update queries may also be constrained by where clauses so we'll
+        // need to compile the where clauses and attach it to the query so only the
+        // intended records are updated by the Cypher statements we generate to run.
+        $where = $this->compileWheres($query);
+
+        // We always need the MATCH clause in our Cypher which
+        // is the responsibility of compiling the From component.
+        $match = $this->compileComponents($query, array('from'));
+        $match = $match['from'];
+
+        return "$match $where $updateType $labels ";
+    }
+
 }
