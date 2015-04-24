@@ -375,7 +375,7 @@ $name = $phone->user->name;
 
 ### Polymorphic
 
-The concept behind Polymocrphic relations is purely relational to the bone but when it comes
+The concept behind Polymorphic relations is purely relational to the bone but when it comes
 to graph we are representing it as a [HyperEdge](http://docs.neo4j.org/chunked/stable/cypher-cookbook-hyperedges.html).
 
 Hyper edges involves three models, the **parent** model, **hyper** model and **related** model
