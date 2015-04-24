@@ -20,6 +20,13 @@ class Table extends NeoEloquent {
 
 class ModelTest extends TestCase {
 
+    public function tearDown()
+    {
+        M::close();
+
+        parent::tearDown();
+    }
+
     public function testDefaultNodeLabel()
     {
         $m = new Model;
@@ -83,13 +90,6 @@ class ModelTest extends TestCase {
         $builder = $m->newEloquentBuilder(M::mock('Vinelab\NeoEloquent\Query\Builder'));
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Builder', $builder);
-    }
-
-    public function tearDown()
-    {
-        M::close();
-
-        parent::tearDown();
     }
 
     public function testAddLabels()

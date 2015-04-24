@@ -50,7 +50,7 @@ class BaseCommand extends Command {
             return $this->laravel['path.base'].$path;
         }
 
-        return $this->laravel['path'].'/database/' . self::LABELS_DIRECTORY;
+        return $this->laravel['path.database'].'/'.self::LABELS_DIRECTORY;
     }
 
 }

@@ -508,8 +508,7 @@ class Builder extends IlluminateQueryBuilder {
         $cypher = $this->grammar->compileCreateWith($this, compact('model', 'related'));
 
         // Indicate that we need the result returned as is.
-        $result = true;
-        return $this->connection->statement($cypher, [], $result);
+        return $this->connection->statement($cypher, [], true);
     }
 
     /**

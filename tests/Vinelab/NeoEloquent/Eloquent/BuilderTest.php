@@ -52,6 +52,18 @@ class EloquentBuilderTest extends TestCase {
     /**
      * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
      */
+    public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
+    {
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
+        $builder->setModel($this->getMockModel());
+        $builder->getQuery()->shouldReceive('whereIn')->once()->with('foo', [1, 2]);
+        $builder->shouldReceive('get')->with(array('column'))->andReturn(new Collection([1]));
+        $result = $builder->findOrFail([1, 2], array('column'));
+    }
+
+    /**
+     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     */
     public function testFirstOrFailMethodThrowsModelNotFoundException()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
@@ -165,47 +177,6 @@ class EloquentBuilderTest extends TestCase {
         $this->assertEquals(array('bar', 'baz'), $builder->lists('name'));
     }
 
-    public function testPaginateMethod()
-    {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
-        $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('getPerPage')->once()->andReturn(15);
-        $builder->getQuery()->shouldReceive('getPaginationCount')->once()->andReturn(10);
-        $conn = m::mock('stdClass');
-        $paginator = m::mock('stdClass');
-        $paginator->shouldReceive('getCurrentPage')->once()->andReturn(1);
-        $conn->shouldReceive('getPaginator')->once()->andReturn($paginator);
-        $builder->getQuery()->shouldReceive('getConnection')->once()->andReturn($conn);
-        $builder->getQuery()->shouldReceive('forPage')->once()->with(1, 15);
-        $builder->shouldReceive('get')->with(array('*'))->andReturn(new Collection(array('results')));
-        $paginator->shouldReceive('make')->once()->with(array('results'), 10, 15)->andReturn(array('results'));
-
-        $this->assertEquals(array('results'), $builder->paginate());
-    }
-
-    public function testQuickPaginateMethod()
-    {
-        $query = $this->getMock('Vinelab\NeoEloquent\Query\Builder', array('from', 'getConnection', 'skip', 'take'), array(
-            m::mock('Vinelab\NeoEloquent\Connection', function($mock){ $mock->shouldReceive('getClient'); }),
-            m::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial(),
-        ));
-        $query->expects($this->once())->method('from')->will($this->returnValue('foo_table'));
-        $builder = $this->getMock('Vinelab\NeoEloquent\Eloquent\Builder', array('get'), array($query));
-        $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('getPerPage')->once()->andReturn(15);
-        $conn = m::mock('stdClass');
-        $paginator = m::mock('stdClass');
-        $paginator->shouldReceive('getCurrentPage')->once()->andReturn(1);
-        $conn->shouldReceive('getPaginator')->once()->andReturn($paginator);
-        $query->expects($this->once())->method('getConnection')->will($this->returnValue($conn));
-        $query->expects($this->once())->method('skip')->with(0)->will($this->returnValue($query));
-        $query->expects($this->once())->method('take')->with(16)->will($this->returnValue($query));
-        $builder->expects($this->once())->method('get')->with($this->equalTo(array('*')))->will($this->returnValue(new Collection(array('results'))));
-        $paginator->shouldReceive('make')->once()->with(array('results'), 15)->andReturn(array('results'));
-
-        $this->assertEquals(array('results'), $builder->simplePaginate());
-    }
-
     public function testGetModelsProperlyHydratesModels()
     {
         $query = $this->getMockQueryBuilder();
@@ -219,6 +190,9 @@ class EloquentBuilderTest extends TestCase {
         $resultSet = $this->createNodeResultSet($records, array('n.name', 'n.age'));
 
         $builder->getQuery()->shouldReceive('get')->once()->with(array('foo'))->andReturn($resultSet);
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
+        $builder->getQuery()->shouldReceive('getGrammar')->andReturn($grammar);
+
         $model = M::mock('Vinelab\NeoEloquent\Eloquent\Model[getTable,getConnectionName,newInstance]');
         $model->shouldReceive('getTable')->once()->andReturn('foo_table');
 
@@ -451,10 +425,10 @@ class EloquentBuilderTest extends TestCase {
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()->with($attributes)->andReturn($user);
 
-
         // assign the builder's $model to our mock
         $this->builder->setModel($this->model);
-
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
+        $this->query->shouldReceive('getGrammar')->andReturn($grammar);
         // put things to the test
         $found = $this->builder->find($id, $properties);
 
@@ -484,8 +458,10 @@ class EloquentBuilderTest extends TestCase {
 
         $resultSet = $this->createNodeResultSet($results);
 
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet)
-                    ->shouldReceive('from')->once()->andReturn('User');
+                    ->shouldReceive('from')->once()->andReturn('User')
+                    ->shouldReceive('getGrammar')->andReturn($grammar);
 
         // our User object that we expect to have returned
         $user = M::mock('User');
@@ -521,8 +497,10 @@ class EloquentBuilderTest extends TestCase {
 
         $resultSet = $this->createNodeResultSet($results);
 
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->query->shouldReceive('get')->once()->with($properties)->andReturn($resultSet)
-                    ->shouldReceive('from')->once()->andReturn('User');
+                    ->shouldReceive('from')->once()->andReturn('User')
+                    ->shouldReceive('getGrammar')->andReturn($grammar);
 
         // our User object that we expect to have returned
         $user = M::mock('User');

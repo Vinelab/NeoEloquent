@@ -1,6 +1,7 @@
 <?php
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
+use Illuminate\Foundation\Composer;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Vinelab\NeoEloquent\Migrations\MigrationCreator;
@@ -11,7 +12,7 @@ class MigrateMakeCommand extends BaseCommand
     /**
      * {@inheritDoc}
      */
-    protected $name = 'neo4j:migrate:make';
+    protected $name = 'neo4j:make:migration';
 
     /**
      * {@inheritDoc}
@@ -31,16 +32,22 @@ class MigrateMakeCommand extends BaseCommand
     protected $packagePath;
 
     /**
+     * @var \Illuminate\Foundation\Composer
+     */
+    protected $composer;
+
+    /**
      * @param  \Vinelab\NeoEloquent\Migrations\MigrationCreator  $creator
      * @param  string  $packagePath
      * @return void
      */
-    public function __construct(MigrationCreator $creator, $packagePath)
+    public function __construct(MigrationCreator $creator, Composer $composer, $packagePath)
     {
         parent::__construct();
 
         $this->creator = $creator;
         $this->packagePath = $packagePath;
+        $this->composer = $composer;
     }
 
     /**
@@ -67,7 +74,7 @@ class MigrateMakeCommand extends BaseCommand
         // make sure that the migrations are registered by the class loaders.
         $this->writeMigration($name, $label);
 
-        $this->call('dump-autoload');
+        $this->composer->dumpAutoloads();
     }
 
     /**

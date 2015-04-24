@@ -1,10 +1,10 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
-use Illuminate\Database\Eloquent\SoftDeletingTrait as IlluminateSoftDeletingTrait;
+use Illuminate\Database\Eloquent\SoftDeletes as IlluminateSoftDeletes;
 
-trait SoftDeletingTrait {
+trait SoftDeletes {
 
-    use IlluminateSoftDeletingTrait;
+    use IlluminateSoftDeletes;
 
     /**
      * Get the fully qualified "deleted at" column.

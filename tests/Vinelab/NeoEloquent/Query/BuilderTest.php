@@ -247,62 +247,6 @@ class QueryBuilderTest extends TestCase {
         $this->assertEquals('MATCH (user:User) RETURN DISTINCT user.foo, user.bar', $builder->toCypher());
     }
 
-    public function testSelectWithCaching()
-    {
-        $cache = m::mock('stdClass');
-        $driver = m::mock('stdClass');
-        $query = $this->setupCacheTestQuery($cache, $driver);
-
-        $query = $query->remember(5);
-
-        $driver->shouldReceive('remember')
-                         ->once()
-                         ->with($query->getCacheKey(), 5, m::type('Closure'))
-                         ->andReturnUsing(function($key, $minutes, $callback) { return $callback(); });
-
-        $this->assertEquals($query->get(), array('results'));
-    }
-
-    public function testSelectWithCachingForever()
-    {
-        $cache = m::mock('stdClass');
-        $driver = m::mock('stdClass');
-        $query = $this->setupCacheTestQuery($cache, $driver);
-
-        $query = $query->rememberForever();
-
-        $driver->shouldReceive('rememberForever')
-                                                ->once()
-                                                ->with($query->getCacheKey(), m::type('Closure'))
-                                                ->andReturnUsing(function($key, $callback) { return $callback(); });
-
-
-
-        $this->assertEquals($query->get(), array('results'));
-    }
-
-    public function testSelectWithCachingAndTags()
-    {
-        $taggedCache = m::mock('StdClass');
-        $cache = m::mock('stdClass');
-        $driver = m::mock('stdClass');
-
-        $driver->shouldReceive('tags')
-                ->once()
-                ->with(array('foo','bar'))
-                ->andReturn($taggedCache);
-
-        $query = $this->setupCacheTestQuery($cache, $driver);
-        $query = $query->cacheTags(array('foo', 'bar'))->remember(5);
-
-        $taggedCache->shouldReceive('remember')
-                        ->once()
-                        ->with($query->getCacheKey(), 5, m::type('Closure'))
-                        ->andReturnUsing(function($key, $minutes, $callback) { return $callback(); });
-
-        $this->assertEquals($query->get(), array('results'));
-    }
-
     public function testAddBindingWithArrayMergesBindings()
     {
         $builder = $this->getBuilder();

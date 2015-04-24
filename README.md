@@ -898,8 +898,8 @@ NeoEloquent introduces new commands under the `neo4j` namespace so you can still
 
 Migration commands are the same as those of Eloquent, in the form of `neo4j:migrate[:command]`
 
+    neo4j:make:migration                 Create a new migration file
     neo4j:migrate                        Run the database migrations
-    neo4j:migrate:make                   Create a new migration file
     neo4j:migrate:reset                  Rollback all database migrations
     neo4j:migrate:refresh                Reset and re-run all migrations
     neo4j:migrate:rollback               Rollback the last database migration
