@@ -2,11 +2,9 @@
 
 use Exception;
 use DateTime, Closure;
-use Everyman\Neo4j\Query\ResultSet;
+use Neoxygen\NeoClient\ClientBuilder;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\QueryException;
-use Everyman\Neo4j\Client as NeoClient;
-use Everyman\Neo4j\Cypher\Query as CypherQuery;
 use Illuminate\Database\Connection as IlluminateConnection;
 use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
 
@@ -15,14 +13,14 @@ class Connection extends IlluminateConnection {
     /**
      * The Neo4j active client connection
      *
-     * @var Everyman\Neo4j\Client
+     * @var Neoxygen\NeoClient\Client
      */
     protected $neo;
 
     /**
      * The Neo4j database transaction
      *
-     * @var \Everyman\Neo4j\Transaction
+     * @var Neoxygen\NeoClient\Transaction\Transaction
      */
     protected $transaction;
 
@@ -61,19 +59,20 @@ class Connection extends IlluminateConnection {
     /**
      * Create a new Neo4j client
      *
-     * @return Everyman\Neo4j\Client
+     * @return Neoxygen\NeoClient\Client
      */
     public function createConnection()
     {
-        $client = new NeoClient($this->getHost(), $this->getPort());
-        $client->getTransport()->setAuth($this->getUsername(), $this->getPassword());
-        return $client;
+        return ClientBuilder::create()
+            ->addConnection('default', 'http', $this->getHost(), $this->getPort())
+            ->setAutoFormatResponse(true)
+            ->build();
     }
 
     /**
      * Get the currenty active database client
      *
-     * @return Everyman\Neo4j\Client
+     * @return \Neoxygen\NeoClient\Client
      */
     public function getClient()
     {
@@ -84,7 +83,7 @@ class Connection extends IlluminateConnection {
      * Set the client responsible for the
      * database communication
      *
-     * @param \Everyman\Neo4j\Client $client
+     * @param \Neoxygen\NeoClient\Client $client
      */
     public function setClient(NeoClient $client)
     {
@@ -168,10 +167,24 @@ class Connection extends IlluminateConnection {
             // For select statements, we'll simply execute the query and return an array
             // of the database result set. Each element in the array will be a single
             // node from the database, and will either be an array or objects.
-            $statement = $me->getCypherQuery($query, $bindings);
+            $query = $me->getCypherQuery($query, $bindings);
 
-            return $statement->getResultSet();
+            return $this->getClient()
+                ->sendCypherQuery($query['statement'], $query['parameters'])
+                ->getResult();
         });
+    }
+
+    /**
+     * Run an insert statement against the database.
+     *
+     * @param  string  $query
+     * @param  array   $bindings
+     * @return mixed
+     */
+    public function insert($query, $bindings = array())
+    {
+        return $this->statement($query, $bindings, true);
     }
 
     /**
@@ -190,9 +203,11 @@ class Connection extends IlluminateConnection {
             // For update or delete statements, we want to get the number of rows affected
             // by the statement and return that back to the developer. We'll first need
             // to execute the statement and then we'll use CypherQuery to fetch the affected.
-            $statement = $me->getCypherQuery($query, $bindings);
+            $query = $me->getCypherQuery($query, $bindings);
 
-            return $statement->getResultSet();
+            return $this->getClient()
+                ->sendCypherQuery($query['statement'], $query['parameters'])
+                ->getResult();
         });
     }
 
@@ -209,11 +224,13 @@ class Connection extends IlluminateConnection {
         {
             if ($me->pretending()) return true;
 
-            $statement = $me->getCypherQuery($query, $bindings);
+            $query = $me->getCypherQuery($query, $bindings);
 
-            $result = $statement->getResultSet();
+            $results = $this->getClient()
+                ->sendCypherQuery($query['statement'], $query['parameters'])
+                ->getResult();
 
-            return ($rawResults === true) ? $result : $result instanceof ResultSet;
+            return ($rawResults === true) ? $results : !!$results;
         });
     }
 
@@ -226,7 +243,7 @@ class Connection extends IlluminateConnection {
      */
     public function getCypherQuery($query, array $bindings)
     {
-        return new CypherQuery($this->getClient(), $query, $this->prepareBindings($bindings));
+        return ['statement' => $query, 'parameters' => $this->prepareBindings($bindings)];
     }
 
     /**
