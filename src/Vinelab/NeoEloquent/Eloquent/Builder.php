@@ -1,11 +1,9 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
 use Closure;
-use Everyman\Neo4j\Node;
-use Everyman\Neo4j\Query\Row;
 use Vinelab\NeoEloquent\Helpers;
-use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Relations\HasMany;
@@ -88,20 +86,24 @@ class Builder extends IlluminateBuilder {
     /**
      * Turn Neo4j result set into the corresponding model
      * @param  string $connection
-     * @param  \Everyman\Neo4j\Query\ResultSet $results
+     * @param  \Neoxygen\NeoClient\Formatter\Result $results
      * @return array
      */
-    protected function resultsToModels($connection, ResultSet $results)
+    protected function resultsToModels($connection, Result $results = null)
     {
         $models = [];
 
-        if ($results->valid())
+        if ($results)
         {
-            $columns = $results->getColumns();
-
-            foreach ($results as $result)
+            foreach ($results->getNodes() as $node)
             {
-                $attributes = $this->getProperties($columns, $result);
+                $attributes = $node->getProperties();
+
+                // we will check to see whether we should use Neo4j's built-in ID.
+                if ($this->model->getKeyName() === 'id')
+                {
+                    $attributes['id'] = $node->getId();
+                }
 
                 // Now that we have the attributes, we first check for mutations
                 // and if exists, we will need to mutate the attributes accordingly.
@@ -127,7 +129,7 @@ class Builder extends IlluminateBuilder {
      * Turn Neo4j result set into the corresponding model with its relations
      *
      * @param  string $connection
-     * @param  \Everyman\Neo4j\Query\ResultSet $results
+     * @param  \Neoxygen\NeoClient\Formatter\Result $results
      * @return array
      */
     protected function resultsToModelsWithRelations($connection, ResultSet $results)
