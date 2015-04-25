@@ -243,12 +243,7 @@ class CypherGrammar extends Grammar {
         // mostly used for simple queries.
         if ( ! empty($query->matches)) return '';
 
-        // first we will check whether we need
-        // to reformat the labels from an array
-        if (is_array($labels))
-        {
-            $labels = $this->prepareLabels($labels);
-        }
+        $labels = $this->prepareLabels($labels);
 
         // every label must begin with a ':' so we need to check
         // and reformat if need be.
@@ -390,6 +385,25 @@ class CypherGrammar extends Grammar {
     }
 
     /**
+     * Compile a create statement into Cypher.
+     *
+     * @param \Vinelab\NeoEloquent\Query\Builder $query
+     * @param array  $values
+     *
+     * @return string
+     */
+    public function compileCreate(Builder $query, $values)
+    {
+        $labels = $this->prepareLabels($query->from);
+
+        $columns = $this->columnsFromValues($values);
+
+        $node = $query->modelAsNode();
+
+        return "CREATE ({$node}{$labels}) SET {$columns} RETURN {$node}";
+    }
+
+    /**
      * Compile an update statement into SQL.
      *
      * @param  \Vinelab\NeoEloquent\Query\Builder  $query
@@ -398,18 +412,7 @@ class CypherGrammar extends Grammar {
      */
     public function compileUpdate(Builder $query, $values)
     {
-        // Each one of the columns in the update statements needs to be wrapped in the
-        // keyword identifiers, also a place-holder needs to be created for each of
-        // the values in the list of bindings so we can make the sets statements.
-
-        foreach ($values as $key => $value)
-        {
-            // Update bindings are differentiated with an _update postfix to make sure the don't clash
-            // with query bindings.
-            $columns[] = $this->wrap($key) . ' = ' . $this->parameter(array('column' => $key .'_update'));
-        }
-
-        $columns = implode(', ', $columns);
+        $columns = $this->columnsFromValues($values, true);
 
         // Of course, update queries may also be constrained by where clauses so we'll
         // need to compile the where clauses and attach it to the query so only the
@@ -426,6 +429,39 @@ class CypherGrammar extends Grammar {
         $return = $this->compileColumns($query, array('count('. $query->modelAsNode() .')'));
 
         return "$match $where SET $columns $return";
+    }
+
+    public function postfixValues(array $values, $updating = false)
+    {
+        $postfix = $updating ? '_update' : '_create';
+
+        $processed = [];
+
+        foreach ($values as $key => $value)
+        {
+            $processed[$key.$postfix] = $value;
+        }
+
+        return $processed;
+    }
+
+    public function columnsFromValues(array $values, $updating = false)
+    {
+        $columns = [];
+         // Each one of the columns in the update statements needs to be wrapped in the
+        // keyword identifiers, also a place-holder needs to be created for each of
+        // the values in the list of bindings so we can make the sets statements.
+
+        foreach ($values as $key => $value)
+        {
+            // Update bindings are differentiated with an _update postfix to make sure the don't clash
+            // with query bindings.
+            $postfix = $updating ? '_update' : '_create';
+
+            $columns[] = $this->wrap($key) . ' = ' . $this->parameter(array('column' => $key.$postfix));
+        }
+
+        return implode(', ', $columns);
     }
 
     /**

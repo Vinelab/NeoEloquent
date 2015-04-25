@@ -4,6 +4,7 @@ use Closure;
 use DateTime;
 use Carbon\Carbon;
 use Vinelab\NeoEloquent\Connection;
+use Neoxygen\NeoClient\Formatter\Result;
 use Illuminadte\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
@@ -21,7 +22,7 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * The database active client handler
      *
-     * @var Everyman\Neo4j\Client
+     * @var Neoxygen\NeoClient\Client
      */
     protected $client;
 
@@ -105,25 +106,18 @@ class Builder extends IlluminateQueryBuilder {
 	 */
     public function insertGetId(array $values, $sequence = null)
     {
-        // create a neo4j Node
-        $node = $this->client->makeNode();
+        $cypher = $this->grammar->compileCreate($this, $values);
 
-        // set its properties
-        foreach ($values as $key => $value)
+        $bindings = $this->getBindingsMergedWithValues($values);
+
+        $results = $this->connection->insert($cypher, $bindings);
+
+        $id = null;
+
+        if ($results instanceof Result)
         {
-            $value = $this->formatValue($value);
-
-            $node->setProperty($key, $value);
+            $id = $results->getSingleNode()->getId();
         }
-
-        // save the node
-        $node->save();
-
-        // get the saved node id
-        $id = $node->getId();
-
-        // set the labels
-        $node->addLabels(array_map(array($this, 'makeLabel'), $this->from));
 
         return $id;
     }
@@ -138,11 +132,11 @@ class Builder extends IlluminateQueryBuilder {
     {
         $cypher = $this->grammar->compileUpdate($this, $values);
 
-        $bindings = $this->getBindingsMergedWithValues($values);
+        $bindings = $this->getBindingsMergedWithValues($values, true);
 
         $updated = $this->connection->update($cypher, $bindings);
 
-        return (isset($updated[0]) && isset($updated[0][0])) ? $updated[0][0] : 0;
+        return ($updated) ? current($updated->getAllByIdentifier()) : 0;
     }
 
     /**
@@ -153,13 +147,15 @@ class Builder extends IlluminateQueryBuilder {
      * @param  array $values
      * @return array
      */
-    protected function getBindingsMergedWithValues(array $values)
+    protected function getBindingsMergedWithValues(array $values, $updating = false)
     {
         $bindings = [];
 
+        $values = $this->getGrammar()->postfixValues($values, $updating);
+
         foreach ($values as $key => $value)
         {
-            $bindings[$key .'_update'] = $value;
+            $bindings[$key] = $value;
         }
 
         return array_merge($this->getBindings(), $bindings);
@@ -493,7 +489,9 @@ class Builder extends IlluminateQueryBuilder {
         // is the same type of result returned by the raw connection instance.
         $bindings = $this->cleanBindings($bindings);
 
-        return $this->connection->insert($cypher, $bindings);
+        $results = $this->connection->insert($cypher, $bindings);
+
+        return !!$results;
     }
 
     /**
@@ -707,10 +705,9 @@ class Builder extends IlluminateQueryBuilder {
 
         $this->columns = $previousColumns;
 
-        if ($results->valid())
-        {
-            return $results->current()[0];
-        }
+        $values = $results->getAllByIdentifier();
+
+        return current(reset($values));
     }
 
     /**
