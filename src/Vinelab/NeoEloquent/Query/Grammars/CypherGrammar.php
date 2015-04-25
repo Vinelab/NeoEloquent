@@ -492,6 +492,12 @@ class CypherGrammar extends Grammar {
          * We are working on getting a Cypher like this:
          * CREATE (:Wiz {fiz: 'foo', biz: 'boo'}). (:Wiz {fiz: 'morefoo', biz: 'moreboo'})
          */
+
+        if ( ! is_array($query->from))
+        {
+            $query->from = array($query->from);
+        }
+
         $label = $this->prepareLabels($query->from);
 
         if ( ! is_array(reset($values)))
