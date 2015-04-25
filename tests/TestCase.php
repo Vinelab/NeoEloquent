@@ -65,11 +65,12 @@ class TestCase extends PHPUnit {
     {
         $connection = (new Stub)->getConnection();
         $client = $connection->getClient();
-        // Remove all relationships and related nodes
-        $query = new \Everyman\Neo4j\Cypher\Query($client, 'MATCH (n)-[r]-(c) DELETE n,r,c');
-        $query->getResultSet();
-        // Remove singular nodes with no relations
-        $query = new \Everyman\Neo4j\Cypher\Query($client, 'MATCH (n) DELETE n');
-        $query->getResultSet();
+
+        $statements = [
+           ['statement' => 'MATCH (n)-[r]-(c) DELETE n,r,c'],
+           ['statement' => 'MATCH (n) DELETE n']
+        ];
+
+        $client->sendMultiple($statements);
     }
 }
