@@ -2,6 +2,7 @@
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 
 class NeoEloquentServiceProvider extends ServiceProvider {
 
@@ -11,6 +12,15 @@ class NeoEloquentServiceProvider extends ServiceProvider {
 	 * @var bool
 	 */
 	protected $defer = false;
+
+    /**
+    * Components to register on the provider.
+    *
+    * @var array
+    */
+    protected $components = array(
+        'Migration'
+    );
 
 	/**
 	* Bootstrap the application events.
@@ -35,13 +45,51 @@ class NeoEloquentServiceProvider extends ServiceProvider {
 	{
 		$this->app['db']->extend('neo4j', function($config)
 		{
-			return new Connection($config);
+			$conn = new Connection($config);
+            $conn->setSchemaGrammar(new CypherGrammar);
+            return $conn;
 		});
 
 		$this->app->booting(function(){
 			$loader = \Illuminate\Foundation\AliasLoader::getInstance();
 			$loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
+            $loader->alias('Neo4jSchema', 'Vinelab\NeoEloquent\Facade\Neo4jSchema');
 		});
+
+
+        $this->registerComponents();
 	}
 
+    /**
+    * Register components on the provider.
+    *
+    * @var array
+    */
+    protected function registerComponents()
+    {
+        foreach ($this->components as $component) {
+            $this->{'register'.$component}();
+        }
+    }
+
+    /**
+     * Register the migration service provider.
+     *
+     * @return void
+     */
+    protected function registerMigration()
+    {
+        $this->app->register('Vinelab\NeoEloquent\MigrationServiceProvider');
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return array(
+        );
+    }
 }

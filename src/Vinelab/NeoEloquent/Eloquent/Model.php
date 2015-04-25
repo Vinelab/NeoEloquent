@@ -32,6 +32,18 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
+     * Get the node label for this model.
+     *
+     * @return string|array
+     */
+    public function getLabel()
+    {
+        return $this->label;
+    }
+
+    /**
+     * @override
      * Create a new Eloquent query builder for the model.
      *
      * @param  Vinelab\NeoEloquent\Query\Builder $query
@@ -43,6 +55,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
 	 * Get a new query builder instance for the connection.
 	 *
 	 * @return Vinelab\NeoEloquent\Query\Builder
@@ -57,6 +70,7 @@ abstract class Model extends IlluminateModel {
 	}
 
     /**
+     * @override
 	 * Get the format for database stored dates.
 	 *
 	 * @return string
@@ -101,6 +115,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
 	 * Get the table associated with the model.
 	 *
 	 * @return string
@@ -111,6 +126,7 @@ abstract class Model extends IlluminateModel {
 	}
 
     /**
+     * @override
      * Define an inverse one-to-one or many relationship.
      *
      * @param  string  $related
@@ -152,6 +168,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a one-to-one relationship.
      *
      * @param  string  $related
@@ -192,6 +209,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a one-to-many relationship.
      *
      * @param  string  $related
@@ -222,6 +240,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a many-to-many relationship.
      *
      * @param  string  $related
@@ -271,6 +290,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Create a new HyperMorph relationship.
      *
      * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
@@ -315,6 +335,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a many-to-many relationship.
      *
      * @param  string  $related
@@ -365,6 +386,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Create an inverse one-to-one polymorphic relationship with specified model and relation.
      *
      * @param  \Vinelab\NeoEloquent\Eloquent\Model $related
@@ -407,6 +429,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Define a polymorphic, inverse one-to-one or many relationship.
      *
      * @param  string  $name
@@ -487,6 +510,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
+     * @override
      * Get the table qualified key name.
      *
      * @return string
@@ -496,11 +520,22 @@ abstract class Model extends IlluminateModel {
         return $this->getKeyName();
     }
 
+    /**
+     * Add timestamps to this model.
+     *
+     * @return void
+     */
     public function addTimestamps()
     {
         $this->updateTimestamps();
     }
 
+    /**
+     * @override
+     * Get the attributes that have been changed since last sync.
+     *
+     * @return array
+     */
     public function getDirty()
     {
         $dirty = parent::getDirty();
@@ -510,5 +545,69 @@ abstract class Model extends IlluminateModel {
         if (isset($dirty[$this->primaryKey])) unset($dirty[$this->primaryKey]);
 
         return $dirty;
+    }
+
+    /*
+     * Adds more labels
+     * @param $labels array of strings containing labels to be added
+     * @return bull true if success, false if failure
+     */
+    function addLabels($labels)
+    {
+        return $this->updateLabels($labels, 'add');
+    }
+
+    /*
+     * Drops labels
+     * @param $labels array of strings containing labels to be dropped
+     * @return bull true if success, false if failure
+     */
+    function dropLabels($labels)
+    {
+        return $this->updateLabels($labels, 'drop');
+    }
+
+    /*
+     * Adds or Drops labels
+     * @param $labels array of strings containing labels to be dropped
+     * @param $operation string can be 'add' or 'drop'
+     * @return bull true if success, false if failure
+     */
+    function updateLabels($labels, $operation = 'add')
+    {
+        $query = $this->newQueryWithoutScopes();
+
+        // If the "saving" event returns false we'll bail out of the save and return
+        // false, indicating that the save failed. This gives an opportunities to
+        // listeners to cancel save operations if validations fail or whatever.
+        if ($this->fireModelEvent('saving') === false)
+        {
+            return false;
+        }
+
+        if( ! is_array($labels) || count($labels) == 0)
+        {
+            return false;
+        }
+
+        foreach($labels as $label)
+        {
+            if( ! preg_match( '/^[a-z]([a-z0-9]+)$/i', $label))
+            {
+                return false;
+            }
+        }
+
+        // If the model already exists in the database we can just update our record
+        // that is already in this database using the current IDs in this "where"
+        // clause to only update this model. Otherwise, we'll return false.
+        if($this->exists)
+        {
+            $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
+            $this->fireModelEvent('updated', false);
+        } else
+        {
+            return false;
+        }
     }
 }

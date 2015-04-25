@@ -1,6 +1,8 @@
 <?php namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
+use DateTime;
+use Carbon\Carbon;
 use Vinelab\NeoEloquent\Connection;
 use Illuminadte\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,9 +61,9 @@ class Builder extends IlluminateQueryBuilder {
     protected $operators = array(
         '+', '-', '*', '/', '%', '^',    // Mathematical
         '=', '<>', '<', '>', '<=', '>=', // Comparison
-        'IS NULL', 'IS NOT NULL',
-        'AND', 'OR', 'XOR', 'NOT',       // Boolean
-        'IN, [x], [x .. y]',             // Collection
+        'is null', 'is not null',
+        'and', 'or', 'xor', 'not',       // Boolean
+        'in', '[x]', '[x .. y]',         // Collection
         '=~'                             // Regular Expression
     );
 
@@ -109,6 +111,8 @@ class Builder extends IlluminateQueryBuilder {
         // set its properties
         foreach ($values as $key => $value)
         {
+            $value = $this->formatValue($value);
+
             $node->setProperty($key, $value);
         }
 
@@ -203,6 +207,13 @@ class Builder extends IlluminateQueryBuilder {
 	 */
 	public function where($column, $operator = null, $value = null, $boolean = 'and')
 	{
+        // First we check whether the operator is 'IN' so that we call whereIn() on it
+        // as a helping hand and centralization strategy, whereIn knows what to do with the IN operator.
+        if (mb_strtolower($operator) == 'in')
+        {
+            return $this->whereIn($column, $value, $boolean);
+        }
+
         // If the column is an array, we will assume it is an array of key-value pairs
 		// and can add them each as a where clause. We will maintain the boolean we
 		// received when the method was called and pass it into the nested where.
@@ -460,6 +471,7 @@ class Builder extends IlluminateQueryBuilder {
         {
             foreach ($values as $key => $value)
             {
+                $value = $this->formatValue($value);
                 ksort($value); $values[$key] = $value;
             }
         }
@@ -798,4 +810,39 @@ class Builder extends IlluminateQueryBuilder {
 	{
 		return new Builder($this->connection, $this->grammar);
 	}
+
+    /**
+     * Fromat the value into its string representation.
+     *
+     * @param  mixed $value
+     *
+     * @return string
+     */
+    protected function formatValue($value)
+    {
+        // If the value is a date we'll format it according to the specified
+        // date format.
+        if ($value instanceof DateTime || $value instanceof Carbon)
+        {
+            $value = $value->format($this->grammar->getDateFormat());
+        }
+
+        return $value;
+    }
+
+    /*
+     * Add/Drop labels
+     * @param $labels array array of strings(labels)
+     * @param $operation string 'add' or 'drop'
+     * @return bool true if success, otherwise false
+     */
+    public function updateLabels($labels, $operation = 'add')
+    {
+
+        $cypher = $this->grammar->compileUpdateLabels($this, $labels, $operation);
+
+        $updated = $this->connection->update($cypher, $this->getBindings());
+
+        return (isset($updated[0]) && isset($updated[0][0])) ? $updated[0][0] : 0;
+    }
 }

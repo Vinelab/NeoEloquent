@@ -4,7 +4,7 @@
 
 # NeoEloquent
 
-Neo4j Graph Eloquent Driver for Laravel 4
+Neo4j Graph Eloquent Driver for Laravel
 
 ## Quick Reference
 
@@ -13,18 +13,32 @@ Neo4j Graph Eloquent Driver for Laravel 4
  - [Models](#models)
  - [Relationships](#relationships)
  - [Edges](#edges)
- - [Only in Neo](#only-in-neo)
+ - [Migration](#migration)
+ - [Schema](#schema)
  - [Aggregates](#aggregates)
+ - [Only in Neo](#only-in-neo)
  - [Things To Avoid](#avoid)
 
 ## Installation
 
 Add the package to your `composer.json` and run `composer update`.
 
+### Laravel 5
+
 ```json
 {
     "require": {
-        "vinelab/neoeloquent": "*"
+        "vinelab/neoeloquent": "1.2.*"
+    }
+}
+```
+
+### Laravel 4
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "1.1.*"
     }
 }
 ```
@@ -39,6 +53,8 @@ The service provider will register all the required classes for this package and
 the `Model` class to `NeoEloquent` so you can simply `extend NeoEloquent` in your models.
 
 ## Configuration
+
+### Connection
 in `app/config/database.php` or in case of an environment-based configuration `app/config/[env]/database.php`
 make `neo4j` your default connection:
 
@@ -59,6 +75,15 @@ Add the connection defaults:
     ]
 ]
 ```
+
+### Migration Setup
+
+If you're willing to have migrations:
+
+- create the folder `app/database/labels`
+- modify `composer.json` and add `app/database/labels` to the `classmap` array
+- run `composer dump-autoload`
+
 
 ### Documentation
 
@@ -211,14 +236,6 @@ MERGE (account)<-[rel_user_account:ACCOUNT]-(user)
 RETURN rel_user_account;
 ```
 
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (phone:Phone) (phone)<-[:PHONE]-(user:User)
-WHERE id(phone) = 1006
-RETURN user;
-```
-
 ### One-To-Many
 
 ```php
@@ -279,7 +296,7 @@ class User extends NeoEloquent {
 }
 ```
 
-This represents an `OUTGOING` relationship between a `:User` node and another `:User`.
+This represents an `INCOMING` relationship between a `:User` node and another `:User`.
 
 ```php
 $jd = User::find(1012);
@@ -297,7 +314,7 @@ Or using the `attach()` method:
 ```php
 $jd->followers()->attach($mc);
 // Or..
-$jd->followers()->attach(1); // 1 being the id of $mc ($mc->getKey())
+$jd->followers()->attach(1013); // 1013 being the id of $mc ($mc->getKey())
 ```
 
 The Cypher performed by this statement will be as follows:
@@ -305,7 +322,7 @@ The Cypher performed by this statement will be as follows:
 ```
 MATCH (user:`User`), (followers:`User`)
 WHERE id(user) = 1012 AND id(followers) = 1013
-CREATE (user)-[:FOLLOWS]->(followers)
+CREATE (followers)-[:FOLLOWS]->(user)
 RETURN rel_follows;
 ```
 
@@ -341,7 +358,7 @@ RETURN rel_follows;
 ### Dynamic Properties
 
 ```php
-class Phone extends Eloquent {
+class Phone extends NeoEloquent {
 
     public function user()
     {
@@ -358,7 +375,7 @@ $name = $phone->user->name;
 
 ### Polymorphic
 
-The concept behind Polymocrphic relations is purely relational to the bone but when it comes
+The concept behind Polymorphic relations is purely relational to the bone but when it comes
 to graph we are representing it as a [HyperEdge](http://docs.neo4j.org/chunked/stable/cypher-cookbook-hyperedges.html).
 
 Hyper edges involves three models, the **parent** model, **hyper** model and **related** model
@@ -541,7 +558,7 @@ class Comment extends NeoEloquent {
 ### Eager Loading
 
 ```php
-class Book extends Eloquent {
+class Book extends NeoEloquent {
 
     public function author()
     {
@@ -650,7 +667,7 @@ $post = $edge->related();
 #### HyperEdge
 
 This edge comes as a result of a [Polymorphic Relation](#polymorphic) representing an edge involving
-tow other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
+two other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
 
 This edge is treated a bit different than the others since it is not a direct relationship
 between two models which means it has no specific direction.
@@ -865,6 +882,148 @@ MATCH (tag:`Tag`)
 WHERE id(tag) IN [1, 2]
 CREATE (post)-[:TAG]->(tag);
 ```
+
+
+## Migration
+For migrations to work please perform the following:
+
+- create the folder `app/database/labels`
+- modify `composer.json` and add `app/database/labels` to the `classmap` array
+
+Since Neo4j is a schema-less database you don't need to predefine types of properties for labels.
+However you will be able to perform [Indexing](http://neo4j.com/docs/stable/query-schema-index.html) and [Constraints](http://neo4j.com/docs/stable/query-constraints.html) using NeoEloquent's pain-less [Schema](#schema).
+
+#### Commands
+NeoEloquent introduces new commands under the `neo4j` namespace so you can still use Eloquent's migration commands side-by-side.
+
+Migration commands are the same as those of Eloquent, in the form of `neo4j:migrate[:command]`
+
+    neo4j:migrate                        Run the database migrations
+    neo4j:migrate:make                   Create a new migration file
+    neo4j:migrate:reset                  Rollback all database migrations
+    neo4j:migrate:refresh                Reset and re-run all migrations
+    neo4j:migrate:rollback               Rollback the last database migration
+
+
+### Creating Migrations
+
+Like in Laravel you can create a new migration by using the `make` command with Artisan:
+
+    php artisan neo4j:migrate:make create_user_label
+
+Label migrations will be placed in `app/database/labels`
+
+You can add additional options to commands like:
+
+    php artisan neo4j:migrate:make foo --path=app/labels
+    php artisan neo4j:migrate:make create_user_label --create=User
+    php artisan neo4j:migrate:make create_user_label --label=User
+
+
+### Running Migrations
+
+##### Run All Outstanding Migrations
+
+    php artisan neo4j:migrate
+
+##### Run All Outstanding Migrations For A Path
+
+    php artisan neo4j:migrate --path=app/foo/labels
+
+##### Run All Outstanding Migrations For A Package
+
+    php artisan neo4j:migrate --package=vendor/package
+
+>Note: If you receive a "class not found" error when running migrations, try running the `composer dump-autoload` command.
+
+#### Forcing Migrations In Production
+
+To force-run migrations on a production database you can use:
+
+    php artisan neo4j:migrate --force
+
+### Rolling Back Migrations
+
+##### Rollback The Last Migration Operation
+
+    php artisan neo4j:migrate:rollback
+
+##### Rollback all migrations
+
+    php artisan neo4j:migrate:reset
+
+##### Rollback all migrations and run them all again
+
+    php artisan neo4j:migrate:refresh
+
+    php artisan neo4j:migrate:refresh --seed
+
+## Schema
+NeoEloquent will alias the `Neo4jSchema` facade automatically for you to be used in manipulating labels.
+
+```php
+Neo4jSchema::label('User', function(Blueprint $label)
+{
+    $label->unique('uuid');
+});
+```
+
+If you decide to write Migration classes manually (not using the generator) make sure to have these `use` statements in place:
+
+- `use Vinelab\NeoEloquent\Schema\Blueprint;`
+- `use Vinelab\NeoEloquent\Migrations\Migration;`
+
+Currently Neo4j supports `UNIQUE` constraint and `INDEX` on properties. You can read more about them at
+
+<http://docs.neo4j.org/chunked/stable/graphdb-neo4j-schema.html>
+
+#### Schema Methods
+
+Command                           | Description
+------------                      | -------------
+`$label->unique('email')`           | Adding a unique constraint on a property
+`$label->dropUnique('email')`       | Dropping a unique constraint from property
+`$label->index('uuid')`           | Adding index on property
+`$label->dropIndex('uuid')`       | Dropping index from property
+
+### Droping Labels
+
+```php
+Neo4jSchema::drop('User');
+Neo4jSchema::dropIfExists('User');
+```
+
+### Renaming Labels
+
+```php
+Neo4jSchema::renameLabel($from, $to);
+```
+
+### Checking Label's Existence
+
+```php
+if (Neo4jSchema::hasLabel('User')) {
+
+} else {
+
+}
+```
+
+### Checking Relation's Existence
+
+```php
+if (Neo4jSchema::hasRelation('FRIEND_OF')) {
+
+} else {
+
+}
+```
+
+You can read more about migrations and schema on:
+
+<http://laravel.com/docs/schema>
+
+<http://laravel.com/docs/migrations>
 
 ## Aggregates
 
