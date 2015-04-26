@@ -13,6 +13,8 @@ class ConnectionTest extends TestCase {
             'email'    => 'me@mulkave.io',
             'username' => 'mulkave'
         );
+
+        $this->client = $this->getClient();
     }
 
     public function tearDown()
@@ -22,7 +24,8 @@ class ConnectionTest extends TestCase {
         $c = $this->getConnectionWithConfig('default');
 
         $cypher = $c->getCypherQuery($query, array(array('username' => $this->user['username'])));
-        $cypher->getResultSet();
+
+        $this->client->sendCypherQuery($cypher['statement'], $cypher['parameters']);
 
         M::close();
 
@@ -322,7 +325,7 @@ class ConnectionTest extends TestCase {
 
         $results = $c->affectingStatement($query, $bindings);
 
-        $this->assertInstanceOf('Everyman\Neo4j\Query\ResultSet', $results);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
 
         foreach($results as $result)
         {
@@ -334,18 +337,14 @@ class ConnectionTest extends TestCase {
         $query = 'MATCH (n:User) WHERE n.username = {username} RETURN n';
         $cypher = $c->getCypherQuery($query, array(array('username' => $this->user['username'])));
 
-        $results = $cypher->getResultSet();
+        $results = $this->client->sendCypherQuery($cypher['statement'], $cypher['parameters'])->getResult();
 
-        $this->assertInstanceOf('Everyman\Neo4j\Query\ResultSet', $results);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
 
         $user = null;
 
-        foreach ($results as $result)
-        {
-            $node = $result[0];
-            $user = $node->getProperties();
-
-        }
+        $node = $results->getSingleNode();
+        $user = $node->getProperties();
 
         $this->assertEquals($type, $user['type']);
     }
@@ -369,7 +368,7 @@ class ConnectionTest extends TestCase {
 
         $results = $c->affectingStatement($query, $bindings);
 
-        $this->assertInstanceOf('Everyman\Neo4j\Query\ResultSet', $results);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
 
         foreach($results as $result)
         {
@@ -516,7 +515,7 @@ class ConnectionTest extends TestCase {
             array('username' => $this->user['username'])
         ));
 
-        return $createCypher->getResultSet();
+        return $this->client->sendCypherQuery($createCypher['statement'], $createCypher['parameters']);
     }
 
     protected function getMockConnection($methods = array())

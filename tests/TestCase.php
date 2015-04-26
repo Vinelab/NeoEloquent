@@ -63,8 +63,8 @@ class TestCase extends PHPUnit {
      */
     protected function flushDb()
     {
-        $connection = (new Stub)->getConnection();
-        $client = $connection->getClient();
+
+        $client = $this->getClient();
 
         $statements = [
            ['statement' => 'MATCH (n)-[r]-(c) DELETE n,r,c'],
@@ -72,5 +72,12 @@ class TestCase extends PHPUnit {
         ];
 
         $client->sendMultiple($statements);
+    }
+
+    protected function getClient()
+    {
+        $connection = (new Stub)->getConnection();
+
+        return $connection->getClient();
     }
 }
