@@ -70,7 +70,7 @@ class Finder extends Delegate {
     public function first(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
     {
         // First we get the first relationship instance between the two models
-        // absed on the given direction.
+        // based on the given direction.
         $relation = $this->firstRelation($parentModel, $relatedModel, $type, $direction);
 
         // Let's stop here if there is no relationship between them.
