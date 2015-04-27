@@ -233,7 +233,7 @@ class Builder extends IlluminateBuilder {
     }
 
     /**
-     * Get the properties (attribtues in Eloquent terms)
+     * Get the properties (attributes in Eloquent terms)
      * out of a result row.
      *
      * @param  array $columns The columns retrieved by the result
