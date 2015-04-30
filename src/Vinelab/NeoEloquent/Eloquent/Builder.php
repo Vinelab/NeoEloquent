@@ -2,12 +2,14 @@
 
 use Closure;
 use Vinelab\NeoEloquent\Helpers;
+use Neoxygen\NeoClient\Formatter\Node;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Collection;
+use Neoxygen\NeoClient\Formatter\Relationship;
 use Vinelab\NeoEloquent\Relations\OneRelation;
 use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
 
@@ -77,10 +79,19 @@ class Builder extends IlluminateBuilder {
         // that should be selected as well, which are typically just everything.
         $results = $this->query->get($properties);
 
+        $models = $this->resultsToModels($this->model->getConnectionName(), $results);
+
+        // FIXME: when we detect relationships, we need to remove duplicate
+        // records returned by query.
+        if (!empty($this->mutations))
+        {
+            $models = [current($models)];
+        }
+
         // Once we have the results, we can spin through them and instantiate a fresh
         // model instance for each records we retrieved from the database. We will
         // also set the proper connection name for the model after we create it.
-        return $this->resultsToModels($this->model->getConnectionName(), $results);
+        return $models;
     }
 
     /**
@@ -93,36 +104,59 @@ class Builder extends IlluminateBuilder {
     {
         $models = [];
 
-        if ($results)
-        {
-            foreach ($results->getNodes() as $node)
-            {
-                $attributes = $node->getProperties();
+        if ($results) {
+            $resultsByIdentifier = $results->getAllByIdentifier();
 
-                // we will check to see whether we should use Neo4j's built-in ID.
-                if ($this->model->getKeyName() === 'id')
-                {
-                    $attributes['id'] = $node->getId();
-                }
+            foreach ($resultsByIdentifier as $identifier => $nodes) {
+                foreach ($nodes as $result) {
+                    if ($result instanceof Node) {
+                        // Now that we have the attributes, we first check for mutations
+                        // and if exists, we will need to mutate the attributes accordingly.
+                        if ($this->shouldMutate($identifier)) {
+                            $model = $this->mutateToOrigin($results, $resultsByIdentifier);
+                        } else {
+                            $model = $this->newModelFromNode($result, $this->model, $connection);
+                        }
 
-                // Now that we have the attributes, we first check for mutations
-                // and if exists, we will need to mutate the attributes accordingly.
-                if ($this->shouldMutate($attributes))
-                {
-                    $models[] = $this->mutateToOrigin($result, $attributes);
-                }
-                // This is a regular record that we should deal with the normal way, creating an instance
-                // of the model out of the fetched attributes.
-                else
-                {
-                    $model = $this->model->newFromBuilder($attributes);
-                    $model->setConnection($connection);
-                    $models[] = $model;
+                        $models[] = $model;
+                    }
                 }
             }
         }
 
         return $models;
+    }
+
+    /**
+     * Get a Model instance out of the given node.
+     *
+     * @param  \Neoxygen\NeoClient\Formatter\Node $node
+     * @param  string $identifier
+     * @param  string $connection
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Model
+     */
+    public function newModelFromNode(Node $node, Model $model, $connection = null)
+    {
+        // let's begin with a proper connection
+        if (!$connection) {
+            $connection = $model->getConnectionName();
+        }
+
+        // get the attributes ready
+        $attributes = $node->getProperties();
+
+        // we will check to see whether we should use Neo4j's built-in ID.
+        if ($model->getKeyName() === 'id') {
+            $attributes['id'] = $node->getId();
+        }
+
+        // This is a regular record that we should deal with the normal way, creating an instance
+        // of the model out of the fetched attributes.
+        $fresh = $model->newFromBuilder($attributes);
+        $fresh->setConnection($connection);
+
+        return $fresh;
     }
 
     /**
@@ -132,24 +166,25 @@ class Builder extends IlluminateBuilder {
      * @param  \Neoxygen\NeoClient\Formatter\Result $results
      * @return array
      */
-    protected function resultsToModelsWithRelations($connection, ResultSet $results)
+    protected function resultsToModelsWithRelations($connection, Result $results)
     {
         $models = [];
 
-        if ($results->valid())
+        if ($results)
         {
             $grammar = $this->getQuery()->getGrammar();
-            $columns = $results->getColumns();
 
-            foreach ($results as $result)
+            $nodesByIdentifier = $results->getAllByIdentifier();
+
+            foreach ($nodesByIdentifier as $identifier => $nodes)
             {
-                $attributes = $this->getProperties($columns, $result);
                 // Now that we have the attributes, we first check for mutations
                 // and if exists, we will need to mutate the attributes accordingly.
-                if ($this->shouldMutate($attributes))
+                if ($this->shouldMutate($identifier))
                 {
-                     foreach ($attributes as $identifier => $values)
+                    foreach ($nodes as $node)
                     {
+                        $attributes = $node->getProperties();
                         $cropped = $grammar->cropLabelIdentifier($identifier);
 
                         if (! isset($models[$cropped])) $models[$cropped] = [];
@@ -157,10 +192,7 @@ class Builder extends IlluminateBuilder {
                         if(isset($this->mutations[$cropped]))
                         {
                             $mutationModel = $this->getMutationModel($cropped);
-                            $model = $mutationModel->newFromBuilder($values);
-                            $model->setConnection($mutationModel->getConnectionName());
-
-                            $models[$cropped][] = $model;
+                            $models[$cropped][] = $this->newModelFromNode($node, $mutationModel);
                         }
                     }
                 }
@@ -191,7 +223,7 @@ class Builder extends IlluminateBuilder {
             // a Many or One mutation.
             if ($this->isManyMutation($mutation))
             {
-                return $this->mutateManyToOrigin($attributes);
+                $mutations = $this->mutateManyToOrigin($attributes);
             }
             // Dealing with Morphing relations requires that we determine the morph_type out of the relationship
             // and mutating back to that class.
@@ -210,9 +242,8 @@ class Builder extends IlluminateBuilder {
             // label being the $key and the related model is $value.
             else
             {
-                $model = $this->getMutationModel($mutation)->newFromBuilder($values);
-                $model->setConnection($model->getConnectionName());
-                $mutations[$mutation] = $model;
+                $node = current($values);
+                $mutations[$mutation] = $this->newModelFromNode($node, $this->getMutationModel($mutation));
             }
         }
 
@@ -227,16 +258,14 @@ class Builder extends IlluminateBuilder {
      * @param  array $attributes
      * @return void
      */
-    public function mutateManyToOrigin($attributes)
+    public function mutateManyToOrigin($results)
     {
         $mutations = [];
 
         foreach ($this->getMutations() as $label => $info)
         {
             $mutationModel = $this->getMutationModel($label);
-            $model = $mutationModel->newFromBuilder($attributes[$label]);
-            $model->setConnection($mutationModel->getConnectionName());
-            $mutations[$label] = $model;
+            $mutations[$label] = $this->newModelFromNode(current($results[$label]), $mutationModel);
         }
 
         return $mutations;
@@ -277,15 +306,13 @@ class Builder extends IlluminateBuilder {
      * @return boolean
      *
      */
-    public function shouldMutate(array $attributes)
+    public function shouldMutate($identifier)
     {
         $grammar = $this->getQuery()->getGrammar();
-        $attributes = array_map([$grammar, 'cropLabelIdentifier'], array_keys($attributes));
+        $identifier = $grammar->cropLabelIdentifier($identifier);
         $mutations = array_keys($this->mutations);
 
-        $intersect = array_intersect($attributes, $mutations);
-
-        return ! empty($intersect);
+        return in_array($identifier, $mutations);
     }
 
     /**
@@ -797,10 +824,10 @@ class Builder extends IlluminateBuilder {
             $related[] = compact('relation', 'label', 'create', 'attach');
         }
 
-        $result = $this->query->createWith($model, $related);
-        $models = $this->resultsToModelsWithRelations($this->model->getConnectionName(), $result);
+        $results = $this->query->createWith($model, $related);
+        $models = $this->resultsToModelsWithRelations($this->model->getConnectionName(), $results);
 
-        return ( ! empty($models)) ? $models : null;
+        return (!empty($models)) ? $models : null;
     }
 
     /**

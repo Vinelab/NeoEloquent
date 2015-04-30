@@ -85,7 +85,7 @@ abstract class Relation extends Delegate {
     /**
      * The relationship instance.
      *
-     * @var \Everyman\Neo4j\Relationship
+     * @var \Neoxygen\NeoClient\Formatter\Relationship
      */
     protected $relation;
 
@@ -210,20 +210,7 @@ abstract class Relation extends Delegate {
             }
         }
 
-        $this->setRelationProperties($this->toArray());
-
-        $saved = $this->relation->save();
-
-        if ($saved)
-        {
-            // Let's refresh the relation we alreay have set so that
-            // we make sure that it is totally in sync with the saved one.
-            $this->setRelation($this->relation);
-
-            return true;
-        }
-
-        return  false;
+        return $this->exists();
     }
 
     /**
@@ -314,17 +301,6 @@ abstract class Relation extends Delegate {
         // This is an existing relationship.
         $this->related = $this->related->newFromBuilder($attributes);
         $this->related->setConnection($this->related->getConnection());
-    }
-
-    public function setRelationProperties(array $properties = array())
-    {
-        // Go through the properties and assign them
-        // to the relation.
-        foreach ($properties as $key => $value)
-        {
-            $this->relation->setProperty($key, $value);
-        }
-
     }
 
     /**
@@ -495,7 +471,7 @@ abstract class Relation extends Delegate {
      */
     public function exists()
     {
-        if ($this->relation && $this->relation->hasId())
+        if ($this->relation && $this->relation->getId())
         {
             return true;
         }

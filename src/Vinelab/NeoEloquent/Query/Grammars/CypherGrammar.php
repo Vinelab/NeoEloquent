@@ -354,20 +354,45 @@ class CypherGrammar extends Grammar {
         // instead we'll have to return in a form such as: RETURN max(user.logins).
         if ( ! is_null($query->aggregate)) return $this->compileAggregate($query, $query->aggregate);
 
+        $node = $this->query->modelAsNode();
+
+        // We need to make sure that there exists relations so that we return
+        // them as well, also there has to be nothing carried in the query
+        // to not conflict with them.
+        if ($this->hasMatchRelations($query) && empty($query->with))
+        {
+            $relations = $this->getMatchRelations($query);
+            $identifiers = [];
+
+            foreach ($relations as $relation) {
+                $identifiers[] = $this->getRelationIdentifier($relation['relationship'], $relation['related']['node']);
+            }
+
+            $properties = array_merge($properties, $identifiers);
+        }
+
         // In the case where the query has relationships
         // we need to return the requested properties as is
         // since they are considered node placeholders.
-        if ( ! empty($query->matches))
+        if (!empty($query->matches))
         {
-            $properties = implode(', ', array_values($properties));
+            $columns = implode(', ', array_values($properties));
         } else
         {
-            $properties = $this->columnize($properties);
+            $columns = $this->columnize($properties);
+            // when asking for specific properties (not *) we add
+            // the node placeholder so that we can get the nodes and
+            // the relationships themselves returned
+            if (!in_array('*', $properties) && !in_array($node, $properties))
+            {
+                $columns .= ", $node";
+            }
         }
+
 
         $distinct = ($query->distinct) ? 'DISTINCT ' : '';
 
-        return 'RETURN ' . $distinct . $properties;
+        return 'RETURN ' . $distinct . $columns;
     }
 
     /**
@@ -549,6 +574,63 @@ class CypherGrammar extends Grammar {
         }, $values);
         // We need to build a list of parameter place-holders of values that are bound to the query.
         return "CREATE ". $this->prepareEntities($values);
+    }
+
+    /**
+     * Compile a query that creates a relationship between two given nodes.
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder $query
+     * @param  array  $relation
+     * @return string
+     */
+    public function compileRelationship(Builder $query, $relation)
+    {
+        $startKey = $relation['start']['id']['key'];
+        $startNode = $this->modelAsNode($relation['start']['label']);
+        $startLabel = $this->prepareLabels($relation['start']['label']);
+
+        $endKey = $relation['end']['id']['key'];
+        $endNode = 'rel_'.$this->modelAsNode($relation['label']);
+        $endLabel = $this->prepareLabels($relation['end']['label']);
+
+        if ($startKey === 'id')
+        {
+            $startKey = 'id('.$startNode.')';
+            $startId = (int) $relation['start']['id']['value'];
+        } else {
+            $startKey = $startNode.'.'.$startKey;
+            $startId = '"'.addslashes($relation['start']['id']['value']).'"';
+        }
+
+        if ($endKey === 'id')
+         {
+            $endKey = 'id('. $endNode.')';
+            $endId = (int) $relation['end']['id']['value'];
+         } else {
+            $endKey = $endNode.'.'.$endKey;
+            $endId = '"'.addslashes($relation['end']['id']['value']).'"';
+         }
+
+        $startCondition = $startKey.'='.$startId;
+        $endCondition = $endKey.'='.$endId;
+
+        $query = "MATCH ($startNode$startLabel), ($endNode$endLabel)"
+            . " WHERE $startCondition"
+            . " AND $endCondition";
+
+        $relationQuery = $this->craftRelation(
+            $startNode,
+            'r:'.$relation['label'],
+            '('.$endNode.')',
+            $relation['end']['label'],
+            $relation['direction'],
+            true
+        );
+
+        $query .= " CREATE UNIQUE $relationQuery";
+        $query .= " RETURN r";
+
+        return $query;
     }
 
     /**

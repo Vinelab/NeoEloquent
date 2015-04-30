@@ -2,6 +2,7 @@
 
 use DateTime;
 use Carbon\Carbon;
+use Vinelab\NeoEloquent\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar {
@@ -85,11 +86,24 @@ class Grammar extends IlluminateGrammar {
      * Prepare a relationship label.
      *
      * @param  string $relation
+     * @param string $related
      * @return string
      */
     public function prepareRelation($relation, $related)
     {
-        return "rel_". mb_strtolower($relation) .'_'. $related .":{$relation}";
+        return $this->getRelationIdentifier($relation, $related).":{$relation}";
+    }
+
+    /**
+     * Get the identifier for the given relationship.
+     *
+     * @param  string $relation
+     * @param  string $related
+     * @return string
+     */
+    public function getRelationIdentifier($relation, $related)
+    {
+        return "rel_". mb_strtolower($relation) .'_'. $related;
     }
 
     /**
@@ -242,7 +256,7 @@ class Grammar extends IlluminateGrammar {
      * @param  array $values
      * @return string
      */
-    protected function prepareEntities(array $entities)
+    public function prepareEntities(array $entities)
     {
         return implode(', ', array_map([$this, 'prepareEntity'], $entities));
     }
@@ -253,7 +267,7 @@ class Grammar extends IlluminateGrammar {
      * @param  array $entity
      * @return string
      */
-    protected function prepareEntity($entity, $identifier = false)
+    public function prepareEntity($entity, $identifier = false)
     {
         $label = (is_array($entity['label'])) ? $this->prepareLabels($entity['label']) : $entity['label'];
 
@@ -331,5 +345,29 @@ class Grammar extends IlluminateGrammar {
     public function cropLabelIdentifier($id)
     {
         return preg_replace('/_neoeloquent_.*/', '', $id);
+    }
+
+    /**
+     * Check whether the given query has relation matches.
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder $query
+     * @return boolean
+     */
+    public function hasMatchRelations(Builder $query)
+    {
+        return (bool) count($query);
+    }
+
+    /**
+     * Get the relation-based matches from the given query.
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder $query
+     * @return array
+     */
+    public function getMatchRelations(Builder $query)
+    {
+        return array_filter($query->matches, function($match) {
+            return $match['type'] == 'Relation';
+        });
     }
 }

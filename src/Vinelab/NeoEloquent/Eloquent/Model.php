@@ -544,8 +544,8 @@ abstract class Model extends IlluminateModel {
         $result = $query->createWith($attributes, $relations);
         // take the parent model that was created out of the results array based on
         // this model's label.
-        $created = reset($result[$label]);
 
+        $created = reset($result[$label]);
         // fire 'saved' and 'created' events on parent model.
         $created->finishSave($options);
         $created->fireModelEvent('created', false);

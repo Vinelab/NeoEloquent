@@ -1,8 +1,8 @@
 <?php namespace Vinelab\NeoEloquent;
 
-use Everyman\Neo4j\Exception as Neo4jException;
+use Exception;
 
-class QueryException extends Neo4jException {
+class QueryException extends Exception {
 
     public function __construct($query, $bindings = array(), $exception = null)
     {

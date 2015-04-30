@@ -1,6 +1,7 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Vinelab\NeoEloquent\Connection;
+use Neoxygen\NeoClient\Formatter\Node;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Eloquent\Builder;
@@ -25,7 +26,7 @@ abstract class Delegate {
     /**
      * The database client.
      *
-     * @var \Everyman\Neo4j\Client
+     * @var \Neoxygen\NeoClient\Client
      */
     protected $client;
 
@@ -66,12 +67,35 @@ abstract class Delegate {
      */
     protected function makeRelationship($type, $startModel, $endModel, $properties = array())
     {
-        return $this->client
-            ->makeRelationship()
-            ->setType($this->type)
-            ->setStartNode($this->start)
-            ->setEndNode($this->end)
-            ->setProperties($this->attributes);
+        $grammar = $this->query->getQuery()->getGrammar();
+
+        $query = $grammar->compileRelationship(
+            $this->query->getQuery(),
+            [
+                'label' => $this->type,
+                'direction' => $this->direction,
+                'start' => [
+                    'id' => [
+                        'key' => $startModel->getKeyName(),
+                        'value' => $this->start->getId(),
+                    ],
+                    'label' => $this->start->getLabels(),
+                    'properties' => $this->start->getProperties(),
+                ],
+                'end' => [
+                    'id' => [
+                        'key' => $endModel->getKeyName(),
+                        'value' => $this->end->getId(),
+                    ],
+                    'label' => $this->end->getLabels(),
+                    'properties' => $this->end->getProperties(),
+                ],
+            ]
+        );
+
+        $result = $this->connection->statement($query, [], true);
+
+        return current($result->getRelationships());
     }
 
     /**
@@ -137,27 +161,21 @@ abstract class Delegate {
      * Convert a model to a Node object.
      *
      * @param  \Vinelab\NeoEloquent\Eloquent\Model $model
-     * @return \Everyman\Neo4j\Node
+     * @return \Neoxygen\NeoClient\Formatter\Node
      */
     public function asNode(Model $model)
     {
-        $node = $this->client->makeNode();
+        $id = $model->getKey();
+        $properties = $model->toArray();
+        $label = $model->getDefaultNodeLabel();
 
-        // If the key name of the model is 'id' we will need to set it properly with setId()
-        // since setting it as a regular property with setProperty() won't cut it.
-        if ($model->getKeyName() == 'id')
+        // The id should not be part of the properties since it is treated differently
+        if (isset($properties['id']))
         {
-            $node->setId($model->getKey());
+            unset($properties['id']);
         }
 
-        // In this case the dev has chosen a different primary key
-        // so we use it insetead.
-        else
-        {
-            $node->setProperty($model->getKeyName(), $model->getKey());
-        }
-
-        return $node;
+        return new Node($id, $label, $properties);
     }
 
     /**
