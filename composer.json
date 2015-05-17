@@ -13,6 +13,7 @@
         "php": ">=5.4.0",
         "illuminate/support": "5.*",
         "illuminate/database": "5.*",
+        "illuminate/pagination": "5.*",
         "vinelab/neo4jphp": "0.1.*",
         "nesbot/carbon": "~1.0"
     },
