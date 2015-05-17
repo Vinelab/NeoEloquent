@@ -401,12 +401,13 @@ class Builder extends IlluminateBuilder {
      *
      * This is more efficient on larger data-sets, etc.
      *
-     * @param  \Illuminate\Pagination\Factory  $paginator
-     * @param  int    $perPage
-     * @param  array  $columns
+     * @param  int $perPage
+     * @param  array $columns
+     * @param string $pageName
      * @return \Illuminate\Pagination\Paginator
+     * @internal param \Illuminate\Pagination\Factory $paginator
      */
-    public function simplePaginate($perPage = null, $columns = array('*'))
+    public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page')
     {
         $paginator = $this->query->getConnection()->getPaginator();
 
@@ -416,7 +417,10 @@ class Builder extends IlluminateBuilder {
 
         $this->query->skip(($page - 1) * $perPage)->take($perPage + 1);
 
-        return $paginator->make($this->get($columns)->all(), $perPage);
+        return new Paginator($this->get($columns), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
+        ]);
     }
 
     /**
