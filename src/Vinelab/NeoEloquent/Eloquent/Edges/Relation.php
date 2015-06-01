@@ -313,7 +313,7 @@ abstract class Relation extends Delegate {
 
         // This is an existing relationship.
         $this->related = $this->related->newFromBuilder($attributes);
-        $this->related->setConnection($this->related->getConnection());
+        $this->related->setConnection($this->related->getConnectionName());
     }
 
     public function setRelationProperties(array $properties = array())
