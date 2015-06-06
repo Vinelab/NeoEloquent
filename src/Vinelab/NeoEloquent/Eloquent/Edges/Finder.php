@@ -1,10 +1,10 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Everyman\Neo4j\Path;
-use Everyman\Neo4j\Relationship;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Neoxygen\NeoClient\Formatter\Relationship;
 
 class Finder extends Delegate {
 
@@ -19,44 +19,6 @@ class Finder extends Delegate {
     public function __construct(Builder $query)
     {
         parent::__construct($query);
-    }
-
-    /**
-     * Get the direct relation between two models.
-     *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $parentModel
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $relatedModel
-     * @param  string $direction
-     * @return \Everyman\Neo4j\Relationship
-     */
-    public function firstRelation(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
-    {
-        // To get a relationship between two models we will have
-        // to find the Path between them so first let's transform
-        // them to nodes.
-        $parent = $this->asNode($parentModel);
-        $related = $this->asNode($relatedModel);
-
-        // Determine the direction, the real one!
-        $direction = $this->getRealDirection($direction);
-
-        // Find the path between parent and related nodes in the previously
-        // determined direction according to the type and we will get returned
-        // an instance of \Everyman\Neo4j\Path which will lead us to the relationship.
-        $path = $parent->findPathsTo($related, $type, $direction)->getSinglePath();
-
-        // Since we are sure that the relation between these two nodes is direct
-        // with depth of 1 we will get the path and return the first relationship (if any).
-        if ( ! is_null($path))
-        {
-            // Tell the path that we need to work with the relationships now
-            // so that it sets the nodes aside.
-            $path->setContext(Path::ContextRelationship);
-
-            $relationships = $path->getRelationships();
-
-            return  reset($relationships);
-        }
     }
 
     /**
