@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Neoxygen\NeoClient\Formatter\Relationship;
 use Vinelab\NeoEloquent\Relations\OneRelation;
 use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
+use Illuminate\Pagination\Paginator;
 
 class Builder extends IlluminateBuilder {
 
@@ -485,27 +486,28 @@ class Builder extends IlluminateBuilder {
         return $this;
     }
 
+
     /**
      * Get a paginator only supporting simple next and previous links.
      *
      * This is more efficient on larger data-sets, etc.
      *
-     * @param  \Illuminate\Pagination\Factory  $paginator
-     * @param  int    $perPage
-     * @param  array  $columns
+     * @param  int $perPage
+     * @param  array $columns
+     * @param string $pageName
      * @return \Illuminate\Pagination\Paginator
+     * @internal param \Illuminate\Pagination\Factory $paginator
      */
-    public function simplePaginate($perPage = null, $columns = array('*'))
+    public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page')
     {
         $paginator = $this->query->getConnection()->getPaginator();
-
         $page = $paginator->getCurrentPage();
-
         $perPage = $perPage ?: $this->model->getPerPage();
-
         $this->query->skip(($page - 1) * $perPage)->take($perPage + 1);
-
-        return $paginator->make($this->get($columns)->all(), $perPage);
+        return new Paginator($this->get($columns), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
+        ]);
     }
 
     /**
@@ -717,11 +719,11 @@ class Builder extends IlluminateBuilder {
         $method = $this->getMatchMethodName($relation);
 
         $this->$method($relation->getParent(),
-                        $relation->getRelated(),
-                        $relatedNode,
-                        $relation->getForeignKey(),
-                        $relation->getLocalKey(),
-                        $relation->getParentLocalKeyValue());
+            $relation->getRelated(),
+            $relatedNode,
+            $relation->getForeignKey(),
+            $relation->getLocalKey(),
+            $relation->getParentLocalKeyValue());
 
         // Prefix all the columns with the relation's node placeholder in the query
         // and merge the queries that needs to be merged.
