@@ -144,6 +144,25 @@ Do not worry about the labels formatting, You may specify them as `array('Label1
 
 ### Soft Deleting
 
+#### Laravel 5
+
+To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletes`
+instead of `Illuminate\Database\Eloquent\SoftDeletes` and just like Eloquent you'll need the `$dates` in your models as follows:
+
+```php
+use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+
+class User extends NeoEloquent {
+
+    use SoftDeletes;
+
+    protected $dates = ['deleted_at'];
+
+}
+```
+
+#### Laravel 4
+
 To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait`
 instead of `Illuminate\Database\Eloquent\SoftDeletingTrait` and just like Eloquent you'll need the `$dates` in your models as follows:
 
