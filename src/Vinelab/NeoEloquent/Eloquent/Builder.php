@@ -80,12 +80,18 @@ class Builder extends IlluminateBuilder {
         $results = $this->query->get($properties);
 
         $models = $this->resultsToModels($this->model->getConnectionName(), $results);
-
+        // hold the unique results (discarding duplicates resulting from the query)
+        $unique = [];
         // FIXME: when we detect relationships, we need to remove duplicate
         // records returned by query.
-        if (!empty($this->mutations))
-        {
-            $models = [current($models)];
+        $index = 0;
+        if (!empty($this->mutations)) {
+            foreach ($results->getRelationships() as $relationship) {
+                $unique[] = $models[$index];
+                $index++;
+            }
+
+            $models = $unique;
         }
 
         // Once we have the results, we can spin through them and instantiate a fresh
