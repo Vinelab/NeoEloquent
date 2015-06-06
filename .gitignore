@@ -5,3 +5,4 @@ composer.lock
 *.sublime-project
 
 *.sublime-workspace
+Examples/**/vendor

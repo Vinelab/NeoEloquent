@@ -1,0 +1,22 @@
+{
+    "name": "neoeloquent-examples/movie",
+    "description": "Illustrating the all-time favourite movie example from the Neo4j docs: http://neo4j.com/docs/stable/cypherdoc-movie-database.html",
+    "type": "Library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Abed Halawi",
+            "email": "abed.halawi@vinelab.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "vinelab/neoeloquent": "1.5.*@dev",
+        "symfony/console": "*"
+    },
+    "autoload": {
+        "classmap": [
+            "models"
+        ]
+    }
+}
