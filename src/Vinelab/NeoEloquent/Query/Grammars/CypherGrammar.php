@@ -576,59 +576,110 @@ class CypherGrammar extends Grammar {
         return "CREATE ". $this->prepareEntities($values);
     }
 
-    /**
-     * Compile a query that creates a relationship between two given nodes.
-     *
-     * @param  \Vinelab\NeoEloquent\Query\Builder $query
-     * @param  array  $relation
-     * @return string
-     */
-    public function compileRelationship(Builder $query, $relation)
+    public function compileMatchRelationship(Builder $query, $attributes)
     {
-        $startKey = $relation['start']['id']['key'];
-        $startNode = $this->modelAsNode($relation['start']['label']);
-        $startLabel = $this->prepareLabels($relation['start']['label']);
+        $startKey = $attributes['start']['id']['key'];
+        $startNode = $this->modelAsNode($attributes['start']['label']);
+        $startLabel = $this->prepareLabels($attributes['start']['label']);
 
-        $endKey = $relation['end']['id']['key'];
-        $endNode = 'rel_'.$this->modelAsNode($relation['label']);
-        $endLabel = $this->prepareLabels($relation['end']['label']);
+        $endKey = $attributes['end']['id']['key'];
+        $endNode = 'rel_'.$this->modelAsNode($attributes['label']);
+        $endLabel = $this->prepareLabels($attributes['end']['label']);
 
         if ($startKey === 'id')
         {
             $startKey = 'id('.$startNode.')';
-            $startId = (int) $relation['start']['id']['value'];
+            $startId = (int) $attributes['start']['id']['value'];
         } else {
             $startKey = $startNode.'.'.$startKey;
-            $startId = '"'.addslashes($relation['start']['id']['value']).'"';
+            $startId = '"'.addslashes($attributes['start']['id']['value']).'"';
         }
 
-        if ($endKey === 'id')
-         {
-            $endKey = 'id('. $endNode.')';
-            $endId = (int) $relation['end']['id']['value'];
-         } else {
-            $endKey = $endNode.'.'.$endKey;
-            $endId = '"'.addslashes($relation['end']['id']['value']).'"';
-         }
+        if ($attributes['end']['id']['value']) {
+            if ($endKey === 'id') {
+                // when it's 'id' it has to be numeric
+                $endKey = 'id('. $endNode.')';
+                $endId = (int) $attributes['end']['id']['value'];
+            } else {
+                $endKey = $endNode.'.'.$endKey;
+                $endId = '"'.addslashes($attributes['end']['id']['value']).'"';
+            }
+        }
 
         $startCondition = $startKey.'='.$startId;
-        $endCondition = $endKey.'='.$endId;
+        $endCondition = (!empty($endId)) ? $endKey.'='.$endId : '';
 
         $query = "MATCH ($startNode$startLabel), ($endNode$endLabel)"
-            . " WHERE $startCondition"
-            . " AND $endCondition";
+            . " WHERE $startCondition";
 
-        $relationQuery = $this->craftRelation(
+        if (!empty($endCondition)) {
+            $query .= " AND $endCondition";
+        }
+
+        return $query;
+    }
+
+    /**
+     * Compile a query that creates a relationship between two given nodes.
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder $query
+     * @param  array  $attributes
+     * @return string
+     */
+    public function compileRelationship(Builder $query, $attributes)
+    {
+        $startNode = $this->modelAsNode($attributes['start']['label']);
+        $endNode   = 'rel_'.$this->modelAsNode($attributes['label']);
+
+        $query = $this->craftRelation(
             $startNode,
-            'r:'.$relation['label'],
+            'r:'.$attributes['label'],
             '('.$endNode.')',
-            $relation['end']['label'],
-            $relation['direction'],
+            $attributes['end']['label'],
+            $attributes['direction'],
             true
         );
 
-        $query .= " CREATE UNIQUE $relationQuery";
+        $properties = $attributes['properties'];
+
+        if (!empty($properties)) {
+            foreach ($properties as $key => $value) {
+                unset($properties[$key]);
+                // we do not accept IDs for relations
+                if ($key === 'id') continue;
+                $properties[] = 'r.'.$key .' = '. $this->valufy($value);
+            }
+
+            $query .= " SET ".implode(', ', $properties);
+        }
+
+        return $query;
+    }
+
+    public function compileCreateRelationship(Builder $query, $attributes)
+    {
+        $match = $this->compileMatchRelationship($query, $attributes);
+        $relationQuery = $this->compileRelationship($query, $attributes);
+        $query = "$match CREATE UNIQUE $relationQuery";
         $query .= " RETURN r";
+
+        return $query;
+    }
+
+    public function compileDeleteRelationship(Builder $query, $attributes)
+    {
+        $match = $this->compileMatchRelationship($query, $attributes);
+        $relation = $this->compileRelationship($query, $attributes);
+        $query = "$match MATCH $relation DELETE r";
+
+        return $query;
+    }
+
+    public function compileGetRelationship(Builder $query, $attributes)
+    {
+        $match = $this->compileMatchRelationship($query, $attributes);
+        $relation = $this->compileRelationship($query, $attributes);
+        $query = "$match MATCH $relation RETURN r";
 
         return $query;
     }
