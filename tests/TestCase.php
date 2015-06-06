@@ -63,7 +63,6 @@ class TestCase extends PHPUnit {
      */
     protected function flushDb()
     {
-
         $client = $this->getClient();
 
         $statements = [

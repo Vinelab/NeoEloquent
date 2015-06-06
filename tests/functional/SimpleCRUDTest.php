@@ -9,9 +9,10 @@ use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
 
 class Wiz extends Model {
 
-    protected $label = ':Wiz';
+    protected $label = ['Wiz', 'SOmet'];
 
     protected $fillable = ['fiz', 'biz', 'triz'];
+
 }
 
 class WizDel extends Model {

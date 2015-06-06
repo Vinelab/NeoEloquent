@@ -29,12 +29,6 @@ class HasManyRelationTest extends TestCase {
     {
         M::close();
 
-        $authors = Author::all();
-        $authors->each(function($a) { $a->delete(); });
-
-        $books = Book::all();
-        $books->each(function($b) { $b->delete(); });
-
         parent::tearDown();
     }
 
@@ -243,11 +237,13 @@ class HasManyRelationTest extends TestCase {
         $this->assertArrayHasKey('books', $relations);
         $this->assertCount(count($novel), $relations['books']->toArray());
 
+        $booksIds = array_map(function($book){ return $book->getKey(); }, $novel);
+
         foreach ($relations['books'] as $key => $book)
         {
-            $this->assertEquals($novel[$key]->toArray(), $book->toArray());
+            $this->assertTrue(in_array($book->getKey(), $booksIds));
             $edge = $author->books()->edge($book);
-            $this->assertTrue($edge->delete());
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
         }
     }
 

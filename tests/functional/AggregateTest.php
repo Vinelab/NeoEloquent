@@ -5,7 +5,6 @@ use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
-
 class AggregateTest extends TestCase {
 
     public function setUp()

@@ -28,12 +28,6 @@ class HasOneRelationTest extends TestCase {
     {
         M::close();
 
-        $users = User::all();
-        $users->each(function($u) { $u->delete(); });
-
-        $accs = Profile::all();
-        $accs->each(function($a) { $a->delete(); });
-
         parent::tearDown();
     }
 
@@ -56,7 +50,7 @@ class HasOneRelationTest extends TestCase {
         $relation = $user->profile()->save($profile);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-        $this->assertEquals($profile, $user->profile);
+        $this->assertEquals($profile->toArray(), $user->profile->toArray());
         $this->assertTrue($relation->delete());
     }
 
@@ -107,7 +101,7 @@ class HasOneRelationTest extends TestCase {
         $saved = User::find($user->id);
         $this->assertEquals($profile, $saved->profile);
 
-     // delete the relation and make sure it was deleted
+        // delete the relation and make sure it was deleted
         // so that we can delete the nodes when cleaning up.
         $this->assertTrue($relation->delete());
     }
@@ -118,7 +112,9 @@ class HasOneRelationTest extends TestCase {
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
+
         $relation->active = true;
+
         $this->assertTrue($relation->save());
 
         $retrieved = $user->profile()->edge($profile);
