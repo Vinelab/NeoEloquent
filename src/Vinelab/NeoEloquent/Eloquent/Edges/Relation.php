@@ -2,10 +2,10 @@
 
 use DateTime;
 use Carbon\Carbon;
-use Everyman\Neo4j\Relationship;
-use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Neoxygen\NeoClient\Formatter\Relationship;
 use Vinelab\NeoEloquent\NoEdgeDirectionException;
 
 abstract class Relation extends Delegate {
@@ -148,6 +148,8 @@ abstract class Relation extends Delegate {
      */
     public function initRelation()
     {
+        $this->updateTimestamps();
+
         switch ($this->direction)
         {
             case 'in':
@@ -156,7 +158,7 @@ abstract class Relation extends Delegate {
                 $this->end   = $this->asNode($this->parent);
                 // Setup relationship
                 $this->relation = $this->makeRelationship($this->type, $this->relation, $this->parent, $this->attributes);
-            break;
+                break;
 
             case 'out':
                 // Make them nodes
@@ -164,7 +166,7 @@ abstract class Relation extends Delegate {
                 $this->end   = $this->asNode($this->related);
                 // Setup relationship
                 $this->relation = $this->makeRelationship($this->type, $this->parent, $this->related, $this->attributes);
-            break;
+                break;
 
             default:
                 throw new NoEdgeDirectionException;
@@ -182,7 +184,7 @@ abstract class Relation extends Delegate {
     {
         $relation = $this->finder->firstRelation($this->parent, $this->related, $this->type, $this->direction);
 
-        return ( ! is_null($relation)) ? $this->newFromRelation($relation) : null;
+        return ($relation) ? $this->newFromRelation($relation) : null;
     }
 
     /**
@@ -197,20 +199,40 @@ abstract class Relation extends Delegate {
          /**
          * If this is a unique relationship we should check for an existing
          * one of the same type and direction for the $parent node before saving
-         * and delete it, only if we are not updating a relationship.
+         * and delete it, unless we are updating an existing relationship.
          */
-        if ($this->unique and ! $this->exists())
+        if ($this->unique && !$this->exists())
         {
-            $parent = $this->asNode($this->parent);
-            $existing = $parent->getFirstRelationship((array) $this->type, $this->getRealDirection($this->direction));
+            $endModel = $this->related->newInstance();
+            $existing = $this->firstRelation($this->parent, $endModel, $this->type, $this->direction);
 
-            if ( ! empty($existing))
-            {
-                $existing->delete();
+            if ($existing && $existing instanceof Relationship) {
+                $instance = $this->newFromRelation($existing);
+                $instance->delete();
             }
         }
 
-        return $this->exists();
+        $saved = $this->saveRelationship($this->type, $this->parent, $this->related, $this->attributes);
+
+        if ($saved)
+        {
+            // Let's refresh the relation we alreay have set so that
+            // we make sure that it is totally in sync with the saved one.
+            $this->setRelation(current($saved->getRelationships()));
+
+            return true;
+        }
+
+        return  false;
+    }
+
+    public function saveRelationship($type, $start, $end, $properties)
+    {
+        $grammar = $this->query->getQuery()->getGrammar();
+        $attributes = $this->getRelationshipAttributes($start, $end, $properties);
+        $query = $grammar->compileCreateRelationship($this->query->getQuery(), $attributes);
+
+        return $this->connection->statement($query, [], true);
     }
 
     /**
@@ -220,14 +242,24 @@ abstract class Relation extends Delegate {
      */
     public function delete()
     {
-        if ( ! is_null($this->relation))
+        if ($this->relation)
         {
-            $deleted = $this->relation->delete();
+            $grammar = $this->query->getQuery()->getGrammar();
 
-            return $deleted ? true : false;
+            $startModel = $this->query->newModelFromNode($this->relation->getStartNode(), $this->parent);
+            $endModel = $this->query->newModelFromNode($this->relation->getEndNode(), $this->related);
+
+            // we need to delete any relationship b/w the start and end models
+            // so we only need the label out of the end model and not the ID.
+            $endInstance = $endModel->newInstance();
+
+            $attributes = $this->getRelationshipAttributes($startModel, $endInstance);
+            $query = $grammar->compileDeleteRelationship($this->query->getQuery(), $attributes);
+
+            $deleted = $this->connection->affectingStatement($query, []);
         }
 
-        return false;
+        return (bool) (isset($deleted)) ? true : false;
     }
 
     /**
@@ -240,7 +272,6 @@ abstract class Relation extends Delegate {
     public function newFromRelation(Relationship $relation)
     {
         $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);
-
         $instance->setRelation($relation);
 
         return $instance;
@@ -279,7 +310,7 @@ abstract class Relation extends Delegate {
     /**
      * Set a given relationship on this relation.
      *
-     * @param \Everyman\Neo4j\Relationship $relation
+     * @param \Neoxygen\NeoClient\Formatter\Relationship $relation
      */
     public function setRelation(Relationship $relation, $debug = false)
     {
@@ -471,12 +502,13 @@ abstract class Relation extends Delegate {
      */
     public function exists()
     {
-        if ($this->relation && $this->relation->getId())
-        {
-            return true;
+        $exists = false;
+
+        if ($this->relation && $this->relation->getId()) {
+            $exists = true;
         }
 
-        return false;
+        return $exists;
     }
 
     /**
