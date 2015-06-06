@@ -5,6 +5,7 @@ use Neoxygen\NeoClient\Formatter\Node;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Eloquent\Builder;
+use Neoxygen\NeoClient\Formatter\Relationship;
 use Vinelab\NeoEloquent\UnknownDirectionException;
 
 abstract class Delegate {
@@ -56,6 +57,31 @@ abstract class Delegate {
         return new Finder($this->query);
     }
 
+    protected function getRelationshipAttributes($startModel, $endModel, array $properties = [])
+    {
+        return [
+            'label' => $this->type,
+            'direction'  => $this->direction,
+            'properties' => $properties,
+            'start' => [
+                'id' => [
+                    'key' => $startModel->getKeyName(),
+                    'value' => $startModel->getKey(),
+                ],
+                'label' => $this->start->getLabels(),
+                'properties' => $this->start->getProperties(),
+            ],
+            'end' => [
+                'id' => [
+                    'key' => $endModel->getKeyName(),
+                    'value' => $endModel->getKey(),
+                ],
+                'label' => $this->end->getLabels(),
+                'properties' => $this->end->getProperties(),
+            ],
+        ];
+    }
+
     /**
      * Make a new Relationship instance.
      *
@@ -68,32 +94,47 @@ abstract class Delegate {
     protected function makeRelationship($type, $startModel, $endModel, $properties = array())
     {
         $grammar = $this->query->getQuery()->getGrammar();
+        $attributes = $this->getRelationshipAttributes($startModel, $endModel, $properties);
 
-        $query = $grammar->compileRelationship(
-            $this->query->getQuery(),
-            [
-                'label' => $this->type,
-                'direction' => $this->direction,
-                'start' => [
-                    'id' => [
-                        'key' => $startModel->getKeyName(),
-                        'value' => $this->start->getId(),
-                    ],
-                    'label' => $this->start->getLabels(),
-                    'properties' => $this->start->getProperties(),
-                ],
-                'end' => [
-                    'id' => [
-                        'key' => $endModel->getKeyName(),
-                        'value' => $this->end->getId(),
-                    ],
-                    'label' => $this->end->getLabels(),
-                    'properties' => $this->end->getProperties(),
-                ],
-            ]
-        );
+        $id = null;
+        if (isset($properties['id'])) {
+            // when there's an ID within the properties
+            // we will remove that so that it doesn't get
+            // mixed up with the properties.
+            $id = $properties['id'];
+            unset($properties['id']);
+        }
 
-        $result = $this->connection->statement($query, [], true);
+        return new Relationship($id, $type, $this->asNode($startModel), $this->asNode($endModel), $properties);
+    }
+
+    /**
+     * Get the direct relation between two models.
+     *
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $parentModel
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $relatedModel
+     * @param  string $direction
+     * @return \Everyman\Neo4j\Relationship
+     */
+    public function firstRelation(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
+    {
+        $this->type = $type;
+        $this->start = $this->asNode($parentModel);
+        $this->end = $this->asNode($relatedModel);
+        $this->direction = $direction;
+        // To get a relationship between two models we will have
+        // to find the Path between them so first let's transform
+        // them to nodes.
+        $grammar = $this->query->getQuery()->getGrammar();
+
+        // remove the ID for the related node so that we match
+        // the label regardless of the which node it is, matching
+        // any relationship of the type.
+        // $relatedInstance = $relatedModel->newInstance();
+
+        $attributes = $this->getRelationshipAttributes($parentModel, $relatedModel);
+        $query = $grammar->compileGetRelationship($this->query->getQuery(), $attributes);
+        $result = $this->connection->select($query);
 
         return current($result->getRelationships());
     }
@@ -134,19 +175,19 @@ abstract class Delegate {
      *
      * @param  string $direction
      * @return string
+     * @deprecated 2.0 No longer using Everyman's Relationship to get the value
+     *                   of the direction constant
      *
      * @throws UnknownDirectionException If the specified $direction is not one of in, out or inout
      */
     public function getRealDirection($direction)
     {
-        if ($direction == 'in' or $direction == 'out')
+        if ($direction === 'in' || $direction === 'out')
         {
             $direction = ucfirst($direction);
-
-        } elseif ($direction == 'any')
+        } else if ($direction === 'any')
         {
             $direction = 'All';
-
         } else
         {
             throw new UnknownDirectionException($direction);
