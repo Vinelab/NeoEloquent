@@ -64,7 +64,7 @@ class Connection extends IlluminateConnection {
     public function createConnection()
     {
         return ClientBuilder::create()
-            ->addConnection('default', 'http', $this->getHost(), $this->getPort())
+            ->addConnection('default', 'http', $this->getHost(), $this->getPort(), $this->isSecured(), $this->getUsername(), $this->getPassword())
             ->setAutoFormatResponse(true)
             ->build();
     }
@@ -118,6 +118,15 @@ class Connection extends IlluminateConnection {
     public function getUsername()
     {
         return $this->getConfig('username', $this->defaults['username']);
+    }
+
+    /**
+     * Returns whether or not the connection should be secured
+     * @return bool
+     */
+    public function isSecured()
+    {
+        return null !== $this->getUsername() && null !== $this->getPassword();
     }
 
     /**
