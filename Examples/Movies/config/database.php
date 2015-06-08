@@ -8,6 +8,8 @@ $config = [
     'driver' => 'neo4j',
     'host'   => 'dev',
     'port'   => 7474,
+    'username' => 'neo4j',
+    'password' => 'neo4j'
 ];
 
 $capsule = new Capsule;
