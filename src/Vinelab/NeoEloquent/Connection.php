@@ -13,11 +13,18 @@ use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
 class Connection extends IlluminateConnection {
 
     /**
-     * The Neo4j active client connection
+     * The Neo4j active client write connection
      *
      * @var Everyman\Neo4j\Client
      */
-    protected $neo;
+    protected $neo = null;
+
+    /**
+     * The Neo4j active client read connection
+     *
+     * @var Everyman\Neo4j\Client
+     */
+    protected $neoRead = null;
 
     /**
      * The Neo4j database transaction
@@ -53,9 +60,6 @@ class Connection extends IlluminateConnection {
     public function __construct(array $config = array())
     {
         $this->config = $config;
-
-        // activate and set the database client connection
-        $this->neo = $this->createConnection();
     }
 
     /**
@@ -63,9 +67,9 @@ class Connection extends IlluminateConnection {
      *
      * @return Everyman\Neo4j\Client
      */
-    public function createConnection()
+    public function createConnection($useRead = false)
     {
-        $client = new NeoClient($this->getHost(), $this->getPort());
+        $client = new NeoClient($this->getHost($useRead), $this->getPort());
         $client->getTransport()->setAuth($this->getUsername(), $this->getPassword());
         return $client;
     }
@@ -75,8 +79,16 @@ class Connection extends IlluminateConnection {
      *
      * @return Everyman\Neo4j\Client
      */
-    public function getClient()
+    public function getClient($useRead = false)
     {
+        if ($useRead) {
+            $this->neoRead = is_null($this->neoRead) ? $this->createConnection($useRead) : $this->neoRead;
+            return $this->neoRead;
+        }
+
+        // activate and set the database client connection
+        $this->neo = is_null($this->neo) ? $this->createConnection($useRead) : $this->neo;
+
         return $this->neo;
     }
 
@@ -86,9 +98,14 @@ class Connection extends IlluminateConnection {
      *
      * @param \Everyman\Neo4j\Client $client
      */
-    public function setClient(NeoClient $client)
+    public function setClient(NeoClient $client, $useRead = false)
     {
-        $this->neo = $client;
+        if ($useRead) {
+            $this->neoRead = $client;
+        }
+        else {
+            $this->neo = $client;
+        }
     }
 
 
@@ -97,8 +114,15 @@ class Connection extends IlluminateConnection {
      *
      * @return string
      */
-    public function getHost()
+    public function getHost($useRead = false)
     {
+        if (is_null($this->getConfig('host'))) {
+            if ($useRead) {
+                return $this->getConfig('read.host', $this->defaults['host']);
+            }
+            return $this->getConfig('write.host', $this->defaults['host']);
+        }
+
         return $this->getConfig('host', $this->defaults['host']);
     }
 
@@ -168,7 +192,7 @@ class Connection extends IlluminateConnection {
             // For select statements, we'll simply execute the query and return an array
             // of the database result set. Each element in the array will be a single
             // node from the database, and will either be an array or objects.
-            $statement = $me->getCypherQuery($query, $bindings);
+            $statement = $me->getCypherQuery($query, $bindings, true);
 
             return $statement->getResultSet();
         });
@@ -224,9 +248,9 @@ class Connection extends IlluminateConnection {
      * @param  string  $query
      * @param  array  $bindings
      */
-    public function getCypherQuery($query, array $bindings)
+    public function getCypherQuery($query, array $bindings, $useRead = false)
     {
-        return new CypherQuery($this->getClient(), $query, $this->prepareBindings($bindings));
+        return new CypherQuery($this->getClient($useRead), $query, $this->prepareBindings($bindings));
     }
 
     /**
@@ -355,7 +379,7 @@ class Connection extends IlluminateConnection {
 
         if ($this->transactions == 1)
         {
-            $this->transaction = $this->neo->beginTransaction();
+            $this->transaction = $this->getClient(false)->beginTransaction();
         }
 
         $this->fireConnectionEvent('beganTransaction');
