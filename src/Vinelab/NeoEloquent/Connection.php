@@ -183,16 +183,16 @@ class Connection extends IlluminateConnection {
      * @param  array   $bindings
      * @return array
      */
-    public function select($query, $bindings = array())
+    public function select($query, $bindings = array(), $useRead = true)
     {
-        return $this->run($query, $bindings, function(self $me, $query, array $bindings)
+        return $this->run($query, $bindings, function(self $me, $query, array $bindings) use ($useRead)
         {
             if ($me->pretending()) return array();
 
             // For select statements, we'll simply execute the query and return an array
             // of the database result set. Each element in the array will be a single
             // node from the database, and will either be an array or objects.
-            $statement = $me->getCypherQuery($query, $bindings, true);
+            $statement = $me->getCypherQuery($query, $bindings, $useRead);
 
             return $statement->getResultSet();
         });
