@@ -47,7 +47,8 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
      */
     public function getRan()
     {
-        return $this->model->all()->lists('migration');
+
+        return $this->model->all()->lists('migration')->toArray();
     }
 
     /**
