@@ -60,7 +60,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
      * @param  \Illuminate\Database\Eloquent\Model  $model
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Relation
      */
-    public function associate(Model $model, $attributes = array())
+    public function associate($model, $attributes = array())
     {
         /**
          * For associated models we will need to create a unique relationship
