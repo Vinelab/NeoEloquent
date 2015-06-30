@@ -288,7 +288,7 @@ class Builder extends IlluminateBuilder {
     }
 
     /**
-     * Get the properties (attribtues in Eloquent terms)
+     * Get the properties (attributes in Eloquent terms)
      * out of a result row.
      *
      * @param  array $columns The columns retrieved by the result
@@ -772,7 +772,7 @@ class Builder extends IlluminateBuilder {
             {
                 // If this is a Model then the $exists property will indicate what we need
                 // so we'll add its id to be attached.
-                if ($value instanceof Model and $value->exists === true)
+                if ($value instanceof Model && $value->exists === true)
                 {
                     $attach[] = $value->getKey();
                 }
