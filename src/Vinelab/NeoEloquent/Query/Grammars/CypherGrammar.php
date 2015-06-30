@@ -457,7 +457,9 @@ class CypherGrammar extends Grammar {
 
         $where = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
-        return "$match $where DELETE " . $query->modelAsNode();
+       
+        return "$match $where OPTIONAL $match-[r]-()  $where DELETE  " . $query->modelAsNode().",r";
+
     }
 
     public function compileWith(Builder $query, $with)
