@@ -29,12 +29,6 @@ class HasManyRelationTest extends TestCase {
     {
         M::close();
 
-        $authors = Author::all();
-        $authors->each(function($a) { $a->delete(); });
-
-        $books = Book::all();
-        $books->each(function($b) { $b->delete(); });
-
         parent::tearDown();
     }
 

@@ -624,7 +624,7 @@ abstract class Model extends IlluminateModel {
         $dirty = parent::getDirty();
 
         // We need to remove the primary key from the dirty attributes since primary keys
-        // never change and when updating it shouldn't be part of the attribtues.
+        // never change and when updating it shouldn't be part of the attributes.
         if (isset($dirty[$this->primaryKey])) unset($dirty[$this->primaryKey]);
 
         return $dirty;
@@ -686,7 +686,7 @@ abstract class Model extends IlluminateModel {
         // clause to only update this model. Otherwise, we'll return false.
         if($this->exists)
         {
-            $saved = $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
+            $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
             $this->fireModelEvent('updated', false);
         } else
         {

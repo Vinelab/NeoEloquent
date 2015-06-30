@@ -684,6 +684,19 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     /**
+     * Execute the query and get the first result.
+     *
+     * @param  array   $columns
+     * @return mixed|static
+     */
+    public function first($columns = array('*'))
+    {
+        $results = $this->take(1)->get($columns)->current();
+
+        return (isset($results[0]) && count($results[0]) > 0) ? $results[0]->getProperties() : null;
+    }
+
+    /**
      * Execute an aggregate function on the database.
      *
      * @param  string  $function

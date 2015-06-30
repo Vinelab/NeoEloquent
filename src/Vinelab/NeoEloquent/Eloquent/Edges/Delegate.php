@@ -115,7 +115,7 @@ abstract class Delegate {
      */
     public function getRealDirection($direction)
     {
-        if ($direction == 'in' or $direction == 'out')
+        if ($direction == 'in' || $direction == 'out')
         {
             $direction = ucfirst($direction);
 

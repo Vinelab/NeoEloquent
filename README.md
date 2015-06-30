@@ -4,6 +4,8 @@
 
 # NeoEloquent
 
+[![Join the chat at https://gitter.im/Vinelab/NeoEloquent](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Vinelab/NeoEloquent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Neo4j Graph Eloquent Driver for Laravel
 
 ## Quick Reference
@@ -141,6 +143,25 @@ class User extends NeoEloquent {
 Do not worry about the labels formatting, You may specify them as `array('Label1', 'Label2')` or separate them by a column `:` and prepending them with a `:` is optional.
 
 ### Soft Deleting
+
+#### Laravel 5
+
+To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletes`
+instead of `Illuminate\Database\Eloquent\SoftDeletes` and just like Eloquent you'll need the `$dates` in your models as follows:
+
+```php
+use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+
+class User extends NeoEloquent {
+
+    use SoftDeletes;
+
+    protected $dates = ['deleted_at'];
+
+}
+```
+
+#### Laravel 4
 
 To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait`
 instead of `Illuminate\Database\Eloquent\SoftDeletingTrait` and just like Eloquent you'll need the `$dates` in your models as follows:
@@ -375,7 +396,7 @@ $name = $phone->user->name;
 
 ### Polymorphic
 
-The concept behind Polymocrphic relations is purely relational to the bone but when it comes
+The concept behind Polymorphic relations is purely relational to the bone but when it comes
 to graph we are representing it as a [HyperEdge](http://docs.neo4j.org/chunked/stable/cypher-cookbook-hyperedges.html).
 
 Hyper edges involves three models, the **parent** model, **hyper** model and **related** model

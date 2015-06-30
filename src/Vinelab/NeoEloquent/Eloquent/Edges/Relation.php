@@ -199,7 +199,7 @@ abstract class Relation extends Delegate {
          * one of the same type and direction for the $parent node before saving
          * and delete it, only if we are not updating a relationship.
          */
-        if ($this->unique and ! $this->exists())
+        if ($this->unique && ! $this->exists())
         {
             $parent = $this->asNode($this->parent);
             $existing = $parent->getFirstRelationship((array) $this->type, $this->getRealDirection($this->direction));

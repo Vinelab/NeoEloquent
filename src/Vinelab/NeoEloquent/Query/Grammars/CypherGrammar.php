@@ -457,7 +457,9 @@ class CypherGrammar extends Grammar {
 
         $where = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
-        return "$match $where DELETE " . $query->modelAsNode();
+       
+        return "$match $where OPTIONAL $match-[r]-()  $where DELETE  " . $query->modelAsNode().",r";
+
     }
 
     public function compileWith(Builder $query, $with)
@@ -492,6 +494,12 @@ class CypherGrammar extends Grammar {
          * We are working on getting a Cypher like this:
          * CREATE (:Wiz {fiz: 'foo', biz: 'boo'}). (:Wiz {fiz: 'morefoo', biz: 'moreboo'})
          */
+
+        if ( ! is_array($query->from))
+        {
+            $query->from = array($query->from);
+        }
+
         $label = $this->prepareLabels($query->from);
 
         if ( ! is_array(reset($values)))

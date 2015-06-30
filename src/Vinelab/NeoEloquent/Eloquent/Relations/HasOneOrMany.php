@@ -206,7 +206,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      * @param  arra   $properties The relationship properties
      * @return array
      */
-    public function saveMany(array $models, array $properties = array())
+    public function saveMany($models, array $properties = array())
     {
         // We will collect the edges returned by save() in an Eloquent Database Collection
         // and return them when done.
@@ -349,7 +349,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      */
     public function detach($id = array(), $touch = true)
     {
-        if ( ! $id instanceof Model and ! $id instanceof Collection)
+        if ( ! $id instanceof Model && ! $id instanceof Collection)
         {
             $id = $this->modelsFromIds($id);
         } elseif ( ! is_array($id))
