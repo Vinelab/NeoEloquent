@@ -164,7 +164,7 @@ class EloquentBuilderTest extends TestCase {
         $builder->getModel()->shouldReceive('newFromBuilder')->with(array('name' => 'bar'))->andReturn(new EloquentBuilderTestListsStub(array('name' => 'bar')));
         $builder->getModel()->shouldReceive('newFromBuilder')->with(array('name' => 'baz'))->andReturn(new EloquentBuilderTestListsStub(array('name' => 'baz')));
 
-        $this->assertEquals(array('foo_bar', 'foo_baz'), $builder->lists('name'));
+        $this->assertEquals(array('foo_bar', 'foo_baz'), $builder->lists('name')->toArray());
     }
 
     public function testListsWithoutModelGetterJustReturnTheAttributesFoundInDatabase()
@@ -174,7 +174,7 @@ class EloquentBuilderTest extends TestCase {
         $builder->setModel($this->getMockModel());
         $builder->getModel()->shouldReceive('hasGetMutator')->with('name')->andReturn(false);
 
-        $this->assertEquals(array('bar', 'baz'), $builder->lists('name'));
+        $this->assertEquals(array('bar', 'baz'), $builder->lists('name')->toArray());
     }
 
     public function testGetModelsProperlyHydratesModels()
