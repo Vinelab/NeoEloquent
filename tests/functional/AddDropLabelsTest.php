@@ -44,15 +44,6 @@ class AddDropLabelsTest extends TestCase {
     {
         M::close();
 
-        // Mama said, always clean up before you go. =D
-        $w = Labelwiz::all();
-        $w->each(function($me){ $me->delete(); });
-
-        $w = Foo::all();
-        $w->each(function($me){ $me->delete(); });
-
-        $w = Bar::all();
-        $w->each(function($me){ $me->delete(); });
         parent::tearDown();
     }
 
