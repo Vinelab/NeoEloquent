@@ -192,7 +192,22 @@ class Grammar extends IlluminateGrammar {
         // @see https://github.com/Vinelab/NeoEloquent/issues/7
         if ( ! is_null($relation)) $labels = 'with_'. $relation .'_'. $labels;
 
-        return mb_strtolower($labels);
+        // patch to fix bug 49.  this downcases only first letter of label which is
+        // compatible with how labels are recased in the rest of the library
+        if (is_array($labels)) {
+            foreach ($labels as $label) {
+                $firstChar = substr($label, 0, 1);
+                $suffix = substr($label, 1, strlen($label) - 1);
+                $label = mb_strtolower($firstChar) . $suffix;
+            }
+        } else {
+            $firstChar = substr($labels, 0, 1);
+            $suffix = substr($labels, 1, strlen($labels) - 1);
+            $labels = mb_strtolower($firstChar) . $suffix;
+        }
+        // the following line is what used to be returned that caused bug 49
+//        return mb_strtolower($labels);
+        return $labels;
     }
 
     /**
