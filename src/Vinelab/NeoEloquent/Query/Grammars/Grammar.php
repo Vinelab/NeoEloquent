@@ -171,10 +171,11 @@ class Grammar extends IlluminateGrammar {
     /**
      * Get a model's name as a Node placeholder
      *
-     * i.e. in "MATCH (user:`User`)"... "user" is what this method returns
+     * Downcases first letter in labels - i.e. in "MATCH (user:`User`)"... "user"
+     * if $relation != null then 'with_' is appended to labels
      *
      * @param  string|array $labels The labels we're choosing from
-     * @param  boolean $related Tells whether this is a related node so that we append a 'with_' to label.
+     * @param  boolean $relation Tells whether this is a related node so that we append a 'with_' to label.
      * @return string
      */
     public function modelAsNode($labels = null, $relation = null)
@@ -192,7 +193,21 @@ class Grammar extends IlluminateGrammar {
         // @see https://github.com/Vinelab/NeoEloquent/issues/7
         if ( ! is_null($relation)) $labels = 'with_'. $relation .'_'. $labels;
 
-        return mb_strtolower($labels);
+        // patch to fix bug 49.  this downcases only first letter of label which is
+        // compatible with how labels are recased in the rest of the library
+        // @see https://github.com/Vinelab/NeoEloquent/issues/49
+        if (is_array($labels)) {
+            foreach ($labels as $label) {
+                $firstChar = substr($label, 0, 1);
+                $suffix = substr($label, 1, strlen($label) - 1);
+                $label = mb_strtolower($firstChar) . $suffix;
+            }
+        } else {
+            $firstChar = substr($labels, 0, 1);
+            $suffix = substr($labels, 1, strlen($labels) - 1);
+            $labels = mb_strtolower($firstChar) . $suffix;
+        }
+        return $labels;
     }
 
     /**
