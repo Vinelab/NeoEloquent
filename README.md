@@ -27,10 +27,22 @@ Add the package to your `composer.json` and run `composer update`.
 
 ### Laravel 5
 
+#### 5.1
+
 ```json
 {
     "require": {
         "vinelab/neoeloquent": "1.2.*"
+    }
+}
+```
+
+#### 5.0
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "1.2.5"
     }
 }
 ```
