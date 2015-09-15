@@ -352,7 +352,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
         if ( ! $id instanceof Model && ! $id instanceof Collection)
         {
             $id = $this->modelsFromIds($id);
-        } elseif ( ! is_array($id))
+        } elseif ( ! is_array($id) && !$id instanceof Collection)
         {
             $id = [$id];
         }
