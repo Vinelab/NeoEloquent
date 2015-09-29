@@ -171,6 +171,7 @@ abstract class Delegate {
      * Start a batch operation with the database.
      *
      * @return \Everyman\Neo4j\Batch
+     * @deprecated No Batches support in NeoClient at 1.3 release
      */
     public function prepareBatch()
     {
@@ -210,20 +211,11 @@ abstract class Delegate {
      */
     public function getRealDirection($direction)
     {
-        if ($direction === 'in' || $direction === 'out')
-        {
-            $direction = ucfirst($direction);
-        } else if ($direction === 'any')
-        {
-            $direction = 'All';
-        } else
-        {
-            throw new UnknownDirectionException($direction);
+        if (in_array($direction, ['in', 'out'])) {
+            $direction = strtoupper($direction);
         }
 
-        $direction = "Direction". $direction;
-
-        return constant("Everyman\Neo4j\Relationship::". $direction);
+        return $direction;
     }
 
     /**
