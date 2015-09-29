@@ -157,7 +157,7 @@ abstract class Relation extends Delegate {
                 $this->start = $this->asNode($this->related);
                 $this->end   = $this->asNode($this->parent);
                 // Setup relationship
-                $this->relation = $this->makeRelationship($this->type, $this->relation, $this->parent, $this->attributes);
+                $this->relation = $this->makeRelationship($this->type, $this->related, $this->parent, $this->attributes);
                 break;
 
             case 'out':
@@ -246,8 +246,18 @@ abstract class Relation extends Delegate {
         {
             $grammar = $this->query->getQuery()->getGrammar();
 
-            $startModel = $this->query->newModelFromNode($this->relation->getStartNode(), $this->parent);
-            $endModel = $this->query->newModelFromNode($this->relation->getEndNode(), $this->related);
+            // based on the direction, the matching between the parent model and the relation's start node
+            // are the inverse, same goes for the end node and the related model.
+            $startNode = $this->relation->getStartNode();
+            $endNode = $this->relation->getEndNode();
+            // this case applies only when it's an inbound relationship.
+            if ($this->direction === 'in') {
+                $startNode = $this->relation->getEndNode();
+                $endNode = $this->relation->getStartNode();
+            }
+
+            $startModel = $this->query->newModelFromNode($startNode, $this->parent);
+            $endModel = $this->query->newModelFromNode($endNode, $this->related);
 
             // we need to delete any relationship b/w the start and end models
             // so we only need the label out of the end model and not the ID.
