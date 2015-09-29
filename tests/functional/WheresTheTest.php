@@ -73,7 +73,7 @@ class WheresTheTest extends TestCase {
     {
         $u = User::where('id', $this->ab->id)->first();
 
-        $this->assertEquals($this->ab, $u);
+        $this->assertEquals($this->ab->toArray(), $u->toArray());
     }
 
     public function testWhereIdSelectingProperties()
@@ -89,27 +89,27 @@ class WheresTheTest extends TestCase {
     {
         $u = User::where('id', '=', $this->cd->id)->first();
 
-        $this->assertEquals($this->cd, $u);
+        $this->assertEquals($this->cd->toArray(), $u->toArray());
     }
 
     public function testWherePropertyWithoutOperator()
     {
         $u = User::where('alias', 'ab')->first();
 
-        $this->assertEquals($this->ab, $u);
+        $this->assertEquals($this->ab->toArray(), $u->toArray());
     }
 
     public function testWherePropertyEqualsOperator()
     {
         $u = User::where('alias', '=', 'ab')->first();
 
-        $this->assertEquals($this->ab, $u);
+        $this->assertEquals($this->ab->toArray(), $u->toArray());
     }
 
     public function testWhereGreaterThanOperator()
     {
         $u = User::where('calls', '>', 10)->first();
-        $this->assertEquals($this->cd, $u);
+        $this->assertEquals($this->cd->toArray(), $u->toArray());
 
         $others = User::where('calls', '>', 10)->get();
         $this->assertCount(4, $others);
@@ -119,13 +119,13 @@ class WheresTheTest extends TestCase {
                                                             $this->ef,
                                                             $this->gh,
                                                             $this->ij));
-        $this->assertEquals($others, $brothers);
+        $this->assertEquals($others->toArray(), $brothers->toArray());
 
         $lastTwo = User::where('calls', '>=', 40)->get();
         $this->assertCount(2, $lastTwo);
 
         $mothers = new \Illuminate\Database\Eloquent\Collection(array($this->gh, $this->ij));
-        $this->assertEquals($lastTwo, $mothers);
+        $this->assertEquals($lastTwo->toArray(), $mothers->toArray());
 
         $none = User::where('calls', '>', 9000)->get();
         $this->assertCount(0, $none);
@@ -137,7 +137,7 @@ class WheresTheTest extends TestCase {
         $this->assertCount(0, $u);
 
         $ab = User::where('calls', '<', 20)->first();
-        $this->assertEquals($this->ab, $ab);
+        $this->assertEquals($this->ab->toArray(), $ab->toArray());
 
         $three = User::where('calls', '<=', 30)->get();
         $this->assertCount(3, $three);
@@ -145,7 +145,7 @@ class WheresTheTest extends TestCase {
         $cocoa = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
                                                             $this->cd,
                                                             $this->ef));
-        $this->assertEquals($cocoa, $three);
+        $this->assertEquals($cocoa->toArray(), $three->toArray());
 
         $below = User::where('calls', '<', -100)->get();
         $this->assertCount(0, $below);
@@ -165,7 +165,7 @@ class WheresTheTest extends TestCase {
                                                             $this->ij));
 
         $this->assertCount(4, $notab);
-        $this->assertEquals($notab, $dudes);
+        $this->assertEquals($notab->toArray(), $dudes->toArray());
     }
 
     public function testWhereIn()
@@ -178,7 +178,7 @@ class WheresTheTest extends TestCase {
                                                             $this->gh,
                                                             $this->ij));
 
-        $this->assertEquals($alpha, $crocodile);
+        $this->assertEquals($alpha->toArray(), $crocodile->toArray());
     }
 
     public function testWhereNotNull()
@@ -191,7 +191,7 @@ class WheresTheTest extends TestCase {
                                                             $this->gh,
                                                             $this->ij));
 
-        $this->assertEquals($alpha, $crocodile);
+        $this->assertEquals($alpha->toArray(), $crocodile->toArray());
     }
 
     public function testWhereNull()
@@ -202,17 +202,29 @@ class WheresTheTest extends TestCase {
 
     public function testWhereNotIn()
     {
+        /**
+         * There is no WHERE NOT IN [ids] in Neo4j, it should be something like this:
+         *
+         * MATCH (actor:Actor {name:"Tom Hanks"} )-[:ACTED_IN]->(movies)<-[:ACTED_IN]-(coactor)
+         * WITH collect(distinct coactor) as coactors
+         * MATCH (actor:Actor)
+         * WHERE actor NOT IN coactors
+         * RETURN actor
+         */
         $this->markTestIncomplete();
 
         $u = User::whereNotIn('alias', ['ab', 'cd', 'eg'])->get();
         $still = new \Illuminate\Database\Eloquent\Collection(array($this->gh, $this->ij));
 
         $this->assertCount(2, $u);
-        $this->assertEquals($buddies, $still);
+        $this->assertEquals($buddies->toArray(), $still->toArray());
     }
 
     public function testWhereBetween()
     {
+        /**
+         * There is no WHERE BETWEEN
+         */
         $this->markTestIncomplete();
 
         $u = User::whereBetween('id', [$this->ab->id, $this->ij->id])->get();
@@ -223,7 +235,7 @@ class WheresTheTest extends TestCase {
                                                             $this->gh,
                                                             $this->ij));
         $this->assertCount(5, $u);
-        $this->assertEquals($buddies, $mwahaha);
+        $this->assertEquals($buddies->toArray(), $mwahaha->toArray());
     }
 
     public function testOrWhere()
@@ -242,7 +254,7 @@ class WheresTheTest extends TestCase {
                                                             $this->gh,
                                                             $this->ij));
 
-        $this->assertEquals($buddies, $bigBrothers);
+        $this->assertEquals($buddies->toArray(), $bigBrothers->toArray());
     }
 
     public function testOrWhereIn()
@@ -255,7 +267,7 @@ class WheresTheTest extends TestCase {
                                                             $this->ef,
                                                             $this->gh,
                                                             $this->ij));
-        $this->assertEquals($all, $padrougas);
+        $this->assertEquals($all->toArray(), $padrougas->toArray());
     }
 
     public function testWhereNotFound()
@@ -289,7 +301,7 @@ class WheresTheTest extends TestCase {
     {
         $ab = User::where('alias', 'IN', ['ab'])->first();
 
-        $this->assertEquals($this->ab, $ab);
+        $this->assertEquals($this->ab->toArray(), $ab->toArray());
 
         $users = User::where('alias', 'IN', ['cd', 'ef'])->get();
 
