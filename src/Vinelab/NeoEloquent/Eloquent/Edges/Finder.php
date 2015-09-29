@@ -36,7 +36,7 @@ class Finder extends Delegate {
         $relation = $this->firstRelation($parentModel, $relatedModel, $type, $direction);
 
         // Let's stop here if there is no relationship between them.
-        if (is_null($relation)) return null;
+        if (!$relation) return null;
 
         // Now we can return the determined edge out of the relation and direction.
         return $this->edgeFromRelationWithDirection($relation, $parentModel, $relatedModel, $direction);
