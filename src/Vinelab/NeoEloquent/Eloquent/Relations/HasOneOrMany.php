@@ -349,29 +349,28 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      */
     public function detach($id = array(), $touch = true)
     {
-        if ( ! $id instanceof Model and ! $id instanceof Collection)
-        {
+        if ( ! $id instanceof Model and ! $id instanceof Collection) {
             $id = $this->modelsFromIds($id);
-        } elseif ( ! is_array($id))
-        {
+        } elseif ( ! is_array($id)) {
             $id = [$id];
         }
 
+        /**
+         * @todo enhance this by creating a WHERE IN query
+         */
         // Prepare for a batch operation to take place so that we don't
         // overwhelm the database with many delete hits.
-        $this->finder->prepareBatch();
-
-        foreach ($id as $model)
-        {
+        $results = [];
+        foreach ($id as $model) {
             $edge = $this->edge($model);
-            $edge->delete();
+            $results[] = $edge->delete();
         }
 
-        $results = $this->finder->commitBatch();
+        if ($touch) {
+            $this->touchIfTouching();
+        }
 
-        if ($touch) $this->touchIfTouching();
-
-        return $results;
+        return !in_array(false, $results);
     }
 
     /**
