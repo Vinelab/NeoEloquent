@@ -278,7 +278,7 @@ class Builder extends IlluminateBuilder {
         return $mutations;
     }
 
-    protected function mutateMorphToOrigin($result, $attributes)
+    protected function mutateMorphToOrigin($result, $attributesByLabel)
     {
         $mutations = [];
 
@@ -290,12 +290,23 @@ class Builder extends IlluminateBuilder {
             // value being the model that we should mutate to as set earlier by a HyperEdge.
             // NOTE: 'r' is statically set in CypherGrammer to represent the relationship.
             // Now we have an \Everyman\Neo4j\Relationship instance that has our morph class name.
-            $relationship = $result['r'];
+            $relationship = current($result->getRelationships());
 
             // Get the morph class name.
             $class = $relationship->getProperty($mutationModelProperty);
+            // we need the model attributes though we might receive a nested
+            // array that includes them on level 2 so we check
+            // whether what we have is the array of attrs
+            if (!Helpers::isAssocArray($attributesByLabel[$label])) {
+                $attributes = current($attributesByLabel[$label]);
+                if ($attributes instanceof Node) {
+                    $attributes = $this->getNodeAttributes($attributes);
+                }
+            } else {
+                $attributes = $attributesByLabel[$label];
+            }
             // Create a new instance of it from builder.
-            $model = (new $class)->newFromBuilder($attributes[$label]);
+            $model = (new $class)->newFromBuilder($attributes);
             // And that my friend, is our mutations model =)
             $mutations[] = $model;
         }
@@ -791,7 +802,12 @@ class Builder extends IlluminateBuilder {
             // In the case of a model Id or an associative array or a Model instance it means that
             // this is probably a One-To-One relationship or the dev decided not to add
             // multiple records as relations so we'll wrap it up in an array.
-            if ( ! is_array($values) || Helpers::isAssocArray($values) || $values instanceof Model) $values = [$values];
+            if (
+                (!is_array($values) || Helpers::isAssocArray($values) || $values instanceof Model)
+                && !($values instanceof Collection)
+            ) {
+                $values = [$values];
+            }
 
             $label     = $relationship->getRelated()->getTable();
             $direction = $relationship->getEdgeDirection();
