@@ -57,29 +57,40 @@ abstract class Delegate {
         return new Finder($this->query);
     }
 
-    protected function getRelationshipAttributes($startModel, $endModel, array $properties = [])
-    {
-        return [
-            'label' => $this->type,
-            'direction'  => $this->direction,
+    protected function getRelationshipAttributes(
+        $startModel,
+        $endModel = null,
+        array $properties = [],
+        $type = null,
+        $direction = null
+    ) {
+        $attributes = [
+            'label' => isset($this->type) ? $this->type: $type,
+            'direction'  => isset($this->direction) ? $this->direction : $direction,
             'properties' => $properties,
             'start' => [
                 'id' => [
                     'key' => $startModel->getKeyName(),
                     'value' => $startModel->getKey(),
                 ],
-                'label' => $this->start->getLabels(),
-                'properties' => $this->start->getProperties(),
+                'label' => $startModel->getDefaultNodeLabel(),
+                'properties' => $this->getModelProperties($startModel),
             ],
-            'end' => [
+        ];
+
+        if ($endModel) {
+            $attributes['end'] = [
                 'id' => [
                     'key' => $endModel->getKeyName(),
                     'value' => $endModel->getKey(),
                 ],
-                'label' => $this->end->getLabels(),
-                'properties' => $this->end->getProperties(),
-            ],
-        ];
+                'label' => $endModel->getDefaultNodeLabel(),
+                'properties' => $this->getModelProperties($endModel),
+            ];
+        }
+
+        return $attributes;
+    }
     }
 
     /**
