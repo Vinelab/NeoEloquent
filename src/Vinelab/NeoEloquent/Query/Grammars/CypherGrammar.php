@@ -208,7 +208,7 @@ class CypherGrammar extends Grammar {
      */
     public function craftRelation($parentNode, $relationLabel, $relatedNode, $relatedLabels, $direction, $bare = false)
     {
-        switch($direction)
+        switch(strtolower($direction))
         {
             case 'out':
             default:
@@ -219,8 +219,8 @@ class CypherGrammar extends Grammar {
                 $relation = '(%s)<-[%s]-%s';
             break;
 
-            case 'in-out':
-                $relation = '(%s)<-[%s]->%s';
+            default:
+                $relation = '(%s)-[%s]-%s';
             break;
         }
 
@@ -582,10 +582,6 @@ class CypherGrammar extends Grammar {
         $startNode = $this->modelAsNode($attributes['start']['label']);
         $startLabel = $this->prepareLabels($attributes['start']['label']);
 
-        $endKey = $attributes['end']['id']['key'];
-        $endNode = 'rel_'.$this->modelAsNode($attributes['label']);
-        $endLabel = $this->prepareLabels($attributes['end']['label']);
-
         if ($startKey === 'id')
         {
             $startKey = 'id('.$startNode.')';
@@ -595,22 +591,33 @@ class CypherGrammar extends Grammar {
             $startId = '"'.addslashes($attributes['start']['id']['value']).'"';
         }
 
-        if ($attributes['end']['id']['value']) {
-            if ($endKey === 'id') {
-                // when it's 'id' it has to be numeric
-                $endKey = 'id('. $endNode.')';
-                $endId = (int) $attributes['end']['id']['value'];
-            } else {
-                $endKey = $endNode.'.'.$endKey;
-                $endId = '"'.addslashes($attributes['end']['id']['value']).'"';
+        $startCondition = $startKey.'='.$startId;
+
+        $query = "MATCH ($startNode$startLabel)";
+
+         // we account for no-end relationships.
+        if (isset($attributes['end'])) {
+            $endKey = $attributes['end']['id']['key'];
+            $endNode = 'rel_'.$this->modelAsNode($attributes['label']);
+            $endLabel = $this->prepareLabels($attributes['end']['label']);
+
+            if ($attributes['end']['id']['value']) {
+                if ($endKey === 'id') {
+                    // when it's 'id' it has to be numeric
+                    $endKey = 'id('. $endNode.')';
+                    $endId = (int) $attributes['end']['id']['value'];
+                } else {
+                    $endKey = $endNode.'.'.$endKey;
+                    $endId = '"'.addslashes($attributes['end']['id']['value']).'"';
+                }
             }
+
+            $endCondition = (!empty($endId)) ? $endKey.'='.$endId : '';
+
+            $query .= ", ($endNode$endLabel)";
         }
 
-        $startCondition = $startKey.'='.$startId;
-        $endCondition = (!empty($endId)) ? $endKey.'='.$endId : '';
-
-        $query = "MATCH ($startNode$startLabel), ($endNode$endLabel)"
-            . " WHERE $startCondition";
+        $query .= " WHERE $startCondition";
 
         if (!empty($endCondition)) {
             $query .= " AND $endCondition";
@@ -631,11 +638,19 @@ class CypherGrammar extends Grammar {
         $startNode = $this->modelAsNode($attributes['start']['label']);
         $endNode   = 'rel_'.$this->modelAsNode($attributes['label']);
 
+        // support crafting relationships for unknown end nodes,
+        // i.e. fetching the relationships of a certain type
+        // for a given start node.
+        $endLabel = 'r';
+        if (isset($attributes['end'])) {
+            $endLabel = $attributes['end']['label'];
+        }
+
         $query = $this->craftRelation(
             $startNode,
             'r:'.$attributes['label'],
             '('.$endNode.')',
-            $attributes['end']['label'],
+            $endLabel,
             $attributes['direction'],
             true
         );
@@ -675,10 +690,10 @@ class CypherGrammar extends Grammar {
         return $query;
     }
 
-    public function compileGetRelationship(Builder $query, $attributes)
+    public function compileGetRelationship(Builder $builder, $attributes)
     {
-        $match = $this->compileMatchRelationship($query, $attributes);
-        $relation = $this->compileRelationship($query, $attributes);
+        $match = $this->compileMatchRelationship($builder, $attributes);
+        $relation = $this->compileRelationship($builder, $attributes);
         $query = "$match MATCH $relation RETURN r";
 
         return $query;
@@ -862,7 +877,7 @@ class CypherGrammar extends Grammar {
         $match = $this->compileComponents($query, array('from'));
         $match = $match['from'];
 
-        return "$match $where $updateType $labels ";
+        return "$match $where $updateType $labels RETURN ".$query->modelAsNode();
     }
 
 }
