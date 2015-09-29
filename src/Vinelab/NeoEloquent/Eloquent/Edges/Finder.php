@@ -50,10 +50,10 @@ class Finder extends Delegate {
      * @param  string|array $type
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function get(Model $parent, Model $related, $type = [])
+    public function get(Model $parent, Model $related, $type = [], $direction = null)
     {
         // Get the relationships for the parent node of the given type.
-        $relationships = $this->getModelRelationsForType($parent, $type);
+        $relationships = $this->getModelRelationsForType($parent, $type, $direction);
 
         $edges = [];
         // Collect the edges out of the found relationships.
