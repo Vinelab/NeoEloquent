@@ -145,6 +145,7 @@ class User extends Model {
         User::deleted(function($user)
         {
             $user->deleted_event = true;
+            unset($user->id);
             $user->save();
         });
 
@@ -256,6 +257,7 @@ class UserObserver {
     public static function deleted($ob)
     {
         $ob->ob_deleted_event = true;
+        unset($ob->id);
         $ob->save();
     }
 
