@@ -44,15 +44,6 @@ class AddDropLabelsTest extends TestCase {
     {
         M::close();
 
-        // Mama said, always clean up before you go. =D
-        $w = Labelwiz::all();
-        $w->each(function($me){ $me->delete(); });
-
-        $w = Foo::all();
-        $w->each(function($me){ $me->delete(); });
-
-        $w = Bar::all();
-        $w->each(function($me){ $me->delete(); });
         parent::tearDown();
     }
 
@@ -70,15 +61,14 @@ class AddDropLabelsTest extends TestCase {
         //add the label
         $w->addLabels(array('Superuniqelabel1'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w->id);
+        $nLabels = $this->getNodeLabels($w->id);
         $this->assertTrue(in_array('Superuniqelabel1', $nLabels));
 
         //now drop the label
         $w->dropLabels(array('Superuniqelabel1'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w->id);
         $this->assertFalse(in_array('Superuniqelabel1', $nLabels));
     }
 
@@ -96,8 +86,8 @@ class AddDropLabelsTest extends TestCase {
         //add the label
         $w->addLabels(array('Superuniqelabel3', 'Superuniqelabel4', 'a1'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w->id);
 
         $this->assertTrue(in_array('Superuniqelabel3', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel4', $nLabels));
@@ -106,16 +96,16 @@ class AddDropLabelsTest extends TestCase {
         //now drop one of the labels
         $w->dropLabels(array('a1'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w->id);
         $this->assertFalse(in_array('a1', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel3', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel4', $nLabels));
 
         //now drop remaining labels
         $w->dropLabels(array('Superuniqelabel3', 'Superuniqelabel4'));
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w->id);
         $this->assertFalse(in_array('a1', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel3', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel4', $nLabels));
@@ -137,8 +127,8 @@ class AddDropLabelsTest extends TestCase {
         $w->addLabels(array('Superuniqelabel6'));
         $w->addLabels(array('Superuniqelabel7'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w->id);
 
         $this->assertTrue(in_array('Superuniqelabel5', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel6', $nLabels));
@@ -149,8 +139,8 @@ class AddDropLabelsTest extends TestCase {
         $w->dropLabels(array('Superuniqelabel6'));
         $w->dropLabels(array('Superuniqelabel7'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w->id);
 
         $this->assertFalse(in_array('Superuniqelabel5', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel6', $nLabels));
@@ -193,21 +183,21 @@ class AddDropLabelsTest extends TestCase {
         $w2->addLabels(array( 'Superuniqelabel9', 'Superuniqelabel10'));
         $w3->addLabels(array( 'Superuniqelabel9','Superuniqelabel10'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w1->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w1->id);
 
         $this->assertTrue(in_array('Superuniqelabel8', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel9', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel10', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w2->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w2->id);
         $this->assertTrue(in_array('Superuniqelabel8', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel9', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel10', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w3->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w3->id);
         $this->assertTrue(in_array('Superuniqelabel8', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel9', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel10', $nLabels));
@@ -222,20 +212,20 @@ class AddDropLabelsTest extends TestCase {
         $w2->dropLabels(array('Superuniqelabel9', 'Superuniqelabel10'));
         $w3->dropLabels(array('Superuniqelabel9','Superuniqelabel10'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w1->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w1->id);
         $this->assertFalse(in_array('Superuniqelabel8', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel9', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel10', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w2->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w2->id);
         $this->assertFalse(in_array('Superuniqelabel8', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel9', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel10', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($w3->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($w3->id);
         $this->assertFalse(in_array('Superuniqelabel8', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel9', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel10', $nLabels));
@@ -281,21 +271,21 @@ class AddDropLabelsTest extends TestCase {
         $f2->addLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
         $f3->addLabels(array('Superuniqelabel12','Superuniqelabel13'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($f1->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($f1->id);
 
         $this->assertTrue(in_array('Superuniqelabel11', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel12', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel13', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($f2->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($f2->id);
         $this->assertTrue(in_array('Superuniqelabel11', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel12', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel13', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($f3->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($f3->id);
         $this->assertTrue(in_array('Superuniqelabel11', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel12', $nLabels));
         $this->assertTrue(in_array('Superuniqelabel13', $nLabels));
@@ -310,20 +300,20 @@ class AddDropLabelsTest extends TestCase {
         $f2->dropLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
         $f3->dropLabels(array('Superuniqelabel12','Superuniqelabel13'));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($f1->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($f1->id);
         $this->assertFalse(in_array('Superuniqelabel11', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel12', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel13', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($f2->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($f2->id);
         $this->assertFalse(in_array('Superuniqelabel11', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel12', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel13', $nLabels));
 
-        //get the labels using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($f3->id);
+        // get all the node's labels
+        $nLabels = $this->getNodeLabels($f3->id);
         $this->assertFalse(in_array('Superuniqelabel11', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel12', $nLabels));
         $this->assertFalse(in_array('Superuniqelabel13', $nLabels));
@@ -341,7 +331,7 @@ class AddDropLabelsTest extends TestCase {
         $foo->bar->addLabels(['SpecialLabel2', 'SpecialLabel3', 'SpecialLabel4']);
 
         //get the Node using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($foo->bar->id);
+        $nLabels = $this->getNodeLabels($foo->bar->id);
         $this->assertTrue(in_array('SpecialLabel1', $nLabels));
         $this->assertTrue(in_array('SpecialLabel2', $nLabels));
         $this->assertTrue(in_array('SpecialLabel3', $nLabels));
@@ -351,7 +341,7 @@ class AddDropLabelsTest extends TestCase {
         $foo->bar->dropLabels(['SpecialLabel1']);
 
         //get the Node using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($foo->bar->id);
+        $nLabels = $this->getNodeLabels($foo->bar->id);
         $this->assertFalse(in_array('SpecialLabel1', $nLabels));
         $this->assertTrue(in_array('SpecialLabel2', $nLabels));
         $this->assertTrue(in_array('SpecialLabel3', $nLabels));
@@ -361,7 +351,7 @@ class AddDropLabelsTest extends TestCase {
         $foo->bar->dropLabels(['SpecialLabel2']);
 
         //get the Node using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($foo->bar->id);
+        $nLabels = $this->getNodeLabels($foo->bar->id);
         $this->assertFalse(in_array('SpecialLabel1', $nLabels));
         $this->assertFalse(in_array('SpecialLabel2', $nLabels));
         $this->assertTrue(in_array('SpecialLabel3', $nLabels));
@@ -371,14 +361,14 @@ class AddDropLabelsTest extends TestCase {
         $foo->bar->dropLabels(['SpecialLabel3', 'SpecialLabel4']);
 
         //get the Node using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($foo->bar->id);
+        $nLabels = $this->getNodeLabels($foo->bar->id);
         $this->assertFalse(in_array('SpecialLabel1', $nLabels));
         $this->assertFalse(in_array('SpecialLabel2', $nLabels));
         $this->assertFalse(in_array('SpecialLabel3', $nLabels));
         $this->assertFalse(in_array('SpecialLabel4', $nLabels));
     }
 
-    function testDroppingTableLabels()
+    function testDroppingLabels()
     {
         $w1 = new Labelwiz([
             'fiz'  => 'foo6',
@@ -392,40 +382,28 @@ class AddDropLabelsTest extends TestCase {
         //now drop the main label Labelwiz
         $w1->dropLabels(['Labelwiz']);
 
-        //get the Node using Everyman lib
-        $nLabels = $this->getLabelsUsingEveryman($id);
+        $nLabels = $this->getNodeLabels($id);
         $this->assertFalse(in_array('Labelwiz', $nLabels));
 
         //now find by id should NOT work on this id using Labelwiz model
         $this->assertNull(Labelwiz::find($id));
-
-        //remove this node using everyman as its not accessible to the model now
-        //Or the cleanup process could not delete this node
-        $connection = $this->getConnectionWithConfig('neo4j');
-        $client = $connection->getClient();
-        $client->deleteNode($client->getNode($id)) ;
     }
 
     /*
-     * function getLabelsUsingEveryman()
+     * function getNodeLabels()
      * this is used to get node labels of a given node id directly using everyman lib
      *
      */
-    function getLabelsUsingEveryman($nodeId)
+    function getNodeLabels($nodeId)
     {
-        //get the labels using Everyman lib
+        //get the labels using NeoClient
         $connection = $this->getConnectionWithConfig('neo4j');
         $client = $connection->getClient();
 
-        //check labels on w1
-        $node = $client->getNode($nodeId);
+        $result = $client->sendCypherQuery("MATCH (n) WHERE id(n)=$nodeId RETURN n")->getResult();
+        $node = $result->getSingleNode();
         $this->assertNotNull($node); //it should exist
-        $labels = $node->getLabels(); //get labels as array on the Everyman nodes
-        $strLabels = array();
-        foreach($labels as $lbl)
-        {
-            $strLabels[] = $lbl->getName();
-        }
-        return $strLabels;
+        //check labels on w1
+        return $node->getLabels();
 	}
 }
