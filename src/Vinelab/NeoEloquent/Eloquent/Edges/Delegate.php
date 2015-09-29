@@ -1,4 +1,6 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Vinelab\NeoEloquent\Connection;
 use Neoxygen\NeoClient\Formatter\Node;
@@ -8,9 +10,9 @@ use Vinelab\NeoEloquent\Eloquent\Builder;
 use Neoxygen\NeoClient\Formatter\Relationship;
 use Vinelab\NeoEloquent\UnknownDirectionException;
 
-abstract class Delegate {
-
-     /**
+abstract class Delegate
+{
+    /**
      * The Eloquent builder instance.
      *
      * @var \Vinelab\NeoEloquent\Eloquent\Builder
@@ -39,7 +41,7 @@ abstract class Delegate {
      */
     public function __construct(Builder $query)
     {
-        $this->query  = $query;
+        $this->query = $query;
         $model = $query->getModel();
 
         // Setup the database connection and client.
@@ -65,8 +67,8 @@ abstract class Delegate {
         $direction = null
     ) {
         $attributes = [
-            'label' => isset($this->type) ? $this->type: $type,
-            'direction'  => isset($this->direction) ? $this->direction : $direction,
+            'label' => isset($this->type) ? $this->type : $type,
+            'direction' => isset($this->direction) ? $this->direction : $direction,
             'properties' => $properties,
             'start' => [
                 'id' => [
@@ -113,10 +115,11 @@ abstract class Delegate {
     /**
      * Make a new Relationship instance.
      *
-     * @param  string $type
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $startModel
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $endModel
-     * @param  array  $properties
+     * @param string                              $type
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $startModel
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $endModel
+     * @param array                               $properties
+     *
      * @return \Everyman\Neo4j\Relationship
      */
     protected function makeRelationship($type, $startModel, $endModel, $properties = array())
@@ -139,9 +142,10 @@ abstract class Delegate {
     /**
      * Get the direct relation between two models.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $parentModel
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $relatedModel
-     * @param  string $direction
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $parentModel
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $relatedModel
+     * @param string                              $direction
+     *
      * @return \Everyman\Neo4j\Relationship
      */
     public function firstRelation(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
@@ -171,6 +175,7 @@ abstract class Delegate {
      * Start a batch operation with the database.
      *
      * @return \Everyman\Neo4j\Batch
+     *
      * @deprecated No Batches support in NeoClient at 1.3 release
      */
     public function prepareBatch()
@@ -181,18 +186,15 @@ abstract class Delegate {
     /**
      * Commit the started batch operation.
      *
-     * @return boolean
+     * @return bool
      *
-     * @throws  \Vinelab\NeoEloquent\QueryException If no open batch to commit.
+     * @throws \Vinelab\NeoEloquent\QueryException If no open batch to commit.
      */
     public function commitBatch()
     {
         try {
-
             return $this->client->commitBatch();
-
-        } catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             throw new QueryException('Error committing batch operation.', array(), $e);
         }
     }
@@ -200,10 +202,12 @@ abstract class Delegate {
     /**
      * Get the direction value from the Neo4j
      * client according to the direction set on
-     * the inheriting class,
+     * the inheriting class,.
      *
-     * @param  string $direction
+     * @param string $direction
+     *
      * @return string
+     *
      * @deprecated 2.0 No longer using Everyman's Relationship to get the value
      *                   of the direction constant
      *
@@ -221,7 +225,8 @@ abstract class Delegate {
     /**
      * Convert a model to a Node object.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
+     *
      * @return \Neoxygen\NeoClient\Formatter\Node
      */
     public function asNode(Model $model)
@@ -231,8 +236,7 @@ abstract class Delegate {
         $label = $model->getDefaultNodeLabel();
 
         // The id should not be part of the properties since it is treated differently
-        if (isset($properties['id']))
-        {
+        if (isset($properties['id'])) {
             unset($properties['id']);
         }
 
@@ -252,8 +256,7 @@ abstract class Delegate {
     /**
      * Set the database connection.
      *
-     * @param  \Vinelab\NeoEloquent\Connection  $name
-     * @return void
+     * @param \Vinelab\NeoEloquent\Connection $name
      */
     public function setConnection(Connection $connection)
     {
@@ -269,5 +272,4 @@ abstract class Delegate {
     {
         return $this->query->getModel()->getConnectionName();
     }
-
 }

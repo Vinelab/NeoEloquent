@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Console\Migrations;
+<?php
+
+namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Database\Migrations\Migrator;
 use Symfony\Component\Console\Input\InputOption;
 
-class MigrateCommand extends BaseCommand {
-
+class MigrateCommand extends BaseCommand
+{
     use ConfirmableTrait;
 
     /**
@@ -31,9 +33,8 @@ class MigrateCommand extends BaseCommand {
     protected $packagePath;
 
     /**
-     * @param  \Vinelab\NeoEloquent\Migrations\Migrator  $migrator
-     * @param  string  $packagePath
-     * @return void
+     * @param \Vinelab\NeoEloquent\Migrations\Migrator $migrator
+     * @param string                                   $packagePath
      */
     public function __construct(Migrator $migrator, $packagePath)
     {
@@ -48,8 +49,7 @@ class MigrateCommand extends BaseCommand {
      */
     public function fire()
     {
-        if ( ! $this->confirmToProceed())
-        {
+        if (!$this->confirmToProceed()) {
             return;
         }
 
@@ -66,16 +66,14 @@ class MigrateCommand extends BaseCommand {
         // Once the migrator has run we will grab the note output and send it out to
         // the console screen, since the migrator itself functions without having
         // any instances of the OutputInterface contract passed into the class.
-        foreach ($this->migrator->getNotes() as $note)
-        {
+        foreach ($this->migrator->getNotes() as $note) {
             $this->output->writeln($note);
         }
 
         // Finally, if the "seed" option has been given, we will re-run the database
         // seed task to re-populate the database, which is convenient when adding
         // a migration and a seed at the same time, as it is only this command.
-        if ($this->input->getOption('seed'))
-        {
+        if ($this->input->getOption('seed')) {
             $this->call('db:seed', ['--force' => true]);
         }
     }
@@ -101,5 +99,4 @@ class MigrateCommand extends BaseCommand {
             array('seed', null, InputOption::VALUE_NONE, 'Indicates if the seed task should be re-run.'),
         );
     }
-
 }

@@ -1,27 +1,31 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-class HasOne extends HasOneOrMany {
-
+class HasOne extends HasOneOrMany
+{
     /**
      * Initialize the relation on a set of models.
      *
-     * @param  array   $models
-     * @param  string  $relation
+     * @param array  $models
+     * @param string $relation
+     *
      * @return array
      */
     public function initRelation(array $models, $relation)
     {
-        foreach ($models as $model)
-        {
+        foreach ($models as $model) {
             // In the case of fetching nested relations, we will get an array
             // with the first key being the model we need, and the other being
             // the related model so we'll just take the first model out of the array.
-            if (is_array($model)) $model = reset($model);
+            if (is_array($model)) {
+                $model = reset($model);
+            }
 
             $model->setRelation($relation, null);
         }
@@ -31,14 +35,11 @@ class HasOne extends HasOneOrMany {
 
     /**
      * Set the base constraints on the relation query.
-     *
-     * @return void
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
-            /**
+        if (static::$constraints) {
+            /*
              * For has one relationships we need to actually query on the primary key
              * of the parent model matching on the OUTGOING relationship by name.
              *
@@ -79,12 +80,11 @@ class HasOne extends HasOneOrMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
-     * @return void
+     * @param array $models
      */
     public function addEagerConstraints(array $models)
     {
-        /**
+        /*
          * We'll grab the primary key name of the related models since it could be set to
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
@@ -111,13 +111,14 @@ class HasOne extends HasOneOrMany {
     /**
      * Get an instance of the EdgeIn relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
      */
     public function getEdge(EloquentModel $model = null, $attributes = array())
     {
-        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
+        $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
        // Indicate a unique relation since this only involves one other model.
         $unique = true;
@@ -129,7 +130,8 @@ class HasOne extends HasOneOrMany {
      * Get the edge between the parent model and the given model or
      * the related model determined by the relation function name.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
+     * @param \Illuminate\Database\Eloquent\Model $model
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
      */
     public function edge(Model $model = null)
@@ -140,9 +142,10 @@ class HasOne extends HasOneOrMany {
     /**
      * Match the eagerly loaded results to their parents.
      *
-     * @param  array   $models
-     * @param  \Illuminate\Database\Eloquent\Collection  $results
-     * @param  string  $relation
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
      * @return array
      */
     public function match(array $models, Collection $results, $relation)

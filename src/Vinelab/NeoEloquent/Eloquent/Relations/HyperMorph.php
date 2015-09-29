@@ -1,12 +1,14 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-class HyperMorph extends BelongsToMany {
-
+class HyperMorph extends BelongsToMany
+{
     /**
      * The morph Model instance
      * representing the 3rd Node of the relationship.
@@ -34,12 +36,12 @@ class HyperMorph extends BelongsToMany {
      * Create a new HyperMorph relationship.
      *
      * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
-     * @param Vinelab\NeoEloquent\Eloquent\Model   $parent
-     * @param Vinelab\NeoEloquent\Eloquent\Model   $morph
-     * @param string  $type
-     * @param string  $morphType
-     * @param string  $key
-     * @param string  $relation
+     * @param Vinelab\NeoEloquent\Eloquent\Model    $parent
+     * @param Vinelab\NeoEloquent\Eloquent\Model    $morph
+     * @param string                                $type
+     * @param string                                $morphType
+     * @param string                                $key
+     * @param string                                $relation
      */
     public function __construct(Builder $query, Model $parent, $morph, $type, $morphType, $key, $relation)
     {
@@ -49,16 +51,13 @@ class HyperMorph extends BelongsToMany {
         parent::__construct($query, $parent, $type, $key, $relation);
     }
 
-        /**
+    /**
      * Set the base constraints on the relation query.
-     *
-     * @return void
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
-            /**
+        if (static::$constraints) {
+            /*
              * For has one relationships we need to actually query on the primary key
              * of the parent model matching on the OUTGOING relationship by name.
              *
@@ -99,12 +98,11 @@ class HyperMorph extends BelongsToMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
-     * @return void
+     * @param array $models
      */
     public function addEagerConstraints(array $models)
     {
-        /**
+        /*
          * We'll grab the primary key name of the related models since it could be set to
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
@@ -135,9 +133,8 @@ class HyperMorph extends BelongsToMany {
 
     public function getEdge(EloquentModel $model = null, $properties = array())
     {
-        $model = ( ! is_null($model)) ? $model : $this->related;
+        $model = (!is_null($model)) ? $model : $this->related;
 
         return new HyperEdge($this->query, $this->parent, $this->type, $model, $this->morphType, $this->morph, $properties);
     }
-
 }

@@ -1,7 +1,9 @@
-<?php namespace Vinelab\NeoEloquent\Migrations;
+<?php
 
-abstract class Migration {
+namespace Vinelab\NeoEloquent\Migrations;
 
+abstract class Migration
+{
     /**
      * The name of the database connection to use.
      *
@@ -18,5 +20,4 @@ abstract class Migration {
     {
         return $this->connection;
     }
-
 }

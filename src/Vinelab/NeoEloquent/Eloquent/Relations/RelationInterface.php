@@ -1,15 +1,17 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
 
-interface RelationInterface {
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-	/**
+interface RelationInterface
+{
+    /**
      * Get the direction of the edge for this relationship.
      *
      * @return string
      */
-	public function getEdgeDirection();
+    public function getEdgeDirection();
 
-	/**
+    /**
      * Get the relation name.
      *
      * @return string

@@ -1,4 +1,5 @@
 <?php
+
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Foundation\Composer;
@@ -8,7 +9,6 @@ use Vinelab\NeoEloquent\Migrations\MigrationCreator;
 
 class MigrateMakeCommand extends BaseCommand
 {
-
     /**
      * {@inheritDoc}
      */
@@ -37,9 +37,8 @@ class MigrateMakeCommand extends BaseCommand
     protected $composer;
 
     /**
-     * @param  \Vinelab\NeoEloquent\Migrations\MigrationCreator  $creator
-     * @param  string  $packagePath
-     * @return void
+     * @param \Vinelab\NeoEloquent\Migrations\MigrationCreator $creator
+     * @param string                                           $packagePath
      */
     public function __construct(MigrationCreator $creator, Composer $composer, $packagePath)
     {
@@ -64,8 +63,7 @@ class MigrateMakeCommand extends BaseCommand
 
         $modify = $this->input->getOption('create');
 
-        if ( ! $label && is_string($modify))
-        {
+        if (!$label && is_string($modify)) {
             $label = $modify;
         }
 
@@ -80,9 +78,10 @@ class MigrateMakeCommand extends BaseCommand
     /**
      * Write the migration file to disk.
      *
-     * @param  string  $name
-     * @param  string  $label
-     * @param  bool    $create
+     * @param string $name
+     * @param string $label
+     * @param bool   $create
+     *
      * @return string
      */
     protected function writeMigration($name, $label)
@@ -121,5 +120,4 @@ class MigrateMakeCommand extends BaseCommand
             array('label', null, InputOption::VALUE_OPTIONAL, 'The label to migrate.'),
         );
     }
-
 }

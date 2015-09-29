@@ -1,4 +1,6 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
@@ -6,8 +8,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-class BelongsToMany extends HasOneOrMany {
-
+class BelongsToMany extends HasOneOrMany
+{
     /**
      * The relationship name.
      *
@@ -57,9 +59,10 @@ class BelongsToMany extends HasOneOrMany {
     /**
      * Match the eagerly loaded results to their parents.
      *
-     * @param  array   $models
-     * @param  \Illuminate\Database\Eloquent\Collection  $results
-     * @param  string  $relation
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
      * @return array
      */
     public function match(array $models, Collection $results, $relation)
@@ -69,14 +72,11 @@ class BelongsToMany extends HasOneOrMany {
 
     /**
      * Set the base constraints on the relation query.
-     *
-     * @return void
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
-            /**
+        if (static::$constraints) {
+            /*
              * For has one relationships we need to actually query on the primary key
              * of the parent model matching on the OUTGOING relationship by name.
              *
@@ -117,12 +117,11 @@ class BelongsToMany extends HasOneOrMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
-     * @return void
+     * @param array $models
      */
     public function addEagerConstraints(array $models)
     {
-        /**
+        /*
          * We'll grab the primary key name of the related models since it could be set to
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
@@ -150,7 +149,8 @@ class BelongsToMany extends HasOneOrMany {
      * Get the edge between the parent model and the given model or
      * the related model determined by the relation function name.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
+     * @param \Illuminate\Database\Eloquent\Model $model
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
     public function edge(Model $model = null)
@@ -161,15 +161,15 @@ class BelongsToMany extends HasOneOrMany {
     /**
      * Get an instance of the Edge[In|Out] relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
     public function getEdge(EloquentModel $model = null, $attributes = array())
     {
-        $model = ( ! is_null($model)) ? $model : $this->related;
+        $model = (!is_null($model)) ? $model : $this->related;
 
         return new EdgeIn($this->query, $this->parent, $model, $this->type, $attributes);
     }
-
 }

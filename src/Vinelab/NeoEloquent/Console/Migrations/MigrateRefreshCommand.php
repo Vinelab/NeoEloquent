@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Console\Migrations;
+<?php
+
+namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
 use Symfony\Component\Console\Input\InputOption;
 
-class MigrateRefreshCommand extends Command {
-
+class MigrateRefreshCommand extends Command
+{
     use ConfirmableTrait;
 
     /**
@@ -23,25 +25,26 @@ class MigrateRefreshCommand extends Command {
      */
     public function fire()
     {
-        if ( ! $this->confirmToProceed()) return;
+        if (!$this->confirmToProceed()) {
+            return;
+        }
 
         $database = $this->input->getOption('database');
 
         $force = $this->input->getOption('force');
 
         $this->call('migrate:reset', array(
-            '--database' => $database, '--force' => $force
+            '--database' => $database, '--force' => $force,
         ));
 
         // The refresh command is essentially just a brief aggregate of a few other of
         // the migration commands and just provides a convenient wrapper to execute
         // them in succession. We'll also see if we need to re-seed the database.
         $this->call('migrate', array(
-            '--database' => $database, '--force' => $force
+            '--database' => $database, '--force' => $force,
         ));
 
-        if ($this->needsSeeding())
-        {
+        if ($this->needsSeeding()) {
             $this->runSeeder($database);
         }
     }
@@ -59,8 +62,7 @@ class MigrateRefreshCommand extends Command {
     /**
      * Run the database seeder command.
      *
-     * @param  string  $database
-     * @return void
+     * @param string $database
      */
     protected function runSeeder($database)
     {
@@ -84,5 +86,4 @@ class MigrateRefreshCommand extends Command {
             array('seeder', null, InputOption::VALUE_OPTIONAL, 'The class name of the root seeder.'),
         );
     }
-
 }

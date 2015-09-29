@@ -1,4 +1,6 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent;
 
 use Vinelab\NeoEloquent\Helpers;
 use Illuminate\Database\Eloquent\Collection;
@@ -14,19 +16,19 @@ use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 
-abstract class Model extends IlluminateModel {
-
+abstract class Model extends IlluminateModel
+{
     /**
-     * The node label
+     * The node label.
      *
      * @var string|array
      */
     protected $label = null;
 
     /**
-     * Set the node label for this model
+     * Set the node label for this model.
      *
-     * @param  string|array  $labels
+     * @param string|array $labels
      */
     public function setLabel($label)
     {
@@ -48,7 +50,8 @@ abstract class Model extends IlluminateModel {
      * @override
      * Create a new Eloquent query builder for the model.
      *
-     * @param  Vinelab\NeoEloquent\Query\Builder $query
+     * @param Vinelab\NeoEloquent\Query\Builder $query
+     *
      * @return Vinelab\NeoEloquent\Eloquent\Builder|static
      */
     public function newEloquentBuilder($query)
@@ -83,7 +86,7 @@ abstract class Model extends IlluminateModel {
     }
 
     /**
-     * Get the node labels
+     * Get the node labels.
      *
      * @return array
      */
@@ -95,13 +98,14 @@ abstract class Model extends IlluminateModel {
 
         // The label is accepted as an array for a convenience so we need to
         // convert it to a string separated by ':' following Neo4j's labels
-        if (is_array($label) && ! empty($label)) return $label;
+        if (is_array($label) && !empty($label)) {
+            return $label;
+        }
 
         // since this is not an array, it is assumed to be a string
         // we check to see if it follows neo4j's labels naming (User:Fan)
         // and return an array exploded from the ':'
-        if ( ! empty($label))
-        {
+        if (!empty($label)) {
             $label = array_filter(explode(':', $label));
 
             // This trick re-indexes the array
@@ -131,10 +135,11 @@ abstract class Model extends IlluminateModel {
      * @override
      * Define an inverse one-to-one or many relationship.
      *
-     * @param  string  $related
-     * @param  string  $foreignKey
-     * @param  string  $otherKey
-     * @param  string  $relation
+     * @param string $related
+     * @param string $foreignKey
+     * @param string $otherKey
+     * @param string $relation
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function belongsTo($related, $foreignKey = null, $otherKey = null, $relation = null)
@@ -142,8 +147,7 @@ abstract class Model extends IlluminateModel {
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
+        if (is_null($relation)) {
             list(, $caller) = debug_backtrace(false);
 
             $relation = $caller['function'];
@@ -152,12 +156,11 @@ abstract class Model extends IlluminateModel {
         // If no foreign key was supplied, we can use a backtrace to guess the proper
         // foreign key name by using the name of the calling class, which
         // will be uppercased and used as a relationship label
-        if (is_null($foreignKey))
-        {
+        if (is_null($foreignKey)) {
             $foreignKey = strtoupper($caller['class']);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Once we have the foreign key names, we'll just create a new Eloquent query
         // for the related models and returns the relationship instance which will
@@ -173,9 +176,10 @@ abstract class Model extends IlluminateModel {
      * @override
      * Define a one-to-one relationship.
      *
-     * @param  string  $related
-     * @param  string  $foreignKey
-     * @param  string  $localKey
+     * @param string $related
+     * @param string $foreignKey
+     * @param string $localKey
+     *
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function hasOne($related, $foreignKey = null, $otherKey = null, $relation = null)
@@ -183,8 +187,7 @@ abstract class Model extends IlluminateModel {
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
+        if (is_null($relation)) {
             list(, $caller) = debug_backtrace(false);
 
             $relation = $caller['function'];
@@ -193,12 +196,11 @@ abstract class Model extends IlluminateModel {
         // If no foreign key was supplied, we can use a backtrace to guess the proper
         // foreign key name by using the name of the calling class, which
         // will be uppercased and used as a relationship label
-        if (is_null($foreignKey))
-        {
+        if (is_null($foreignKey)) {
             $foreignKey = strtoupper($caller['class']);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Once we have the foreign key names, we'll just create a new Eloquent query
         // for the related models and returns the relationship instance which will
@@ -214,9 +216,10 @@ abstract class Model extends IlluminateModel {
      * @override
      * Define a one-to-many relationship.
      *
-     * @param  string  $related
-     * @param  string  $type
-     * @param  string  $key
+     * @param string $related
+     * @param string $type
+     * @param string $key
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\HasMany
      */
     public function hasMany($related, $type = null, $key = null, $relation = null)
@@ -224,8 +227,7 @@ abstract class Model extends IlluminateModel {
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
+        if (is_null($relation)) {
             list(, $caller) = debug_backtrace(false);
 
             $relation = $caller['function'];
@@ -234,7 +236,7 @@ abstract class Model extends IlluminateModel {
         // the $type should be the UPPERCASE of the relation not the foreign key.
         $type = $type ?: mb_strtoupper($relation);
 
-        $instance = new $related;
+        $instance = new $related();
 
         $key = $key ?: $this->getKeyName();
 
@@ -245,10 +247,11 @@ abstract class Model extends IlluminateModel {
      * @override
      * Define a many-to-many relationship.
      *
-     * @param  string  $related
-     * @param  string  $type
-     * @param  string  $key
-     * @param  string  $relation
+     * @param string $related
+     * @param string $type
+     * @param string $key
+     * @param string $relation
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany
      */
     public function belongsToMany($related, $table = null, $foreignKey = null, $otherKey = null, $relation = null)
@@ -257,14 +260,13 @@ abstract class Model extends IlluminateModel {
         // PHP Strict standards:  Declaration of Vinelab\NeoEloquent\Eloquent\Model::belongsToMany() should be
         //      compatible with Illuminate\Database\Eloquent\Model::belongsToMany()
         // We'll just map them in with the variables we want.
-        $type     = $table;
-        $key      = $foreignKey;
+        $type = $table;
+        $key = $foreignKey;
         $relation = $otherKey;
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
+        if (is_null($relation)) {
             list(, $caller) = debug_backtrace(false);
 
             $relation = $caller['function'];
@@ -276,12 +278,11 @@ abstract class Model extends IlluminateModel {
         // If no relationship type was provided, we can use the previously traced back
         // $relation being the function name that called this method and using it in its
         // all uppercase form.
-        if (is_null($type))
-        {
+        if (is_null($type)) {
             $type = mb_strtoupper($relation);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Now we're ready to create a new query builder for the related model and
         // the relationship instances for the relation. The relations will set
@@ -295,12 +296,13 @@ abstract class Model extends IlluminateModel {
      * @override
      * Create a new HyperMorph relationship.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
-     * @param  string $related
-     * @param  string $type
-     * @param  string $morphType
-     * @param  string $relation
-     * @param  string $key
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
+     * @param string                              $related
+     * @param string                              $type
+     * @param string                              $morphType
+     * @param string                              $relation
+     * @param string                              $key
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\HyperMorph
      */
     public function hyperMorph($model, $related, $type = null, $morphType = null, $relation = null, $key = null)
@@ -308,8 +310,7 @@ abstract class Model extends IlluminateModel {
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
+        if (is_null($relation)) {
             list(, $caller) = debug_backtrace(false);
 
             $relation = $caller['function'];
@@ -321,12 +322,11 @@ abstract class Model extends IlluminateModel {
         // If no relationship type was provided, we can use the previously traced back
         // $relation being the function name that called this method and using it in its
         // all uppercase form.
-        if (is_null($type))
-        {
+        if (is_null($type)) {
             $type = mb_strtoupper($relation);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Now we're ready to create a new query builder for the related model and
         // the relationship instances for the relation. The relations will set
@@ -340,10 +340,11 @@ abstract class Model extends IlluminateModel {
      * @override
      * Define a many-to-many relationship.
      *
-     * @param  string  $related
-     * @param  string  $type
-     * @param  string  $key
-     * @param  string  $relation
+     * @param string $related
+     * @param string $type
+     * @param string $key
+     * @param string $relation
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\MorphMany
      */
     public function morphMany($related, $name, $type = null, $id = null, $localKey = null)
@@ -353,14 +354,13 @@ abstract class Model extends IlluminateModel {
         //          compatible with Illuminate\Database\Eloquent\Model::morphMany()
         // We'll just map them in with the variables we want.
         $relationType = $name;
-        $key          = $type;
-        $relation     = $id;
+        $key = $type;
+        $relation = $id;
 
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
+        if (is_null($relation)) {
             list(, $caller) = debug_backtrace(false);
 
             $relation = $caller['function'];
@@ -372,12 +372,11 @@ abstract class Model extends IlluminateModel {
         // If no relationship type was provided, we can use the previously traced back
         // $relation being the function name that called this method and using it in its
         // all uppercase form.
-        if (is_null($relationType))
-        {
+        if (is_null($relationType)) {
             $relationType = mb_strtoupper($relation);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Now we're ready to create a new query builder for the related model and
         // the relationship instances for the relation. The relations will set
@@ -391,10 +390,11 @@ abstract class Model extends IlluminateModel {
      * @override
      * Create an inverse one-to-one polymorphic relationship with specified model and relation.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related
-     * @param  string $type
-     * @param  string $key
-     * @param  string $relation
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $related
+     * @param string                              $type
+     * @param string                              $key
+     * @param string                              $relation
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne
      */
     public function morphedByOne($related, $type, $key = null, $relation = null)
@@ -402,8 +402,7 @@ abstract class Model extends IlluminateModel {
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
+        if (is_null($relation)) {
             list(, $caller) = debug_backtrace(false);
 
             $relation = $caller['function'];
@@ -415,12 +414,11 @@ abstract class Model extends IlluminateModel {
         // If no relationship type was provided, we can use the previously traced back
         // $relation being the function name that called this method and using it in its
         // all uppercase form.
-        if (is_null($type))
-        {
+        if (is_null($type)) {
             $type = mb_strtoupper($relation);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Now we're ready to create a new query builder for the related model and
         // the relationship instances for the relation. The relations will set
@@ -434,9 +432,10 @@ abstract class Model extends IlluminateModel {
      * @override
      * Define a polymorphic, inverse one-to-one or many relationship.
      *
-     * @param  string  $name
-     * @param  string  $type
-     * @param  string  $id
+     * @param string $name
+     * @param string $type
+     * @param string $id
+     *
      * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
     public function morphTo($name = null, $type = null, $id = null)
@@ -445,19 +444,18 @@ abstract class Model extends IlluminateModel {
         // When the name and the type are specified we'll return a MorphedByOne
         // relationship with the given arguments since we know the kind of Model
         // and relationship type we're looking for.
-        if ($name && $type)
-        {
+        if ($name && $type) {
             // Determine the relation function name out of the back trace
             list(, $caller) = debug_backtrace(false);
             $relation = $caller['function'];
+
             return $this->morphedByOne($name, $type, $id, $relation);
         }
 
         // If no name is provided, we will use the backtrace to get the function name
         // since that is most likely the name of the polymorphic interface. We can
         // use that to get both the class and foreign key that will be utilized.
-        if (is_null($name))
-        {
+        if (is_null($name)) {
             list(, $caller) = debug_backtrace(false);
 
             $name = snake_case($caller['function']);
@@ -468,8 +466,7 @@ abstract class Model extends IlluminateModel {
         // If the type value is null it is probably safe to assume we're eager loading
         // the relationship. When that is the case we will pass in a dummy query as
         // there are multiple types in the morph and we can't use single queries.
-        if (is_null($class = $this->$type))
-        {
+        if (is_null($class = $this->$type)) {
             return new MorphTo(
                 $this->newQuery(), $this, $id, null, $type, $name
             );
@@ -478,9 +475,8 @@ abstract class Model extends IlluminateModel {
         // If we are not eager loading the relationship we will essentially treat this
         // as a belongs-to style relationship since morph-to extends that class and
         // we will pass in the appropriate values so that it behaves as expected.
-        else
-        {
-            $instance = new $class;
+        else {
+            $instance = new $class();
 
             return new MorphTo(
                 with($instance)->newQuery(), $this, $id, $instance->getKeyName(), $type, $name
@@ -503,24 +499,20 @@ abstract class Model extends IlluminateModel {
         $query->addManyMutation($label, $me);
 
         // setup relations
-        foreach ($relations as $relation => $values)
-        {
+        foreach ($relations as $relation => $values) {
             $related = $me->$relation()->getRelated();
             // if the relation holds the attributes directly instead of an array
             // of attributes, we transform it into an array of attributes.
-            if (! is_array($values) || Helpers::isAssocArray($values))
-            {
+            if (!is_array($values) || Helpers::isAssocArray($values)) {
                 $values = [$values];
             }
 
             // create instances with the related attributes so that we fire model
             // events on each of them.
-            foreach ($values as $relatedModel)
-            {
+            foreach ($values as $relatedModel) {
                 // one may pass in either instances or arrays of attributes, when we get
                 // attributes we will dynamically fill a new model instance of the related model.
-                if (is_array($relatedModel))
-                {
+                if (is_array($relatedModel)) {
                     $relatedModel = $related->fill($relatedModel);
                 }
 
@@ -530,13 +522,15 @@ abstract class Model extends IlluminateModel {
         }
 
         // fire 'creating' and 'saving' events on all models.
-        foreach ($models as $model)
-        {
+        foreach ($models as $model) {
             // we will fire model events on actual models, however attached models using IDs will not be considered.
-            if ($model instanceof Model)
-            {
-                if ($model->fireModelEvent('creating') === false) return false;
-                if ($model->fireModelEvent('saving') === false) return false;
+            if ($model instanceof self) {
+                if ($model->fireModelEvent('creating') === false) {
+                    return false;
+                }
+                if ($model->fireModelEvent('saving') === false) {
+                    return false;
+                }
             }
         }
 
@@ -551,8 +545,7 @@ abstract class Model extends IlluminateModel {
         $created->fireModelEvent('created', false);
 
         // set related models as relations on the parent model.
-        foreach ($relations as $method => $values)
-        {
+        foreach ($relations as $method => $values) {
             $relation = $created->$method();
             // is this a one-to-one relation ? If so then we add the model directly,
             // otherwise we create a collection of the loaded models.
@@ -565,8 +558,7 @@ abstract class Model extends IlluminateModel {
 
             // when the relation is 'One' instead of 'Many' we will only return the retrieved instance
             // instead of colletion.
-            if ($relation instanceof OneRelation || $relation instanceof HasOne || $relation instanceof BelongsTo)
-            {
+            if ($relation instanceof OneRelation || $relation instanceof HasOne || $relation instanceof BelongsTo) {
                 $related = $related->first();
             }
 
@@ -578,9 +570,10 @@ abstract class Model extends IlluminateModel {
     /**
      * Get the polymorphic relationship columns.
      *
-     * @param  string  $name
-     * @param  string  $type
-     * @param  string  $id
+     * @param string $name
+     * @param string $type
+     * @param string $id
+     *
      * @return array
      */
     protected function getMorphs($name, $type, $id)
@@ -605,8 +598,6 @@ abstract class Model extends IlluminateModel {
 
     /**
      * Add timestamps to this model.
-     *
-     * @return void
      */
     public function addTimestamps()
     {
@@ -625,7 +616,9 @@ abstract class Model extends IlluminateModel {
 
         // We need to remove the primary key from the dirty attributes since primary keys
         // never change and when updating it shouldn't be part of the attribtues.
-        if (isset($dirty[$this->primaryKey])) unset($dirty[$this->primaryKey]);
+        if (isset($dirty[$this->primaryKey])) {
+            unset($dirty[$this->primaryKey]);
+        }
 
         return $dirty;
     }
@@ -635,7 +628,7 @@ abstract class Model extends IlluminateModel {
      * @param $labels array of strings containing labels to be added
      * @return bull true if success, false if failure
      */
-    function addLabels($labels)
+    public function addLabels($labels)
     {
         return $this->updateLabels($labels, 'add');
     }
@@ -645,7 +638,7 @@ abstract class Model extends IlluminateModel {
      * @param $labels array of strings containing labels to be dropped
      * @return bull true if success, false if failure
      */
-    function dropLabels($labels)
+    public function dropLabels($labels)
     {
         return $this->updateLabels($labels, 'drop');
     }
@@ -656,27 +649,23 @@ abstract class Model extends IlluminateModel {
      * @param $operation string can be 'add' or 'drop'
      * @return bull true if success, false if failure
      */
-    function updateLabels($labels, $operation = 'add')
+    public function updateLabels($labels, $operation = 'add')
     {
         $query = $this->newQueryWithoutScopes();
 
         // If the "saving" event returns false we'll bail out of the save and return
         // false, indicating that the save failed. This gives an opportunities to
         // listeners to cancel save operations if validations fail or whatever.
-        if ($this->fireModelEvent('saving') === false)
-        {
+        if ($this->fireModelEvent('saving') === false) {
             return false;
         }
 
-        if( ! is_array($labels) || count($labels) == 0)
-        {
+        if (!is_array($labels) || count($labels) == 0) {
             return false;
         }
 
-        foreach($labels as $label)
-        {
-            if( ! preg_match( '/^[a-z]([a-z0-9]+)$/i', $label))
-            {
+        foreach ($labels as $label) {
+            if (!preg_match('/^[a-z]([a-z0-9]+)$/i', $label)) {
                 return false;
             }
         }
@@ -684,12 +673,10 @@ abstract class Model extends IlluminateModel {
         // If the model already exists in the database we can just update our record
         // that is already in this database using the current IDs in this "where"
         // clause to only update this model. Otherwise, we'll return false.
-        if($this->exists)
-        {
+        if ($this->exists) {
             $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
             $this->fireModelEvent('updated', false);
-        } else
-        {
+        } else {
             return false;
         }
     }

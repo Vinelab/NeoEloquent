@@ -1,20 +1,19 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-class MorphMany extends BelongsToMany {
-
+class MorphMany extends BelongsToMany
+{
     /**
      * Set the base constraints on the relation query.
-     *
-     * @return void
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
-            /**
+        if (static::$constraints) {
+            /*
              * For has one relationships we need to actually query on the primary key
              * of the parent model matching on the OUTGOING relationship by name.
              *
@@ -55,12 +54,11 @@ class MorphMany extends BelongsToMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
-     * @return void
+     * @param array $models
      */
     public function addEagerConstraints(array $models)
     {
-        /**
+        /*
          * We'll grab the primary key name of the related models since it could be set to
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
@@ -87,13 +85,14 @@ class MorphMany extends BelongsToMany {
     /**
      * Get an instance of the Edge[In|Out] relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
     public function getEdge(EloquentModel $model = null, $attributes = array())
     {
-        $model = ( ! is_null($model)) ? $model : $this->related;
+        $model = (!is_null($model)) ? $model : $this->related;
 
         return new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes);
     }

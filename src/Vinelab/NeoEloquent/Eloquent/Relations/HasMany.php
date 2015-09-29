@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-class HasMany extends HasOneOrMany {
-
+class HasMany extends HasOneOrMany
+{
     /**
      * Get the results of the relationship.
      *
@@ -19,13 +21,14 @@ class HasMany extends HasOneOrMany {
     /**
      * Get an instance of the Edge relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
      */
     public function getEdge(EloquentModel $model = null, $attributes = array())
     {
-        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
+        $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
         return new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes);
     }
@@ -33,12 +36,11 @@ class HasMany extends HasOneOrMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
-     * @return void
+     * @param array $models
      */
     public function addEagerConstraints(array $models)
     {
-        /**
+        /*
          * We'll grab the primary key name of the related models since it could be set to
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
@@ -65,9 +67,10 @@ class HasMany extends HasOneOrMany {
     /**
      * Match the eagerly loaded results to their parents.
      *
-     * @param  array   $models
-     * @param  \Illuminate\Database\Eloquent\Collection  $results
-     * @param  string  $relation
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
      * @return array
      */
     public function match(array $models, Collection $results, $relation)

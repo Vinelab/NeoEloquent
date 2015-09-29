@@ -1,4 +1,6 @@
-<?php namespace Vinelab\NeoEloquent;
+<?php
+
+namespace Vinelab\NeoEloquent;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Migrations\Migrator;
@@ -11,8 +13,8 @@ use Vinelab\NeoEloquent\Migrations\DatabaseMigrationRepository;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateRefreshCommand;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateRollbackCommand;
 
-class MigrationServiceProvider extends ServiceProvider {
-
+class MigrationServiceProvider extends ServiceProvider
+{
     /**
      * {@inheritDoc}
      */
@@ -42,14 +44,11 @@ class MigrationServiceProvider extends ServiceProvider {
 
     /**
      * Register the migration repository service.
-     *
-     * @return void
      */
     protected function registerRepository()
     {
-        $this->app->bindShared('neoeloquent.migration.repository', function($app)
-        {
-            $model = new MigrationModel;
+        $this->app->bindShared('neoeloquent.migration.repository', function ($app) {
+            $model = new MigrationModel();
 
             $label = $app['config']['database.migrations_node'];
 
@@ -67,26 +66,21 @@ class MigrationServiceProvider extends ServiceProvider {
 
     /**
      * Register the migrator service.
-     *
-     * @return void
      */
     protected function registerMigrator()
     {
         // The migrator is responsible for actually running and rollback the migration
         // files in the application. We'll pass in our database connection resolver
         // so the migrator can resolve any of these connections when it needs to.
-        $this->app->bindShared('neoeloquent.migrator', function($app) {
+        $this->app->bindShared('neoeloquent.migrator', function ($app) {
             $repository = $app['neoeloquent.migration.repository'];
 
             return new Migrator($repository, $app['db'], $app['files']);
         });
     }
 
-
     /**
      * Register all of the migration commands.
-     *
-     * @return void
      */
     protected function registerCommands()
     {
@@ -95,14 +89,13 @@ class MigrationServiceProvider extends ServiceProvider {
             'MigrateRollback',
             'MigrateReset',
             'MigrateRefresh',
-            'MigrateMake'
+            'MigrateMake',
         );
 
         // We'll simply spin through the list of commands that are migration related
         // and register each one of them with an application container. They will
         // be resolved in the Artisan start file and registered on the console.
-        foreach ($commands as $command)
-        {
+        foreach ($commands as $command) {
             $this->{'register'.$command.'Command'}();
         }
 
@@ -120,12 +113,10 @@ class MigrationServiceProvider extends ServiceProvider {
 
     /**
      * Register the "migrate" migration command.
-     *
-     * @return void
      */
     protected function registerMigrateCommand()
     {
-        $this->app->bindShared('command.neoeloquent.migrate', function($app) {
+        $this->app->bindShared('command.neoeloquent.migrate', function ($app) {
             $packagePath = $app['path.base'].'/vendor';
 
             return new MigrateCommand($app['neoeloquent.migrator'], $packagePath);
@@ -134,55 +125,44 @@ class MigrationServiceProvider extends ServiceProvider {
 
     /**
      * Register the "rollback" migration command.
-     *
-     * @return void
      */
     protected function registerMigrateRollbackCommand()
     {
-        $this->app->bindShared('command.neoeloquent.migrate.rollback', function($app)
-        {
+        $this->app->bindShared('command.neoeloquent.migrate.rollback', function ($app) {
             return new MigrateRollbackCommand($app['neoeloquent.migrator']);
         });
     }
 
     /**
      * Register the "reset" migration command.
-     *
-     * @return void
      */
     protected function registerMigrateResetCommand()
     {
-        $this->app->bindShared('command.neoeloquent.migrate.reset', function($app)
-        {
+        $this->app->bindShared('command.neoeloquent.migrate.reset', function ($app) {
             return new MigrateResetCommand($app['neoeloquent.migrator']);
         });
     }
 
     /**
      * Register the "refresh" migration command.
-     *
-     * @return void
      */
     protected function registerMigrateRefreshCommand()
     {
-        $this->app->bindShared('command.neoeloquent.migrate.refresh', function($app)
-        {
-            return new MigrateRefreshCommand;
+        $this->app->bindShared('command.neoeloquent.migrate.refresh', function ($app) {
+            return new MigrateRefreshCommand();
         });
     }
 
     /**
      * Register the "install" migration command.
-     *
-     * @return void
      */
     protected function registerMigrateMakeCommand()
     {
-        $this->app->bindShared('migration.neoeloquent.creator', function($app) {
+        $this->app->bindShared('migration.neoeloquent.creator', function ($app) {
             return new MigrationCreator($app['files']);
         });
 
-        $this->app->bindShared('command.neoeloquent.migrate.make', function($app) {
+        $this->app->bindShared('command.neoeloquent.migrate.make', function ($app) {
             // Once we have the migration creator registered, we will create the command
             // and inject the creator. The creator is responsible for the actual file
             // creation of the migrations, and may be extended by these developers.
@@ -212,5 +192,4 @@ class MigrationServiceProvider extends ServiceProvider {
             'command.neoeloquent.migrate.make',
         );
     }
-
 }

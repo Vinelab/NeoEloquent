@@ -1,12 +1,14 @@
-<?php namespace Vinelab\NeoEloquent\Migrations;
+<?php
+
+namespace Vinelab\NeoEloquent\Migrations;
 
 use Illuminate\Database\Migrations\MigrationRepositoryInterface;
 use Illuminate\Database\ConnectionResolverInterface;
 use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
-class DatabaseMigrationRepository implements MigrationRepositoryInterface {
-
+class DatabaseMigrationRepository implements MigrationRepositoryInterface
+{
     /**
      * The database connection resolver instance.
      *
@@ -28,12 +30,10 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
      */
     protected $connection;
 
-
     /**
-     * @param  \Illuminate\Database\ConnectionResolverInterface  $resolver
-     * @param  \Vinelab\NeoEloquent\Schema\Builder  $schema
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
-     * @return void
+     * @param \Illuminate\Database\ConnectionResolverInterface $resolver
+     * @param \Vinelab\NeoEloquent\Schema\Builder              $schema
+     * @param \Vinelab\NeoEloquent\Eloquent\Model              $model
      */
     public function __construct(ConnectionResolverInterface $resolver, SchemaBuilder $schema, Model $model)
     {
@@ -97,7 +97,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
      */
     public function createRepository()
     {
-        return null;
+        return;
     }
 
     /**
@@ -169,7 +169,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     /**
      * Set migration model.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      */
     public function setMigrationModel(Model $model)
     {
@@ -185,5 +185,4 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     {
         return $this->model;
     }
-
 }

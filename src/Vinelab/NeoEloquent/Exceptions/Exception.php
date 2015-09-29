@@ -1,23 +1,26 @@
-<?php namespace Vinelab\NeoEloquent\Exceptions;
+<?php
+
+namespace Vinelab\NeoEloquent\Exceptions;
 
 use RuntimeException;
 
-class NeoEloquentException extends RuntimeException {
-
+class Exception extends RuntimeException
+{
     /**
      * The error messages.
+     *
      * @var array
      */
     protected $messages;
 
     /**
-     * create an instance of this class
+     * create an instance of this class.
+     *
      * @param array $messages
      */
     public function __construct($messages = [])
     {
-        if( ! is_array($messages) )
-        {
+        if (!is_array($messages)) {
             $messages = [$messages];
         }
 
@@ -25,12 +28,12 @@ class NeoEloquentException extends RuntimeException {
     }
 
     /**
-     * return the error message
+     * return the error message.
+     *
      * @return string
      */
     public function messages()
     {
         return $this->messages;
     }
-
 }
