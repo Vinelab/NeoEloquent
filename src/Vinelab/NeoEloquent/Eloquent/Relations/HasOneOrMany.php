@@ -119,7 +119,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      */
     public function edges()
     {
-        return $this->finder->get($this->parent, $this->related, $this->type);
+        return $this->finder->get($this->parent, $this->related, $this->type, $this->edgeDirection);
     }
 
     /**
