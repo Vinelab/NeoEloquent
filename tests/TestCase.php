@@ -27,6 +27,7 @@ class TestCase extends PHPUnit {
         $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
 
         Stub::setConnectionResolver($resolver);
+        $this->flushDb();
     }
 
     public function tearDown()
