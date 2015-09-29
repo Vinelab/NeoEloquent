@@ -91,6 +91,23 @@ abstract class Delegate {
 
         return $attributes;
     }
+
+    /**
+     * Get the model's attributes as query-able properties.
+     *
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
+     *
+     * @return array
+     */
+    protected function getModelProperties(Model $model)
+    {
+        $properties = $model->toArray();
+        // there shouldn't be an 'id' within the attributes.
+        unset($properties['id']);
+        // node primary keys should not be passed in as properties.
+        unset($properties[$model->getKeyName()]);
+
+        return $properties;
     }
 
     /**
