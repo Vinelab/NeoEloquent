@@ -2,7 +2,9 @@
 
 use Mockery as M;
 use Illuminate\Support\Collection;
+use Neoxygen\NeoClient\Formatter\Node;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
@@ -164,7 +166,7 @@ class EloquentBuilderTest extends TestCase {
         $builder->getModel()->shouldReceive('newFromBuilder')->with(array('name' => 'bar'))->andReturn(new EloquentBuilderTestListsStub(array('name' => 'bar')));
         $builder->getModel()->shouldReceive('newFromBuilder')->with(array('name' => 'baz'))->andReturn(new EloquentBuilderTestListsStub(array('name' => 'baz')));
 
-        $this->assertEquals(array('foo_bar', 'foo_baz'), $builder->lists('name'));
+        $this->assertEquals(new Collection(['foo_bar', 'foo_baz']), $builder->lists('name'));
     }
 
     public function testListsWithoutModelGetterJustReturnTheAttributesFoundInDatabase()
@@ -174,7 +176,7 @@ class EloquentBuilderTest extends TestCase {
         $builder->setModel($this->getMockModel());
         $builder->getModel()->shouldReceive('hasGetMutator')->with('name')->andReturn(false);
 
-        $this->assertEquals(array('bar', 'baz'), $builder->lists('name'));
+        $this->assertEquals(new Collection(['bar', 'baz']), $builder->lists('name'));
     }
 
     public function testGetModelsProperlyHydratesModels()
@@ -360,28 +362,26 @@ class EloquentBuilderTest extends TestCase {
 
     public function testFindingById()
     {
-        $resultSet = M::mock('Everyman\Neo4j\Query\ResultSet');
-        $resultSet->shouldReceive('getColumns')->withNoArgs()->andReturn(array('id', 'name', 'age'));
+        $resultSet = M::mock('Neoxygen\NeoClient\Formatter\Result');
+        $resultSet->shouldReceive('getAllByIdentifier')->withNoArgs()->andReturn([new Node('id', [])]);
 
         $this->query->shouldReceive('where')->once()->with('id(n)', '=', 1);
         $this->query->shouldReceive('from')->once()->with('Model')->andReturn(array('Model'));
         $this->query->shouldReceive('take')->once()->with(1)->andReturn($this->query);
         $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet);
 
-        $resultSet->shouldReceive('valid')->once()->andReturn(false);
-
         $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
         $this->model->shouldReceive('getTable')->once()->andReturn('Model');
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
-        $collection = new \Illuminate\Support\Collection(array(M::mock('Everyman\Neo4j\Query\ResultSet')));
+        $collection = new \Illuminate\Support\Collection(array(M::mock('Neoxygen\NeoClient\Formatter\Result')));
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection);
 
         $this->builder->setModel($this->model);
 
         $result = $this->builder->find(1);
 
-        $this->assertInstanceOf('Everyman\Neo4j\Query\ResultSet', $result);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $result);
     }
 
     public function testFindingByIdWithProperties()
@@ -522,6 +522,11 @@ class EloquentBuilderTest extends TestCase {
 
     public function testExtractingPropertiesFromNode()
     {
+        // skipping for this tests a deprecated method,
+        // now using Eloquent\Builder::getNodeAttributes
+        // and such method is not needed anymore
+        $this->markTestIncomplete();
+
         $properties = array(
             'id'         => 911,
             'skin'       => 'white',
@@ -552,6 +557,11 @@ class EloquentBuilderTest extends TestCase {
 
     public function testExtractingPropertiesOfChosenColumns()
     {
+        // skipping for this tests a deprecated method,
+        // now using Eloquent\Builder::getNodeAttributes
+        // and such method is not needed anymore
+        $this->markTestIncomplete();
+
         $properties = array(
             'id'    => 'mothafucka',
             'arms'  => 2,
@@ -605,28 +615,24 @@ class EloquentBuilderTest extends TestCase {
     {
         $c = $this->getConnectionWithConfig('default');
 
-        $rows = array();
+        $result = new Result();
 
-        if (is_array(reset($data)))
-        {
-            foreach ($data as $index => $node)
-            {
-                $rows[] = $this->createRowWithNodeAtIndex($index, $node);
+        if (is_array(reset($data))) {
+            foreach ($data as $index => $attributes) {
+                $node = $this->createNode($attributes);
+                $result->addNode($node);
+                $result->addIdentifierValue($index, [$node]);
             }
 
         } else {
-
-            $rows[] = $this->createRowWithNodeAtIndex(0, $data);
+            $node = $this->createNode($data);
+            $result->addNode($node);
+            $result->addIdentifierValue(0, [$node]);
         }
 
         // the ResultSet $result part
-        $result = array(
-            'data'    => $rows,
-            'columns' => $properties
-        );
 
-        // create the result set
-        return new \Everyman\Neo4j\Query\ResultSet($c->getClient(), $result);
+        return $result;
     }
 
     /**
@@ -634,30 +640,27 @@ class EloquentBuilderTest extends TestCase {
      *
      * @param  integer $index The index of the node in the row
      * @param  array   $data
-     * @return  \Everyman\Neo4j\Query\Row
+     * @return  \Neoxygen\NeoClient\Formatter
      */
-    public function createRowWithNodeAtIndex($index, array $data)
+    public function createNode(array $data)
     {
         // create the result Node containing the properties and their values
-        $node = M::mock('Everyman\Neo4j\Node');
+        $node = M::mock('Neoxygen\NeoClient\Formatter\Node');
 
         // the Node id is never returned with the properties so in case
         // that is one of the data properties we need to remove it
         // and add it to when requested through getId()
         if (isset($data['id']))
         {
-            $node->shouldReceive('getId')->once()->andReturn($data['id']);
+            $node->shouldReceive('getId')->andReturn($data['id']);
 
             unset($data['id']);
         }
 
-        $node->shouldReceive('getProperties')->once()->andReturn($data);
+        $node->shouldReceive('getProperties')->andReturn($data);
 
         // create the result row that should contain the Node
-        $row = M::mock('Everyman\Neo4j\Query\Row');
-        $row->shouldReceive('offsetGet')->andReturn($node);
-
-        return $row;
+        return $node;
     }
 
     public function createRowWithPropertiesAtIndex($index, array $properties)
