@@ -336,6 +336,7 @@ class Builder extends IlluminateBuilder
      * @param array                     $columns
      *
      * @return array
+     * @deprecated 2.0 using getNodeAttributes instead
      */
     public function getProperties(array $resultColumns, Row $row)
     {
