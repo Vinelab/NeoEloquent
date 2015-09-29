@@ -136,7 +136,7 @@ class Builder extends IlluminateQueryBuilder {
 
         $updated = $this->connection->update($cypher, $bindings);
 
-        return ($updated) ? current($updated->getAllByIdentifier()) : 0;
+        return ($updated) ? count(current($updated->getAllByIdentifier())) : 0;
     }
 
     /**
@@ -837,8 +837,8 @@ class Builder extends IlluminateQueryBuilder {
 
         $cypher = $this->grammar->compileUpdateLabels($this, $labels, $operation);
 
-        $updated = $this->connection->update($cypher, $this->getBindings());
+        $result = $this->connection->update($cypher, $this->getBindings());
 
-        return (isset($updated[0]) && isset($updated[0][0])) ? $updated[0][0] : 0;
+        return (bool) $result->getNodesCount();
     }
 }
