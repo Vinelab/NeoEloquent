@@ -15,5 +15,11 @@
             <directory suffix=".php">./tests/Vinelab</directory>
             <directory suffix=".php">./tests/functional</directory>
         </testsuite>
+        <testsuite name="f">
+            <directory suffix=".php">./tests/functional</directory>
+        </testsuite>
+        <testsuite name="u">
+            <directory suffix=".php">./tests/Vinelab</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
