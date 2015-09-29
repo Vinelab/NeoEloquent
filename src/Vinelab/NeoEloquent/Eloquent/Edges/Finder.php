@@ -142,16 +142,21 @@ class Finder extends Delegate {
         return $edge;
     }
 
-    public function getModelRelationsForType(Model $parentModel, $type = array(), $direction = 'any')
+    public function getModelRelationsForType(Model $startModel, $type = null, $direction = null)
     {
-        // Get the Node representation of the parent model so that we can
-        // query its relationships.
-        $parent = $this->asNode($parentModel);
-
         // Determine the direction, the real one!
         $direction = $this->getRealDirection($direction);
 
-        return $parent->getRelationships((array) $type, $direction);
+        $grammar = $this->query->getQuery()->getGrammar();
+
+        $query = $grammar->compileGetRelationship(
+            $this->query->getQuery(),
+            $this->getRelationshipAttributes($startModel, null, [], $type, $direction)
+        );
+
+        $result = $this->connection->statement($query, [], true);
+
+        return $result->getRelationships();
     }
 
     /**
