@@ -1,6 +1,7 @@
 <?php namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Mockery as M;
+use Neoxygen\NeoClient\Formatter\Node;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
@@ -12,10 +13,10 @@ class QueryBuilderTest extends TestCase {
         parent::setUp();
 
         $this->grammar    = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
-        $this->connection = M::mock('Vinelab\NeoEloquent\Connection');
+        $this->connection = M::mock('Vinelab\NeoEloquent\Connection')->makePartial();
 
-        $this->neoClient = M::mock('Everyman\Neo4j\Client');
-        $this->connection->shouldReceive('getClient')->once()->andReturn($this->neoClient);
+        $this->neoClient = M::mock('Neoxygen\NeoClient\Client');
+        $this->connection->shouldReceive('getClient')->andReturn($this->neoClient);
 
         $this->builder = new Builder($this->connection, $this->grammar);
     }
@@ -47,24 +48,27 @@ class QueryBuilderTest extends TestCase {
             'power'  => 'Strong Fart Noises'
         );
 
-        $node=  M::mock('Everyman\Neo4j\Node');
+        $query = [
+            'statement' => 'CREATE (hero:`Hero`) SET hero.length = {length_create}, hero.height = {height_create}, hero.power = {power_create} RETURN hero',
+            'parameters' => [
+                'length_create' => $values['length'],
+                'height_create' => $values['height'],
+                'power_create' => $values['power'],
+            ],
+        ];
 
-        $this->neoClient->shouldReceive('makeNode')->once()->andReturn($node);
-        $this->neoClient->shouldReceive('makeLabel')->once()->andReturn($label);
+        $id = 69;
+        $node = new Node($id, $values);
+        $result = M::mock('Neoxygen\neoClient\Formatter\Result');
+        $result->shouldReceive('getSingleNode')->once()->andReturn($node);
 
-        foreach ($values as $key => $value)
-        {
-            $node->shouldReceive('setProperty')->once()->with($key, $value);
-        }
+        $this->neoClient->shouldReceive('getResult')->once()->andReturn($result);
+        $this->neoClient->shouldReceive('sendCypherQuery')
+            ->once()
+            ->with($query['statement'], $query['parameters'])
+            ->andReturn($this->neoClient);
 
-        // node should save
-        $node->shouldReceive('save')->once();
-        // get the node id
-        $node->shouldReceive('getId')->once()->andReturn(9);
-        // add the labels
-        $node->shouldReceive('addLabels')->once()->with(M::type('array'));
-
-        $this->builder->insertGetId($values);
+        $this->assertEquals($id, $this->builder->insertGetId($values));
     }
 
     public function testTransformingQueryToCypher()
@@ -219,14 +223,14 @@ class QueryBuilderTest extends TestCase {
         $builder = $this->getBuilder();
         $builder->select('foo as bar')->from('User');
 
-        $this->assertEquals('MATCH (user:User) RETURN user.foo as bar', $builder->toSql());
+        $this->assertEquals('MATCH (user:User) RETURN user.foo as bar, user', $builder->toSql());
     }
 
     public function testAddigSelects()
     {
         $builder = $this->getBuilder();
         $builder->select('foo')->addSelect('bar')->addSelect(array('baz', 'boom'))->from('User');
-        $this->assertEquals('MATCH (user:User) RETURN user.foo, user.bar, user.baz, user.boom', $builder->toCypher());
+        $this->assertEquals('MATCH (user:User) RETURN user.foo, user.bar, user.baz, user.boom, user', $builder->toCypher());
     }
 
     public function testBasicWheres()
@@ -244,7 +248,7 @@ class QueryBuilderTest extends TestCase {
         $builder = $this->getBuilder();
         $builder->distinct()->select('foo', 'bar')->from('User');
 
-        $this->assertEquals('MATCH (user:User) RETURN DISTINCT user.foo, user.bar', $builder->toCypher());
+        $this->assertEquals('MATCH (user:User) RETURN DISTINCT user.foo, user.bar, user', $builder->toCypher());
     }
 
     public function testAddBindingWithArrayMergesBindings()

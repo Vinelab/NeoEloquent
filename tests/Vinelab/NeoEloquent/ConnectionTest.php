@@ -19,14 +19,6 @@ class ConnectionTest extends TestCase {
 
     public function tearDown()
     {
-        $query = 'MATCH (n:User) WHERE n.username = {username} DELETE n RETURN count(n)';
-
-        $c = $this->getConnectionWithConfig('default');
-
-        $cypher = $c->getCypherQuery($query, array(array('username' => $this->user['username'])));
-
-        $this->client->sendCypherQuery($cypher['statement'], $cypher['parameters']);
-
         M::close();
 
         parent::tearDown();
@@ -45,7 +37,7 @@ class ConnectionTest extends TestCase {
 
         $client = $c->getClient();
 
-        $this->assertInstanceOf('Everyman\Neo4j\Client', $client);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Client', $client);
     }
 
     public function testGettingConfigParam()
@@ -67,7 +59,7 @@ class ConnectionTest extends TestCase {
     {
         $c = $this->getConnectionWithConfig('neo4j');
 
-        $this->assertInstanceOf('Everyman\Neo4j\Client', $c->getClient());
+        $this->assertInstanceOf('Neoxygen\NeoClient\Client', $c->getClient());
     }
 
     public function testGettingDefaultHost()
@@ -208,9 +200,13 @@ class ConnectionTest extends TestCase {
     {
         $c = $this->getConnectionWithConfig('default');
 
-        $query = $c->getCypherQuery('MATCH (u:`User`) RETURN * LIMIT 10', array());
+        $cypher = 'MATCH (u:`User`) RETURN * LIMIT 10';
+        $query = $c->getCypherQuery($cypher, array());
 
-        $this->assertInstanceOf('Everyman\Neo4j\Cypher\Query', $query);
+        $this->assertInternalType('array', $query);
+        $this->assertArrayHasKey('statement', $query);
+        $this->assertArrayHasKey('parameters', $query);
+        $this->assertEquals($cypher, $query['statement']);
     }
 
     public function testCheckingIfBindingIsABinding()
@@ -234,7 +230,7 @@ class ConnectionTest extends TestCase {
 
         $connection = $c->createConnection();
 
-        $this->assertInstanceOf('Everyman\Neo4j\Client', $connection);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Client', $connection);
     }
 
     public function testSelectWithBindings()
@@ -255,12 +251,12 @@ class ConnectionTest extends TestCase {
 
         $this->assertEquals($log['query'], $query);
         $this->assertEquals($log['bindings'], $bindings);
-        $this->assertInstanceOf('Everyman\Neo4j\Query\ResultSet', $results);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
 
         // This is how we get the first row of the result (first [0])
         // and then we get the Node instance (the 2nd [0])
         // and then ask it to return its properties
-        $selected = $results[0][0]->getProperties();
+        $selected = $results->getSingleNode()->getProperties();
 
         $this->assertEquals($this->user, $selected, 'The fetched User must be the same as the one we just created');
     }
@@ -281,7 +277,7 @@ class ConnectionTest extends TestCase {
         // Get the ID of the created record
         $results = $c->select($query, array(array('username' => $this->user['username'])));
 
-        $node = $results[0][0];
+        $node = $results->getSingleNode();
         $id = $node->getId();
 
         $bindings = array(
@@ -297,9 +293,9 @@ class ConnectionTest extends TestCase {
 
         $this->assertEquals($log[1]['query'], $query);
         $this->assertEquals($log[1]['bindings'], $bindings);
-        $this->assertInstanceOf('Everyman\Neo4j\Query\ResultSet', $results);
+        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
 
-        $selected = $results[0][0]->getProperties();
+        $selected = $results->getSingleNode()->getProperties();
 
         $this->assertEquals($this->user, $selected);
     }
@@ -452,14 +448,17 @@ class ConnectionTest extends TestCase {
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
         $connection->setEventDispatcher($events = m::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.rollingBack', $connection);
-        $connection->rollBack();
+        $connection->rollback();
     }
 
     public function testTransactionMethodRunsSuccessfully()
     {
-        $client = M::mock('Everyman\Neo4j\Client');
-        $client->shouldReceive('beginTransaction')->once()
-            ->andReturn(M::mock('Everyman\Neo4j\Transaction')->makePartial());
+        $client = M::mock('Neoxygen\NeoClient\Client');
+        $client->shouldReceive('createTransaction')->once()
+            ->andReturn($transaction = M::mock('Neoxygen\NeoClient\Transaction\Transaction'));
+
+        $transaction->shouldReceive('commit')
+            ->shouldReceive('rollback')->andReturn('foo');
 
         $connection  = $this->getMockConnection();
         $connection->setClient($client);
@@ -470,9 +469,11 @@ class ConnectionTest extends TestCase {
 
     public function testTransactionMethodRollsbackAndThrows()
     {
-        $neo = M::mock('Everyman\Neo4j\Client');
-        $neo->shouldReceive('beginTransaction')->once()
-            ->andReturn(M::mock('Everyman\Neo4j\Transaction')->makePartial());
+        $neo = M::mock('Neoxygen\NeoClient\Client');
+        $neo->shouldReceive('createTransaction')->once()
+            ->andReturn($transaction = M::mock('Neoxygen\NeoClient\Transaction\Transaction'));
+
+        $transaction->shouldReceive('rollback');
 
         $connection = $this->getMockConnection();
         $connection->setClient($neo);
