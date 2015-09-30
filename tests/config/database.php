@@ -9,11 +9,11 @@ return array(
         'neo4j' => array(
             'driver' => 'neo4j',
             'host' => 'localhost',
-            'port' => 7474
+            'port' => 7474,
         ),
 
         'default' => array(
-            'driver' => 'neo4j'
-        )
-    )
+            'driver' => 'neo4j',
+        ),
+    ),
 );

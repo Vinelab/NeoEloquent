@@ -1,36 +1,36 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\AddDropLabels;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional\AddDropLabels;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
 
-class Labelwiz extends Model {
-
+class Labelwiz extends Model
+{
     protected $label = ':Labelwiz';
 
     protected $fillable = ['fiz', 'biz', 'triz'];
 }
 
-class Bar extends Model {
+class Bar extends Model
+{
     protected $label = ':Bar';
     protected $fillable = ['prop'];
 }
 
-class Foo extends Model {
+class Foo extends Model
+{
     protected $label = ':Foo';
     protected $fillable = ['prop'];
     public function bar()
     {
-    return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\AddDropLabels\Bar', 'OWNS');
+        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\AddDropLabels\Bar', 'OWNS');
     }
 }
 
-
-
-
-class AddDropLabelsTest extends TestCase {
-
+class AddDropLabelsTest extends TestCase
+{
     public function setUp()
     {
         parent::setUp();
@@ -47,14 +47,13 @@ class AddDropLabelsTest extends TestCase {
         parent::tearDown();
     }
 
-
-    function testAddingDroppingSingleLabelOnNewModel()
+    public function testAddingDroppingSingleLabelOnNewModel()
     {
         //create a new model object
         $w = new Labelwiz([
-            'fiz'  => 'foo',
-            'biz'  => 'boo',
-            'triz' => 'troo'
+            'fiz' => 'foo',
+            'biz' => 'boo',
+            'triz' => 'troo',
         ]);
         $this->assertTrue($w->save());
 
@@ -72,14 +71,13 @@ class AddDropLabelsTest extends TestCase {
         $this->assertFalse(in_array('Superuniqelabel1', $nLabels));
     }
 
-
-    function testAddingDroppingLabelsOnNewModel()
+    public function testAddingDroppingLabelsOnNewModel()
     {
         //create a new model object
         $w = new Labelwiz([
-            'fiz'  => 'foo1',
-            'biz'  => 'boo1',
-            'triz' => 'troo1'
+            'fiz' => 'foo1',
+            'biz' => 'boo1',
+            'triz' => 'troo1',
         ]);
         $this->assertTrue($w->save());
 
@@ -111,14 +109,13 @@ class AddDropLabelsTest extends TestCase {
         $this->assertFalse(in_array('Superuniqelabel4', $nLabels));
     }
 
-
-    function testAddDroppLabelsRepeatedlyOnNewModel()
+    public function testAddDroppLabelsRepeatedlyOnNewModel()
     {
         //create a new model object
         $w = new Labelwiz([
-            'fiz'  => 'foo2',
-            'biz'  => 'boo2',
-            'triz' => 'troo2'
+            'fiz' => 'foo2',
+            'biz' => 'boo2',
+            'triz' => 'troo2',
         ]);
         $this->assertTrue($w->save());
 
@@ -147,29 +144,29 @@ class AddDropLabelsTest extends TestCase {
         $this->assertFalse(in_array('Superuniqelabel7', $nLabels));
     }
 
-    function testAddDropLabelsRepeatedlyOnNewModels()
+    public function testAddDropLabelsRepeatedlyOnNewModels()
     {
         //create a new model object
         $w1 = new Labelwiz([
-            'fiz'  => 'foo3',
-            'biz'  => 'boo3',
-            'triz' => 'troo4'
+            'fiz' => 'foo3',
+            'biz' => 'boo3',
+            'triz' => 'troo4',
         ]);
         $this->assertTrue($w1->save());
 
         //create a new model object
         $w2 = new Labelwiz([
-            'fiz'  => 'foo4',
-            'biz'  => 'boo4',
-            'triz' => 'troo4'
+            'fiz' => 'foo4',
+            'biz' => 'boo4',
+            'triz' => 'troo4',
         ]);
         $this->assertTrue($w2->save());
 
         //create a new model object
         $w3 = new Labelwiz([
-            'fiz'  => 'foo5',
-            'biz'  => 'boo5',
-            'triz' => 'troo5'
+            'fiz' => 'foo5',
+            'biz' => 'boo5',
+            'triz' => 'troo5',
         ]);
         $this->assertTrue($w3->save());
 
@@ -179,9 +176,9 @@ class AddDropLabelsTest extends TestCase {
         $w3->addLabels(array('Superuniqelabel8'));
 
         //add the array of labels
-        $w1->addLabels(array( 'Superuniqelabel9','Superuniqelabel10'));
-        $w2->addLabels(array( 'Superuniqelabel9', 'Superuniqelabel10'));
-        $w3->addLabels(array( 'Superuniqelabel9','Superuniqelabel10'));
+        $w1->addLabels(array('Superuniqelabel9', 'Superuniqelabel10'));
+        $w2->addLabels(array('Superuniqelabel9', 'Superuniqelabel10'));
+        $w3->addLabels(array('Superuniqelabel9', 'Superuniqelabel10'));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w1->id);
@@ -208,9 +205,9 @@ class AddDropLabelsTest extends TestCase {
         $w3->dropLabels(array('Superuniqelabel8'));
 
         //drop the array of labels
-        $w1->dropLabels(array('Superuniqelabel9','Superuniqelabel10'));
+        $w1->dropLabels(array('Superuniqelabel9', 'Superuniqelabel10'));
         $w2->dropLabels(array('Superuniqelabel9', 'Superuniqelabel10'));
-        $w3->dropLabels(array('Superuniqelabel9','Superuniqelabel10'));
+        $w3->dropLabels(array('Superuniqelabel9', 'Superuniqelabel10'));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w1->id);
@@ -231,29 +228,29 @@ class AddDropLabelsTest extends TestCase {
         $this->assertFalse(in_array('Superuniqelabel10', $nLabels));
     }
 
-    function testAddDropLabelsRepeatedlyOnModelsFoundById()
+    public function testAddDropLabelsRepeatedlyOnModelsFoundById()
     {
         //create a new model object
         $w1 = new Labelwiz([
-            'fiz'  => 'foo6',
-            'biz'  => 'boo6',
-            'triz' => 'troo6'
+            'fiz' => 'foo6',
+            'biz' => 'boo6',
+            'triz' => 'troo6',
         ]);
         $this->assertTrue($w1->save());
 
         //create a new model object
         $w2 = new Labelwiz([
-            'fiz'  => 'foo7',
-            'biz'  => 'boo7',
-            'triz' => 'troo7'
+            'fiz' => 'foo7',
+            'biz' => 'boo7',
+            'triz' => 'troo7',
         ]);
         $this->assertTrue($w2->save());
 
         //create a new model object
         $w3 = new Labelwiz([
-            'fiz'  => 'foo8',
-            'biz'  => 'boo8',
-            'triz' => 'troo8'
+            'fiz' => 'foo8',
+            'biz' => 'boo8',
+            'triz' => 'troo8',
         ]);
         $this->assertTrue($w3->save());
 
@@ -267,9 +264,9 @@ class AddDropLabelsTest extends TestCase {
         $f3->addLabels(array('Superuniqelabel11'));
 
         //add the array of labels
-        $f1->addLabels(array('Superuniqelabel12','Superuniqelabel13'));
+        $f1->addLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
         $f2->addLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
-        $f3->addLabels(array('Superuniqelabel12','Superuniqelabel13'));
+        $f3->addLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f1->id);
@@ -296,9 +293,9 @@ class AddDropLabelsTest extends TestCase {
         $f3->dropLabels(array('Superuniqelabel11'));
 
         //drop the array of labels
-        $f1->dropLabels(array('Superuniqelabel12','Superuniqelabel13'));
+        $f1->dropLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
         $f2->dropLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
-        $f3->dropLabels(array('Superuniqelabel12','Superuniqelabel13'));
+        $f3->dropLabels(array('Superuniqelabel12', 'Superuniqelabel13'));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f1->id);
@@ -319,11 +316,10 @@ class AddDropLabelsTest extends TestCase {
         $this->assertFalse(in_array('Superuniqelabel13', $nLabels));
     }
 
-
-    function testAddDropLabelsOnRelated()
+    public function testAddDropLabelsOnRelated()
     {
         //create related nodes
-        $foo = Foo::createWith(['prop'=>'I am Foo'], ['bar'=>['prop'=>'I am Bar']]);
+        $foo = Foo::createWith(['prop' => 'I am Foo'], ['bar' => ['prop' => 'I am Bar']]);
         //$this->assertTrue($foo->save());
 
         //now add labels on related node
@@ -368,12 +364,12 @@ class AddDropLabelsTest extends TestCase {
         $this->assertFalse(in_array('SpecialLabel4', $nLabels));
     }
 
-    function testDroppingLabels()
+    public function testDroppingLabels()
     {
         $w1 = new Labelwiz([
-            'fiz'  => 'foo6',
-            'biz'  => 'boo6',
-            'triz' => 'troo6'
+            'fiz' => 'foo6',
+            'biz' => 'boo6',
+            'triz' => 'troo6',
         ]);
         $this->assertTrue($w1->save());
 

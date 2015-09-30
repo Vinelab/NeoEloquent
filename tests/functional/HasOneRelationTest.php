@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasOne;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasOne;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
-class User extends Model {
-
+class User extends Model
+{
     protected $label = 'Individual';
     protected $fillable = ['name', 'email'];
 
@@ -15,15 +17,15 @@ class User extends Model {
     }
 }
 
-class Profile extends Model {
-
+class Profile extends Model
+{
     protected $label = 'Profile';
 
     protected $fillable = ['guid', 'service'];
 }
 
-class HasOneRelationTest extends TestCase {
-
+class HasOneRelationTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
@@ -60,7 +62,6 @@ class HasOneRelationTest extends TestCase {
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
-
 
         $found = User::find($user->id);
 
@@ -163,5 +164,4 @@ class HasOneRelationTest extends TestCase {
         $this->assertEquals($relation->toArray(), $retrieved->toArray());
         $this->assertTrue($relation->delete());
     }
-
 }

@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
-class PolymorphicHyperMorphToTest extends TestCase {
-
+class PolymorphicHyperMorphToTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
@@ -35,7 +37,7 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Comment on post and video
@@ -57,17 +59,17 @@ class PolymorphicHyperMorphToTest extends TestCase {
     public function testSavingUserCommentOnPostAndVideo()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentor  = User::create(['name' => 'I Comment On Posts']);
+        $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);
 
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost  = new Comment(['title' => 'Another Place', 'body' => 'To Go..']);
+        $commentOnPost = new Comment(['title' => 'Another Place', 'body' => 'To Go..']);
         $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Comment on post and video
         $postComment = $postCommentor->comments($post)->save($commentOnPost);
@@ -88,17 +90,17 @@ class PolymorphicHyperMorphToTest extends TestCase {
     public function testAttachingById()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentor  = User::create(['name' => 'I Comment On Posts']);
+        $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);
 
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost  = Comment::create(['text' => 'Another Place']);
+        $commentOnPost = Comment::create(['text' => 'Another Place']);
         $commentOnVideo = Comment::create(['text' => 'When We Meet']);
         // Comment on post and video
         $postComment = $postCommentor->comments($post)->attach($commentOnPost->id);
@@ -119,25 +121,24 @@ class PolymorphicHyperMorphToTest extends TestCase {
     public function testAttachingManyIds()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentor  = User::create(['name' => 'I Comment On Posts']);
+        $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);
 
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost         = Comment::create(['text' => 'Another Place']);
-        $anotherCommentOnPost  = Comment::create(['text' => 'Here and there']);
-        $commentOnVideo        = Comment::create(['text' => 'When We Meet']);
+        $commentOnPost = Comment::create(['text' => 'Another Place']);
+        $anotherCommentOnPost = Comment::create(['text' => 'Here and there']);
+        $commentOnVideo = Comment::create(['text' => 'When We Meet']);
         $anotherCommentOnVideo = Comment::create(['text' => 'That is good']);
 
         // Comment on post and video
         $postComments = $postCommentor->comments($post)->attach([$commentOnPost->id, $anotherCommentOnPost->id]);
-        foreach ($postComments as $comment)
-        {
+        foreach ($postComments as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
@@ -145,8 +146,7 @@ class PolymorphicHyperMorphToTest extends TestCase {
         }
 
         $videoComments = $videoCommentor->comments($video)->attach([$commentOnVideo->id, $anotherCommentOnVideo->id]);
-        foreach ($videoComments as $comment)
-        {
+        foreach ($videoComments as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
@@ -165,11 +165,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Comment on post and video
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $commentOnVideo = Comment::create(['text' => 'Balalaika Sings']);
 
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
@@ -190,25 +190,24 @@ class PolymorphicHyperMorphToTest extends TestCase {
     public function testAttachingManyModelInstances()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentor  = User::create(['name' => 'I Comment On Posts']);
+        $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);
 
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost         = Comment::create(['text' => 'Another Place']);
-        $anotherCommentOnPost  = Comment::create(['text' => 'Here and there']);
-        $commentOnVideo        = Comment::create(['text' => 'When We Meet']);
+        $commentOnPost = Comment::create(['text' => 'Another Place']);
+        $anotherCommentOnPost = Comment::create(['text' => 'Here and there']);
+        $commentOnVideo = Comment::create(['text' => 'When We Meet']);
         $anotherCommentOnVideo = Comment::create(['text' => 'That is good']);
 
         // Comment on post and video
         $postComments = $postCommentor->comments($post)->attach([$commentOnPost, $anotherCommentOnPost]);
-        foreach ($postComments as $comment)
-        {
+        foreach ($postComments as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
@@ -216,8 +215,7 @@ class PolymorphicHyperMorphToTest extends TestCase {
         }
 
         $videoComments = $videoCommentor->comments($video)->attach([$commentOnVideo, $anotherCommentOnVideo]);
-        foreach ($videoComments as $comment)
-        {
+        foreach ($videoComments as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
@@ -248,11 +246,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Comment on post and video
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $commentOnVideo = Comment::create(['text' => 'Balalaika Sings']);
 
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
@@ -287,11 +285,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Comment on post and video
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $anotherCommentOnPost = Comment::create(['text' => 'Balalaika Sings']);
 
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
@@ -300,11 +298,13 @@ class PolymorphicHyperMorphToTest extends TestCase {
 
         $edges = $user->comments($post)->edges();
 
-        $edgesIds = array_map(function($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
         $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
         $this->assertFalse(in_array($commentOnPost->id, $edgesIds));
 
-        foreach ($edges as $edge) { $edge->delete(); }
+        foreach ($edges as $edge) {
+            $edge->delete();
+        }
     }
 
     public function testSyncingUpdatesModels()
@@ -316,11 +316,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Comment on post and video
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $anotherCommentOnPost = Comment::create(['text' => 'Balalaika Sings']);
 
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
@@ -329,11 +329,13 @@ class PolymorphicHyperMorphToTest extends TestCase {
 
         $edges = $user->comments($post)->edges();
 
-        $edgesIds = array_map(function($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
         $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
         $this->assertTrue(in_array($commentOnPost->id, $edgesIds));
 
-        foreach ($edges as $edge) { $edge->delete(); }
+        foreach ($edges as $edge) {
+            $edge->delete();
+        }
     }
 
     public function testSyncingWithAttributes()
@@ -345,30 +347,29 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Comment on post and video
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $anotherCommentOnPost = Comment::create(['text' => 'Balalaika Sings']);
 
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $user->comments($post)->sync([
             $commentOnPost->id => ['feeling' => 'happy'],
-            $anotherCommentOnPost->id => ['feeling' => 'sad']
+            $anotherCommentOnPost->id => ['feeling' => 'sad'],
         ]);
 
         $edges = $user->comments($post)->edges();
 
-        $edgesIds = array_map(function($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
         $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
         $this->assertTrue(in_array($commentOnPost->id, $edgesIds));
 
         $expectedEdgesTypes = ['happy', 'sad'];
 
-        foreach ($edges as $key => $edge)
-        {
+        foreach ($edges as $key => $edge) {
             $attributes = $edge->toArray();
             $this->assertArrayHasKey('feeling', $attributes);
             $this->assertEquals($expectedEdgesTypes[$key], $edge->feeling);
@@ -385,18 +386,17 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
         $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
 
         $post = Post::find($post->id);
-        foreach ($post->comments as $comment)
-        {
+        foreach ($post->comments as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
             $this->assertTrue($comment->exists);
             $this->assertGreaterThanOrEqual(0, $comment->id);
@@ -404,8 +404,7 @@ class PolymorphicHyperMorphToTest extends TestCase {
         }
 
         $video = Video::find($video->id);
-        foreach ($video->comments as $comment)
-        {
+        foreach ($video->comments as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
             $this->assertTrue($comment->exists);
             $this->assertGreaterThanOrEqual(0, $comment->id);
@@ -422,18 +421,17 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $post = Post::with('comments')->find($post->id);
         $postRelations = $post->getRelations();
         $this->assertArrayHasKey('comments', $postRelations);
         $this->assertCount(1, $postRelations['comments']);
-        foreach ($postRelations['comments'] as $comment)
-        {
+        foreach ($postRelations['comments'] as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
             $this->assertTrue($comment->exists);
             $this->assertGreaterThanOrEqual(0, $comment->id);
@@ -447,8 +445,7 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $videoRelations = $video->getRelations();
         $this->assertArrayHasKey('comments', $videoRelations);
         $this->assertCount(1, $videoRelations['comments']);
-        foreach ($videoRelations['comments'] as $comment)
-        {
+        foreach ($videoRelations['comments'] as $comment) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
             $this->assertTrue($comment->exists);
             $this->assertGreaterThanOrEqual(0, $comment->id);
@@ -465,10 +462,10 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
@@ -490,11 +487,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Attach and assert the comment on Post
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $userMorph = User::with('comments')->find($postCommentor->id);
@@ -523,10 +520,10 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $postMorph = $commentOnPost->post;
@@ -552,11 +549,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Check the post of this comment
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $morphedComment = Comment::with('post')->find($commentOnPost->id);
@@ -572,7 +569,6 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $vMorphedCommentRelations = $vMorphedComment->getRelations();
         $this->assertArrayHasKey('video', $vMorphedCommentRelations);
         $this->assertEquals($video->toArray(), $vMorphedCommentRelations['video']->toArray());
-
     }
 
     public function testDynamicLoadingMorphToModel()
@@ -584,11 +580,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Check the post of this comment
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $commentablePost = $commentOnPost->commentable;
@@ -614,11 +610,11 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
         // Check the post of this comment
-        $commentOnPost  = Comment::create(['text' => 'Please soooooon!']);
+        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $morphedPostComment = Comment::with('commentable')->find($commentOnPost->id);
@@ -639,11 +635,10 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Video', $morphedVideoCommentRelations['commentable']);
         $this->assertEquals($video->toArray(), $morphedVideoCommentRelations['commentable']->toArray());
     }
-
 }
 
-class User extends Model {
-
+class User extends Model
+{
     protected $label = 'User';
 
     protected $fillable = ['name'];
@@ -664,8 +659,8 @@ class User extends Model {
     }
 }
 
-class Post extends Model {
-
+class Post extends Model
+{
     protected $label = 'Post';
 
     protected $fillable = ['title', 'body'];
@@ -676,8 +671,8 @@ class Post extends Model {
     }
 }
 
-class Video extends Model {
-
+class Video extends Model
+{
     protected $label = 'Video';
 
     protected $fillable = ['title', 'url'];
@@ -688,8 +683,8 @@ class Video extends Model {
     }
 }
 
-class Comment extends Model {
-
+class Comment extends Model
+{
     protected $label = 'Comment';
 
     protected $fillable = ['text'];
@@ -709,5 +704,3 @@ class Comment extends Model {
         return $this->morphTo('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Video', 'ON');
     }
 }
-
-

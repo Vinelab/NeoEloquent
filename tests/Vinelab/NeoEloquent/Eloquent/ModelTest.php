@@ -1,25 +1,27 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Eloquent;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Eloquent\Model as NeoEloquent;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
-class Model extends NeoEloquent {
-
+class Model extends NeoEloquent
+{
 }
 
-class Labeled extends NeoEloquent {
-
+class Labeled extends NeoEloquent
+{
     protected $label = 'Labeled';
 }
 
-class Table extends NeoEloquent {
-
+class Table extends NeoEloquent
+{
     protected $table = 'Table';
 }
 
-class ModelTest extends TestCase {
-
+class ModelTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
@@ -29,7 +31,7 @@ class ModelTest extends TestCase {
 
     public function testDefaultNodeLabel()
     {
-        $m = new Model;
+        $m = new Model();
 
         $label = $m->getDefaultNodeLabel();
 
@@ -39,7 +41,7 @@ class ModelTest extends TestCase {
 
     public function testOverriddenNodeLabel()
     {
-        $m = new Labeled;
+        $m = new Labeled();
 
         $label = $m->getDefaultNodeLabel();
 
@@ -48,7 +50,7 @@ class ModelTest extends TestCase {
 
     public function testLabelBackwardCompatibilityWithTable()
     {
-        $m = new Table;
+        $m = new Table();
 
         $label = $m->getTable();
 
@@ -57,7 +59,7 @@ class ModelTest extends TestCase {
 
     public function testSettingLabelAtRuntime()
     {
-        $m = new Model;
+        $m = new Model();
 
         $m->setLabel('Padrouga');
 
@@ -68,7 +70,7 @@ class ModelTest extends TestCase {
 
     public function testDifferentTypesOfLabelsAlwaysLandsAnArray()
     {
-        $m = new Model;
+        $m = new Model();
 
         $m->setLabel(array('User', 'Fan'));
         $label = $m->getDefaultNodeLabel();
@@ -85,7 +87,7 @@ class ModelTest extends TestCase {
 
     public function testGettingEloquentBuilder()
     {
-        $m = new Model;
+        $m = new Model();
 
         $builder = $m->newEloquentBuilder(M::mock('Vinelab\NeoEloquent\Query\Builder'));
 
@@ -95,7 +97,7 @@ class ModelTest extends TestCase {
     public function testAddLabels()
     {
         //create a new model object
-        $m = new Labeled;
+        $m = new Labeled();
         $m->setLabel(array('User', 'Fan')); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph
@@ -107,13 +109,12 @@ class ModelTest extends TestCase {
         $labels = $this->getNodeLabels($id);
 
         $this->assertTrue(in_array('Superuniqelabel1', $labels));
-
     }
 
     public function testDropLabels()
-	{
+    {
         //create a new model object
-        $m = new Labeled;
+        $m = new Labeled();
         $m->setLabel(array('User', 'Fan', 'Superuniqelabel2')); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph

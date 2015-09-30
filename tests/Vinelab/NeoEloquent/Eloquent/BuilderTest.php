@@ -1,4 +1,6 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Eloquent;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
 use Mockery as M;
 use Illuminate\Support\Collection;
@@ -6,10 +8,9 @@ use Neoxygen\NeoClient\Formatter\Node;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
-class EloquentBuilderTest extends TestCase {
-
+class EloquentBuilderTest extends TestCase
+{
     public function setUp()
     {
         parent::setUp();
@@ -122,7 +123,7 @@ class EloquentBuilderTest extends TestCase {
     public function testPluckMethodWithModelFound()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
-        $mockModel = new \StdClass;
+        $mockModel = new \StdClass();
         $mockModel->name = 'foo';
         $builder->shouldReceive('first')->with(array('name'))->andReturn($mockModel);
 
@@ -150,7 +151,7 @@ class EloquentBuilderTest extends TestCase {
         $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo2')->once();
         $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo3')->once();
 
-        $builder->chunk(2, function($results) use($callbackExecutionAssertor) {
+        $builder->chunk(2, function ($results) use ($callbackExecutionAssertor) {
             foreach ($results as $result) {
                 $callbackExecutionAssertor->doSomething($result);
             }
@@ -201,7 +202,7 @@ class EloquentBuilderTest extends TestCase {
         $builder->setModel($model);
 
         $model->shouldReceive('getConnectionName')->once()->andReturn('foo_connection');
-        $model->shouldReceive('newInstance')->andReturnUsing(function() { return new EloquentBuilderTestModelStub; });
+        $model->shouldReceive('newInstance')->andReturnUsing(function () { return new EloquentBuilderTestModelStub(); });
         $models = $builder->getModels(array('foo'));
 
         $this->assertEquals('taylor', $models[0]->name);
@@ -215,8 +216,8 @@ class EloquentBuilderTest extends TestCase {
     public function testEagerLoadRelationsLoadTopLevelRelationships()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[loadRelation]', array($this->getMockQueryBuilder()));
-        $nop1 = function() {};
-        $nop2 = function() {};
+        $nop1 = function () {};
+        $nop2 = function () {};
         $builder->setEagerLoads(array('foo' => $nop1, 'foo.bar' => $nop2));
         $builder->shouldAllowMockingProtectedMethods()->shouldReceive('loadRelation')->with(array('models'), 'foo', $nop1)->andReturn(array('foo'));
 
@@ -284,13 +285,13 @@ class EloquentBuilderTest extends TestCase {
         $this->assertInstanceOf('Closure', $eagers['orders.lines']);
 
         $builder = $this->getBuilder();
-        $builder->with(array('orders' => function() { return 'foo'; }));
+        $builder->with(array('orders' => function () { return 'foo'; }));
         $eagers = $builder->getEagerLoads();
 
         $this->assertEquals('foo', $eagers['orders']());
 
         $builder = $this->getBuilder();
-        $builder->with(array('orders.lines' => function() { return 'foo'; }));
+        $builder->with(array('orders.lines' => function () { return 'foo'; }));
         $eagers = $builder->getEagerLoads();
 
         $this->assertInstanceOf('Closure', $eagers['orders']);
@@ -316,7 +317,7 @@ class EloquentBuilderTest extends TestCase {
         $builder = $this->getBuilder();
         $builder->getQuery()->shouldReceive('from');
         $builder->getQuery()->shouldReceive('where')->once()->with('foo', 'bar');
-        $builder->setModel($model = new EloquentBuilderTestScopeStub);
+        $builder->setModel($model = new EloquentBuilderTestScopeStub());
         $result = $builder->approved();
 
         $this->assertEquals($builder, $result);
@@ -345,7 +346,7 @@ class EloquentBuilderTest extends TestCase {
         $builder->getQuery()->shouldReceive('addNestedWhereQuery')->once()->with($nestedRawQuery, 'and');
         $nestedQuery->shouldReceive('foo')->once();
 
-        $result = $builder->where(function($query) { $query->foo(); });
+        $result = $builder->where(function ($query) { $query->foo(); });
         $this->assertEquals($builder, $result);
     }
 
@@ -353,8 +354,7 @@ class EloquentBuilderTest extends TestCase {
     {
         $this->markTestIncomplete('Getting the error BadMethodCallException: Method Mockery_2_Vinelab_NeoEloquent_Query_Builder::onDelete() does not exist on this mock object');
         $builder = $this->getBuilder();
-        $builder->onDelete(function($builder)
-        {
+        $builder->onDelete(function ($builder) {
             return array('foo' => $builder);
         });
         $this->assertEquals(array('foo' => $builder), $builder->delete());
@@ -392,9 +392,9 @@ class EloquentBuilderTest extends TestCase {
         // the expected result set
         $result = array(
 
-            'id'    => $id,
-            'name'  => 'Some Name',
-            'email' => 'some@mail.net'
+            'id' => $id,
+            'name' => 'Some Name',
+            'email' => 'some@mail.net',
         );
 
         // the properties that we need returned of our model
@@ -442,17 +442,17 @@ class EloquentBuilderTest extends TestCase {
 
             array(
 
-                'id'    => 10,
-                'name'  => 'Some Name',
-                'email' => 'some@mail.net'
+                'id' => 10,
+                'name' => 'Some Name',
+                'email' => 'some@mail.net',
             ),
 
             array(
 
-                'id'    => 11,
-                'name'  => 'Another Person',
-                'email' => 'person@diff.io'
-            )
+                'id' => 11,
+                'name' => 'Another Person',
+                'email' => 'person@diff.io',
+            ),
 
         );
 
@@ -488,9 +488,9 @@ class EloquentBuilderTest extends TestCase {
     {
         // the expected result set
         $results = array(
-            'id'    => 138,
-            'name'  => 'Nicolas Jaar',
-            'email' => 'noise@space.see'
+            'id' => 138,
+            'name' => 'Nicolas Jaar',
+            'email' => 'noise@space.see',
         );
 
         $properties = array('id', 'name');
@@ -528,10 +528,10 @@ class EloquentBuilderTest extends TestCase {
         $this->markTestIncomplete();
 
         $properties = array(
-            'id'         => 911,
-            'skin'       => 'white',
-            'username'   => 'eminem',
-            'occupation' => 'white nigga'
+            'id' => 911,
+            'skin' => 'white',
+            'username' => 'eminem',
+            'occupation' => 'white nigga',
         );
 
         $row = $this->createRowWithNodeAtIndex(0, $properties);
@@ -544,9 +544,8 @@ class EloquentBuilderTest extends TestCase {
 
         $this->builder->setModel($this->model);
 
-        $columns = array_map(function($property)
-            {
-                return 'n.'. $property;
+        $columns = array_map(function ($property) {
+                return 'n.'.$property;
 
             }, array_keys($properties));
 
@@ -563,12 +562,12 @@ class EloquentBuilderTest extends TestCase {
         $this->markTestIncomplete();
 
         $properties = array(
-            'id'    => 'mothafucka',
-            'arms'  => 2,
-            'legs'  => 2,
+            'id' => 'mothafucka',
+            'arms' => 2,
+            'legs' => 2,
             'heads' => 1,
-            'eyes'  => 2,
-            'sex'   => 'male'
+            'eyes' => 2,
+            'sex' => 'male',
         );
 
         $row = $this->createRowWithPropertiesAtIndex(0, $properties);
@@ -596,20 +595,18 @@ class EloquentBuilderTest extends TestCase {
     }
 
     /**
-     *
-     *     Utility methods down below this area
-     *
+     *     Utility methods down below this area.
      */
 
-
     /**
-     * Create a new ResultSet out of an array of properties and values
+     * Create a new ResultSet out of an array of properties and values.
      *
-     * @param  array $data The values you want returned could be of the form
-     *             [ [name => something, username => here] ]
-     *             or specify the attributes straight in the array
-     * @param  array $properties The expected properties (columns)
-     * @return  Everyman\Neo4j\Query\ResultSet
+     * @param array $data       The values you want returned could be of the form
+     *                          [ [name => something, username => here] ]
+     *                          or specify the attributes straight in the array
+     * @param array $properties The expected properties (columns)
+     *
+     * @return Everyman\Neo4j\Query\ResultSet
      */
     public function createNodeResultSet($data = array(), $properties = array())
     {
@@ -623,7 +620,6 @@ class EloquentBuilderTest extends TestCase {
                 $result->addNode($node);
                 $result->addIdentifierValue($index, [$node]);
             }
-
         } else {
             $node = $this->createNode($data);
             $result->addNode($node);
@@ -636,11 +632,12 @@ class EloquentBuilderTest extends TestCase {
     }
 
     /**
-     * Get a row with a Node inside of it having $data as properties
+     * Get a row with a Node inside of it having $data as properties.
      *
-     * @param  integer $index The index of the node in the row
-     * @param  array   $data
-     * @return  \Neoxygen\NeoClient\Formatter
+     * @param int   $index The index of the node in the row
+     * @param array $data
+     *
+     * @return \Neoxygen\NeoClient\Formatter
      */
     public function createNode(array $data)
     {
@@ -650,8 +647,7 @@ class EloquentBuilderTest extends TestCase {
         // the Node id is never returned with the properties so in case
         // that is one of the data properties we need to remove it
         // and add it to when requested through getId()
-        if (isset($data['id']))
-        {
+        if (isset($data['id'])) {
             $node->shouldReceive('getId')->andReturn($data['id']);
 
             unset($data['id']);
@@ -668,8 +664,7 @@ class EloquentBuilderTest extends TestCase {
         $row = M::mock('Everyman\Neo4j\Query\Row');
         // $row->shouldReceive('offsetGet')->with($index)->andReturn($properties);
 
-        foreach($properties as $key => $value)
-        {
+        foreach ($properties as $key => $value) {
             // prepare the row's offsetGet to rerturn the desired value when asked
             // by prepending the key with an n. representing the node in the Cypher query.
             $row->shouldReceive('offsetGet')
@@ -690,6 +685,7 @@ class EloquentBuilderTest extends TestCase {
         $model->shouldReceive('getKeyName')->andReturn('foo');
         $model->shouldReceive('getTable')->andReturn('foo_table');
         $model->shouldReceive('getQualifiedKeyName')->andReturn('foo');
+
         return $model;
     }
 
@@ -720,17 +716,20 @@ class EloquentBuilderTest extends TestCase {
 // Don't ask what this is, brought in from
 // laravel/framework/tests/Databases/DatabaseEloquentBuilderTest.php
 // and it makes the tests pass, so leave it :P
-class EloquentBuilderTestModelStub extends \Vinelab\NeoEloquent\Eloquent\Model {}
+class EloquentBuilderTestModelStub extends \Vinelab\NeoEloquent\Eloquent\Model
+{
+}
 
-class EloquentBuilderTestScopeStub extends \Vinelab\NeoEloquent\Eloquent\Model {
+class EloquentBuilderTestScopeStub extends \Vinelab\NeoEloquent\Eloquent\Model
+{
     public function scopeApproved($query)
     {
         $query->where('foo', 'bar');
     }
 }
 
-class EloquentBuilderTestListsStub {
-
+class EloquentBuilderTestListsStub
+{
     protected $attributes;
 
     public function __construct($attributes)
@@ -739,6 +738,6 @@ class EloquentBuilderTestListsStub {
     }
     public function __get($key)
     {
-        return 'foo_' . $this->attributes[$key];
+        return 'foo_'.$this->attributes[$key];
     }
 }

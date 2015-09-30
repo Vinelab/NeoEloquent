@@ -1,24 +1,26 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
-class User extends Model {
-
+class User extends Model
+{
     protected $label = 'Individual';
 
     protected $fillable = ['name', 'email', 'alias', 'calls'];
 }
 
-class WheresTheTest extends TestCase {
-
+class WheresTheTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
 
         $all = User::all();
-        $all->each(function($u) { $u->delete(); });
+        $all->each(function ($u) { $u->delete(); });
 
         parent::tearDown();
     }
@@ -33,40 +35,39 @@ class WheresTheTest extends TestCase {
 
         // Setup the data in the database
         $this->ab = User::create([
-            'name'  => 'Ey Bee',
+            'name' => 'Ey Bee',
             'alias' => 'ab',
             'email' => 'ab@alpha.bet',
-            'calls' => 10
+            'calls' => 10,
         ]);
 
         $this->cd = User::create([
-            'name'  => 'See Dee',
+            'name' => 'See Dee',
             'alias' => 'cd',
             'email' => 'cd@alpha.bet',
-            'calls' => 20
+            'calls' => 20,
         ]);
 
         $this->ef = User::create([
-            'name'  => 'Eee Eff',
+            'name' => 'Eee Eff',
             'alias' => 'ef',
             'email' => 'ef@alpha.bet',
-            'calls' => 30
+            'calls' => 30,
         ]);
 
         $this->gh = User::create([
-            'name'  => 'Gee Aych',
+            'name' => 'Gee Aych',
             'alias' => 'gh',
             'email' => 'gh@alpha.bet',
-            'calls' => 40
+            'calls' => 40,
         ]);
 
         $this->ij = User::create([
             'name' => 'Eye Jay',
             'alias' => 'ij',
             'email' => 'ij@alpha.bet',
-            'calls' => 50
+            'calls' => 50,
         ]);
-
     }
 
     public function testWhereIdWithNoOperator()
@@ -118,7 +119,7 @@ class WheresTheTest extends TestCase {
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ));
         $this->assertEquals($others->toArray(), $brothers->toArray());
 
         $lastTwo = User::where('calls', '>=', 40)->get();
@@ -144,7 +145,7 @@ class WheresTheTest extends TestCase {
 
         $cocoa = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
                                                             $this->cd,
-                                                            $this->ef));
+                                                            $this->ef, ));
         $this->assertEquals($cocoa->toArray(), $three->toArray());
 
         $below = User::where('calls', '<', -100)->get();
@@ -162,7 +163,7 @@ class WheresTheTest extends TestCase {
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ));
 
         $this->assertCount(4, $notab);
         $this->assertEquals($notab->toArray(), $dudes->toArray());
@@ -176,7 +177,7 @@ class WheresTheTest extends TestCase {
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ));
 
         $this->assertEquals($alpha->toArray(), $crocodile->toArray());
     }
@@ -189,7 +190,7 @@ class WheresTheTest extends TestCase {
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ));
 
         $this->assertEquals($alpha->toArray(), $crocodile->toArray());
     }
@@ -202,7 +203,7 @@ class WheresTheTest extends TestCase {
 
     public function testWhereNotIn()
     {
-        /**
+        /*
          * There is no WHERE NOT IN [ids] in Neo4j, it should be something like this:
          *
          * MATCH (actor:Actor {name:"Tom Hanks"} )-[:ACTED_IN]->(movies)<-[:ACTED_IN]-(coactor)
@@ -222,7 +223,7 @@ class WheresTheTest extends TestCase {
 
     public function testWhereBetween()
     {
-        /**
+        /*
          * There is no WHERE BETWEEN
          */
         $this->markTestIncomplete();
@@ -233,7 +234,7 @@ class WheresTheTest extends TestCase {
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ));
         $this->assertCount(5, $u);
         $this->assertEquals($buddies->toArray(), $mwahaha->toArray());
     }
@@ -252,7 +253,7 @@ class WheresTheTest extends TestCase {
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ));
 
         $this->assertEquals($buddies->toArray(), $bigBrothers->toArray());
     }
@@ -266,7 +267,7 @@ class WheresTheTest extends TestCase {
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ));
         $this->assertEquals($all->toArray(), $padrougas->toArray());
     }
 
@@ -280,7 +281,7 @@ class WheresTheTest extends TestCase {
     }
 
     /**
-     * Regression test for issue #19
+     * Regression test for issue #19.
      *
      * @see  https://github.com/Vinelab/NeoEloquent/issues/19
      */
@@ -293,7 +294,7 @@ class WheresTheTest extends TestCase {
     }
 
     /**
-     * Regression test for issue #41
+     * Regression test for issue #41.
      *
      * @see https://github.com/Vinelab/NeoEloquent/issues/41
      */
@@ -305,7 +306,7 @@ class WheresTheTest extends TestCase {
 
         $users = User::where('alias', 'IN', ['cd', 'ef'])->get();
 
-        $l = (new User)->getConnection()->getQueryLog();
+        $l = (new User())->getConnection()->getQueryLog();
 
         $this->assertEquals($this->cd->toArray(), $users[0]->toArray());
         $this->assertEquals($this->ef->toArray(), $users[1]->toArray());

@@ -1,4 +1,6 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Query;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Mockery as M;
 use Neoxygen\NeoClient\Formatter\Node;
@@ -6,13 +8,13 @@ use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
-class QueryBuilderTest extends TestCase {
-
+class BuilderTest extends TestCase
+{
     public function setUp()
     {
         parent::setUp();
 
-        $this->grammar    = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
+        $this->grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->connection = M::mock('Vinelab\NeoEloquent\Connection')->makePartial();
 
         $this->neoClient = M::mock('Neoxygen\NeoClient\Client');
@@ -45,7 +47,7 @@ class QueryBuilderTest extends TestCase {
         $values = array(
             'length' => 123,
             'height' => 343,
-            'power'  => 'Strong Fart Noises'
+            'power' => 'Strong Fart Noises',
         );
 
         $query = [
@@ -100,7 +102,7 @@ class QueryBuilderTest extends TestCase {
         $this->assertEquals($result, 'result');
     }
 
-     /**
+    /**
      * @depends testTransformingQueryToCypher
      */
     public function testSelectingProperties()
@@ -131,13 +133,13 @@ class QueryBuilderTest extends TestCase {
 
         $this->assertEquals(array(
             array(
-                'type'     => 'Basic',
-                'column'   => 'id(n)',
+                'type' => 'Basic',
+                'column' => 'id(n)',
                 'operator' => '=',
-                'value'    => 19,
-                'boolean'  => 'and',
-                'binding'  => 'id(n)'
-            )
+                'value' => 19,
+                'boolean' => 'and',
+                'binding' => 'id(n)',
+            ),
         ), $this->builder->wheres, 'make sure the statement was atted to $wheres');
         // When the '$from' attribute is not set on the query builder, the grammar
         // will use 'n' as the default node identifier.
@@ -151,13 +153,13 @@ class QueryBuilderTest extends TestCase {
 
         $this->assertEquals(array(
             array(
-                'type'     => 'Basic',
-                'column'   => 'id(user)',
+                'type' => 'Basic',
+                'column' => 'id(user)',
                 'operator' => '=',
-                'value'    => 19,
-                'boolean'  => 'and',
-                'binding'  => 'id(user)'
-            )
+                'value' => 19,
+                'boolean' => 'and',
+                'binding' => 'id(user)',
+            ),
         ), $this->builder->wheres, 'make sure the statement was atted to $wheres');
         // When no query builder is passed to the grammar then it will return 'n'
         // as node identifier by default.
@@ -170,11 +172,11 @@ class QueryBuilderTest extends TestCase {
 
         $this->assertEquals(array(
             array(
-                'type'    => 'Null',
+                'type' => 'Null',
                 'boolean' => 'and',
-                'column'  => 'farted',
-                'binding' => 'farted'
-            )
+                'column' => 'farted',
+                'binding' => 'farted',
+            ),
         ), $this->builder->wheres);
 
         $this->assertEmpty($this->builder->getBindings(), 'no bindings should be added when dealing with null stuff..');
@@ -189,13 +191,13 @@ class QueryBuilderTest extends TestCase {
 
         $this->assertEquals(array(
             array(
-                'type'     => 'Basic',
-                'column'   => 'id(n)',
-                'boolean'  => 'and',
+                'type' => 'Basic',
+                'column' => 'id(n)',
+                'boolean' => 'and',
                 'operator' => '=',
-                'value'    => 200,
-                'binding' => 'id(n)'
-            )
+                'value' => 200,
+                'binding' => 'id(n)',
+            ),
         ), $this->builder->wheres);
 
         $this->assertEquals(array('idn' => 200), $this->builder->getBindings());
@@ -259,7 +261,7 @@ class QueryBuilderTest extends TestCase {
 
         $this->assertEquals(array(
             'foo' => 'bar',
-            'bar' => 'baz'
+            'bar' => 'baz',
         ), $builder->getBindings());
     }
 
@@ -302,7 +304,7 @@ class QueryBuilderTest extends TestCase {
         $connection->shouldReceive('getName')->andReturn('default');
         $connection->shouldReceive('getCacheManager')->once()->andReturn($cache);
         $cache->shouldReceive('driver')->once()->andReturn($driver);
-        $grammar = new CypherGrammar;
+        $grammar = new CypherGrammar();
 
         $builder = $this->getMock('Vinelab\NeoEloquent\Query\Builder', array('getFresh'), array($connection, $grammar));
         $builder->expects($this->once())->method('getFresh')->with($this->equalTo(array('*')))->will($this->returnValue(array('results')));
@@ -315,7 +317,7 @@ class QueryBuilderTest extends TestCase {
         $connection = M::mock('Vinelab\NeoEloquent\Connection');
         $client = M::mock('Everyman\Neo4j\Client');
         $connection->shouldReceive('getClient')->once()->andReturn($client);
-        $grammar = new CypherGrammar;
+        $grammar = new CypherGrammar();
 
         return new Builder($connection, $grammar);
     }

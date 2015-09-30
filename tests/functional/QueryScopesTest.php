@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
-class Misfit extends Model {
-
+class Misfit extends Model
+{
     protected $label = 'Misfit';
 
     protected $fillable = ['name', 'alias'];
@@ -21,14 +23,14 @@ class Misfit extends Model {
     }
 }
 
-class QueryScopesTest extends TestCase {
-
+class QueryScopesTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
 
         $all = Misfit::all();
-        $all->each(function($u) { $u->delete(); });
+        $all->each(function ($u) { $u->delete(); });
 
         parent::tearDown();
     }
@@ -42,13 +44,13 @@ class QueryScopesTest extends TestCase {
         Misfit::setConnectionResolver($resolver);
 
         $this->t = Misfit::create([
-            'name'  => 'Nikola Tesla',
-            'alias' => 'tesla'
+            'name' => 'Nikola Tesla',
+            'alias' => 'tesla',
         ]);
 
         $this->e = misfit::create([
-            'name'  => 'Thomas Edison',
-            'alias' => 'edison'
+            'name' => 'Thomas Edison',
+            'alias' => 'edison',
         ]);
     }
 
