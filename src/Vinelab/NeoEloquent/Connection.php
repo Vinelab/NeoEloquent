@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent;
 use Exception;
 use DateTime;
 use Closure;
+use Neoxygen\NeoClient\Client;
 use Neoxygen\NeoClient\ClientBuilder;
 use Vinelab\NeoEloquent\Query\Builder;
 use Illuminate\Database\Connection as IlluminateConnection;
@@ -87,7 +88,7 @@ class Connection extends IlluminateConnection
      *
      * @param \Neoxygen\NeoClient\Client $client
      */
-    public function setClient(NeoClient $client)
+    public function setClient(Client $client)
     {
         $this->neo = $client;
     }
@@ -386,7 +387,7 @@ class Connection extends IlluminateConnection
         ++$this->transactions;
 
         if ($this->transactions == 1) {
-            $this->transaction = $this->neo->beginTransaction();
+            $this->transaction = $this->neo->createTransaction();
         }
 
         $this->fireConnectionEvent('beganTransaction');
@@ -414,7 +415,7 @@ class Connection extends IlluminateConnection
         if ($this->transactions == 1) {
             $this->transactions = 0;
 
-            $this->transaction->rollBack();
+            $this->transaction->rollback();
         } else {
             --$this->transactions;
         }
