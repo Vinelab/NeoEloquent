@@ -80,4 +80,33 @@ class TestCase extends PHPUnit {
 
         return $connection->getClient();
     }
+
+    /**
+     * get the node by the given id.
+     *
+     * @param int $id
+     *
+     * @return \Neoxygen\NeoClient\Formatter\Node
+     */
+    protected function getNodeById($id)
+    {
+        //get the labels using NeoClient
+        $connection = $this->getConnectionWithConfig('neo4j');
+        $client = $connection->getClient();
+        $result = $client->sendCypherQuery("MATCH (n) WHERE id(n)=$id RETURN n")->getResult();
+
+        return $result->getSingleNode();
+    }
+
+    /**
+     * Get node labels of a node by the given id.
+     *
+     * @param int $id
+     *
+     * @return array
+     */
+    protected function getNodeLabels($id)
+    {
+        return $this->getNodeById($id)->getLabels();
+    }
 }

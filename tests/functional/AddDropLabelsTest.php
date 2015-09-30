@@ -388,22 +388,4 @@ class AddDropLabelsTest extends TestCase {
         //now find by id should NOT work on this id using Labelwiz model
         $this->assertNull(Labelwiz::find($id));
     }
-
-    /*
-     * function getNodeLabels()
-     * this is used to get node labels of a given node id directly using everyman lib
-     *
-     */
-    function getNodeLabels($nodeId)
-    {
-        //get the labels using NeoClient
-        $connection = $this->getConnectionWithConfig('neo4j');
-        $client = $connection->getClient();
-
-        $result = $client->sendCypherQuery("MATCH (n) WHERE id(n)=$nodeId RETURN n")->getResult();
-        $node = $result->getSingleNode();
-        $this->assertNotNull($node); //it should exist
-        //check labels on w1
-        return $node->getLabels();
-	}
 }
