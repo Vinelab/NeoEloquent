@@ -77,19 +77,19 @@ class QueryingRelationsTest extends TestCase
         $anotherManager->roles()->save($manager);
 
         // check admins
-        $admins = User::whereHas('roles', function ($q) { $q->where('alias', 'admin'); })->get();
+        $admins = User::whereHas('roles', function ($q) { $q->where('alias', 'admin'); })->orderBy('id')->get();
         $this->assertEquals(2, count($admins));
         $expectedAdmins = [$mrAdmin, $anotherAdmin];
         foreach ($admins as $key => $admin) {
             $this->assertEquals($admin->toArray(), $expectedAdmins[$key]->toArray());
         }
         // check editors
-        $editors = User::whereHas('roles', function ($q) { $q->where('alias', 'editor'); })->get();
+        $editors = User::whereHas('roles', function ($q) { $q->where('alias', 'editor'); })->orderBy('id')->get();
         $this->assertEquals(1, count($editors));
         $this->assertEquals($mrsEditor->toArray(), $editors->first()->toArray());
         // check managers
         $expectedManagers = [$mrsManager, $anotherManager];
-        $managers = User::whereHas('roles', function ($q) { $q->where('alias', 'manager'); })->get();
+        $managers = User::whereHas('roles', function ($q) { $q->where('alias', 'manager'); })->orderBy('id')->get();
         $this->assertEquals(2, count($managers));
         foreach ($managers as $key => $manager) {
             $this->assertEquals($manager->toArray(), $expectedManagers[$key]->toArray());
