@@ -9,6 +9,7 @@ use PHPUnit_Framework_TestCase as PHPUnit;
 
 class Stub extends Model
 {
+    protected $connection = 'neo4j';
 }
 
 class TestCase extends PHPUnit
@@ -77,7 +78,7 @@ class TestCase extends PHPUnit
 
     protected function getClient()
     {
-        $connection = (new Stub())->getConnection();
+        $connection = $this->getConnectionWithConfig('default');
 
         return $connection->getClient();
     }
