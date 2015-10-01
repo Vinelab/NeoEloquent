@@ -35,8 +35,8 @@ class Connection extends IlluminateConnection
     protected $defaults = array(
         'host' => 'localhost',
         'port' => 7474,
-        'username' => null,
-        'password' => null,
+        'username' => 'neo4j',
+        'password' => 'neo4j',
     );
 
     /**

@@ -1,19 +1,23 @@
 <?php
 
-return array(
+return [
 
     'default' => 'default',
 
-    'connections' => array(
+    'connections' => [
 
-        'neo4j' => array(
+        'neo4j' => [
             'driver' => 'neo4j',
             'host' => 'localhost',
             'port' => 7474,
-        ),
+            'username' => 'neo4j',
+            'password' => 'neoeloquent',
+        ],
 
-        'default' => array(
+        'default' => [
             'driver' => 'neo4j',
-        ),
-    ),
-);
+            'username' => 'neo4j',
+            'password' => 'neoeloquent',
+        ],
+    ],
+];
