@@ -215,7 +215,6 @@ class CypherGrammar extends Grammar
     {
         switch (strtolower($direction)) {
             case 'out':
-            default:
                 $relation = '(%s)-[%s]->%s';
             break;
 
