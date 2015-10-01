@@ -21,7 +21,9 @@ before_script:
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
 
-script: phpunit
+script:
+- ./tests/changePassword.sh
+- ./vendor/bin/phpunit
 
 jdk:
   - oraclejdk7  # needed for local Neo4j 2.0+
