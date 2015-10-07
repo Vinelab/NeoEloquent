@@ -68,7 +68,7 @@ class BelongsToRelationTest extends TestCase {
 
         $found = Location::find($location->id);
 
-        $this->assertEquals($user, $found->user);
+        $this->assertEquals($user->toArray(), $found->user->toArray());
         $this->assertTrue($relation->delete());
     }
 
@@ -84,7 +84,7 @@ class BelongsToRelationTest extends TestCase {
         $relations = $found->getRelations();
 
         $this->assertArrayHasKey('user', $relations);
-        $this->assertEquals($user, $relations['user']);
+        $this->assertEquals($user->toArray(), $relations['user']->toArray());
         $this->assertTrue($relation->delete());
     }
 
@@ -101,11 +101,11 @@ class BelongsToRelationTest extends TestCase {
         $this->assertInstanceOf('Carbon\Carbon', $relation->updated_at, 'make sure we set the updated_at timestamp');
         $this->assertArrayHasKey('user', $location->getRelations(), 'make sure the user has been set as relation in the model');
         $this->assertArrayHasKey('user', $location->toArray(), 'make sure it is also returned when dealing with the model');
-        $this->assertEquals($location->user, $user);
+        $this->assertEquals($location->user->toArray(), $user->toArray());
 
         // Let's retrieve it to make sure that NeoEloquent is not lying about it.
         $saved = Location::find($location->id);
-        $this->assertEquals($user, $saved->user);
+        $this->assertEquals($user->toArray(), $saved->user->toArray());
 
         // delete the relation and make sure it was deleted
         // so that we can delete the nodes when cleaning up.

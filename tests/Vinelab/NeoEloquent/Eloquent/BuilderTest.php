@@ -30,7 +30,7 @@ class EloquentBuilderTest extends TestCase {
     {
         $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
-        $builder->getQuery()->shouldReceive('where')->once()->with('foo(n)', '=', 'bar');
+        $builder->getQuery()->shouldReceive('where')->once()->with('foo', '=', 'bar');
         $builder->shouldReceive('first')->with(array('column'))->andReturn('baz');
 
         $result = $builder->find('bar', array('column'));
@@ -44,7 +44,7 @@ class EloquentBuilderTest extends TestCase {
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
-        $builder->getQuery()->shouldReceive('where')->once()->with('foo(n)', '=', 'bar');
+        $builder->getQuery()->shouldReceive('where')->once()->with('foo', '=', 'bar');
         $builder->shouldReceive('first')->with(array('column'))->andReturn(null);
         $result = $builder->findOrFail('bar', array('column'));
     }
@@ -370,7 +370,7 @@ class EloquentBuilderTest extends TestCase {
 
         $resultSet->shouldReceive('valid')->once()->andReturn(false);
 
-        $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
+        $this->model->shouldReceive('getKeyName')->twice()->andReturn('id');
         $this->model->shouldReceive('getTable')->once()->andReturn('Model');
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
@@ -468,7 +468,6 @@ class EloquentBuilderTest extends TestCase {
         $user->shouldReceive('setConnection')->twice()->with('default');
 
         $this->model->shouldReceive('getTable')->once()->andReturn('User')
-                    ->shouldReceive('getKeyName')->twice()->andReturn('id')
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()
                         ->with($results[0])->andReturn($user)
@@ -507,7 +506,6 @@ class EloquentBuilderTest extends TestCase {
         $user->shouldReceive('setConnection')->once()->with('default');
 
         $this->model->shouldReceive('getTable')->once()->andReturn('User')
-                    ->shouldReceive('getKeyName')->once()->andReturn('id')
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()
                         ->with($results)->andReturn($user);
@@ -532,7 +530,6 @@ class EloquentBuilderTest extends TestCase {
         $row = $this->createRowWithNodeAtIndex(0, $properties);
         $row->shouldReceive('current')->once()->andReturn($row->offsetGet(0));
 
-        $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
         $this->model->shouldReceive('getTable')->once()->andReturn('Artist');
 
         $this->query->shouldReceive('from')->once()->andReturn('Artist');

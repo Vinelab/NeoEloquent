@@ -55,9 +55,9 @@ class QueryScopesTest extends TestCase {
     public function testQueryScopes()
     {
         $t = Misfit::kingOfScience()->first();
-        $this->assertEquals($this->t, $t);
+        $this->assertEquals($this->t->toArray(), $t->toArray());
 
         $e = Misfit::stupidDickhead()->first();
-        $this->assertEquals($this->e, $e);
+        $this->assertEquals($this->e->toArray(), $e->toArray());
     }
 }

@@ -327,7 +327,7 @@ class QueryingRelationsTest extends TestCase {
 
         foreach ($related as $key => $tag)
         {
-            $this->assertEquals($tags[$key], $tag);
+            $this->assertEquals($tags[$key]->toArray(), $tag->toArray());
         }
     }
 
@@ -356,7 +356,7 @@ class QueryingRelationsTest extends TestCase {
         foreach ($related as $key => $tag)
         {
             $expected = 'tag'. ($key + 1);
-            $this->assertEquals($$expected, $tag);
+            $this->assertEquals($$expected->toArray(), $tag->toArray());
         }
     }
 
@@ -382,7 +382,7 @@ class QueryingRelationsTest extends TestCase {
         foreach ($related as $key => $tag)
         {
             $expected = 'tag'. ($key + 1);
-            $this->assertEquals($$expected, $tag);
+            $this->assertEquals($$expected->toArray(), $tag->toArray());
         }
     }
 
@@ -409,7 +409,7 @@ class QueryingRelationsTest extends TestCase {
         foreach ($related as $key => $tag)
         {
             $expected = 'tag'. ($key + 1);
-            $this->assertEquals($$expected, $tag);
+            $this->assertEquals($$expected->toArray(), $tag->toArray());
         }
     }
 
@@ -430,7 +430,7 @@ class QueryingRelationsTest extends TestCase {
         foreach ($related as $key => $tag)
         {
             $expected = 'tag'. ($key + 1);
-            $this->assertEquals($$expected, $tag);
+            $this->assertEquals($$expected->toArray(), $tag->toArray());
         }
     }
 
@@ -444,7 +444,7 @@ class QueryingRelationsTest extends TestCase {
         $related = $post->tags;
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
         $this->assertEquals(1, count($related));
-        $this->assertEquals($tag, $related->first());
+        $this->assertEquals($tag->toArray(), $related->first()->toArray());
     }
 
     public function testCreatingModelWithAttachedSingleModel()
@@ -457,7 +457,7 @@ class QueryingRelationsTest extends TestCase {
         $related = $post->tags;
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
         $this->assertEquals(1, count($related));
-        $this->assertEquals($tag, $related->first());
+        $this->assertEquals($tag->toArray(), $related->first()->toArray());
     }
 
     public function testCreatingModelWithMixedRelationsAndPassingCollection()

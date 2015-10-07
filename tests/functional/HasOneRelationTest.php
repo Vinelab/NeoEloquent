@@ -56,7 +56,7 @@ class HasOneRelationTest extends TestCase {
         $relation = $user->profile()->save($profile);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-        $this->assertEquals($profile, $user->profile);
+        $this->assertEquals($profile->toArray(), $user->profile->toArray());
         $this->assertTrue($relation->delete());
     }
 
@@ -71,7 +71,7 @@ class HasOneRelationTest extends TestCase {
         $found = User::find($user->id);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-        $this->assertEquals($profile, $found->profile);
+        $this->assertEquals($profile->toArray(), $found->profile->toArray());
         $this->assertTrue($relation->delete());
     }
 
@@ -87,7 +87,7 @@ class HasOneRelationTest extends TestCase {
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertArrayHasKey('profile', $relations);
-        $this->assertEquals($profile, $relations['profile']);
+        $this->assertEquals($profile->toArray(), $relations['profile']->toArray());
         $this->assertTrue($relation->delete());
     }
 
@@ -101,11 +101,11 @@ class HasOneRelationTest extends TestCase {
 
         $this->assertInstanceOf('Carbon\Carbon', $relation->created_at, 'make sure we set the created_at timestamp');
         $this->assertInstanceOf('Carbon\Carbon', $relation->updated_at, 'make sure we set the updated_at timestamp');
-        $this->assertEquals($user->profile, $profile);
+        $this->assertEquals($user->profile->toArray(), $profile->toArray());
 
         // Let's retrieve it to make sure that NeoEloquent is not lying about it.
         $saved = User::find($user->id);
-        $this->assertEquals($profile, $saved->profile);
+        $this->assertEquals($profile->toArray(), $saved->profile->toArray());
 
      // delete the relation and make sure it was deleted
         // so that we can delete the nodes when cleaning up.
