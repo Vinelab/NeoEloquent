@@ -493,6 +493,7 @@ abstract class Model extends IlluminateModel {
         // we need to fire model events on all the models that are involved with our operaiton,
         // including the ones from the relations, starting with this model.
         $me = new static();
+        $me->fill($attributes);
         $models = [$me];
 
         $query = static::query();
@@ -508,7 +509,7 @@ abstract class Model extends IlluminateModel {
             $related = $me->$relation()->getRelated();
             // if the relation holds the attributes directly instead of an array
             // of attributes, we transform it into an array of attributes.
-            if (! is_array($values) || Helpers::isAssocArray($values))
+            if ((!is_array($values) || Helpers::isAssocArray($values)) && !$values instanceof Collection)
             {
                 $values = [$values];
             }
@@ -521,27 +522,37 @@ abstract class Model extends IlluminateModel {
                 // attributes we will dynamically fill a new model instance of the related model.
                 if (is_array($relatedModel))
                 {
-                    $relatedModel = $related->fill($relatedModel);
+                    $model = $related->newInstance();
+                    $model->fill($relatedModel);
+                    $relatedModel = $model;
                 }
 
-                $models[] = $relatedModel;
+                $models[$relation][] = $relatedModel;
                 $query->addManyMutation($relation, $related);
             }
         }
 
         // fire 'creating' and 'saving' events on all models.
-        foreach ($models as $model)
-        {
-            // we will fire model events on actual models, however attached models using IDs will not be considered.
-            if ($model instanceof Model)
-            {
-                if ($model->fireModelEvent('creating') === false) return false;
-                if ($model->fireModelEvent('saving') === false) return false;
+        foreach ($models as $relation => $related) {
+            if (!is_array($related)) {
+                $related = [$related];
+            }
+            foreach ($related as $model) {
+                // we will fire model events on actual models, however attached models using IDs will not be considered.
+                if ($model instanceof Model) {
+                    if ($model->fireModelEvent('creating') === false) {
+                        return false;
+                    }
+                    if ($model->fireModelEvent('saving') === false) {
+                        return false;
+                    }
+                }
             }
         }
 
+        array_shift($models);
         // run the query and create the records.
-        $result = $query->createWith($attributes, $relations);
+        $result = $query->createWith($me->toArray(), $models);
         // take the parent model that was created out of the results array based on
         // this model's label.
         $created = reset($result[$label]);
