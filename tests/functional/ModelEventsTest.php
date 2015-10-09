@@ -65,6 +65,34 @@ class ModelEventsTest extends TestCase
         $this->assertTrue($user->restoring_event);
         $this->assertTrue($user->restored_event);
     }
+
+    public function testCreateWithDispatchesEventsOnModelAndRelations()
+    {
+        $user = User::createWith(['name' => 'user name'], [
+            'singleCake' => ['name' => 'single'],
+            'cakes' => [
+                ['name' => 'c 1'],
+                ['name' => 'c 2'],
+            ],
+        ]);
+
+        $this->assertTrue($user->creating_event);
+        $this->assertTrue($user->created_event);
+        $this->assertTrue($user->saving_event);
+        $this->assertTrue($user->saved_event);
+
+        $this->assertTrue($user->singleCake->creating_event);
+        $this->assertTrue($user->singleCake->created_event);
+        $this->assertTrue($user->singleCake->saving_event);
+        $this->assertTrue($user->singleCake->saved_event);
+
+        foreach ($user->cakes as $cake) {
+            $this->assertTrue($cake->creating_event);
+            $this->assertTrue($cake->created_event);
+            $this->assertTrue($cake->saving_event);
+            $this->assertTrue($cake->saved_event);
+        }
+    }
 }
 
 class User extends Model
@@ -91,6 +119,16 @@ class User extends Model
 
     // Will hold the events and their callbacks
     protected static $listenerStub = [];
+
+    public function cakes()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\Events\Cake', 'HAS_CAKE');
+    }
+
+    public function singleCake()
+    {
+        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\Events\Cake', 'HAS_SINGLE_CAKE');
+    }
 
     public static function boot()
     {
@@ -156,6 +194,54 @@ class User extends Model
     }
 }
 
+class Cake extends Model
+{
+    protected $label = 'Cake';
+
+    protected $fillable = ['name'];
+
+    // Will hold the events and their callbacks
+    protected static $listenerStub = [];
+
+    public static function boot()
+    {
+        static::$dispatcher = User::$dispatcher;
+
+        // boot up model
+        parent::boot();
+
+        self::creating(function ($user) {
+            $user->creating_event = true;
+        });
+
+        self::created(function ($user) {
+            $user->created_event = true;
+            $user->save();
+        });
+
+        self::saving(function ($user) {
+            $user->saving_event = true;
+        });
+
+        self::saved(function ($user) {
+            if (!$user->saved_event) {
+                $user->saved_event = true;
+                $user->save();
+            }
+        });
+
+        self::deleting(function ($user) {
+            $user->deleting_event = true;
+        });
+
+        self::deleted(function ($user) {
+            $user->deleted_event = true;
+            unset($user->id);
+            $user->save();
+        });
+    }
+}
+
 class OBOne extends Model
 {
     use SoftDeletes;
@@ -214,6 +300,7 @@ class OBOne extends Model
         });
 
         static::$dispatcher = $dispatcher;
+        OBOne::observe(new UserObserver());
     }
 }
 
@@ -266,5 +353,3 @@ class UserObserver
         $ob->save();
     }
 }
-
-OBOne::observe(new UserObserver());
