@@ -646,14 +646,14 @@ class CypherGrammar extends Grammar {
             $distinct = 'DISTINCT ';
         }
 
-        $node  = $this->modelAsNode($aggregate['label']);
+        $node  = $this->modelAsNode($query->from);
 
         // We need to format the columns to be in the form of n.property unless it is a *.
         $columns  = implode(', ', array_map(function($column) use($node) {
             return $column == '*' ? $column : "$node.$column";
         }, $aggregate['columns']));
 
-        if ( ! is_null($aggregate['percentile']))
+        if ( isset($aggregate['percentile']) && ! is_null($aggregate['percentile']))
         {
             $percentile = $aggregate['percentile'];
             return "RETURN $function($columns, $percentile)";
