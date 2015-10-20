@@ -816,6 +816,7 @@ class Builder extends IlluminateBuilder
                 $values = [$values];
             }
 
+            $id = $relatedModel->getKeyName();
             $label = $relationship->getRelated()->getTable();
             $direction = $relationship->getEdgeDirection();
             $type = $relationship->getRelationType();
@@ -850,7 +851,7 @@ class Builder extends IlluminateBuilder
             }
 
             $relation = compact('name', 'type', 'direction');
-            $related[] = compact('relation', 'label', 'create', 'attach');
+            $related[] = compact('relation', 'label', 'create', 'attach', 'id');
         }
 
         $results = $this->query->createWith($model, $related);

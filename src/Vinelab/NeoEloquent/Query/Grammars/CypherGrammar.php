@@ -738,6 +738,7 @@ class CypherGrammar extends Grammar
         $attachedIdsToReturn = [];
 
         foreach ($related as $with) {
+            $idKey = $with['id'];
             $label = $with['label'];
             $values = $with['create'];
             $attach = $with['attach'];
@@ -784,7 +785,14 @@ class CypherGrammar extends Grammar
                 // on the records that we need to attach with WHERE and then
                 // CREATE these relationships.
                 $attachments['matches'][] = "({$identifier}{$nodeLabel})";
-                $attachments['wheres'][] = "id($identifier) IN [".implode(', ', $attach).']';
+
+                if($idKey === 'id') {
+                    // Native Neo4j IDs are treated differently
+                    $attachments['wheres'][] = "id($identifier) IN [".implode(', ', $attach).']';
+                } else {
+                    $attachments['wheres'][] = "$identifier.$idKey IN [\"".implode('", "', $attach).'"]';
+                }
+
                 $attachments['relations'][] = $this->craftRelation(
                     $parentNode,
                     ':'.$relation['type'],

@@ -118,7 +118,8 @@ class Builder extends IlluminateQueryBuilder
         $id = null;
 
         if ($results instanceof Result) {
-            $id = $results->getSingleNode()->getId();
+            $node = $results->getSingleNode();
+            $id = (isset($sequence) && $sequence !== 'id') ? $node->getProperty($sequence) : $node->getId();
         }
 
         return $id;
