@@ -492,6 +492,7 @@ class ConnectionTest extends TestCase {
     {
         $conn = $this->getMockConnection();
         $conn->setQueryGrammar(M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial());
+        $conn->setPostProcessor(M::mock('Illuminate\Database\Query\Processors\Processor')->makePartial());
         $builder = $conn->table('User');
         $this->assertInstanceOf('Vinelab\NeoEloquent\Query\Builder', $builder);
         $this->assertEquals('User', $builder->from);

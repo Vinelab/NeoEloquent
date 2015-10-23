@@ -7,6 +7,7 @@ use Vinelab\NeoEloquent\Connection;
 use Illuminadte\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
+use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\Query\Builder as IlluminateQueryBuilder;
 
 class Builder extends IlluminateQueryBuilder {
@@ -71,12 +72,15 @@ class Builder extends IlluminateQueryBuilder {
      * Create a new query builder instance.
      *
      * @param Vinelab\NeoEloquent\Connection $connection
+     * @param  \Illuminate\Database\Query\Grammars\Grammar  $grammar
+     * @param  \Illuminate\Database\Query\Processors\Processor  $processor
      * @return void
      */
-    public function __construct(Connection $connection, Grammar $grammar)
+    public function __construct(Connection $connection, Grammar $grammar, Processor $processor)
     {
         $this->grammar = $grammar;
         $this->grammar->setQuery($this);
+        $this->processor = $processor;
 
         $this->connection = $connection;
 
@@ -225,7 +229,7 @@ class Builder extends IlluminateQueryBuilder {
                 return 0;
         }
     }
-    
+
     /**
 	 * Add a basic where clause to the query.
 	 *
@@ -852,7 +856,7 @@ class Builder extends IlluminateQueryBuilder {
 	 */
 	public function newQuery()
 	{
-		return new Builder($this->connection, $this->grammar);
+		return new Builder($this->connection, $this->grammar, $this->getProcessor());
 	}
 
     /**
