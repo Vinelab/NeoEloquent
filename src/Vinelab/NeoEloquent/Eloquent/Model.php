@@ -534,7 +534,7 @@ abstract class Model extends IlluminateModel
             foreach ($related as $model) {
                 // we will fire model events on actual models, however attached models using IDs will not be considered.
                 if ($model instanceof Model) {
-                    if ($model->fireModelEvent('creating') === false) {
+                    if (!$model->exists && $model->fireModelEvent('creating') === false) {
                         return false;
                     }
                     if ($model->fireModelEvent('saving') === false) {
