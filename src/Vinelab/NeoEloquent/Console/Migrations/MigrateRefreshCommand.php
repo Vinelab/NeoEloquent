@@ -11,17 +11,17 @@ class MigrateRefreshCommand extends Command
     use ConfirmableTrait;
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $name = 'neo4j:migrate:refresh';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $description = 'Reset and re-run all migrations';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function fire()
     {
@@ -72,7 +72,7 @@ class MigrateRefreshCommand extends Command
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getOptions()
     {

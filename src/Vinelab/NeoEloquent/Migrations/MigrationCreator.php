@@ -30,7 +30,7 @@ class MigrationCreator extends IlluminateMigrationCreator
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getStubPath()
     {

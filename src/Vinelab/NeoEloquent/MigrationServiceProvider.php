@@ -16,19 +16,19 @@ use Vinelab\NeoEloquent\Console\Migrations\MigrateRollbackCommand;
 class MigrationServiceProvider extends ServiceProvider
 {
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $defer = true;
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function boot()
     {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function register()
     {
@@ -177,7 +177,7 @@ class MigrationServiceProvider extends ServiceProvider
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function provides()
     {

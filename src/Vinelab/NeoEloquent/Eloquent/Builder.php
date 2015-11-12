@@ -40,14 +40,16 @@ class Builder extends IlluminateBuilder
         // so we cast it anyways.
 
         if (is_array($id)) {
-            return $this->findMany(array_map(function ($id) { return (int) $id; }, $id), $properties);
+            return $this->findMany(array_map(function ($id) {
+                        return (int) $id;
+                    }, $id), $properties);
         } else {
             $id = (int) $id;
         }
 
         if ($this->model->getKeyName() === 'id') {
             // ids are treated differently in neo4j so we have to adapt the query to them.
-            $this->query->where($this->model->getKeyName() . '('. $this->query->modelAsNode() .')', '=', $id);
+            $this->query->where($this->model->getKeyName().'('.$this->query->modelAsNode().')', '=', $id);
         } else {
             $this->query->where($this->model->getKeyName(), '=', $id);
         }
@@ -341,6 +343,7 @@ class Builder extends IlluminateBuilder
      * @param array                     $columns
      *
      * @return array
+     *
      * @deprecated 2.0 using getNodeAttributes instead
      */
     public function getProperties(array $resultColumns, Row $row)
@@ -353,7 +356,6 @@ class Builder extends IlluminateBuilder
         // and each result is either a Node or a single column value
         // so we first extract the returned value and retrieve
         // the attributes according to the result type.
-
         // Only when requesting a single property
         // will we extract the current() row of result.
 
@@ -387,7 +389,6 @@ class Builder extends IlluminateBuilder
             // If the node id is in the columns we need to treat it differently
             // since Neo4j's convenience with node ids will be retrieved as id(n)
             // instead of n.id.
-
             // WARNING: Do this after setting all the attributes to avoid overriding it
             // with a null value or colliding it with something else, some Daenerys dragons maybe ?!
             if (!is_null($columns) && in_array('id', $columns)) {
@@ -400,6 +401,50 @@ class Builder extends IlluminateBuilder
         }
 
         return $attributes;
+    }
+
+    /**
+     * Add a relationship query condition and order results by the count of the
+     * relationship.
+     *
+     * orderByHas builds on top of Has.  You call orderByHas with the same
+     * parameters as Has except that the 2nd argument is the direction of
+     * the ordering, then the 3rd argument is the same as the 2nd argument of Has()
+     * and so forth.
+     *
+     * for example if you were calling has like
+     *   $postsWithAtLeast2Comments = Post::has('comments', '>=', 2);
+     * if you want those same results except ordered by number of comments
+     * in descending order you would write
+     *   $postsWithAtLeast2Comments = Post::orderByHas('comments', 'desc', '>=', 2);
+     *
+     * @param string   $relation
+     * @param string   $operator
+     * @param int      $count
+     * @param string   $boolean
+     * @param \Closure $callback
+     *
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function orderByHas($relation, $direction = 'asc', $operator = '>=', $count = 1, $boolean = 'and', Closure $callback = null)
+    {
+        $this->has($relation, $operator, $count, $boolean, $callback);
+        $wheres = $this->getQuery()->wheres;
+
+        // because of how querrys with aggrigation (count)  are constructed, the column name 
+        // carried forward by the WITH statement will be the last element of the $wheres[] array.
+        $column = $wheres[count($wheres) - 1]['column'];
+        // "raw" tells later steps of compilation that we don't want this column prefixed or modified
+        //  in any other way, we have given this column the exact name we want in the 
+        //  WITH and ORDER BY clauses
+        $raw = true;
+        $direction = strtolower($direction) == 'asc' ? 'asc' : 'desc';
+
+        // adds to the $orders[] table what is needed to construct the clause in the form of
+        // ORDER BY $column 
+        $this->getQuery()->orders[] = compact('column', 'direction', 'raw');
+
+        return $this;
     }
 
     /**
@@ -455,6 +500,22 @@ class Builder extends IlluminateBuilder
     {
         // Add a MATCH clause for a relation to the query
         $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'in');
+
+        return $this;
+    }
+
+    /**
+     * Add early matches to query.
+     * 
+     * @see \Vinelab\NeoEloquent\Eloquent\Query\Builder::matchEarly()
+     *
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $model
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Builder/static
+     */
+    public function matchEarly($model)
+    {
+        $this->query->matchEarly($model);
 
         return $this;
     }
@@ -650,7 +711,9 @@ class Builder extends IlluminateBuilder
      */
     public function getMorphMutations()
     {
-        return array_filter($this->getMutations(), function ($mutation) { return $this->isMorphMutation($mutation); });
+        return array_filter($this->getMutations(), function ($mutation) {
+            return $this->isMorphMutation($mutation);
+        });
     }
 
     /**
@@ -678,7 +741,7 @@ class Builder extends IlluminateBuilder
             return true;
         });
 
-        return  count($matched) > 1 ? true : false;
+        return count($matched) > 1 ? true : false;
     }
 
     /**
@@ -730,21 +793,21 @@ class Builder extends IlluminateBuilder
 
         $parentNode = $relation->getParentNode();
         $relatedNode = $relation->getRelatedNode();
+
+        // Prefix all the columns with the relation's node placeholder in the query
+        $this->prefixWheres($query, $prefix);
+        // do "early match" here if  a carry (WITH) statement would otherwise block a 
+        // placeholder needed by a WHERE later on in the query.  Required for using soft deletes
+        $this->matchEarly($query);
+        // merge bindings for the columns
+        $this->query->mergeBindings($query->getQuery());
+
         // Tell the query to select our parent node only.
         $this->select($parentNode);
         // Set the relationship match clause.
         $method = $this->getMatchMethodName($relation);
 
-        $this->$method($relation->getParent(),
-            $relation->getRelated(),
-            $relatedNode,
-            $relation->getForeignKey(),
-            $relation->getLocalKey(),
-            $relation->getParentLocalKeyValue());
-
-        // Prefix all the columns with the relation's node placeholder in the query
-        // and merge the queries that needs to be merged.
-        $this->prefixAndMerge($query, $prefix);
+        $this->$method($relation->getParent(), $relation->getRelated(), $relatedNode, $relation->getForeignKey(), $relation->getLocalKey(), $relation->getParentLocalKeyValue());
 
         /*
          * After that we've done everything we need with the Has() and related we need
@@ -810,8 +873,7 @@ class Builder extends IlluminateBuilder
             // this is probably a One-To-One relationship or the dev decided not to add
             // multiple records as relations so we'll wrap it up in an array.
             if (
-                (!is_array($values) || Helpers::isAssocArray($values) || $values instanceof Model)
-                && !($values instanceof Collection)
+                (!is_array($values) || Helpers::isAssocArray($values) || $values instanceof Model) && !($values instanceof Collection)
             ) {
                 $values = [$values];
             }
@@ -873,7 +935,6 @@ class Builder extends IlluminateBuilder
         // We need to get the attributes of each $value from $values into
         // an instance of the related model so that we make sure that it goes
         // through the $fillable filter pipeline.
-
         // This adds support for having model instances mixed with values, so whenever
         // we encounter a Model we take it as our instance
         if ($attributes instanceof Model) {
