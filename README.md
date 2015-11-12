@@ -750,6 +750,7 @@ $edge = $location->user()->edge($location->user);
 ## Only in Neo
 
 - [CreateWith](#createwith)
+- [Ordering based on relationship properties](#orderByHas)
 
 Here you will find NeoEloquent-specific methods and implementations that with the
 wonderful Eloquent methods would make working with Graph and Neo4j a blast!
@@ -882,7 +883,59 @@ MATCH (tag:`Tag`)
 WHERE id(tag) IN [1, 2]
 CREATE (post)-[:TAG]->(tag);
 ```
+# Order by Relation Count
 
+### orderByHas
+
+In graph databases it is a common need to order a result set by the count of a relationship.
+For example, if you have a message board with Posts that have Comments you might model
+it like this:
+
+```php
+class Post extends Model
+{
+    protected $label = 'Post';
+
+    public function comments()
+    {
+        return $this->hasMany('Comment', 'COMMENT');
+    }
+}
+
+class Comment extends Model
+{
+    protected $label = 'Comment';
+
+    protected $fillable = ['text'];
+
+    public function post()
+    {
+        return $this->belongsTo('Post', 'COMMENT');
+    }
+}
+
+```
+
+Let's say that you want to list posts in descending order of number of comments, so that the most commented
+posts will be at the beginning of the list.  You can do this using the orderByHas() method like this:
+
+```php
+$sortedPostList = Post::orderByHas('comments', 'desc')->get();
+```
+
+You can use much of the same syntax as you could with Post::has().  For example if you wanted all posts
+with at least 10 comments, listed with most commented posts first you could write:
+
+```php
+$moreThan10PostsSorted = Post::orderByHas('comments', 'desc', '>=', 2)->get();
+```
+
+Here is a typical real-world scenario for using orderByHas():  On your message board you want
+to list only the top 20 most commented posts.  You can do this with
+
+```php
+$top20 = Post::orderByHas('comments', 'desc')->limit(20)->get();
+```
 
 ## Migration
 For migrations to work please perform the following:

@@ -74,6 +74,7 @@ class GrammarTest extends TestCase
     public function testPreparingRelationName()
     {
         $this->assertEquals('rel_posted_post:POSTED', $this->grammar->prepareRelation('POSTED', 'post'));
+//        $this->assertEquals('`rel_posted_post:POSTED`', $this->grammar->prepareRelation('POSTED', 'post'));
     }
 
     public function testNormalizingLabels()
