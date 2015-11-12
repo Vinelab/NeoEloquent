@@ -10,12 +10,12 @@ use Vinelab\NeoEloquent\Migrations\MigrationCreator;
 class MigrateMakeCommand extends BaseCommand
 {
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $name = 'neo4j:make:migration';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $description = 'Create a new migration file';
 
@@ -50,7 +50,7 @@ class MigrateMakeCommand extends BaseCommand
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function fire()
     {
@@ -94,7 +94,7 @@ class MigrateMakeCommand extends BaseCommand
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getArguments()
     {
@@ -104,7 +104,7 @@ class MigrateMakeCommand extends BaseCommand
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getOptions()
     {

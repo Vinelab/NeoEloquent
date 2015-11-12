@@ -11,12 +11,12 @@ class MigrateCommand extends BaseCommand
     use ConfirmableTrait;
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $name = 'neo4j:migrate';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $description = 'Run the database migrations';
 
@@ -45,7 +45,7 @@ class MigrateCommand extends BaseCommand
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function fire()
     {
@@ -79,7 +79,7 @@ class MigrateCommand extends BaseCommand
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getOptions()
     {

@@ -192,6 +192,40 @@ class Builder extends IlluminateQueryBuilder
     }
 
     /**
+     * Get the count of the total records for the paginator.
+     *
+     * @param array $columns
+     *
+     * @return int
+     */
+    public function getCountForPagination($columns = ['*'])
+    {
+        $this->backupFieldsForCount();
+
+        $this->aggregate = ['function' => 'count', 'columns' => $columns];
+
+        $results = $this->get();
+
+        $this->aggregate = null;
+
+        $this->restoreFieldsForCount();
+
+        if (isset($this->groups)) {
+            return count($results);
+        }
+
+        $row = null;
+        if ($results->offsetExists(0)) {
+            $row = $results->offsetGet(0);
+            $count = $row->offsetGet(0);
+
+            return $count;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
      * Add a basic where clause to the query.
      *
      * @param string $column
@@ -566,7 +600,20 @@ class Builder extends IlluminateQueryBuilder
         $relatedLabels = $related->getTable();
         $parentNode = $this->modelAsNode($parentLabels);
 
-        $this->matches[] = array(
+//        $this->matches[] = array(
+
+        // if this relation is already being matched, avoid doing it again
+        foreach ($this->matches as $match) {
+            if ($match['type'] == 'Relation' &&
+                $match['parent']['node'] == $parentNode &&
+                $match['relationship'] == $relationship) {
+                return $this;
+            }
+        }
+
+        array_push($this->matches,
+            array(
+
             'type' => 'Relation',
             'property' => $property,
             'direction' => $direction,
@@ -579,9 +626,34 @@ class Builder extends IlluminateQueryBuilder
                 'node' => $relatedNode,
                 'labels' => $relatedLabels,
             ),
-        );
+        ));
 
         $this->addBinding(array($this->wrap($property) => $value), 'matches');
+
+        return $this;
+    }
+
+    /**
+     * "Early" matches are for filtering (WHERE) nodes that appear later in the
+     * query in cases in which a WITH clause would otherwise block a field needed for that filtering WHERE clause 
+     * This is required for supporting soft deletion with relationship querries.
+     *
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $model
+     *
+     * @return \Vinelab\NeoEloquent\Query\Builder
+     */
+    public function matchEarly($model)
+    {
+        $labels = $model->getModel()->getTable();
+        $nodePlaceholder = $this->modelAsNode($labels);
+
+        $this->matches[] = [
+            'type' => 'Early',
+            'property' => 'id',
+            'node' => $nodePlaceholder,
+            'labels' => $labels ,
+            'query' => $model->getQuery(),
+        ];
 
         return $this;
     }
