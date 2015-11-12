@@ -120,16 +120,36 @@ class CypherGrammar extends Grammar
             return '';
         }
 
-        $prepared = array();
+//        $prepared = array();
+        $retval = "";
 
         foreach ($matches as $match) {
             $method = 'prepareMatch'.ucfirst($match['type']);
-            $prepared[] = $this->$method($match);
+//            $prepared[] = $this->$method($match);
+            $prepared = $this->$method($match);
+            $retval .= "MATCH " . $prepared . ' ';
         }
 
-        return 'MATCH '.implode(', ', $prepared);
+//        return 'MATCH '.implode(', ', $prepared);
+        return $retval;
     }
 
+     public function prepareMatchEarly(array $match) {
+        $node = $match['node'];
+        $labels = $this->prepareLabels($match['labels']);
+        $property = $match['property'];
+
+        $q = $match['query'];
+
+        $compwheres = $this->compileWheres($q);
+
+        $matchStatement = '(%s%s) ';
+
+        $retVal =  sprintf($matchStatement, $node, $labels) . $compwheres;
+
+        return $retVal;
+    }
+    
     /**
      * Prepare a query for MATCH using
      * collected $matches of type Relation.
@@ -148,7 +168,7 @@ class CypherGrammar extends Grammar
 
         // Prepare labels for query
         $parentLabels = $this->prepareLabels($parent['labels']);
-        $relatedLabels = $this->prepareLabels($related['labels']);
+//        $relatedLabels = $this->prepareLabels($related['labels']);
 
         // Get the relationship ready for query
         $relationshipLabel = $this->prepareRelation($relationship, $related['node']);
@@ -158,7 +178,7 @@ class CypherGrammar extends Grammar
         $property = $property == 'id' ? 'id('.$parent['node'].')' : $parent['node'].'.'.$property;
 
         return '('.$parent['node'].$parentLabels.'), '
-                .$this->craftRelation($parent['node'], $relationshipLabel, $related['node'], $relatedLabels, $direction);
+            . $this->craftRelation($parent['node'], $relationshipLabel, $related['node'], null, $direction);
     }
 
     /**
@@ -405,6 +425,8 @@ class CypherGrammar extends Grammar
 
     /**
      * Compile the "order by" portions of the query.
+       * If an order has the 'raw' property then its "column" will
+     * not be wrapped.  This is to support ordering by relationship.
      *
      * @param \Vinelab\NeoEloquent\Query\Builder $query
      * @param array                              $orders
@@ -413,9 +435,23 @@ class CypherGrammar extends Grammar
      */
     public function compileOrders(Builder $query, $orders)
     {
-        return 'ORDER BY '.implode(', ', array_map(function ($order) {
-                return $this->wrap($order['column']).' '.mb_strtoupper($order['direction']);
-        }, $orders));
+//        return 'ORDER BY '.implode(', ', array_map(function ($order) {
+//                return $this->wrap($order['column']).' '.mb_strtoupper($order['direction']);
+//        }, $orders));
+        $retval = null;
+
+        $retval =  'ORDER BY '. implode(', ', array_map(function($order){
+            $rv = null;
+            if (isset($order['raw']) && $order['raw']) {
+                $rv = $order['column'].' '.mb_strtoupper($order['direction']);
+            } else {
+                $rv = $this->wrap($order['column']).' '.mb_strtoupper($order['direction']);
+            }
+            return $rv;
+
+         }, $orders));
+
+        return $retval;
     }
 
     /**
@@ -843,14 +879,16 @@ class CypherGrammar extends Grammar
             $distinct = 'DISTINCT ';
         }
 
-        $node = $this->modelAsNode($aggregate['label']);
+//        $node = $this->modelAsNode($aggregate['label']);
+        $node  = $this->modelAsNode($query->from); // tomb - now gets labels from query not aggregate
 
         // We need to format the columns to be in the form of n.property unless it is a *.
         $columns = implode(', ', array_map(function ($column) use ($node) {
             return $column == '*' ? $column : "$node.$column";
         }, $aggregate['columns']));
 
-        if (!is_null($aggregate['percentile'])) {
+//        if (!is_null($aggregate['percentile'])) {
+        if ( isset($aggregate['percentile']) && ! is_null($aggregate['percentile'])) {            
             $percentile = $aggregate['percentile'];
 
             return "RETURN $function($columns, $percentile)";

@@ -401,6 +401,40 @@ class Builder extends IlluminateBuilder
 
         return $attributes;
     }
+    
+    /**
+     * Add a relationship query condition and order results by the count of the
+     * relationship.
+     *
+     * orderByHas builds on top of Has.  You call orderByHas with the same
+     * parameters as Has except that the 2nd argument is the direction of
+     * the ordering, then the 3rd argument is the same as the 2nd argument of Has()
+     * and so forth.
+     *
+     * for example if you were calling has like
+     *   $postsWithAtLeast2Comments = Post::has('comments', '>=', 2);
+     * if you want those same results except ordered by number of comments
+     * in descending order you would write
+     *   $postsWithAtLeast2Comments = Post::orderByHas('comments', 'desc', '>=', 2);
+     *
+     * @param  string  $relation
+     * @param  string  $operator
+     * @param  int     $count
+     * @param  string  $boolean
+     * @param  \Closure  $callback
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function orderByHas($relation, $direction = 'asc', $operator = '>=', $count = 1, $boolean = 'and', Closure $callback = null) {
+        $this->has($relation, $operator, $count, $boolean , $callback);
+        $wheres = $this->getQuery()->wheres;
+        $column = $wheres[count($wheres) - 1]['column'];
+        $raw = true;
+        $direction = strtolower($direction) == 'asc' ? 'asc' : 'desc';
+
+        $this->getQuery()->orders[] = compact('column', 'direction', 'raw');
+
+        return $this;
+    }
 
     /**
      * Gather the properties of a Node including its id.
@@ -459,6 +493,13 @@ class Builder extends IlluminateBuilder
         return $this;
     }
 
+    public function matchEarly($query)
+    {
+        $this->query->matchEarly($query);
+
+        return $this;
+    }
+    
     /**
      * Add an OUTGOING "->" relationship MATCH to the query.
      *
@@ -730,6 +771,12 @@ class Builder extends IlluminateBuilder
 
         $parentNode = $relation->getParentNode();
         $relatedNode = $relation->getRelatedNode();
+        
+        // do early match here
+        $this->prefixWheres($query, $prefix);
+        $this->matchEarly($query);
+        $this->query->mergeBindings($query->getQuery());
+        
         // Tell the query to select our parent node only.
         $this->select($parentNode);
         // Set the relationship match clause.
@@ -742,9 +789,9 @@ class Builder extends IlluminateBuilder
             $relation->getLocalKey(),
             $relation->getParentLocalKeyValue());
 
-        // Prefix all the columns with the relation's node placeholder in the query
-        // and merge the queries that needs to be merged.
-        $this->prefixAndMerge($query, $prefix);
+//        // Prefix all the columns with the relation's node placeholder in the query
+//        // and merge the queries that needs to be merged.
+//        $this->prefixAndMerge($query, $prefix);
 
         /*
          * After that we've done everything we need with the Has() and related we need

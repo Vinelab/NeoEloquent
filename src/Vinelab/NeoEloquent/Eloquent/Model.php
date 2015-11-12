@@ -241,7 +241,7 @@ abstract class Model extends IlluminateModel
 
         $key = $key ?: $this->getKeyName();
 
-        return new HasMany($instance->newQuery(), $this, $type, $key, $relation);
+        return new HasMany($instance->newQuery(), $this, $type, $key, mb_strtolower($relation));
     }
 
     /**

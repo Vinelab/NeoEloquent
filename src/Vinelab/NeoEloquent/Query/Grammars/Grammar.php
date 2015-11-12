@@ -93,6 +93,7 @@ class Grammar extends IlluminateGrammar
      */
     public function prepareRelation($relation, $related)
     {
+        // note tomb's 1.2.6 changes not applied here, tomb doesn't yet see where it would be required
         return $this->getRelationIdentifier($relation, $related).":{$relation}";
     }
 
@@ -106,7 +107,7 @@ class Grammar extends IlluminateGrammar
      */
     public function getRelationIdentifier($relation, $related)
     {
-        return 'rel_'.mb_strtolower($relation).'_'.$related;
+        return 'rel_'.mb_strtolower($relation).'_'. $related;
     }
 
     /**
