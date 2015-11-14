@@ -58,10 +58,10 @@ class QueryingRelationsTest extends TestCase
         $this->assertEquals(1, count($postWithTen));
         $this->assertEquals($postWithTenComments->toArray(), $postWithTen->first()->toArray());
     }
-    
+
     public function testQueryingHasCountDel()
     {
-        $postNoComment   = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
+        $postNoComment = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
         $postWithComment = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
         $postWithTwoComments = Post::create(['title' => 'I got two']);
         $postWithTenComments = Post::create(['tite' => 'Up yours posts, got 10 here']);
@@ -70,13 +70,11 @@ class QueryingRelationsTest extends TestCase
         $postWithComment->commentDels()->save($comment);
 
         // add two commentDels to $postWithTwoComments
-        for($i = 0; $i < 2; $i++)
-        {
+        for ($i = 0; $i < 2; ++$i) {
             $postWithTwoComments->commentDels()->create(['text' => "Comment $i"]);
         }
         // add ten commentDels to $postWithTenComments
-        for ($i = 0; $i < 10; $i++)
-        {
+        for ($i = 0; $i < 10; ++$i) {
             $postWithTenComments->commentDels()->create(['text' => "Comment $i"]);
         }
 
@@ -86,16 +84,14 @@ class QueryingRelationsTest extends TestCase
         $posts = Post::has('commentDels')->get();
         $this->assertEquals(3, count($posts));
         $expectedHasComments = [$postWithComment->id, $postWithTwoComments->id, $postWithTenComments->id];
-        foreach ($posts as $key => $post)
-        {
+        foreach ($posts as $key => $post) {
             $this->assertTrue(in_array($post->id, $expectedHasComments));
         }
 
         $postsWithMoreThanOneComment = Post::has('commentDels', '>=', 2)->get();
         $this->assertEquals(2, count($postsWithMoreThanOneComment));
         $expectedWithMoreThanOne = [$postWithTwoComments->id, $postWithTenComments->id];
-        foreach ($postsWithMoreThanOneComment as $post)
-        {
+        foreach ($postsWithMoreThanOneComment as $post) {
             $this->assertTrue(in_array($post->id, $expectedWithMoreThanOne));
         }
 
@@ -104,9 +100,9 @@ class QueryingRelationsTest extends TestCase
         $this->assertEquals($postWithTenComments->toArray(), $postWithTen->first()->toArray());
     }
 
-      public function testQueryingOrderByHas()
+    public function testQueryingOrderByHas()
     {
-        $postNoComment   = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
+        $postNoComment = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
         $postNoComment->tags()->save(Tag::create());
         $postWithComment = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
         $postWithComment->tags()->save(Tag::create());
@@ -119,13 +115,11 @@ class QueryingRelationsTest extends TestCase
         $postWithComment->comments()->save($comment);
 
         // add two commentDels to $postWithTwoComments
-        for($i = 0; $i < 2; $i++)
-        {
+        for ($i = 0; $i < 2; ++$i) {
             $postWithTwoComments->comments()->create(['text' => "Comment $i"]);
         }
         // add ten commentDels to $postWithTenComments
-        for ($i = 0; $i < 10; $i++)
-        {
+        for ($i = 0; $i < 10; ++$i) {
             $postWithTenComments->comments()->create(['text' => "Comment $i"]);
         }
 
@@ -135,16 +129,14 @@ class QueryingRelationsTest extends TestCase
         $posts = Post::has('comments')->get();
         $this->assertEquals(3, count($posts));
         $expectedHasComments = [$postWithComment->id, $postWithTwoComments->id, $postWithTenComments->id];
-        foreach ($posts as $key => $post)
-        {
+        foreach ($posts as $key => $post) {
             $this->assertTrue(in_array($post->id, $expectedHasComments));
         }
 
         $postsWithMoreThanOneComment = Post::has('comments', '>=', 2)->get();
         $this->assertEquals(2, count($postsWithMoreThanOneComment));
         $expectedWithMoreThanOne = [$postWithTwoComments->id, $postWithTenComments->id];
-        foreach ($postsWithMoreThanOneComment as $post)
-        {
+        foreach ($postsWithMoreThanOneComment as $post) {
             $this->assertTrue(in_array($post->id, $expectedWithMoreThanOne));
         }
 
@@ -163,10 +155,10 @@ class QueryingRelationsTest extends TestCase
             $lowest = $newLowest;
         }
     }
-    
+
     public function testQueryingHasCountDelAfterDel()
     {
-        $postNoComment   = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
+        $postNoComment = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
         $postNoComment->tags()->save(Tag::create());
         $postWithComment = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
         $postWithComment->tags()->save(Tag::create());
@@ -179,13 +171,11 @@ class QueryingRelationsTest extends TestCase
         $postWithComment->commentDels()->save($comment);
 
         // add two commentDels to $postWithTwoComments
-        for($i = 0; $i < 2; $i++)
-        {
+        for ($i = 0; $i < 2; ++$i) {
             $postWithTwoComments->commentDels()->create(['text' => "Comment $i"]);
         }
         // add ten commentDels to $postWithTenComments
-        for ($i = 0; $i < 10; $i++)
-        {
+        for ($i = 0; $i < 10; ++$i) {
             $postWithTenComments->commentDels()->create(['text' => "Comment $i"]);
         }
 
@@ -195,16 +185,14 @@ class QueryingRelationsTest extends TestCase
         $posts = Post::has('commentDels')->get();
         $this->assertEquals(3, count($posts));
         $expectedHasComments = [$postWithComment->id, $postWithTwoComments->id, $postWithTenComments->id];
-        foreach ($posts as $key => $post)
-        {
+        foreach ($posts as $key => $post) {
             $this->assertTrue(in_array($post->id, $expectedHasComments));
         }
 
         $postsWithMoreThanOneComment = Post::has('commentDels', '>=', 2)->get();
         $this->assertEquals(2, count($postsWithMoreThanOneComment));
         $expectedWithMoreThanOne = [$postWithTwoComments->id, $postWithTenComments->id];
-        foreach ($postsWithMoreThanOneComment as $post)
-        {
+        foreach ($postsWithMoreThanOneComment as $post) {
             $this->assertTrue(in_array($post->id, $expectedWithMoreThanOne));
         }
 
@@ -229,21 +217,21 @@ class QueryingRelationsTest extends TestCase
 
     public function testQueryingNestedWhereHas()
     {
-        $this->markTestIncomplete("Nested whereHas queries not yet implemented");
+        $this->markTestIncomplete('Nested whereHas queries not yet implemented');
         $user = User::create(['name' => 'cappuccino']);
         $user2 = User::create(['name' => 'bob']);
-        
+
         $role = Role::createWith(['alias' => 'pikachu'], [
             'permissions' => [
                 'title' => 'Read Things',
-                'alias' => 'read'
-            ]
+                'alias' => 'read',
+            ],
         ]);
         $role2 = Role::createWith(['alias' => 'role2'], [
             'permissions' => [
                 'title' => 'Write Things',
-                'alias' => 'write'
-            ]
+                'alias' => 'write',
+            ],
         ]);
         $account = Account::create(['guid' => uniqid()]);
         $account2 = Account::create(['guid' => uniqid()]);
@@ -252,17 +240,17 @@ class QueryingRelationsTest extends TestCase
         $user->account()->save($account);
         $user2->roles()->save($role2);
 
-        $found = User::whereHas('roles', function($q){
-            $q->whereHas('permissions', function($q){
+        $found = User::whereHas('roles', function ($q) {
+            $q->whereHas('permissions', function ($q) {
                 $q->where('alias', 'read');
             });
         })->get();
-        
+
         $this->assertEquals(1, count($found));
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[0]);
         $this->assertEquals($user->toArray(), $found[0]->toArray());
-    }  
+    }
 
     public function testQueryingWhereHasOne()
     {
@@ -966,13 +954,13 @@ class Post extends Model
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Comment', 'COMMENT');
     }
-    
+
     // these are comments with soft deletes
     public function commentDels()
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\CommentDel', 'COMMENT_DEL');
     }
-    
+
     public function tags()
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Tag', 'TAG');
@@ -1012,8 +1000,8 @@ class Comment extends Model
     }
 }
 
-class CommentDel extends Model {
-
+class CommentDel extends Model
+{
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
