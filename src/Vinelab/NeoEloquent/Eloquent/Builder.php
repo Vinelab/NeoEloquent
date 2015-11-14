@@ -502,14 +502,15 @@ class Builder extends IlluminateBuilder
     }
 
     /**
+     * Add early matches to query
      * 
-     * 
-     * @param  type $query // FIXME
+     * @see \Vinelab\NeoEloquent\Eloquent\Query\Builder::matchEarly()
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $model
      * @return \Vinelab\NeoEloquent\Eloquent\Builder/static
      */
-    public function matchEarly($query)
+    public function matchEarly($model)
     {
-        $this->query->matchEarly($query);
+        $this->query->matchEarly($model);
 
         return $this;
     }

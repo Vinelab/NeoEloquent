@@ -165,7 +165,7 @@ class CypherGrammar extends Grammar
     /**
      * Prepare a query for MATCH using
      * collected $matches of type Early.
-     *
+     * @see \Vinelab\NeoEloquent\Eloquent\Query\Builder::matchEarly()
      * @param array $match
      *
      * @return string

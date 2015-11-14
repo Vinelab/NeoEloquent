@@ -635,11 +635,11 @@ class Builder extends IlluminateQueryBuilder
      * "Early" matches are for filtering (WHERE) nodes that appear later in the
      * query in cases in which a WITH clause would otherwise block a field needed for that filtering WHERE clause 
      * This is required for supporting soft deletion with relationship querries
-     * @param type $query
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $model
      * @return \Vinelab\NeoEloquent\Query\Builder
      */
-    public function matchEarly($query) {
-        $labels = $query->getModel()->getTable();
+    public function matchEarly($model) {
+        $labels = $model->getModel()->getTable();
         $nodePlaceholder = $this->modelAsNode($labels);
 
         $this->matches[] = [
@@ -647,7 +647,7 @@ class Builder extends IlluminateQueryBuilder
             'property' => 'id',
             'node' => $nodePlaceholder,
             'labels' => $labels ,
-            'query' => $query->getQuery(),
+            'query' => $model->getQuery(),
         ];
         return $this;
     }
