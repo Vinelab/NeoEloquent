@@ -104,6 +104,66 @@ class QueryingRelationsTest extends TestCase
         $this->assertEquals($postWithTenComments->toArray(), $postWithTen->first()->toArray());
     }
 
+      public function testQueryingOrderByHas()
+    {
+        $postNoComment   = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
+        $postNoComment->tags()->save(Tag::create());
+        $postWithComment = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
+        $postWithComment->tags()->save(Tag::create());
+        $postWithTwoComments = Post::create(['title' => 'I got two']);
+        $postWithTwoComments->tags()->save(Tag::create());
+        $postWithTenComments = Post::create(['tite' => 'Up yours posts, got 10 here']);
+        $postWithTenComments->tags()->save(Tag::create());
+
+        $comment = new Comment(['text' => 'food']);
+        $postWithComment->comments()->save($comment);
+
+        // add two commentDels to $postWithTwoComments
+        for($i = 0; $i < 2; $i++)
+        {
+            $postWithTwoComments->comments()->create(['text' => "Comment $i"]);
+        }
+        // add ten commentDels to $postWithTenComments
+        for ($i = 0; $i < 10; $i++)
+        {
+            $postWithTenComments->comments()->create(['text' => "Comment $i"]);
+        }
+
+        $allPosts = Post::get();
+        $this->assertEquals(4, count($allPosts));
+
+        $posts = Post::has('comments')->get();
+        $this->assertEquals(3, count($posts));
+        $expectedHasComments = [$postWithComment->id, $postWithTwoComments->id, $postWithTenComments->id];
+        foreach ($posts as $key => $post)
+        {
+            $this->assertTrue(in_array($post->id, $expectedHasComments));
+        }
+
+        $postsWithMoreThanOneComment = Post::has('comments', '>=', 2)->get();
+        $this->assertEquals(2, count($postsWithMoreThanOneComment));
+        $expectedWithMoreThanOne = [$postWithTwoComments->id, $postWithTenComments->id];
+        foreach ($postsWithMoreThanOneComment as $post)
+        {
+            $this->assertTrue(in_array($post->id, $expectedWithMoreThanOne));
+        }
+
+        $postWithTen = Post::has('comments', '=', 10)->get();
+        $this->assertEquals(1, count($postWithTen));
+        $this->assertEquals($postWithTenComments->id, $postWithTen->first()->id);
+
+        $postsOrdered = Post::orderByHas('comments', 'desc')->has('tags')->get();
+        $this->assertEquals(3, count($postsOrdered));
+        $lowest = null;
+        foreach ($postsOrdered as $post) {
+            $newLowest = $post->comments()->count();
+            if ($lowest != null) {
+                $this->assertLessThanOrEqual($lowest, $newLowest);
+            }
+            $lowest = $newLowest;
+        }
+    }
+    
     public function testQueryingHasCountDelAfterDel()
     {
         $postNoComment   = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);

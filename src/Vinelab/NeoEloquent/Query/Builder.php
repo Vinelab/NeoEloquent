@@ -632,10 +632,9 @@ class Builder extends IlluminateQueryBuilder
     }
     
     /**
-     * "Early" matches are for filtering models that appear later in the
-     * query.  This is required for supporting soft deletion with
-     * relationship querries
-     *
+     * "Early" matches are for filtering (WHERE) nodes that appear later in the
+     * query in cases in which a WITH clause would otherwise block a field needed for that filtering WHERE clause 
+     * This is required for supporting soft deletion with relationship querries
      * @param type $query
      * @return \Vinelab\NeoEloquent\Query\Builder
      */

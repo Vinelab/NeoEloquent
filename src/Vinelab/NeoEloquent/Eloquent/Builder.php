@@ -427,10 +427,18 @@ class Builder extends IlluminateBuilder
     public function orderByHas($relation, $direction = 'asc', $operator = '>=', $count = 1, $boolean = 'and', Closure $callback = null) {
         $this->has($relation, $operator, $count, $boolean , $callback);
         $wheres = $this->getQuery()->wheres;
+ 
+        // because of how querrys with aggrigation (count)  are constructed, the column name 
+        // carried forward by the WITH statement will be the last element of the $wheres[] array.
         $column = $wheres[count($wheres) - 1]['column'];
-        $raw = true;
+        // "raw" tells later steps of compilation that we don't want this column prefixed or modified
+        //  in any other way, we have given this column the exact name we want in the 
+        //  WITH and ORDER BY clauses
+        $raw = true; 
         $direction = strtolower($direction) == 'asc' ? 'asc' : 'desc';
 
+        // adds to the $orders[] table what is needed to construct the clause in the form of
+        // ORDER BY $column 
         $this->getQuery()->orders[] = compact('column', 'direction', 'raw');
 
         return $this;
@@ -493,6 +501,12 @@ class Builder extends IlluminateBuilder
         return $this;
     }
 
+    /**
+     * 
+     * 
+     * @param  type $query // FIXME
+     * @return \Vinelab\NeoEloquent\Eloquent\Builder/static
+     */
     public function matchEarly($query)
     {
         $this->query->matchEarly($query);
@@ -772,9 +786,12 @@ class Builder extends IlluminateBuilder
         $parentNode = $relation->getParentNode();
         $relatedNode = $relation->getRelatedNode();
         
-        // do early match here
+        // Prefix all the columns with the relation's node placeholder in the query
         $this->prefixWheres($query, $prefix);
+        // do "early match" here if  a carry (WITH) statement would otherwise block a 
+        // placeholder needed by a WHERE later on in the query.  Required for using soft deletes
         $this->matchEarly($query);
+        // merge bindings for the columns
         $this->query->mergeBindings($query->getQuery());
         
         // Tell the query to select our parent node only.
@@ -788,10 +805,6 @@ class Builder extends IlluminateBuilder
             $relation->getForeignKey(),
             $relation->getLocalKey(),
             $relation->getParentLocalKeyValue());
-
-//        // Prefix all the columns with the relation's node placeholder in the query
-//        // and merge the queries that needs to be merged.
-//        $this->prefixAndMerge($query, $prefix);
 
         /*
          * After that we've done everything we need with the Has() and related we need
