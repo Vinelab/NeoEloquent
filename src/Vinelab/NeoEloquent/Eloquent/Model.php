@@ -5,7 +5,6 @@ namespace Vinelab\NeoEloquent\Eloquent;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
@@ -241,7 +240,7 @@ abstract class Model extends IlluminateModel
 
         $key = $key ?: $this->getKeyName();
 
-        return new HasMany($instance->newQuery(), $this, $type, $key, $relation);
+        return new HasMany($instance->newQuery(), $this, $type, $key, mb_strtolower($relation));
     }
 
     /**
@@ -533,7 +532,7 @@ abstract class Model extends IlluminateModel
 
             foreach ($related as $model) {
                 // we will fire model events on actual models, however attached models using IDs will not be considered.
-                if ($model instanceof Model) {
+                if ($model instanceof self) {
                     if (!$model->exists && $model->fireModelEvent('creating') === false) {
                         return false;
                     }
