@@ -107,7 +107,7 @@ class Grammar extends IlluminateGrammar
      */
     public function getRelationIdentifier($relation, $related)
     {
-        return 'rel_'.mb_strtolower($relation).'_'. $related;
+        return 'rel_'.mb_strtolower($relation).'_'.$related;
     }
 
     /**

@@ -12,12 +12,12 @@ class MigrateResetCommand extends Command
     use ConfirmableTrait;
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $name = 'neo4j:migrate:reset';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $description = 'Rollback all database migrations';
 
@@ -39,7 +39,7 @@ class MigrateResetCommand extends Command
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function fire()
     {
@@ -68,7 +68,7 @@ class MigrateResetCommand extends Command
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getOptions()
     {

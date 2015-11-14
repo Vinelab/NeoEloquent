@@ -194,7 +194,8 @@ class Builder extends IlluminateQueryBuilder
     /**
      * Get the count of the total records for the paginator.
      *
-     * @param  array  $columns
+     * @param array $columns
+     *
      * @return int
      */
     public function getCountForPagination($columns = ['*'])
@@ -217,12 +218,13 @@ class Builder extends IlluminateQueryBuilder
         if ($results->offsetExists(0)) {
             $row = $results->offsetGet(0);
             $count = $row->offsetGet(0);
+
             return $count;
         } else {
             return 0;
         }
     }
-    
+
     /**
      * Add a basic where clause to the query.
      *
@@ -599,7 +601,7 @@ class Builder extends IlluminateQueryBuilder
         $parentNode = $this->modelAsNode($parentLabels);
 
 //        $this->matches[] = array(
-        
+
         // if this relation is already being matched, avoid doing it again
         foreach ($this->matches as $match) {
             if ($match['type'] == 'Relation' &&
@@ -611,7 +613,7 @@ class Builder extends IlluminateQueryBuilder
 
         array_push($this->matches,
             array(
-        
+
             'type' => 'Relation',
             'property' => $property,
             'direction' => $direction,
@@ -630,25 +632,29 @@ class Builder extends IlluminateQueryBuilder
 
         return $this;
     }
-    
+
     /**
      * "Early" matches are for filtering (WHERE) nodes that appear later in the
      * query in cases in which a WITH clause would otherwise block a field needed for that filtering WHERE clause 
-     * This is required for supporting soft deletion with relationship querries
+     * This is required for supporting soft deletion with relationship querries.
+     *
      * @param \Vinelab\NeoEloquent\Eloquent\Builder $model
+     *
      * @return \Vinelab\NeoEloquent\Query\Builder
      */
-    public function matchEarly($model) {
+    public function matchEarly($model)
+    {
         $labels = $model->getModel()->getTable();
         $nodePlaceholder = $this->modelAsNode($labels);
 
         $this->matches[] = [
-            'type'  => 'Early',
+            'type' => 'Early',
             'property' => 'id',
             'node' => $nodePlaceholder,
             'labels' => $labels ,
             'query' => $model->getQuery(),
         ];
+
         return $this;
     }
 
