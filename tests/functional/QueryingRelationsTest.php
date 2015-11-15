@@ -103,9 +103,11 @@ class QueryingRelationsTest extends TestCase
 
     public function testSimpleOrderByHas()
     {
-        for ($i = 0; $i < 100; ++$i) {
+        $nPosts = 10;
+        $nPostsWithComments = 5; // must be <= $nPosts
+        for ($i = 0; $i < $nPosts; ++$i) {
             $post = Post::create(['title' => "Post $i", 'body' => "Post $i Body"]);
-            if ($i < 50) {
+            if ($i < $nPostsWithComments) {
                 $comment = $post->comments()->create(['text' => "Comment on post $i"]);
             }
             $tag = $post->tags()->save(Tag::create());
@@ -117,7 +119,7 @@ class QueryingRelationsTest extends TestCase
 //        $this->assertEquals(1, count($postsWithCommentLoaded));
 
         $postsWithCommentAndTagLoaded = Post::has('comments')->has('tags')->get();
-//        $this->assertEquals(1, count($postsWithCommentAndTagLoaded));
+        $this->assertEquals($nPostsWithComments, count($postsWithCommentAndTagLoaded));
     }
 
     public function testQueryingOrderByHas()

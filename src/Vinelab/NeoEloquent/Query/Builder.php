@@ -600,15 +600,17 @@ class Builder extends IlluminateQueryBuilder
         $relatedLabels = $related->getTable();
         $parentNode = $this->modelAsNode($parentLabels);
 
+
+
         $newMatch = [
             'type' => 'Relation',
             'property' => $property,
             'direction' => $direction,
             'relationship' => $relationship,
-            'parent' => array(
+            'parent' => [
                 'node' => $parentNode,
                 'labels' => $parentLabels,
-            ),
+            ],
             'related' => [
                 'node' => $relatedNode,
                 'labels' => $relatedLabels,
@@ -618,6 +620,7 @@ class Builder extends IlluminateQueryBuilder
         if (!in_array($this->matches, $newMatch)) {
             // relation matches go at the end of match array, node matches go at the front
             array_push($this->matches, $newMatch);
+            $this->matchEarly($parent);
             $this->addBinding(array($this->wrap($property) => $value), 'matches');
         }
 
@@ -646,9 +649,17 @@ class Builder extends IlluminateQueryBuilder
             'query' => $model->getQuery(),
         ];
 
-        if (!in_array($this->matches, $newMatch)) {
-            array_unshift($this->matches, $newMatch);
+        foreach ($this->matches as $existingMatch) {
+            if ($existingMatch['type'] == $newMatch['type'] &&
+                $existingMatch['property'] == $newMatch['property'] &&
+                $existingMatch['node'] == $newMatch['node'] &&
+                $existingMatch['labels'] == $newMatch['labels']                
+            ) {
+                return $this;
+            }
         }
+
+        array_unshift($this->matches, $newMatch);
 
         return $this;
     }

@@ -148,7 +148,7 @@ class CypherGrammar extends Grammar
         $relationship = $match['relationship'];
 
         // Prepare labels for query
-        $parentLabels = $this->prepareLabels($parent['labels']);
+//        $parentLabels = $this->prepareLabels($parent['labels']);
 //        $relatedLabels = $this->prepareLabels($related['labels']);
         // Get the relationship ready for query
         $relationshipLabel = $this->prepareRelation($relationship, $related['node']);
@@ -157,8 +157,8 @@ class CypherGrammar extends Grammar
         // so we will have to turn it into something like id(node)
         $property = $property == 'id' ? 'id('.$parent['node'].')' : $parent['node'].'.'.$property;
 
-        return '('.$parent['node'].$parentLabels.'), '
-            .$this->craftRelation($parent['node'], $relationshipLabel, $related['node'], null, $direction);
+        // BOOKMARK
+        return $this->craftRelation($parent['node'], $relationshipLabel, $related['node'], null, $direction);
     }
 
     /**
