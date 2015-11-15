@@ -92,6 +92,9 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
          * RETURN rel;
          */
 
+        $edge = $this->getEdge($model, $attributes);
+        $edge->save();
+
         // Set the relation on the model
         $this->parent->setRelation($this->relation, $model);
 
@@ -102,7 +105,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
          * it is a relationship with an edge incoming towards the $parent model and we call it
          * an "Edge" relationship.
          */
-        return $this->getEdge($model, $attributes);
+        return $edge;
     }
 
     /**
