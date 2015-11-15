@@ -62,12 +62,12 @@ class Builder extends IlluminateQueryBuilder
      * @var array
      */
     protected $operators = array(
-        '+', '-', '*', '/', '%', '^',    // Mathematical
+        '+', '-', '*', '/', '%', '^', // Mathematical
         '=', '<>', '<', '>', '<=', '>=', // Comparison
         'is null', 'is not null',
-        'and', 'or', 'xor', 'not',       // Boolean
-        'in', '[x]', '[x .. y]',         // Collection
-        '=~',                             // Regular Expression
+        'and', 'or', 'xor', 'not', // Boolean
+        'in', '[x]', '[x .. y]', // Collection
+        '=~', // Regular Expression
     );
 
     /**
@@ -192,6 +192,40 @@ class Builder extends IlluminateQueryBuilder
     }
 
     /**
+     * Get the count of the total records for the paginator.
+     *
+     * @param array $columns
+     *
+     * @return int
+     */
+    public function getCountForPagination($columns = ['*'])
+    {
+        $this->backupFieldsForCount();
+
+        $this->aggregate = ['function' => 'count', 'columns' => $columns];
+
+        $results = $this->get();
+
+        $this->aggregate = null;
+
+        $this->restoreFieldsForCount();
+
+        if (isset($this->groups)) {
+            return count($results);
+        }
+
+        $row = null;
+        if ($results->offsetExists(0)) {
+            $row = $results->offsetGet(0);
+            $count = $row->offsetGet(0);
+
+            return $count;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
      * Add a basic where clause to the query.
      *
      * @param string $column
@@ -216,10 +250,10 @@ class Builder extends IlluminateQueryBuilder
         // received when the method was called and pass it into the nested where.
         if (is_array($column)) {
             return $this->whereNested(function (IlluminateQueryBuilder $query) use ($column) {
-                foreach ($column as $key => $value) {
-                    $query->where($key, '=', $value);
-                }
-            }, $boolean);
+                    foreach ($column as $key => $value) {
+                        $query->where($key, '=', $value);
+                    }
+                }, $boolean);
         }
 
         if (func_num_args() == 2) {
@@ -320,8 +354,8 @@ class Builder extends IlluminateQueryBuilder
     {
         if (is_array($this->wheres)) {
             return count(array_filter($this->wheres, function ($where) use ($column) {
-                return $where['column'] == $column;
-            }));
+                    return $where['column'] == $column;
+                }));
         }
     }
 
@@ -566,22 +600,66 @@ class Builder extends IlluminateQueryBuilder
         $relatedLabels = $related->getTable();
         $parentNode = $this->modelAsNode($parentLabels);
 
-        $this->matches[] = array(
+
+
+        $newMatch = [
             'type' => 'Relation',
             'property' => $property,
             'direction' => $direction,
             'relationship' => $relationship,
-            'parent' => array(
+            'parent' => [
                 'node' => $parentNode,
                 'labels' => $parentLabels,
-            ),
-            'related' => array(
+            ],
+            'related' => [
                 'node' => $relatedNode,
                 'labels' => $relatedLabels,
-            ),
-        );
+            ]
+        ];
 
-        $this->addBinding(array($this->wrap($property) => $value), 'matches');
+        if (!in_array($this->matches, $newMatch)) {
+            // relation matches go at the end of match array, node matches go at the front
+            array_push($this->matches, $newMatch);
+            $this->matchEarly($parent);
+            $this->addBinding(array($this->wrap($property) => $value), 'matches');
+        }
+
+        return $this;
+    }
+
+    /**
+     * "Early" matches are for filtering (WHERE) nodes that appear later in the
+     * query in cases in which a WITH clause would otherwise block a field needed for that filtering WHERE clause 
+     * This is required for supporting soft deletion with relationship querries.
+     *
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $model
+     *
+     * @return \Vinelab\NeoEloquent\Query\Builder
+     */
+    public function matchEarly($model)
+    {
+        $labels = $model->getModel()->getTable();
+        $nodePlaceholder = $this->modelAsNode($labels);
+
+        $newMatch = [
+            'type' => 'Early',
+            'property' => 'id',
+            'node' => $nodePlaceholder,
+            'labels' => $labels,
+            'query' => $model->getQuery(),
+        ];
+
+        foreach ($this->matches as $existingMatch) {
+            if ($existingMatch['type'] == $newMatch['type'] &&
+                $existingMatch['property'] == $newMatch['property'] &&
+                $existingMatch['node'] == $newMatch['node'] &&
+                $existingMatch['labels'] == $newMatch['labels']                
+            ) {
+                return $this;
+            }
+        }
+
+        array_unshift($this->matches, $newMatch);
 
         return $this;
     }
@@ -704,7 +782,7 @@ class Builder extends IlluminateQueryBuilder
     {
         $this->aggregate = array_merge([
             'label' => $this->from,
-        ], compact('function', 'columns', 'percentile'));
+            ], compact('function', 'columns', 'percentile'));
 
         $previousColumns = $this->columns;
 
@@ -832,13 +910,13 @@ class Builder extends IlluminateQueryBuilder
 
         return $value;
     }
-
     /*
      * Add/Drop labels
      * @param $labels array array of strings(labels)
      * @param $operation string 'add' or 'drop'
      * @return bool true if success, otherwise false
      */
+
     public function updateLabels($labels, $operation = 'add')
     {
         $cypher = $this->grammar->compileUpdateLabels($this, $labels, $operation);
