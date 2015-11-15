@@ -356,4 +356,94 @@ class HasManyRelationTest extends TestCase
             $edge->delete();
         }
     }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingHasManyRelation()
+    {
+        // not really author and books, they're cities but wth.
+        $skyrim = Author::create(['name' => 'Skyrim']);
+
+        $riften = Book::create(['title' => 'Riften']);
+        $whiterun = Book::create(['title' => 'Whiterun']);
+
+        $skyrim->books()->saveMany([$riften, $whiterun]);
+
+        $fetched = Author::find($skyrim->getKey());
+        $this->assertEquals(2, count($fetched->books));
+        $fetched->books()->delete();
+
+        // make sure it was deleted
+        $again = Author::find($skyrim->getKey());
+        $deletedEdges = $again->books()->edges();
+        $this->assertEquals(0, count($deletedEdges));
+    }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingHasManyRelationKeepingEndModels()
+    {
+        // not really author and books, they're cities but wth.
+        $skyrim = Author::create(['name' => 'Skyrim']);
+
+        $riften = Book::create(['title' => 'Riften']);
+        $whiterun = Book::create(['title' => 'Whiterun']);
+
+        $skyrim->books()->saveMany([$riften, $whiterun]);
+
+        $fetched = Author::find($skyrim->getKey());
+        $this->assertEquals(2, count($fetched->books));
+        $fetched->books()->delete(true);
+
+        // make sure it was deleted
+        $again = Author::find($skyrim->getKey());
+        $deletedEdges = $again->books()->edges();
+        $this->assertEquals(0, count($deletedEdges));
+
+        $riftenFound = Book::where('title', 'Riften')->first();
+        $this->assertEquals($riften->toArray(), $riftenFound->toArray());
+
+        $whiterunFound = Book::where('title', 'Whiterun')->first();
+        $this->assertEquals($whiterun->toArray(), $whiterunFound->toArray());
+    }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingModelHasManyWithWhereHasRelation()
+    {
+        // not really author and books, they're cities but wth.
+        $skyrim = Author::create(['name' => 'Skyrim']);
+
+        $riften = Book::create(['title' => 'Riften']);
+        $whiterun = Book::create(['title' => 'Whiterun']);
+
+        $skyrim->books()->saveMany([$riften, $whiterun]);
+
+        $fetched = Author::find($skyrim->getKey());
+        $this->assertEquals(2, count($fetched->books));
+
+        $deleted = Author::whereHas('books', function ($q) {
+            $q->where('title', 'Riften')
+                ->orWhere('title', 'Whiterun');
+        })->delete(true);
+
+        $this->assertTrue($deleted);
+
+        $this->assertNull(Author::find($skyrim->getKey()));
+
+        $riftenFound = Book::where('title', 'Riften')->first();
+        $this->assertEquals($riften->toArray(), $riftenFound->toArray());
+
+        $whiterunFound = Book::where('title', 'Whiterun')->first();
+        $this->assertEquals($whiterun->toArray(), $whiterunFound->toArray());
+    }
 }

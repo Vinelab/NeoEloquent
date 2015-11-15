@@ -52,6 +52,11 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
         $this->finder = $this->newFinder();
     }
 
+    public function delete($shouldKeepEndNode = false)
+    {
+        return $this->finder->delete($shouldKeepEndNode);
+    }
+
     /**
      * Initialize the relation on a set of models.
      *

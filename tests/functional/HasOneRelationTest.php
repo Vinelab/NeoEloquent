@@ -164,4 +164,74 @@ class HasOneRelationTest extends TestCase
         $this->assertEquals($relation->toArray(), $retrieved->toArray());
         $this->assertTrue($relation->delete());
     }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingHasOneRelation()
+    {
+        $user = User::create(['name' => 'Soldin', 'email' => 'sol@din.net']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'Tamriel']);
+
+        $user->profile()->save($profile);
+
+        // fetch user and relation
+        $fetched = User::find($user->getKey());
+        $deleted = $fetched->profile()->delete();
+        $this->assertTrue($deleted);
+
+        // fetch again to see if it were really deleted
+        $again = User::find($user->getKey());
+        $this->assertNull($again->profile);
+    }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingHasOneRelationKeepingEndModel()
+    {
+        $user = User::create(['name' => 'Soldin', 'email' => 'sol@din.net']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'Tamriel']);
+
+        $user->profile()->save($profile);
+
+        // fetch user and relation
+        $fetched = User::find($user->getKey());
+        $deleted = $fetched->profile()->delete(true);
+        $this->assertTrue($deleted);
+
+        // fetch again to see if it were really deleted
+        $again = User::find($user->getKey());
+        $this->assertNull($again->profile, 'relationship has been deleted');
+
+        $fetchedProfile = Profile::find($profile->getKey());
+        $this->assertNotNull($profile->toArray(), $fetchedProfile->toArray());
+    }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingModelHasOneWithWhereHasRelation()
+    {
+        $user = User::create(['name' => 'Hrard', ' email' => 'hrar@d.n']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'Orc']);
+
+        $user->profile()->save($profile);
+
+        // fetch user and relation by specific query
+        $deleted = User::whereHas('profile', function ($q) {
+            $q->where('service', 'Orc');
+        })->delete();
+
+        $this->assertTrue($deleted);
+
+        $fetched = User::find($user->getKey());
+        $this->assertNull($fetched);
+    }
 }

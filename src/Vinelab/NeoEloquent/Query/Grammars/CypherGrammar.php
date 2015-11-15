@@ -9,7 +9,6 @@ class CypherGrammar extends Grammar
 {
     protected $selectComponents = array(
         'matches',
-        'from',
         'with',
         'wheres',
         'unions',
@@ -117,17 +116,21 @@ class CypherGrammar extends Grammar
     public function compileMatches(Builder $query, $matches)
     {
         if (!is_array($matches) || empty($matches)) {
-            return '';
+            // when no matches are specified fallback to using the 'from' key
+            $component = $this->compileComponents($query, ['from']);
+            $cypher = $component['from'];
+        } else {
+            $prepared = array();
+
+            foreach ($matches as $match) {
+                $method = 'prepareMatch'.ucfirst($match['type']);
+                $prepared[] = $this->$method($match);
+            }
+
+            $cypher = 'MATCH '.implode(', ', $prepared);
         }
 
-        $prepared = array();
-
-        foreach ($matches as $match) {
-            $method = 'prepareMatch'.ucfirst($match['type']);
-            $prepared[] = $this->$method($match);
-        }
-
-        return 'MATCH '.implode(', ', $prepared);
+        return $cypher;
     }
 
     /**
@@ -519,16 +522,46 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    public function compileDelete(Builder $query)
+    public function compileDelete(Builder $query, $isRelationship = false, $shouldKeepEndNode = false)
     {
         // We always need the MATCH clause in our Cypher which
         // is the responsibility of compiling the From component.
-        $match = $this->compileComponents($query, array('from'));
-        $match = $match['from'];
+        $matchComponent = $this->compileComponents($query, array('matches'));
+        $matchCypher = $matchComponent['matches'];
 
         $where = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
-        return "$match $where DELETE ".$query->modelAsNode();
+        // by default we assume that we're deleting the start node
+        // so we set the identifier accordingly (the placeholder of the startn node)
+        $returnIdentifiers = $query->modelAsNode();
+
+        // now we determine whether we're deleting a relationship,
+        // in this case the identifier that we're targeting is
+        // then the identifier of the relationship and the end node.
+        if ($isRelationship) {
+            // when deleting the relationship we should not delete
+            // the start node, only the relationship and optionally
+            // the end node so we will clear whatever identifier we had.
+            $returnIdentifiers = '';
+            foreach ($query->matches as $match) {
+                // determine whether we should also delete the end node
+                if (!$shouldKeepEndNode) {
+                    $returnIdentifiers .= $match['related']['node'].', ';
+                }
+
+                $returnIdentifiers .= $this->getRelationIdentifier($match['relationship'], $match['related']['node']);
+            }
+        } else {
+
+            // when deleting the start node must not have any relations left
+            // so when asked to delete the start node we'll add an
+            // OPTIONAL MATCH (n)-[r]-() where n is the node
+            // we're matching in this query.
+            $matchCypher .= ', OPTIONAL MATCH ('.$query->modelAsNode().')-[r]-()';
+            $returnIdentifiers .= ', r';
+        }
+
+        return "$matchCypher $where DELETE $returnIdentifiers";
     }
 
     public function compileWith(Builder $query, $with)
@@ -786,7 +819,7 @@ class CypherGrammar extends Grammar
                 // CREATE these relationships.
                 $attachments['matches'][] = "({$identifier}{$nodeLabel})";
 
-                if($idKey === 'id') {
+                if ($idKey === 'id') {
                     // Native Neo4j IDs are treated differently
                     $attachments['wheres'][] = "id($identifier) IN [".implode(', ', $attach).']';
                 } else {

@@ -847,4 +847,21 @@ class Builder extends IlluminateQueryBuilder
 
         return (bool) $result->getNodesCount();
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($id = null)
+    {
+        $result = parent::delete($id);
+
+        // sometimes we will receive the result as is
+        // from the affecting statement so we return a boolean
+        // since if there were errors they would've been thrown.
+        if ($result instanceof Result) {
+            $result = true;
+        }
+
+        return $result;
+    }
 }

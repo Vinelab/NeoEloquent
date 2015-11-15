@@ -6,6 +6,7 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Neoxygen\NeoClient\Formatter\Relationship;
+use Neoxygen\NeoClient\Formatter\Result;
 
 class Finder extends Delegate
 {
@@ -44,6 +45,27 @@ class Finder extends Delegate
 
         // Now we can return the determined edge out of the relation and direction.
         return $this->edgeFromRelationWithDirection($relation, $parentModel, $relatedModel, $direction);
+    }
+
+    /**
+     * Delete the current relation in the query.
+     *
+     * @return bool
+     */
+    public function delete($shouldKeepEndNode)
+    {
+        $builder = $this->query->getQuery();
+        $grammar = $builder->getGrammar();
+
+        $cypher = $grammar->compileDelete($builder, true, $shouldKeepEndNode);
+
+        $result = $this->connection->delete($cypher, $builder->getBindings());
+
+        if ($result instanceof Result) {
+            $result = true;
+        }
+
+        return $result;
     }
 
     /**

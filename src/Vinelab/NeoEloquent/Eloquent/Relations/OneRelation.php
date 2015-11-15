@@ -2,9 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
 
 abstract class OneRelation extends BelongsTo implements RelationInterface
 {
@@ -37,6 +38,11 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
         }
 
         return $models;
+    }
+
+    public function delete($shouldKeepEndNode = false)
+    {
+        return (new Finder($this->query))->delete($shouldKeepEndNode);
     }
 
     /**

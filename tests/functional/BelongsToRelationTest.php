@@ -3,8 +3,9 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class User extends Model
 {
@@ -168,4 +169,83 @@ class BelongsToRelationTest extends TestCase
         $this->assertEquals($relation->toArray(), $retrieved->toArray());
         $this->assertTrue($relation->delete());
     }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingBelongsToRelation()
+    {
+        $location = Location::create(['lat' => 52.3735291, 'long' => 4.886257, 'country' => 'Skyrim', 'city' => 'Solitude']);
+        $user = User::create(['name' => 'Cluson', 'alias' => 'cluson']);
+
+        $relation = $location->user()->associate($user);
+        $this->assertInstanceOf(EdgeIn::class, $relation);
+
+        $fetched = Location::find($location->getKey());
+        $deleted = $fetched->user()->delete();
+        $this->assertTrue($deleted);
+
+        // make sure the location is still there
+        $again = Location::find($location->getKey());
+        $this->assertEquals($fetched->toArray(), $again->toArray());
+        $this->assertNull($again->user, 'relation deleted successfully');
+
+        $shovedUser = User::find($user->getKey());
+        $this->assertNull($shovedUser);
+    }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingBelongsToRelationKeepingEndModel()
+    {
+        $location = Location::create(['lat' => 52.3735291, 'long' => 4.886257, 'country' => 'Skyrim', 'city' => 'Solitude']);
+        $user = User::create(['name' => 'Cluson', 'alias' => 'cluson']);
+
+        $relation = $location->user()->associate($user);
+        $this->assertInstanceOf(EdgeIn::class, $relation);
+
+        $fetched = Location::find($location->getKey());
+        $deleted = $fetched->user()->delete(true);
+        $this->assertTrue($deleted);
+
+        // make sure the location is still there
+        $again = Location::find($location->getKey());
+        $this->assertEquals($fetched->toArray(), $again->toArray());
+        $this->assertNull($again->user, 'relation deleted successfully');
+
+        $remainingUser = User::find($user->getKey());
+        $this->assertEquals($user->toArray(), $remainingUser->toArray());
+    }
+
+    /**
+     * Regression for issue #120.
+     *
+     * @see https://github.com/Vinelab/NeoEloquent/issues/120
+     */
+    public function testDeletingModelBelongsToWithWhereHasRelation()
+    {
+        $location = Location::create(['lat' => 52.3735291, 'long' => 4.886257, 'country' => 'Skyrim', 'city' => 'Solitude']);
+        $user = User::create(['name' => 'Cluson', 'alias' => 'cluson']);
+
+        $relation = $location->user()->associate($user);
+        $this->assertInstanceOf(EdgeIn::class, $relation);
+
+        $deleted = Location::whereHas('user', function ($q) {
+            $q->where('name', 'Cluson');
+        })->delete();
+
+        $this->assertTrue($deleted);
+
+        // make sure the location is still there
+        $this->assertNull(Location::find($location->getKey()));
+
+        $remainingUser = User::find($user->getKey());
+        $this->assertEquals($user->toArray(), $remainingUser->toArray());
+    }
+
 }
