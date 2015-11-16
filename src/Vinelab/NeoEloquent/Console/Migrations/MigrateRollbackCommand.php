@@ -12,12 +12,12 @@ class MigrateRollbackCommand extends Command
     use ConfirmableTrait;
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $name = 'neo4j:migrate:rollback';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $description = 'Rollback the last database migration';
 
@@ -41,7 +41,7 @@ class MigrateRollbackCommand extends Command
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function fire()
     {
@@ -64,7 +64,7 @@ class MigrateRollbackCommand extends Command
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getOptions()
     {

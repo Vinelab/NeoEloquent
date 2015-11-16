@@ -161,7 +161,7 @@ class CypherGrammar extends Grammar
         $property = $property == 'id' ? 'id('.$parent['node'].')' : $parent['node'].'.'.$property;
 
         return '('.$parent['node'].$parentLabels.'), '
-                .$this->craftRelation($parent['node'], $relationshipLabel, $related['node'], $relatedLabels, $direction);
+            .$this->craftRelation($parent['node'], $relationshipLabel, $related['node'], $relatedLabels, $direction);
     }
 
     /**
@@ -188,7 +188,7 @@ class CypherGrammar extends Grammar
         $property = $property == 'id' ? 'id('.$parent['node'].')' : $parent['node'].'.'.$property;
 
         return '('.$parent['node'].$parentLabels.'), '
-                .$this->craftRelation($parent['node'], 'r', $relatedNode, '', $direction);
+            .$this->craftRelation($parent['node'], 'r', $relatedNode, '', $direction);
     }
 
     /**
@@ -219,19 +219,18 @@ class CypherGrammar extends Grammar
         switch (strtolower($direction)) {
             case 'out':
                 $relation = '(%s)-[%s]->%s';
-            break;
+                break;
 
             case 'in':
                 $relation = '(%s)<-[%s]-%s';
-            break;
+                break;
 
             default:
                 $relation = '(%s)-[%s]-%s';
-            break;
+                break;
         }
 
-        return ($bare) ? sprintf($relation, $parentNode, $relationLabel, $relatedNode)
-            : sprintf($relation, $parentNode, $relationLabel, '('.$relatedNode.$relatedLabels.')');
+        return ($bare) ? sprintf($relation, $parentNode, $relationLabel, $relatedNode) : sprintf($relation, $parentNode, $relationLabel, '('.$relatedNode.$relatedLabels.')');
     }
 
     /**
@@ -312,6 +311,28 @@ class CypherGrammar extends Grammar
         $value = $this->parameter($where);
 
         return $this->wrap($where['column']).' '.$where['operator'].' '.$value;
+    }
+
+    /**
+     * The where clause that excludes soft deleted models, or selects only soft deleted models
+     * is added when the soft deleting scope is applied.  This is too early in the compilation
+     * process to know whether any WITH clauses will appear in final output.
+     * This function formats the soft delete WHERE clause correctly in either case.
+     * 
+     * @param Builder $query
+     * @param array   $where
+     *
+     * @return string
+     */
+    protected function WHERESoftDeleted(Builder $query, $where)
+    {
+        if (empty($query->with)) {
+            $cypher = $where['placeholder'].'.'.$where['column'].' '.$where['operator'].' ';
+        } else {
+            $cypher = $where['placeholder'].'_'.$where['column'].' '.$where['operator'].' ';
+        }
+
+        return $cypher;
     }
 
     /**
@@ -417,8 +438,8 @@ class CypherGrammar extends Grammar
     public function compileOrders(Builder $query, $orders)
     {
         return 'ORDER BY '.implode(', ', array_map(function ($order) {
-                return $this->wrap($order['column']).' '.mb_strtoupper($order['direction']);
-        }, $orders));
+                    return $this->wrap($order['column']).' '.mb_strtoupper($order['direction']);
+                }, $orders));
     }
 
     /**
@@ -485,7 +506,7 @@ class CypherGrammar extends Grammar
     public function columnsFromValues(array $values, $updating = false)
     {
         $columns = [];
-         // Each one of the columns in the update statements needs to be wrapped in the
+        // Each one of the columns in the update statements needs to be wrapped in the
         // keyword identifiers, also a place-holder needs to be created for each of
         // the values in the list of bindings so we can make the sets statements.
 
@@ -633,7 +654,7 @@ class CypherGrammar extends Grammar
 
         $query = "MATCH ($startNode$startLabel)";
 
-         // we account for no-end relationships.
+        // we account for no-end relationships.
         if (isset($attributes['end'])) {
             $endKey = $attributes['end']['id']['key'];
             $endNode = 'rel_'.$this->modelAsNode($attributes['label']);
@@ -686,12 +707,7 @@ class CypherGrammar extends Grammar
         }
 
         $query = $this->craftRelation(
-            $startNode,
-            'r:'.$attributes['label'],
-            '('.$endNode.')',
-            $endLabel,
-            $attributes['direction'],
-            true
+            $startNode, 'r:'.$attributes['label'], '('.$endNode.')', $endLabel, $attributes['direction'], true
         );
 
         $properties = $attributes['properties'];
@@ -753,14 +769,13 @@ class CypherGrammar extends Grammar
         $model = $create['model'];
         $related = $create['related'];
         $identifier = true; // indicates that we this entity requires an identifier for prepareEntity.
-
         // Prepare the parent model as a query entity with an identifier to be
         // later used when relating with the rest of the models, something like:
         // (post:`Post` {title: '..', body: '...'})
         $entity = $this->prepareEntity([
             'label' => $model['label'],
             'bindings' => $model['attributes'],
-        ], $identifier);
+            ], $identifier);
 
         $parentNode = $this->modelAsNode($model['label']);
 
@@ -794,12 +809,7 @@ class CypherGrammar extends Grammar
                 $createdIdsToReturn[] = $identifier;
                 // get a relation cypher.
                 $relations[] = $this->craftRelation(
-                    $parentNode,
-                    ':'.$relation['type'],
-                    $this->prepareEntity(compact('label', 'bindings'), $identifier),
-                    $this->modelAsNode($label),
-                    $relation['direction'],
-                    $bare
+                    $parentNode, ':'.$relation['type'], $this->prepareEntity(compact('label', 'bindings'), $identifier), $this->modelAsNode($label), $relation['direction'], $bare
                 );
             }
 
@@ -827,12 +837,7 @@ class CypherGrammar extends Grammar
                 }
 
                 $attachments['relations'][] = $this->craftRelation(
-                    $parentNode,
-                    ':'.$relation['type'],
-                    "($identifier)",
-                    $nodeLabel,
-                    $relation['direction'],
-                    $bare
+                    $parentNode, ':'.$relation['type'], "($identifier)", $nodeLabel, $relation['direction'], $bare
                 );
             }
         }
@@ -850,7 +855,7 @@ class CypherGrammar extends Grammar
             $cypher .= " WITH $parentNode";
 
             if (!empty($createdIdsToReturn)) {
-                $cypher  .= ', '.implode(', ', $createdIdsToReturn);
+                $cypher .= ', '.implode(', ', $createdIdsToReturn);
             }
 
             // MATCH the related nodes that we are attaching.
@@ -880,8 +885,8 @@ class CypherGrammar extends Grammar
 
         // We need to format the columns to be in the form of n.property unless it is a *.
         $columns = implode(', ', array_map(function ($column) use ($node) {
-            return $column == '*' ? $column : "$node.$column";
-        }, $aggregate['columns']));
+                return $column == '*' ? $column : "$node.$column";
+            }, $aggregate['columns']));
 
         if (!is_null($aggregate['percentile'])) {
             $percentile = $aggregate['percentile'];
