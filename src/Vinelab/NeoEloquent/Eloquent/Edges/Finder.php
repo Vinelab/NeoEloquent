@@ -141,7 +141,9 @@ class Finder extends Delegate
         // we match and find otherwise.
         $direction = 'in';
 
-        if ($node->getId() === $parent->getKey()) {
+        $id = ($parent->getKeyName() === 'id') ? $id = $node->getId() : $node->getProperty($parent->getKeyName());
+
+        if ($id === $parent->getKey()) {
             $direction = 'out';
         }
 
