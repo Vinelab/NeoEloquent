@@ -551,17 +551,19 @@ class CypherGrammar extends Grammar
 
                 $returnIdentifiers .= $this->getRelationIdentifier($match['relationship'], $match['related']['node']);
             }
+
+            $matchCypher .= $where;
         } else {
 
             // when deleting the start node must not have any relations left
             // so when asked to delete the start node we'll add an
             // OPTIONAL MATCH (n)-[r]-() where n is the node
             // we're matching in this query.
-            $matchCypher .= ', OPTIONAL MATCH ('.$query->modelAsNode().')-[r]-()';
+            $matchCypher .= $where.' OPTIONAL MATCH ('.$query->modelAsNode().')-[r]-()';
             $returnIdentifiers .= ', r';
         }
 
-        return "$matchCypher $where DELETE $returnIdentifiers";
+        return "$matchCypher DELETE $returnIdentifiers";
     }
 
     public function compileWith(Builder $query, $with)
