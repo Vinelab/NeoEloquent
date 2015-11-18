@@ -400,6 +400,8 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
         // get them as collection
         if ($ids instanceof Collection) {
             $ids = $ids->modelKeys();
+        } elseif (!is_array($ids)) {
+            $ids = [$ids];
         }
 
         // First we need to attach the relationships that do not exist
