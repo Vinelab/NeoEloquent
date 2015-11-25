@@ -260,6 +260,25 @@ class CypherGrammar extends Grammar {
         return sprintf("MATCH (%s)", $labels);
     }
 
+    
+    /**
+     * Compile a "where not in" clause.
+     *
+     * @param  \Vinelab\NeoEloquent\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereNotIn(Builder $query, $where)
+    {
+        if (empty($where['values'])) {
+            return '1 = 1';
+        }
+
+        $values = $this->parameterize($where['values']);
+        $values = str_replace(['{','}'], "'", $values);
+        return 'not '. $this->wrap($where['column']).' in ['.$values.']';
+    }
+
         /**
      * Compile the "where" portions of the query.
      *
