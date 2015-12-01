@@ -8,16 +8,14 @@ return [
 
         'neo4j' => [
             'driver' => 'neo4j',
-            'host' => 'dev',
-            'port' => 7574,
+            'host' => 'localhost',
+            'port' => 7474,
             'username' => 'neo4j',
             'password' => 'neoeloquent',
         ],
 
         'default' => [
             'driver' => 'neo4j',
-            'host' => 'dev',
-            'port' => 7574,
             'username' => 'neo4j',
             'password' => 'neoeloquent',
         ],
