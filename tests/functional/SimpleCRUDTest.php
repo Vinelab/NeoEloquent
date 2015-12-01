@@ -381,4 +381,45 @@ class SimpleCRUDTest extends TestCase
         $this->assertEquals($tomorrow->format(Wiz::getDateFormat()), $updated->fiz);
         $this->assertEquals($after->format(Wiz::getDateFormat()), $updated->biz);
     }
+
+    /**
+     * Regression test for issue #84 regarding pagination.
+     *
+     * @see  https://github.com/Vinelab/NeoEloquent/issues/84
+     *
+     * @return [type] [description]
+     */
+    public function testPagination()
+    {
+        $w1 = Wiz::create([
+            'fiz' => 'foo',
+            'biz' => 'boo',
+            'triz' => 'troo',
+        ]);
+
+        $w2 = Wiz::create([
+            'fiz' => 'foo',
+            'biz' => 'boo',
+            'triz' => 'troo',
+        ]);
+
+        $w3 = Wiz::create([
+            'fiz' => 'foo',
+            'biz' => 'boo',
+            'triz' => 'troo',
+        ]);
+
+        $ws = [$w1, $w2, $w3];
+
+        $result = wiz::paginate(2);
+
+        foreach ($result as $wiz) {
+            foreach ($ws as $w) {
+                $this->assertEquals($wiz->toArray(), $w->toArray());
+            }
+        }
+
+        $z = $result->nextPageUrl();
+        $this->assertEquals(3, $result->total);
+    }
 }
