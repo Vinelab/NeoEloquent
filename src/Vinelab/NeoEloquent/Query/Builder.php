@@ -220,16 +220,6 @@ class Builder extends IlluminateQueryBuilder
         } else {
                 return 0;
         }
-
-/*        $row = null;
-        if ($results->offsetExists(0)) {
-                $row = $results->offsetGet(0);
-                $count = $row->offsetGet(0);
-                return $count;
-        } else {
-                return 0;
-        }
-*/
     }
 
     /**

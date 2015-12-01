@@ -393,33 +393,26 @@ class SimpleCRUDTest extends TestCase
     {
         $w1 = Wiz::create([
             'fiz' => 'foo',
-            'biz' => 'boo',
-            'triz' => 'troo',
+            'biz' => 'foo',
+            'triz' => 'foo',
         ]);
 
         $w2 = Wiz::create([
-            'fiz' => 'foo',
-            'biz' => 'boo',
-            'triz' => 'troo',
+            'fiz' => 'too',
+            'biz' => 'too',
+            'triz' => 'too',
         ]);
 
         $w3 = Wiz::create([
-            'fiz' => 'foo',
+            'fiz' => 'boo',
             'biz' => 'boo',
-            'triz' => 'troo',
+            'triz' => 'boo',
         ]);
 
-        $ws = [$w1, $w2, $w3];
+        $result = wiz::orderBy('id')->paginate(2);
 
-        $result = wiz::paginate(2);
-
-        foreach ($result as $wiz) {
-            foreach ($ws as $w) {
-                $this->assertEquals($wiz->toArray(), $w->toArray());
-            }
-        }
-
-        $z = $result->nextPageUrl();
-        $this->assertEquals(3, $result->total);
+        $this->assertEquals($result[0]->toArray(), $w1->toArray());
+        $this->assertEquals($result[1]->toArray(), $w2->toArray());
+        $this->assertEquals(3, $result->total());
     }
 }
