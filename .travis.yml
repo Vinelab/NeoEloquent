@@ -31,7 +31,12 @@ jdk:
 
 env:
   - NEO4J_VERSION="2.1.6"
+  - NEO4J_VERSION="2.1.8"
   - NEO4J_VERSION="2.2.2"
+  - NEO4J_VERSION="2.2.3"
+  - NEO4J_VERSION="2.2.7"
+  - NEO4J_VERSION="2.3.0"
+  - NEO4J_VERSION="2.3.1"
 
 notifications:
   slack:
