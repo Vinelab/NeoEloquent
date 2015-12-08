@@ -202,13 +202,11 @@ class WheresTheTest extends TestCase {
 
     public function testWhereNotIn()
     {
-        $this->markTestIncomplete();
 
-        $u = User::whereNotIn('alias', ['ab', 'cd', 'eg'])->get();
+        $u = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->get();
         $still = new \Illuminate\Database\Eloquent\Collection(array($this->gh, $this->ij));
 
         $this->assertCount(2, $u);
-        $this->assertEquals($buddies, $still);
     }
 
     public function testWhereBetween()
