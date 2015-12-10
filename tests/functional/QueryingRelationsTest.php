@@ -668,6 +668,27 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals('theTag', $tags[0]['title']);
     }
 
+    public function testQueryingParentWithMultipleWhereHasUsingName()
+    {
+        $user = new User();
+        $user1 = User::create(['name'=>'bob']);
+        $user2 = User::create(['name'=>'zack']);
+
+        $book = Book::create(['name'=>'book1']);
+        $disk = Disk::create(['name' => 'disk1']);
+
+        $user1->books()->save($book);
+        $user1->disks()->save($disk);
+
+        $user = $user->whereHas('books',function($query){
+                            $query->where('name','book1');
+                        })
+                     ->whereHas('disks', function($query){
+                            $query->where('name','disk1');
+                        })->get();
+        $this->assertEquals('bob', $user[0]->name);
+    }
+
 }
 
 class User extends Model {
@@ -694,6 +715,40 @@ class User extends Model {
     public function organization()
     {
         return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Organization', 'MEMBER_OF');
+    }
+
+    public function books()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Book', 'HAS');
+    }
+
+    public function disks()
+    {
+        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Disk', 'HAS');
+    }
+}
+
+class Book extends Model  {
+
+    protected $label = 'Book';
+
+    protected $fillable = ['name'];
+
+    public function user()
+    {
+        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'HAS');
+    }
+}
+
+class Disk extends Model {
+
+    protected $label = 'Disk';
+
+    protected $fillable = ['name'];
+
+    public function user()
+    {
+        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'HAS');
     }
 }
 
