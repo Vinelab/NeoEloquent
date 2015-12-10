@@ -37,9 +37,11 @@ class Builder extends IlluminateBuilder {
      */
     public function find($id, $properties = array('*'))
     {
+      //If the ID is numeric we cast it to int.
+      //otherwise we leave it as it is.
         if (is_array($id))
         {
-            return $this->findMany($id, $properties);
+            return $this->findMany(array_map(function($id){return is_numeric($id) ? (int) $id : $id;},$id), $properties);
         }
 
         if ($this->model->getKeyName() === 'id') {
