@@ -301,6 +301,14 @@ class CypherGrammar extends Grammar {
             $cypher[] = $where['boolean'].' '.$this->$method($query, $where);
         }
 
+        //add integer to the name variable
+        if(sizeof($cypher)>1)
+        {   
+            foreach ($cypher as $key => $value) {
+                $cypher[$key] = str_replace('{name}', "{name$key}", $cypher[$key]);
+            } 
+        }
+
         // If we actually have some where clauses, we will strip off the first boolean
         // operator, which is added by the query builders for convenience so we can
         // avoid checking for the first clauses in each of the compilers methods.

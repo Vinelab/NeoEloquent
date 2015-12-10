@@ -305,6 +305,18 @@ class Connection extends IlluminateConnection {
                 if ($property == 'id') $property = $grammar->getIdReplacement($property);
 
                 $prepared[$property] = $real;
+
+                if(isset($prepared['name']))
+                {   
+                    $prepared[$property] = array_values($binding);
+                    $values = $prepared['name'];
+                    if(sizeof($values)>1)
+                    {
+                        foreach ($values as $key => $value) {
+                            $prepared["name".$key] = $value;
+                        }
+                    }
+                }
             }
         }
 
