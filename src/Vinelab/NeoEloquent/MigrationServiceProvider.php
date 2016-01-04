@@ -190,7 +190,7 @@ class MigrationServiceProvider extends ServiceProvider {
 
             $packagePath = $app['path.base'].'/vendor';
 
-            $composer = $app->make('Illuminate\Foundation\Composer');
+            $composer = $app->make('Illuminate\Support\Composer');
 
             return new MigrateMakeCommand($creator, $composer, $packagePath);
         });
