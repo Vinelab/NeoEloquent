@@ -2,17 +2,100 @@
 
 namespace Vinelab\NeoEloquent;
 
-use Exception;
-use DateTime;
 use Closure;
+use DateTime;
+use Exception;
+use Vinelab\NeoEloquent\Query\Expression;
+use Vinelab\NeoEloquent\Query\Processors\Processor;
+use Illuminate\Contracts\Events\Dispatcher;
+use LogicException;
 use Neoxygen\NeoClient\Client;
 use Neoxygen\NeoClient\ClientBuilder;
-use Vinelab\NeoEloquent\Query\Builder;
-use Illuminate\Database\Connection as IlluminateConnection;
-use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
+use Throwable;
+use Vinelab\NeoEloquent\Exceptions\Exception as QueryException;
+use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
+use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 
-class Connection extends IlluminateConnection
+class Connection
 {
+    /**
+     * The reconnector instance for the connection.
+     *
+     * @var callable
+     */
+    protected $reconnector;
+
+    /**
+     * The query grammar implementation.
+     *
+     * @var \Illuminate\Database\Query\Grammars\Grammar
+     */
+    protected $queryGrammar;
+
+    /**
+     * The schema grammar implementation.
+     *
+     * @var \Illuminate\Database\Schema\Grammars\Grammar
+     */
+    protected $schemaGrammar;
+
+    /**
+     * The query post processor implementation.
+     *
+     * @var \Illuminate\Database\Query\Processors\Processor
+     */
+    protected $postProcessor;
+
+    /**
+     * The event dispatcher instance.
+     *
+     * @var \Illuminate\Contracts\Events\Dispatcher
+     */
+    protected $events;
+
+    /**
+     * The number of active transactions.
+     *
+     * @var int
+     */
+    protected $transactions = 0;
+
+    /**
+     * All of the queries run against the connection.
+     *
+     * @var array
+     */
+    protected $queryLog = [];
+
+    /**
+     * Indicates whether queries are being logged.
+     *
+     * @var bool
+     */
+    protected $loggingQueries = false;
+
+    /**
+     * Indicates if the connection is in a "dry run".
+     *
+     * @var bool
+     */
+    protected $pretending = false;
+
+    /**
+     * The name of the connected database.
+     *
+     * @var string
+     */
+    protected $database;
+
+    /**
+     * The database connection configuration options.
+     *
+     * @var array
+     */
+    protected $config = [];
+
     /**
      * The Neo4j active client connection.
      *
@@ -57,6 +140,230 @@ class Connection extends IlluminateConnection
 
         // activate and set the database client connection
         $this->neo = $this->createConnection();
+    }
+
+    /**
+     * Set the query grammar used by the connection.
+     *
+     * @param  \Illuminate\Database\Query\Grammars\Grammar  $grammar
+     * @return void
+     */
+    public function setQueryGrammar(Grammar $grammar)
+    {
+        $this->queryGrammar = $grammar;
+    }
+
+
+    /**
+     * Set the query grammar to the default implementation.
+     */
+    public function useDefaultQueryGrammar()
+    {
+        $this->queryGrammar = $this->getDefaultQueryGrammar();
+    }
+
+    /**
+     * Set the schema grammar to the default implementation.
+     */
+    public function useDefaultSchemaGrammar()
+    {
+        $this->schemaGrammar = $this->getDefaultSchemaGrammar();
+    }
+
+    /**
+     * Set the query post processor to the default implementation.
+     */
+    public function useDefaultPostProcessor()
+    {
+        $this->postProcessor = $this->getDefaultPostProcessor();
+    }
+
+    /**
+     * Get the query post processor used by the connection.
+     *
+     * @return \Illuminate\Database\Query\Processors\Processor
+     */
+    public function getPostProcessor()
+    {
+        return $this->postProcessor;
+    }
+
+    /**
+     * Set the query post processor used by the connection.
+     *
+     * @param \Illuminate\Database\Query\Processors\Processor $processor
+     */
+    public function setPostProcessor(Processor $processor)
+    {
+        $this->postProcessor = $processor;
+    }
+
+    /**
+     * Get the event dispatcher used by the connection.
+     *
+     * @return \Illuminate\Contracts\Events\Dispatcher
+     */
+    public function getEventDispatcher()
+    {
+        return $this->events;
+    }
+
+    /**
+     * Get the default post processor instance.
+     *
+     * @return \Illuminate\Database\Query\Processors\Processor
+     */
+    protected function getDefaultPostProcessor()
+    {
+        return new Processor();
+    }
+
+    /**
+     * Determine if the connection in a "dry run".
+     *
+     * @return bool
+     */
+    public function pretending()
+    {
+        return $this->pretending === true;
+    }
+
+    // *
+    //  * Get the default fetch mode for the connection.
+    //  *
+    //  * @return int
+
+    // public function getFetchMode()
+    // {
+    //     return $this->fetchMode;
+    // }
+
+    /**
+     * Clear the query log.
+     */
+    public function flushQueryLog()
+    {
+        $this->queryLog = [];
+    }
+
+    /**
+     * Enable the query log on the connection.
+     */
+    public function enableQueryLog()
+    {
+        $this->loggingQueries = true;
+    }
+
+    /**
+     * Disable the query log on the connection.
+     */
+    public function disableQueryLog()
+    {
+        $this->loggingQueries = false;
+    }
+
+    /**
+     * Get the connection query log.
+     *
+     * @return array
+     */
+    public function getQueryLog()
+    {
+        return $this->queryLog;
+    }
+
+    /**
+     * Determine whether we're logging queries.
+     *
+     * @return bool
+     */
+    public function logging()
+    {
+        return $this->loggingQueries;
+    }
+
+    /**
+     * Get the name of the connected database.
+     *
+     * @return string
+     */
+    public function getDatabaseName()
+    {
+        return $this->database;
+    }
+
+    /**
+     * Set the name of the connected database.
+     *
+     * @param string $database
+     *
+     * @return string
+     */
+    public function setDatabaseName($database)
+    {
+        $this->database = $database;
+    }
+
+    /**
+     * Set the default fetch mode for the connection.
+     *
+     * @param int $fetchMode
+     *
+     * @return int
+     */
+    public function setFetchMode($fetchMode)
+    {
+        $this->fetchMode = $fetchMode;
+    }
+
+    /**
+     * Set the event dispatcher instance on the connection.
+     *
+     * @param \Illuminate\Contracts\Events\Dispatcher $events
+     */
+    public function setEventDispatcher(Dispatcher $events)
+    {
+        $this->events = $events;
+    }
+
+    /**
+     * Get a new raw query expression.
+     *
+     * @param mixed $value
+     *
+     * @return \Illuminate\Database\Query\Expression
+     */
+    public function raw($value)
+    {
+        return new Expression($value);
+    }
+
+    /**
+     * Run a select statement and return a single result.
+     *
+     * @param string $query
+     * @param array  $bindings
+     *
+     * @return mixed
+     */
+    public function selectOne($query, $bindings = [])
+    {
+        $records = $this->select($query, $bindings);
+
+        return count($records) > 0 ? reset($records) : null;
+    }
+
+    /**
+     * Run a select statement against the database.
+     *
+     * @param string $query
+     * @param array  $bindings
+     *
+     * @return array
+     */
+    public function selectFromWriteConnection($query, $bindings = [])
+    {
+        return $this->select($query, $bindings, false);
     }
 
     /**
@@ -157,6 +464,16 @@ class Connection extends IlluminateConnection
     }
 
     /**
+     * Get the database connection name.
+     *
+     * @return string|null
+     */
+    public function getName()
+    {
+        return $this->getConfig('name');
+    }
+
+    /**
      * Get the Neo4j driver name.
      *
      * @return string
@@ -203,6 +520,32 @@ class Connection extends IlluminateConnection
     public function insert($query, $bindings = array())
     {
         return $this->statement($query, $bindings, true);
+    }
+
+    /**
+     * Run an update statement against the database.
+     *
+     * @param string $query
+     * @param array  $bindings
+     *
+     * @return int
+     */
+    public function update($query, $bindings = [])
+    {
+        return $this->affectingStatement($query, $bindings);
+    }
+
+    /**
+     * Run a delete statement against the database.
+     *
+     * @param string $query
+     * @param array  $bindings
+     *
+     * @return int
+     */
+    public function delete($query, $bindings = [])
+    {
+        return $this->affectingStatement($query, $bindings);
     }
 
     /**
@@ -253,6 +596,24 @@ class Connection extends IlluminateConnection
                 ->getResult();
 
             return ($rawResults === true) ? $results : !!$results;
+        });
+    }
+
+    /**
+     * Run a raw, unprepared query against the PDO connection.
+     *
+     * @param string $query
+     *
+     * @return bool
+     */
+    public function unprepared($query)
+    {
+        return $this->run($query, [], function ($me, $query) {
+            if ($me->pretending()) {
+                return true;
+            }
+
+            return (bool) $me->getPdo()->exec($query);
         });
     }
 
@@ -380,6 +741,44 @@ class Connection extends IlluminateConnection
     }
 
     /**
+     * Execute a Closure within a transaction.
+     *
+     * @param \Closure $callback
+     *
+     * @return mixed
+     *
+     * @throws \Throwable
+     */
+    public function transaction(Closure $callback)
+    {
+        $this->beginTransaction();
+
+        // We'll simply execute the given callback within a try / catch block
+        // and if we catch any exception we can rollback the transaction
+        // so that none of the changes are persisted to the database.
+        try {
+            $result = $callback($this);
+
+            $this->commit();
+        }
+
+        // If we catch an exception, we will roll back so nothing gets messed
+        // up in the database. Then we'll re-throw the exception so it can
+        // be handled how the developer sees fit for their applications.
+        catch (Exception $e) {
+            $this->rollBack();
+
+            throw $e;
+        } catch (Throwable $e) {
+            $this->rollBack();
+
+            throw $e;
+        }
+
+        return $result;
+    }
+
+    /**
      * Start a new database transaction.
      */
     public function beginTransaction()
@@ -387,7 +786,7 @@ class Connection extends IlluminateConnection
         ++$this->transactions;
 
         if ($this->transactions == 1) {
-            $this->transaction = $this->neo->createTransaction();
+            $this->transaction = $this->getClient()->createTransaction();
         }
 
         $this->fireConnectionEvent('beganTransaction');
@@ -408,6 +807,16 @@ class Connection extends IlluminateConnection
     }
 
     /**
+     * Get the number of active transactions.
+     *
+     * @return int
+     */
+    public function transactionLevel()
+    {
+        return $this->transactions;
+    }
+
+    /**
      * Rollback the active database transaction.
      */
     public function rollBack()
@@ -424,18 +833,58 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * Begin a fluent query against a database table.
-     * In neo4j's terminologies this is a node.
+     * Execute the given callback in "dry run" mode.
      *
-     * @param string $table
+     * @param \Closure $callback
+     *
+     * @return array
+     */
+    public function pretend(Closure $callback)
+    {
+        $loggingQueries = $this->loggingQueries;
+
+        $this->enableQueryLog();
+
+        $this->pretending = true;
+
+        $this->queryLog = [];
+
+        // Basically to make the database connection "pretend", we will just return
+        // the default values for all the query methods, then we will return an
+        // array of queries that were "executed" within the Closure callback.
+        $callback($this);
+
+        $this->pretending = false;
+
+        $this->loggingQueries = $loggingQueries;
+
+        return $this->queryLog;
+    }
+
+    /**
+     * Begin a fluent query against a node.
+     *
+     * @param string $label
      *
      * @return \Vinelab\NeoEloquent\Query\Builder
      */
-    public function table($table)
+    public function node($label)
     {
-        $query = new Builder($this, $this->getQueryGrammar());
+        $query = new QueryBuilder($this, $this->getQueryGrammar());
 
-        return $query->from($table);
+        return $query->from($label);
+    }
+
+    /**
+     * Get a new query builder instance.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function query()
+    {
+        return new QueryBuilder(
+            $this, $this->getQueryGrammar(), $this->getPostProcessor()
+        );
     }
 
     /**
@@ -478,11 +927,167 @@ class Connection extends IlluminateConnection
     }
 
     /**
+     * Run a Cypher statement.
+     *
+     * @param string   $query
+     * @param array    $bindings
+     * @param \Closure $callback
+     *
+     * @return mixed
+     *
+     * @throws \Vinelab\NeoEloquent\Exceptions\InvalidCypherException
+     */
+    protected function runQueryCallback($query, $bindings, Closure $callback)
+    {
+        // To execute the statement, we'll simply call the callback, which will actually
+        // run the SQL against the PDO connection. Then we can calculate the time it
+        // took to execute and log the query SQL, bindings and time in our memory.
+        try {
+            $result = $callback($this, $query, $bindings);
+        }
+
+        // If an exception occurs when attempting to run a query, we'll format the error
+        // message to include the bindings with SQL, which will make this exception a
+        // lot more helpful to the developer instead of just the database's errors.
+        catch (Exception $e) {
+            throw new QueryException(
+                $query, $this->prepareBindings($bindings), $e
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Handle a query exception that occurred during query execution.
+     *
+     * @param \Vinelab\NeoEloquent\Exceptions\Exception $e
+     * @param string                                    $query
+     * @param array                                     $bindings
+     * @param \Closure                                  $callback
+     *
+     * @return mixed
+     *
+     * @throws \Vinelab\NeoEloquent\Exceptions\Exception
+     */
+    protected function tryAgainIfCausedByLostConnection(QueryException $e, $query, $bindings, Closure $callback)
+    {
+        if ($this->causedByLostConnection($e->getPrevious())) {
+            $this->reconnect();
+
+            return $this->runQueryCallback($query, $bindings, $callback);
+        }
+
+        throw $e;
+    }
+
+    /**
+     * Disconnect from the underlying PDO connection.
+     */
+    public function disconnect()
+    {
+        $this->neo = null;
+    }
+
+    /**
+     * Reconnect to the database.
+     *
+     *
+     * @throws \LogicException
+     */
+    public function reconnect()
+    {
+        if (is_callable($this->reconnector)) {
+            return call_user_func($this->reconnector, $this);
+        }
+
+        throw new LogicException('Lost connection and no reconnector available.');
+    }
+
+    /**
+     * Reconnect to the database if a PDO connection is missing.
+     */
+    protected function reconnectIfMissingConnection()
+    {
+        if (is_null($this->getClient())) {
+            $this->reconnect();
+        }
+    }
+
+    /**
+     * Log a query in the connection's query log.
+     *
+     * @param string     $query
+     * @param array      $bindings
+     * @param float|null $time
+     */
+    public function logQuery($query, $bindings, $time = null)
+    {
+        if (isset($this->events)) {
+            $this->events->fire('illuminate.query', [$query, $bindings, $time, $this->getName()]);
+        }
+
+        if ($this->loggingQueries) {
+            $this->queryLog[] = compact('query', 'bindings', 'time');
+        }
+    }
+
+    /**
+     * Register a database query listener with the connection.
+     *
+     * @param \Closure $callback
+     */
+    public function listen(Closure $callback)
+    {
+        if (isset($this->events)) {
+            $this->events->listen(Events\QueryExecuted::class, $callback);
+        }
+    }
+
+    /**
+     * Fire an event for this connection.
+     *
+     * @param string $event
+     */
+    protected function fireConnectionEvent($event)
+    {
+        if (isset($this->events)) {
+            $this->events->fire('connection.'.$this->getName().'.'.$event, $this);
+        }
+    }
+
+    /**
+     * Get the elapsed time since a given starting point.
+     *
+     * @param int $start
+     *
+     * @return float
+     */
+    protected function getElapsedTime($start)
+    {
+        return round((microtime(true) - $start) * 1000, 2);
+    }
+
+    /**
+     * Set the reconnect instance on the connection.
+     *
+     * @param callable $reconnector
+     *
+     * @return $this
+     */
+    public function setReconnector(callable $reconnector)
+    {
+        $this->reconnector = $reconnector;
+
+        return $this;
+    }
+
+    /**
      * Set the schema grammar used by the connection.
      *
      * @param  \Illuminate\Database\Schema\Grammars\Grammar
      */
-    public function setSchemaGrammar(IlluminateSchemaGrammar $grammar)
+    public function setSchemaGrammar(CypherGrammar $grammar)
     {
         $this->schemaGrammar = $grammar;
     }

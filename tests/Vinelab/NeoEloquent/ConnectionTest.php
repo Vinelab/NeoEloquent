@@ -23,7 +23,7 @@ class ConnectionTest extends TestCase
     {
         M::close();
 
-        parent::tearDown();
+        // parent::tearDown();
     }
 
     public function testConnection()
@@ -98,7 +98,7 @@ class ConnectionTest extends TestCase
         $bindings = array('test' => $date);
 
         $conn = $this->getMockConnection();
-        $grammar = m::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar');
+        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar');
         $grammar->shouldReceive('getDateFormat')->once()->andReturn('foo');
         $conn->setQueryGrammar($grammar);
         $result = $conn->prepareBindings($bindings);
@@ -110,7 +110,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection();
         $connection->logQuery('foo', array(), time());
-        $connection->setEventDispatcher($events = m::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('illuminate.query', array('foo', array(), null, null));
         $connection->logQuery('foo', array(), null);
     }
@@ -427,7 +427,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = m::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.beganTransaction', $connection);
         $connection->beginTransaction();
     }
@@ -436,7 +436,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = m::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.committed', $connection);
         $connection->commit();
     }
@@ -445,7 +445,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = m::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.rollingBack', $connection);
         $connection->rollback();
     }
@@ -488,7 +488,7 @@ class ConnectionTest extends TestCase
     {
         $conn = $this->getMockConnection();
         $conn->setQueryGrammar(M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial());
-        $builder = $conn->table('User');
+        $builder = $conn->node('User');
         $this->assertInstanceOf('Vinelab\NeoEloquent\Query\Builder', $builder);
         $this->assertEquals('User', $builder->from);
     }
@@ -519,7 +519,11 @@ class ConnectionTest extends TestCase
     {
         $defaults = array('getDefaultQueryGrammar', 'getDefaultPostProcessor', 'getDefaultSchemaGrammar');
 
-        return $this->getMock('Vinelab\NeoEloquent\Connection', array_merge($defaults, $methods), array());
+        return $this->getMock(
+            'Vinelab\NeoEloquent\Connection',
+            array_merge($defaults, $methods),
+            array($this->dbConfig['connections']['default'])
+        );
     }
 }
 
