@@ -3,7 +3,7 @@
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class BelongsTo extends OneRelation
 {
@@ -47,13 +47,13 @@ class BelongsTo extends OneRelation
             */
 
             // Get the parent node's placeholder.
-            $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+            $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
             $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()<-[]-() Cypher clause.
-            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
+            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->relationType, $this->otherKey, $this->parent->{$this->otherKey});
             // Add WHERE clause over the parent node's matching key = value.
             $this->query->where($this->otherKey, '=', $this->parent->{$this->otherKey});
         }
@@ -73,7 +73,7 @@ class BelongsTo extends OneRelation
          */
 
         // Grab the parent node placeholder
-        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         // Tell the builder to select both models of the relationship
         $this->query->select($this->relation, $parentNode);
@@ -85,7 +85,7 @@ class BelongsTo extends OneRelation
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()<-[]-() Cypher clause.
-        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
+        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->relationType, $this->otherKey, $this->parent->{$this->otherKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->otherKey, $this->getEagerModelKeys($models));
     }
@@ -93,18 +93,18 @@ class BelongsTo extends OneRelation
     /**
      * Get an instance of the EdgeIn relationship.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      * @param array                               $attributes
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(Model $model = null, $attributes = array())
     {
         $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
         // Indicate a unique relation since this only involves one other model.
         $unique = true;
 
-        return new EdgeIn($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
+        return new EdgeIn($this->query, $this->parent, $model, $this->relationType, $attributes, $unique);
     }
 }

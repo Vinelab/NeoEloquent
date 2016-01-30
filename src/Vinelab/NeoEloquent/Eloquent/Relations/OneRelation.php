@@ -2,18 +2,68 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Query\Expression;
+use Vinelab\NeoEloquent\Eloquent\Collection;
 
-abstract class OneRelation extends BelongsTo implements RelationInterface
+abstract class OneRelation extends Relation implements RelationInterface
 {
+    /**
+     * The foreign key of the parent model.
+     *
+     * @var string
+     */
+    protected $relationType;
+
+    /**
+     * The associated key on the parent model.
+     *
+     * @var string
+     */
+    protected $otherKey;
+
+    /**
+     * The name of the relationship.
+     *
+     * @var string
+     */
+    protected $relation;
+
     /**
      * The edge direction for this relationship.
      *
      * @var string
      */
     protected $edgeDirection = 'out';
+
+    /**
+     * Create a new belongs to relationship instance.
+     *
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
+     * @param \Vinelab\NeoEloquent\Eloquent\Model   $parent
+     * @param string                                $relationType
+     * @param string                                $otherKey
+     * @param string                                $relation
+     */
+    public function __construct(Builder $query, Model $parent, $relationType, $otherKey, $relation)
+    {
+        $this->otherKey = $otherKey;
+        $this->relation = $relation;
+        $this->relationType = $relationType;
+
+        parent::__construct($query, $parent);
+    }
+
+    /**
+     * Get the results of the relationship.
+     *
+     * @return mixed
+     */
+    public function getResults()
+    {
+        return $this->query->first();
+    }
 
     /**
      * Initialize the relation on a set of models.
@@ -42,7 +92,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
     /**
      * Get an instance of the Edge[In, Out, etc.] relationship.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      * @param array                               $attributes
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
@@ -64,7 +114,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
      *
      * @param \Illuminate\Database\Eloquent\Model $model
      *
-     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Relation
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge
      */
     public function associate($model, $attributes = array())
     {
@@ -106,10 +156,56 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
     }
 
     /**
+     * Dissociate previously associated model from the given parent.
+     *
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function dissociate()
+    {
+        $this->parent->setAttribute($this->relationType, null);
+
+        return $this->parent->setRelation($this->relation, null);
+    }
+
+    /**
+     * Update the parent model on the relationship.
+     *
+     * @param array $attributes
+     *
+     * @return mixed
+     */
+    public function update(array $attributes)
+    {
+        $instance = $this->getResults();
+
+        return $instance->fill($attributes)->save();
+    }
+
+    /**
+     * Get the fully qualified associated key of the relationship.
+     *
+     * @return string
+     */
+    public function getQualifiedOtherKeyName()
+    {
+        return $this->otherKey;
+    }
+
+    /**
+     * Get the associated key of the relationship.
+     *
+     * @return string
+     */
+    public function getOtherKey()
+    {
+        return $this->otherKey;
+    }
+
+    /**
      * Get the edge between the parent model and the given model or
      * the related model determined by the relation function name.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
      */
@@ -163,7 +259,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
      * Match the eagerly loaded results to their parents.
      *
      * @param array                                    $models
-     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param \Vinelab\NeoEloquent\Eloquent\Collection $results
      * @param string                                   $relation
      *
      * @return array
@@ -171,7 +267,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
     public function match(array $models, Collection $results, $relation)
     {
         // We will need the parent node placeholder so that we use it to extract related results.
-        $parent = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parent = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         /*
          * Looping into all the parents to match back onto their children using
@@ -217,17 +313,17 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
 
     public function getRelationType()
     {
-        return $this->foreignKey;
+        return $this->relationType;
     }
 
     public function getParentNode()
     {
-        return $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        return $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
     }
 
     public function getRelatedNode()
     {
-        return $this->query->getQuery()->modelAsNode($this->related->getTable());
+        return $this->query->getQuery()->modelAsNode($this->related->nodeLabel());
     }
 
     public function getLocalKey()

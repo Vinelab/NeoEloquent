@@ -4,7 +4,7 @@ namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Collection;
 use Neoxygen\NeoClient\Formatter\Relationship;
 
 class Finder extends Delegate

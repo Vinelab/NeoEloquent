@@ -5,8 +5,8 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 use Mockery as M;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Query\Expression;
-use Vinelab\NeoEloquent\Query\Grammars\Grammar;
+use Vinelab\NeoEloquent\Query\Expression;
+use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
 class GrammarTest extends TestCase
 {
@@ -14,7 +14,7 @@ class GrammarTest extends TestCase
     {
         parent::setUp();
 
-        $this->grammar = new Grammar();
+        $this->grammar = new CypherGrammar();
     }
 
     public function tearDown()

@@ -5,7 +5,7 @@ namespace Vinelab\NeoEloquent\Tests\Eloquent\Relations;
 use Mockery as M;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 
 class BelongsToTest extends TestCase
@@ -97,7 +97,7 @@ class BelongsToTest extends TestCase
 
         $related = M::mock('Vinelab\NeoEloquent\Eloquent\Model')->makePartial();
         $related->shouldReceive('getKeyName')->andReturn('id');
-        $related->shouldReceive('getTable')->andReturn('relation');
+        $related->shouldReceive('nodeLabel')->andReturn('relation');
 
         $id = 19;
         $parent = new Stub(['id' => $id]);
@@ -132,7 +132,7 @@ class BelongsToTest extends TestCase
 
         $related = M::mock('Vinelab\NeoEloquent\Eloquent\Model')->makePartial();
         $related->shouldReceive('getKeyName')->andReturn('id');
-        $related->shouldReceive('getTable')->andReturn('relation');
+        $related->shouldReceive('nodeLabel')->andReturn('relation');
 
         $builder->shouldReceive('getModel')->once()->andReturn($related);
 

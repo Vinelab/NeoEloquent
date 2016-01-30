@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Query\Grammars;
 
-use Illuminate\Database\Query\Builder;
+use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Exceptions\InvalidCypherGrammarComponentException;
 
 class CypherGrammar extends Grammar
@@ -280,7 +280,7 @@ class CypherGrammar extends Grammar
         // for actually creating the where clauses Cypher. This helps keep the code nice
         // and maintainable since each clause has a very small method that it uses.
         foreach ($query->wheres as $where) {
-            $method = "WHERE{$where['type']}";
+            $method = "Where{$where['type']}";
 
             $cypher[] = $where['boolean'].' '.$this->$method($query, $where);
         }
@@ -362,7 +362,7 @@ class CypherGrammar extends Grammar
     protected function compileColumns(Builder $query, $properties)
     {
         // When we have an aggregate we will have to return it instead of the plain columns
-        // since aggregates for Cypher are not calculated at the beginning of the query like SQL
+        // since aggregates for Cypher are not calculated at the beginning of the query like Cypher
         // instead we'll have to return in a form such as: RETURN max(user.logins).
         if (!is_null($query->aggregate)) {
             return $this->compileAggregate($query, $query->aggregate);
@@ -439,7 +439,7 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * Compile an update statement into SQL.
+     * Compile an update statement into Cypher.
      *
      * @param \Vinelab\NeoEloquent\Query\Builder $query
      * @param array                              $values
@@ -511,6 +511,168 @@ class CypherGrammar extends Grammar
         $values = $this->valufy($where['values']);
 
         return $this->wrap($where['column']).' IN ['.$values.']';
+    }
+
+    /**
+     * Compile a nested where clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereNested(Builder $query, $where)
+    {
+        $nested = $where['query'];
+
+        return '('.substr($this->compileWheres($nested), 6).')';
+    }
+
+    /**
+     * Compile a where condition with a sub-select.
+     *
+     * @param  \Illuminate\Database\Query\Builder $query
+     * @param  array   $where
+     * @return string
+     */
+    protected function whereSub(Builder $query, $where)
+    {
+        $select = $this->compileSelect($where['query']);
+
+        return $this->wrap($where['column']).' '.$where['operator']." ($select)";
+    }
+
+    /**
+     * Compile a "where null" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereNull(Builder $query, $where)
+    {
+        return $this->wrap($where['column']).' is null';
+    }
+
+    /**
+     * Compile a "where not null" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereNotNull(Builder $query, $where)
+    {
+        return $this->wrap($where['column']).' is not null';
+    }
+
+    /**
+     * Compile a "where date" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereDate(Builder $query, $where)
+    {
+        return $this->dateBasedWhere('date', $query, $where);
+    }
+
+    /**
+     * Compile a "where day" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereDay(Builder $query, $where)
+    {
+        return $this->dateBasedWhere('day', $query, $where);
+    }
+
+    /**
+     * Compile a "where month" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereMonth(Builder $query, $where)
+    {
+        return $this->dateBasedWhere('month', $query, $where);
+    }
+
+    /**
+     * Compile a "where year" clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function whereYear(Builder $query, $where)
+    {
+        return $this->dateBasedWhere('year', $query, $where);
+    }
+
+    /**
+     * Compile a date based where clause.
+     *
+     * @param  string  $type
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $where
+     * @return string
+     */
+    protected function dateBasedWhere($type, Builder $query, $where)
+    {
+        $value = $this->parameter($where['value']);
+
+        return $type.'('.$this->wrap($where['column']).') '.$where['operator'].' '.$value;
+    }
+
+    /**
+     * Compile the "having" portions of the query.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $havings
+     * @return string
+     */
+    protected function compileHavings(Builder $query, $havings)
+    {
+        $cypher = implode(' ', array_map([$this, 'compileHaving'], $havings));
+
+        return 'with '.$this->removeLeadingBoolean($cypher);
+    }
+
+    /**
+     * Compile a single having clause.
+     *
+     * @param  array   $having
+     * @return string
+     */
+    protected function compileHaving(array $having)
+    {
+        // If the having clause is "raw", we can just return the clause straight away
+        // without doing any more processing on it. Otherwise, we will compile the
+        // clause into Cypher based on the components that make it up from builder.
+        if ($having['type'] === 'raw') {
+            return $having['boolean'].' '.$having['cypher'];
+        }
+
+        return $this->compileBasicHaving($having);
+    }
+
+    /**
+     * Compile a basic having clause.
+     *
+     * @param  array   $having
+     * @return string
+     */
+    protected function compileBasicHaving($having)
+    {
+        $column = $this->wrap($having['column']);
+
+        $parameter = $this->parameter($having['value']);
+
+        return $having['boolean'].' '.$column.' '.$having['operator'].' '.$parameter;
     }
 
     /**

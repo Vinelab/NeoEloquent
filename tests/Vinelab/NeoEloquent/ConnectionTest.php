@@ -46,8 +46,9 @@ class ConnectionTest extends TestCase
     {
         $c = $this->getConnectionWithConfig('neo4j');
 
-        $this->assertEquals($c->getConfig('port'), 7474);
-        $this->assertEquals($c->getConfig('host'), 'localhost');
+        $config = require(__DIR__.'/../../config/database.php');
+        $this->assertEquals($c->getConfig('port'), $config['connections']['neo4j']['port']);
+        $this->assertEquals($c->getConfig('host'), $config['connections']['neo4j']['host']);
     }
 
     public function testDriverName()
@@ -69,6 +70,7 @@ class ConnectionTest extends TestCase
         $c = $this->getConnectionWithConfig('default');
 
         $this->assertEquals('localhost', $c->getHost());
+        $this->assertEquals(7474, $c->getPort());
     }
 
     public function testGettingDefaultPort()

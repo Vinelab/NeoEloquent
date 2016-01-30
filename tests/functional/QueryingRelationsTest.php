@@ -80,8 +80,11 @@ class QueryingRelationsTest extends TestCase
         $admins = User::whereHas('roles', function ($q) { $q->where('alias', 'admin'); })->get();
         $this->assertEquals(2, count($admins));
         $expectedAdmins = [$mrAdmin, $anotherAdmin];
+        $expectedAdmins = array_map(function($admin) {
+            return $admin->toArray();
+        }, $expectedAdmins);
         foreach ($admins as $key => $admin) {
-            $this->assertEquals($admin->toArray(), $expectedAdmins[$key]->toArray());
+            $this->assertContains($admin->toArray(), $expectedAdmins);
         }
         // check editors
         $editors = User::whereHas('roles', function ($q) { $q->where('alias', 'editor'); })->get();
@@ -91,8 +94,11 @@ class QueryingRelationsTest extends TestCase
         $expectedManagers = [$mrsManager, $anotherManager];
         $managers = User::whereHas('roles', function ($q) { $q->where('alias', 'manager'); })->get();
         $this->assertEquals(2, count($managers));
+        $expectedManagers = array_map(function($manager) {
+            return $manager->toArray();
+        }, $expectedManagers);
         foreach ($managers as $key => $manager) {
-            $this->assertEquals($manager->toArray(), $expectedManagers[$key]->toArray());
+            $this->assertContains($manager->toArray(), $expectedManagers);
         }
     }
 
@@ -312,7 +318,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -339,7 +345,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertNotNull($post->updated_at);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -364,7 +370,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertNotNull($post->updated_at);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -390,7 +396,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertNotNull($post->updated_at);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -410,7 +416,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -427,7 +433,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(1, count($related));
         $this->assertEquals($tag->toArray(), $related->first()->toArray());
     }
@@ -440,7 +446,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(1, count($related));
         $this->assertEquals($tag->toArray(), $related->first()->toArray());
     }
@@ -458,7 +464,7 @@ class QueryingRelationsTest extends TestCase
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(3, count($related));
 
         $tags = Tag::all();

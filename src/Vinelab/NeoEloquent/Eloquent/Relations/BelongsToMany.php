@@ -4,9 +4,8 @@ namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
 
 class BelongsToMany extends HasOneOrMany
 {
@@ -108,7 +107,7 @@ class BelongsToMany extends HasOneOrMany
             // Set the parent node's placeholder as the RETURN key.
             $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()-[]->() Cypher clause.
-            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
             $this->query->where($this->localKey, '=', $this->parent->{$this->localKey});
         }
@@ -128,7 +127,7 @@ class BelongsToMany extends HasOneOrMany
          */
 
         // Grab the parent node placeholder
-        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         // Tell the builder to select both models of the relationship
         $this->query->select($this->relation, $parentNode);
@@ -140,7 +139,7 @@ class BelongsToMany extends HasOneOrMany
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()-[]->() Cypher clause.
-        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models));
     }
@@ -166,7 +165,7 @@ class BelongsToMany extends HasOneOrMany
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(Model $model = null, $attributes = array())
     {
         $model = (!is_null($model)) ? $model : $this->related;
 

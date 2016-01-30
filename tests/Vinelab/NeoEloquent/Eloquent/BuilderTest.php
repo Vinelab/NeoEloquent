@@ -41,7 +41,7 @@ class EloquentBuilderTest extends TestCase
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testFindOrFailMethodThrowsModelNotFoundException()
     {
@@ -53,7 +53,7 @@ class EloquentBuilderTest extends TestCase
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
     {
@@ -65,7 +65,7 @@ class EloquentBuilderTest extends TestCase
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testFirstOrFailMethodThrowsModelNotFoundException()
     {
@@ -196,8 +196,8 @@ class EloquentBuilderTest extends TestCase
         $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $builder->getQuery()->shouldReceive('getGrammar')->andReturn($grammar);
 
-        $model = M::mock('Vinelab\NeoEloquent\Eloquent\Model[getTable,getConnectionName,newInstance]');
-        $model->shouldReceive('getTable')->once()->andReturn('foo_table');
+        $model = M::mock('Vinelab\NeoEloquent\Eloquent\Model[nodeLabel,getConnectionName,newInstance]');
+        $model->shouldReceive('nodeLabel')->once()->andReturn('foo_table');
 
         $builder->setModel($model);
 
@@ -371,7 +371,7 @@ class EloquentBuilderTest extends TestCase
         $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet);
 
         $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
-        $this->model->shouldReceive('getTable')->once()->andReturn('Model');
+        $this->model->shouldReceive('nodeLabel')->once()->andReturn('Model');
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
         $collection = new \Illuminate\Support\Collection(array(M::mock('Neoxygen\NeoClient\Formatter\Result')));
@@ -421,7 +421,7 @@ class EloquentBuilderTest extends TestCase
 
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection)
                     ->shouldReceive('getKeyName')->twice()->andReturn('id')
-                    ->shouldReceive('getTable')->once()->andReturn('Model')
+                    ->shouldReceive('nodeLabel')->once()->andReturn('Model')
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()->with($attributes)->andReturn($user);
 
@@ -467,7 +467,7 @@ class EloquentBuilderTest extends TestCase
         $user = M::mock('User');
         $user->shouldReceive('setConnection')->twice()->with('default');
 
-        $this->model->shouldReceive('getTable')->once()->andReturn('User')
+        $this->model->shouldReceive('nodeLabel')->once()->andReturn('User')
                     ->shouldReceive('getKeyName')->twice()->andReturn('id')
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()
@@ -506,7 +506,7 @@ class EloquentBuilderTest extends TestCase
         $user = M::mock('User');
         $user->shouldReceive('setConnection')->once()->with('default');
 
-        $this->model->shouldReceive('getTable')->once()->andReturn('User')
+        $this->model->shouldReceive('nodeLabel')->once()->andReturn('User')
                     ->shouldReceive('getKeyName')->once()->andReturn('id')
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()
@@ -538,7 +538,7 @@ class EloquentBuilderTest extends TestCase
         $row->shouldReceive('current')->once()->andReturn($row->offsetGet(0));
 
         $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
-        $this->model->shouldReceive('getTable')->once()->andReturn('Artist');
+        $this->model->shouldReceive('nodeLabel')->once()->andReturn('Artist');
 
         $this->query->shouldReceive('from')->once()->andReturn('Artist');
 
@@ -573,7 +573,7 @@ class EloquentBuilderTest extends TestCase
         $row = $this->createRowWithPropertiesAtIndex(0, $properties);
         $row->shouldReceive('current')->once()->andReturn($row->offsetGet(0));
 
-        $this->model->shouldReceive('getTable')->once()->andReturn('Human:Male');
+        $this->model->shouldReceive('nodeLabel')->once()->andReturn('Human:Male');
 
         $this->query->columns = array('arms', 'legs');
         $this->query->shouldReceive('from')->once()->andReturn('Human:Male');
@@ -683,7 +683,7 @@ class EloquentBuilderTest extends TestCase
     {
         $model = m::mock('Vinelab\NeoEloquent\Eloquent\Model');
         $model->shouldReceive('getKeyName')->andReturn('foo');
-        $model->shouldReceive('getTable')->andReturn('foo_table');
+        $model->shouldReceive('nodeLabel')->andReturn('foo_table');
         $model->shouldReceive('getQualifiedKeyName')->andReturn('foo');
 
         return $model;

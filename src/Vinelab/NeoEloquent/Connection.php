@@ -5,19 +5,20 @@ namespace Vinelab\NeoEloquent;
 use Closure;
 use DateTime;
 use Exception;
-use Vinelab\NeoEloquent\Query\Expression;
-use Vinelab\NeoEloquent\Query\Processors\Processor;
 use Illuminate\Contracts\Events\Dispatcher;
 use LogicException;
 use Neoxygen\NeoClient\Client;
 use Neoxygen\NeoClient\ClientBuilder;
 use Throwable;
+use Vinelab\NeoEloquent\ConnectionInterface;
 use Vinelab\NeoEloquent\Exceptions\Exception as QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
+use Vinelab\NeoEloquent\Query\Expression;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
+use Vinelab\NeoEloquent\Query\Processors\Processor;
 
-class Connection
+class Connection implements ConnectionInterface
 {
     /**
      * The reconnector instance for the connection.

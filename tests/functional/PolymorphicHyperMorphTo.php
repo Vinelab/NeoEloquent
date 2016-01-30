@@ -226,7 +226,7 @@ class PolymorphicHyperMorphToTest extends TestCase
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testAttachingNonExistingModelIds()
     {

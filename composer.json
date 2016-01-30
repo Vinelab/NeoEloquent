@@ -1,7 +1,7 @@
 {
     "name": "vinelab/neoeloquent",
     "description": "Laravel wrapper for the Neo4j graph database REST interface",
-    "keywords": ["laravel", "neo4j", "graph", "database", "neoeloquent"],
+    "keywords": ["neo4j", "ogm", "graph", "database", "neoeloquent"],
     "license": "MIT",
     "authors": [
         {
@@ -11,8 +11,10 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "illuminate/support": "5.*",
-        "illuminate/database": "5.*",
+        "illuminate/support": "5.1.*",
+        "illuminate/pagination": "5.1.*",
+        "illuminate/events": "5.1.*",
+        "illuminate/contracts": "5.1.*",
         "neoxygen/neoclient": "~2.1",
         "nesbot/carbon": "~1.0"
     },

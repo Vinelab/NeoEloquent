@@ -52,7 +52,7 @@ class ModelTest extends TestCase
     {
         $m = new Table();
 
-        $label = $m->getTable();
+        $label = $m->nodeLabel();
 
         $this->assertEquals('Table', reset($label));
     }

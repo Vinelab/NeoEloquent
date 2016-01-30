@@ -5,7 +5,7 @@ namespace Vinelab\NeoEloquent\Eloquent\Edges;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 
-class HyperEdge extends Relation
+class HyperEdge extends Edge
 {
     protected $direction = 'any';
 
@@ -103,7 +103,7 @@ class HyperEdge extends Relation
     /**
      * Set the left side Edge of this relation.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Edges\Relation $left
+     * @param \Vinelab\NeoEloquent\Eloquent\Edges\Edge $left
      */
     public function setLeft($left)
     {
@@ -123,7 +123,7 @@ class HyperEdge extends Relation
     /**
      * Set the right side Edge of this relationship.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Edges\Relation $right
+     * @param \Vinelab\NeoEloquent\Eloquent\Edges\Edge $right
      */
     public function setRight($right)
     {

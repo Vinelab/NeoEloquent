@@ -4,14 +4,12 @@ namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
-use Vinelab\NeoEloquent\Eloquent\Edges\Relation;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\Eloquent\Relations\HasOneOrMany as IlluminateHasOneOrMany;
+use Vinelab\NeoEloquent\Eloquent\Edges\Edge;
+use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 
-abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationInterface
+abstract class HasOneOrMany extends Relation implements RelationInterface
 {
     /**
      * The name of the relationship.
@@ -45,7 +43,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     {
         $this->localKey = $key;
         $this->relation = $relation;
-        $this->type = $this->foreignKey = $type;
+        $this->type = $type;
 
         parent::__construct($query, $parent, $type, $key);
 
@@ -77,6 +75,15 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     }
 
     /**
+     * Set the constraints for an eager load of the relation.
+     *
+     * @param array $models
+     */
+    public function addEagerConstraints(array $models)
+    {
+        $this->query->whereIn($this->foreignKey, $this->getKeys($models, $this->localKey));
+    }
+    /**
      * Get all of the primary keys for an array of models.
      *
      * @param array  $models
@@ -104,7 +111,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
      */
-    abstract public function getEdge(EloquentModel $model = null, $attributes = array());
+    abstract public function getEdge(Model $model = null, $attributes = array());
 
     /**
      * Get the edge between the parent model and the given model or
@@ -130,6 +137,34 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     }
 
     /**
+     * Match the eagerly loaded results to their single parents.
+     *
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
+     * @return array
+     */
+    public function matchOne(array $models, Collection $results, $relation)
+    {
+        return $this->matchOneOrMany($models, $results, $relation, 'one');
+    }
+
+    /**
+     * Match the eagerly loaded results to their many parents.
+     *
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
+     * @return array
+     */
+    public function matchMany(array $models, Collection $results, $relation)
+    {
+        return $this->matchOneOrMany($models, $results, $relation, 'many');
+    }
+
+    /**
      * Match the eagerly loaded results to their parents.
      *
      * @param array                                    $models
@@ -141,7 +176,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     public function matchOneOrMany(array $models, Collection $results, $relation, $type)
     {
         // We will need the parent node placeholder so that we use it to extract related results.
-        $parent = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parent = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         /*
          * Looping into all the parents to match back onto their children using
@@ -187,6 +222,45 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     }
 
     /**
+     * Get the value of a relationship by one or many type.
+     *
+     * @param array  $dictionary
+     * @param string $key
+     * @param string $type
+     *
+     * @return mixed
+     */
+    protected function getRelationValue(array $dictionary, $key, $type)
+    {
+        $value = $dictionary[$key];
+
+        return $type == 'one' ? reset($value) : $this->related->newCollection($value);
+    }
+
+    /**
+     * Build model dictionary keyed by the relation's foreign key.
+     *
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     *
+     * @return array
+     */
+    protected function buildDictionary(Collection $results)
+    {
+        $dictionary = [];
+
+        $foreign = $this->getPlainForeignKey();
+
+        // First we will create a dictionary of models keyed by the foreign key of the
+        // relationship as this will allow us to quickly access all of the related
+        // models without having to do nested looping which will be quite slow.
+        foreach ($results as $result) {
+            $dictionary[$result->{$foreign}][] = $result;
+        }
+
+        return $dictionary;
+    }
+
+    /**
      * Attach a model instance to the parent model.
      *
      * @param \Illuminate\Database\Eloquent\Model $model
@@ -194,7 +268,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In, Out, etc.]
      */
-    public function save(EloquentModel $model, array $properties = array())
+    public function save(Model $model, array $properties = array())
     {
         $model->save() ? $model : false;
         // Create a new edge relationship for both models
@@ -301,7 +375,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
             // Set the parent node's placeholder as the RETURN key.
             $this->query->getQuery()->from = array($this->relation);
             // Build the MATCH ()-[]->() Cypher clause.
-            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
             $this->query->where($parentNode.'.'.$this->localKey, '=', $this->parent->{$this->localKey});
         }
@@ -405,7 +479,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
         // Let's fetch the existing edges first.
         $edges = $this->edges();
         // Collect the current related models IDs out of related models.
-        $current = array_map(function (Relation $edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
+        $current = array_map(function (Edge $edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
 
         $records = $this->formatSyncList($ids);
 
@@ -461,6 +535,22 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     }
 
     /**
+     * Perform an update on all the related models.
+     *
+     * @param array $attributes
+     *
+     * @return int
+     */
+    public function update(array $attributes)
+    {
+        if ($this->related->usesTimestamps()) {
+            $attributes[$this->relatedUpdatedAt()] = $this->related->freshTimestampString();
+        }
+
+        return $this->query->update($attributes);
+    }
+
+    /**
      * Update an edge's properties.
      *
      * @param int   $id
@@ -510,6 +600,78 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
         if ($this->getParent()->touches($this->relation)) {
             $this->touch();
         }
+    }
+
+    /**
+     * Find a model by its primary key or return new instance of the related model.
+     *
+     * @param mixed $id
+     * @param array $columns
+     *
+     * @return \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Model
+     */
+    public function findOrNew($id, $columns = ['*'])
+    {
+        if (is_null($instance = $this->find($id, $columns))) {
+            $instance = $this->related->newInstance();
+
+            $instance->setAttribute($this->getPlainForeignKey(), $this->getParentKey());
+        }
+
+        return $instance;
+    }
+
+    /**
+     * Get the first related model record matching the attributes or instantiate it.
+     *
+     * @param array $attributes
+     *
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function firstOrNew(array $attributes)
+    {
+        if (is_null($instance = $this->where($attributes)->first())) {
+            $instance = $this->related->newInstance($attributes);
+
+            $instance->setAttribute($this->getPlainForeignKey(), $this->getParentKey());
+        }
+
+        return $instance;
+    }
+
+    /**
+     * Get the first related record matching the attributes or create it.
+     *
+     * @param array $attributes
+     *
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function firstOrCreate(array $attributes)
+    {
+        if (is_null($instance = $this->where($attributes)->first())) {
+            $instance = $this->create($attributes);
+        }
+
+        return $instance;
+    }
+
+    /**
+     * Create or update a related record matching the attributes, and fill it with values.
+     *
+     * @param array $attributes
+     * @param array $values
+     *
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function updateOrCreate(array $attributes, array $values = [])
+    {
+        $instance = $this->firstOrNew($attributes);
+
+        $instance->fill($values);
+
+        $instance->save();
+
+        return $instance;
     }
 
     /**
@@ -579,6 +741,35 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
     }
 
     /**
+     * Get the foreign key for the relationship.
+     *
+     * @return string
+     */
+    public function getForeignKey()
+    {
+        return $this->getForeignKey;
+    }
+
+    /**
+     * Get the key value of the parent's local key.
+     *
+     * @return mixed
+     */
+    public function getParentKey()
+    {
+        return $this->parent->getAttribute($this->localKey);
+    }
+
+    /**
+     * Get the fully qualified parent key name.
+     *
+     * @return string
+     */
+    public function getQualifiedParentKeyName()
+    {
+        return $this->parent->getTable().'.'.$this->localKey;
+    }
+    /**
      * Get a new Finder instance.
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Finder
@@ -616,7 +807,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      */
     public function getRelationType()
     {
-        return $this->foreignKey;
+        return $this->type;
     }
 
     /**
@@ -646,7 +837,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      */
     public function getParentNode()
     {
-        return $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        return $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
     }
 
     /**
@@ -656,7 +847,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      */
     public function getRelatedNode()
     {
-        return $this->query->getQuery()->modelAsNode($this->related->getTable());
+        return $this->query->getQuery()->modelAsNode($this->related->nodeLabel());
     }
 
     /**

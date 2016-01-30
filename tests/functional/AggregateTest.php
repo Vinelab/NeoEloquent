@@ -282,14 +282,14 @@ class AggregateTest extends TestCase
         User::create(['logins' => 55, 'points' => 2]);
 
         $logins = $this->query->collect('logins');
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $logins);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $logins);
         $this->assertEquals(3, count($logins));
         $this->assertEquals(33, $logins[0]);
         $this->assertEquals(44, $logins[1]);
         $this->assertEquals(55, $logins[2]);
 
         $points = $this->query->collect('points');
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $points);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $points);
         $this->assertEquals(3, count($points));
         $this->assertEquals(1, $points[0]);
         $this->assertEquals(4, $points[1]);
@@ -303,7 +303,7 @@ class AggregateTest extends TestCase
         User::create(['logins' => 55, 'points' => 2]);
 
         $logins = $this->query->where('points', '>', 1)->collect('logins');
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $logins);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $logins);
         $this->assertEquals(2, count($logins));
         $this->assertEquals(44, $logins[0]);
         $this->assertEquals(55, $logins[1]);

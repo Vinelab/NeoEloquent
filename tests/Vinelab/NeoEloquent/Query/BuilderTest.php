@@ -225,7 +225,7 @@ class BuilderTest extends TestCase
         $builder = $this->getBuilder();
         $builder->select('foo as bar')->from('User');
 
-        $this->assertEquals('MATCH (user:User) RETURN user.foo as bar, user', $builder->toSql());
+        $this->assertEquals('MATCH (user:User) RETURN user.foo as bar, user', $builder->toCypher());
     }
 
     public function testAddigSelects()

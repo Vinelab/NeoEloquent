@@ -5,7 +5,6 @@ namespace Vinelab\NeoEloquent\Eloquent\Relations;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
 
 class HyperMorph extends BelongsToMany
 {
@@ -89,7 +88,7 @@ class HyperMorph extends BelongsToMany
             // Set the parent node's placeholder as the RETURN key.
             $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()-[]->() Cypher clause.
-            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
             $this->query->where($this->localKey, '=', $this->parent->{$this->localKey});
         }
@@ -109,7 +108,7 @@ class HyperMorph extends BelongsToMany
          */
 
         // Grab the parent node placeholder
-        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         // Tell the builder to select both models of the relationship
         $this->query->select($this->relation, $parentNode);
@@ -121,7 +120,7 @@ class HyperMorph extends BelongsToMany
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()-[]->() Cypher clause.
-        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models));
     }
@@ -131,7 +130,7 @@ class HyperMorph extends BelongsToMany
         return $this->finder->hyperFirst($this->parent, $model, $this->morph, $this->type, $this->morphType);
     }
 
-    public function getEdge(EloquentModel $model = null, $properties = array())
+    public function getEdge(Model $model = null, $properties = array())
     {
         $model = (!is_null($model)) ? $model : $this->related;
 

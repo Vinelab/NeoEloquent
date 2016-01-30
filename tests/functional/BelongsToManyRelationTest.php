@@ -140,7 +140,7 @@ class BelongsToManyRelationTest extends TestCase
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testAttachingNonExistingModelId()
     {
@@ -205,7 +205,7 @@ class BelongsToManyRelationTest extends TestCase
 
         // Try retrieving them before detaching
         $edges = $user->roles()->edges();
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $edges);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $edges);
         $this->assertCount(3, $edges->toArray());
 
         $edges->each(function ($edge) { $edge->delete(); });
@@ -322,7 +322,7 @@ class BelongsToManyRelationTest extends TestCase
         $editor = Role::create(['title' => 'Editor']);
 
         $edges = $user->roles()->attach([$master, $admin, $editor]);
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $edges);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $edges);
 
         $creep = User::with('roles')->find($user->id);
         $relations = $creep->getRelations();

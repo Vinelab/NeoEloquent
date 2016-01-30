@@ -2,9 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class HasMany extends HasOneOrMany
 {
@@ -26,7 +26,7 @@ class HasMany extends HasOneOrMany
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(Model $model = null, $attributes = array())
     {
         $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
@@ -47,7 +47,7 @@ class HasMany extends HasOneOrMany
          */
 
         // Grab the parent node placeholder
-        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         // Tell the builder to select both models of the relationship
         $this->query->select($this->relation, $parentNode);
@@ -59,7 +59,7 @@ class HasMany extends HasOneOrMany
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()-[]->() Cypher clause.
-        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models, $this->localKey));
     }

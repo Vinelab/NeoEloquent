@@ -6,11 +6,11 @@ use DateTime;
 use Carbon\Carbon;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Collection;
 use Neoxygen\NeoClient\Formatter\Relationship;
 use Vinelab\NeoEloquent\NoEdgeDirectionException;
 
-abstract class Relation extends Delegate
+abstract class Edge extends Delegate
 {
     /**
      * The edges finder instance.
