@@ -115,7 +115,7 @@ abstract class Model extends IlluminateModel {
         // Since there was no label for this model
         // we take the fully qualified (namespaced) class name and
         // pluck out backslashes to get a clean 'WordsUp' class name and use it as default
-        return array(str_replace('\\', '', get_class($this)));
+        // return array(str_replace('\\', '', get_class($this)));
     }
 
     /**
