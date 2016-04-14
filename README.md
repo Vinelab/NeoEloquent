@@ -35,6 +35,7 @@ Add the package to your `composer.json` and run `composer update`.
         "vinelab/neoeloquent": "1.3.*"
     }
 }
+```
 
 #### 5.1
 
