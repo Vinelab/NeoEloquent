@@ -58,7 +58,7 @@ class Finder extends Delegate
     public function get(Model $parent, Model $related, $type = [], $direction = null)
     {
         // Get the relationships for the parent node of the given type.
-        $relationships = $this->getModelRelationsForType($parent, $type, $direction);
+        $relationships = $this->getModelRelationsForType($parent, $related, $type, $direction);
 
         $edges = [];
         // Collect the edges out of the found relationships.
@@ -151,7 +151,7 @@ class Finder extends Delegate
         return $edge;
     }
 
-    public function getModelRelationsForType(Model $startModel, $type = null, $direction = null)
+    public function getModelRelationsForType(Model $startModel, Model $endModel, $type = null, $direction = null)
     {
         // Determine the direction, the real one!
         $direction = $this->getRealDirection($direction);
@@ -160,7 +160,7 @@ class Finder extends Delegate
 
         $query = $grammar->compileGetRelationship(
             $this->query->getQuery(),
-            $this->getRelationshipAttributes($startModel, null, [], $type, $direction)
+            $this->getRelationshipAttributes($startModel, $endModel, [], $type, $direction)
         );
 
         $result = $this->connection->statement($query, [], true);

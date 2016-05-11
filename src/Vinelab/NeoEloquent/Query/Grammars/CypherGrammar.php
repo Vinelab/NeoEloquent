@@ -802,7 +802,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    public function compileRelationship(Builder $query, $attributes)
+    public function compileRelationship(Builder $query, $attributes, $addEndLabel = false)
     {
         $startNode = $this->modelAsNode($attributes['start']['label']);
         $endNode = 'rel_'.$this->modelAsNode($attributes['label']);
@@ -812,7 +812,10 @@ class CypherGrammar extends Grammar
         // for a given start node.
         $endLabel = 'r';
         if (isset($attributes['end'])) {
-            $endLabel = $attributes['end']['label'];
+            $endLabel = $this->prepareLabels($attributes['end']['label']);
+            if ($addEndLabel) {
+                $endNode .= $endLabel;
+            }
         }
 
         $query = $this->craftRelation(
@@ -864,7 +867,7 @@ class CypherGrammar extends Grammar
     public function compileGetRelationship(Builder $builder, $attributes)
     {
         $match = $this->compileMatchRelationship($builder, $attributes);
-        $relation = $this->compileRelationship($builder, $attributes);
+        $relation = $this->compileRelationship($builder, $attributes, true);
         $query = "$match MATCH $relation RETURN r";
 
         return $query;
