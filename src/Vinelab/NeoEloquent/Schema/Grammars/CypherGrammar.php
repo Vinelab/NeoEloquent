@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Schema\Grammars;
 
-use Illuminate\Support\Fluent;
+use Vinelab\NeoEloquent\Support\Fluent;
 use Vinelab\NeoEloquent\Schema\Blueprint;
 
 class CypherGrammar extends Grammar

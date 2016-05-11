@@ -80,7 +80,7 @@ class QueryingRelationsTest extends TestCase
         $admins = User::whereHas('roles', function ($q) { $q->where('alias', 'admin'); })->get();
         $this->assertEquals(2, count($admins));
         $expectedAdmins = [$mrAdmin, $anotherAdmin];
-        $expectedAdmins = array_map(function($admin) {
+        $expectedAdmins = array_map(function ($admin) {
             return $admin->toArray();
         }, $expectedAdmins);
         foreach ($admins as $key => $admin) {
@@ -94,7 +94,7 @@ class QueryingRelationsTest extends TestCase
         $expectedManagers = [$mrsManager, $anotherManager];
         $managers = User::whereHas('roles', function ($q) { $q->where('alias', 'manager'); })->get();
         $this->assertEquals(2, count($managers));
-        $expectedManagers = array_map(function($manager) {
+        $expectedManagers = array_map(function ($manager) {
             return $manager->toArray();
         }, $expectedManagers);
         foreach ($managers as $key => $manager) {
@@ -512,7 +512,7 @@ class QueryingRelationsTest extends TestCase
     public function testEagerLoadingNestedRelationship()
     {
         $user = User::create(['name' => 'cappuccino']);
-        $role = Role::create(['alias' => 'pikachu']);
+        $role = Role::createWith(['alias' => 'pikachu'], ['permissions' => ['title' => 'Perr', 'alias' => 'perr']]);
 
         $user->roles()->save($role);
         // Eager load so that when we assert we make sure they're there
@@ -619,7 +619,7 @@ class QueryingRelationsTest extends TestCase
     public function testSavingRelationWithDateTimeAndCarbonInstances()
     {
         $user = User::create(['name' => 'Andrew Hale']);
-        $yesterday = Carbon::now()->subDay();
+        $yesterday = Carbon::now();
         $brother = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
 
         $dt = new DateTime();
@@ -658,6 +658,40 @@ class QueryingRelationsTest extends TestCase
 
         $this->assertNotEmpty($tags[0]['id']);
         $this->assertEquals('theTag', $tags[0]['title']);
+    }
+
+    public function testEagerloadingRelationships()
+    {
+        $fooPost = Post::createWith(
+            ['title' => 'foo tit', 'body' => 'some body'],
+            [
+                'cover' => ['url' => 'http://url'],
+                'tags' => ['title' => 'theTag'],
+            ]
+        );
+
+        $anotherPost = Post::createWith(
+            ['title' => 'another tit', 'body' => 'another body'],
+            [
+                'cover' => ['url' => 'http://another.url'],
+                'tags' => ['title' => 'anotherTag'],
+            ]
+        );
+
+        $posts = Post::with(['cover', 'tags'])->get();
+
+        $this->assertEquals(2, count($posts));
+
+        foreach ($posts as $post) {
+            $this->assertNotNull($post->cover);
+            $this->assertEquals(1, count($post->tags));
+        }
+
+        $this->assertEquals('http://url', $posts[0]->cover->url);
+        $this->assertEquals('theTag', $posts[0]->tags->first()->title);
+
+        $this->assertEquals('http://another.url', $posts[1]->cover->url);
+        $this->assertEquals('anotherTag', $posts[1]->tags->first()->title);
     }
 }
 

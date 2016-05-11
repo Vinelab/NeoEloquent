@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent\Eloquent\Relations;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Eloquent\Relationship;
 
 class HasMany extends HasOneOrMany
 {
@@ -45,6 +46,7 @@ class HasMany extends HasOneOrMany
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
          */
+        // parent::addEagerConstraints($models);
 
         // Grab the parent node placeholder
         $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
@@ -62,6 +64,7 @@ class HasMany extends HasOneOrMany
         $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models, $this->localKey));
+
     }
 
     /**

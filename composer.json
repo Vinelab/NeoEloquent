@@ -11,16 +11,18 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "illuminate/support": "5.1.*",
-        "illuminate/pagination": "5.1.*",
-        "illuminate/events": "5.1.*",
-        "illuminate/contracts": "5.1.*",
+        "vinelab/neoeloquent-support": "5.2.*",
+        "vinelab/neoeloquent-pagination": "5.2.*",
+        "vinelab/neoeloquent-contracts": "5.2.*",
+        "vinelab/neoeloquent-container": "5.2.*",
+        "illuminate/database": "5.2.*",
         "neoxygen/neoclient": "~2.1",
         "nesbot/carbon": "~1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "4.2.*",
-        "mockery/mockery": "0.9.*"
+        "mockery/mockery": "0.9.*",
+        "symfony/var-dumper": "*"
     },
     "repositories": [
 

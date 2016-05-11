@@ -88,9 +88,14 @@ class HasOne extends HasOneOrMany
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
          */
+        parent::addEagerConstraints($models);
 
         // Grab the parent node placeholder
         $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
+
+        // $this->query->startModel = $this->parent;
+        // $this->query->endModel = $this->related;
+        // $this->query->relationshipName = $this->relation;
 
         // Tell the builder to select both models of the relationship
         $this->query->select($this->relation, $parentNode);
@@ -105,6 +110,7 @@ class HasOne extends HasOneOrMany
         $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models));
+
     }
 
     /**

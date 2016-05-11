@@ -4,13 +4,15 @@ use Vinelab\NeoEloquent\Connection;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 
-$config = [
+$connection = [
     'driver' => 'neo4j',
     'host'   => 'dev',
     'port'   => 7474,
     'username' => 'neo4j',
     'password' => 'neo4j'
 ];
+
+Vinelab\NeoEloquent\Neo4j::connection($connection);
 
 $capsule = new Capsule;
 $manager = $capsule->getDatabaseManager();

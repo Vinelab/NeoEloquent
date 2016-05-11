@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent;
 
-use Illuminate\Support\ServiceProvider;
+use Vinelab\NeoEloquent\Support\ServiceProvider;
 use Illuminate\Database\Migrations\Migrator;
 use Vinelab\NeoEloquent\Migrations\MigrationModel;
 use Vinelab\NeoEloquent\Migrations\MigrationCreator;

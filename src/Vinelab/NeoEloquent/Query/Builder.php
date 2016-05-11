@@ -5,16 +5,16 @@ namespace Vinelab\NeoEloquent\Query;
 use Closure;
 use DateTime;
 use Carbon\Carbon;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
+use Vinelab\NeoEloquent\Support\Arr;
+use Vinelab\NeoEloquent\Support\Str;
 use BadMethodCallException;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\Connection;
-use Illuminate\Pagination\Paginator;
+use Vinelab\NeoEloquent\Pagination\Paginator;
 use Neoxygen\NeoClient\Formatter\Result;
-use Illuminate\Contracts\Support\Arrayable;
+use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
 use Vinelab\NeoEloquent\Eloquent\Collection;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Vinelab\NeoEloquent\Pagination\LengthAwarePaginator;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
 
@@ -37,14 +37,14 @@ class Builder
     /**
      * The database query grammar instance.
      *
-     * @var \Illuminate\Database\Query\Grammars\Grammar
+     * @var \Vinelab\NeoEloquent\Query\Grammars\Grammar
      */
     protected $grammar;
 
     /**
      * The database query post processor instance.
      *
-     * @var \Illuminate\Database\Query\Processors\Processor
+     * @var \Vinelab\NeoEloquent\Query\Processors\Processor
      */
     protected $processor;
 
@@ -244,7 +244,7 @@ class Builder
      * @param string $expression
      * @param array  $bindings
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function selectRaw($expression, array $bindings = [])
     {
@@ -260,10 +260,10 @@ class Builder
     /**
      * Add a subselect expression to the query.
      *
-     * @param \Closure|\Illuminate\Database\Query\Builder|string $query
+     * @param \Closure|\Vinelab\NeoEloquent\Query\Builder|string $query
      * @param string                                             $as
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function selectSub($query, $as)
     {
@@ -427,7 +427,7 @@ class Builder
      * @param mixed  $value
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      *
      * @throws \InvalidArgumentException
      */
@@ -529,7 +529,7 @@ class Builder
      * @param string $operator
      * @param mixed  $value
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhere($column, $operator = null, $value = null)
     {
@@ -577,7 +577,7 @@ class Builder
      * @param string $sql
      * @param array  $bindings
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereRaw($sql, array $bindings = [])
     {
@@ -591,7 +591,7 @@ class Builder
      * @param array  $values
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereNotBetween($column, array $values, $boolean = 'and')
     {
@@ -604,7 +604,7 @@ class Builder
      * @param string $column
      * @param array  $values
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereNotBetween($column, array $values)
     {
@@ -617,7 +617,7 @@ class Builder
      * @param \Closure $callback
      * @param string   $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereNested(Closure $callback, $boolean = 'and')
     {
@@ -636,7 +636,7 @@ class Builder
     /**
      * Add another query builder as a nested where to the query builder.
      *
-     * @param \Illuminate\Database\Query\Builder|static $query
+     * @param \Vinelab\NeoEloquent\Query\Builder|static $query
      * @param string                                    $boolean
      *
      * @return $this
@@ -660,7 +660,7 @@ class Builder
      * @param string $column
      * @param array  $values
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereBetween($column, array $values)
     {
@@ -728,7 +728,7 @@ class Builder
      * @param \Closure $callback
      * @param bool     $not
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereExists(Closure $callback, $not = false)
     {
@@ -741,7 +741,7 @@ class Builder
      * @param \Closure $callback
      * @param string   $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereNotExists(Closure $callback, $boolean = 'and')
     {
@@ -753,7 +753,7 @@ class Builder
      *
      * @param \Closure $callback
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereNotExists(Closure $callback)
     {
@@ -766,7 +766,7 @@ class Builder
      * @param string $column
      * @param mixed  $values
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereIn($column, $values)
     {
@@ -780,7 +780,7 @@ class Builder
      * @param mixed  $values
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereNotIn($column, $values, $boolean = 'and')
     {
@@ -793,7 +793,7 @@ class Builder
      * @param string $column
      * @param mixed  $values
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereNotIn($column, $values)
     {
@@ -831,7 +831,7 @@ class Builder
      *
      * @param string $column
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereNull($column)
     {
@@ -844,7 +844,7 @@ class Builder
      * @param string $column
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereNotNull($column, $boolean = 'and')
     {
@@ -856,7 +856,7 @@ class Builder
      *
      * @param string $column
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orWhereNotNull($column)
     {
@@ -886,7 +886,7 @@ class Builder
      * @param int    $value
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereDate($column, $operator, $value, $boolean = 'and')
     {
@@ -901,7 +901,7 @@ class Builder
      * @param int    $value
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereDay($column, $operator, $value, $boolean = 'and')
     {
@@ -916,7 +916,7 @@ class Builder
      * @param int    $value
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereMonth($column, $operator, $value, $boolean = 'and')
     {
@@ -931,7 +931,7 @@ class Builder
      * @param int    $value
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereYear($column, $operator, $value, $boolean = 'and')
     {
@@ -1064,7 +1064,7 @@ class Builder
      * @param string $operator
      * @param string $value
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orHaving($column, $operator = null, $value = null)
     {
@@ -1097,7 +1097,7 @@ class Builder
      * @param string $sql
      * @param array  $bindings
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function orHavingRaw($sql, array $bindings = [])
     {
@@ -1127,7 +1127,7 @@ class Builder
      *
      * @param string $column
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function latest($column = 'created_at')
     {
@@ -1139,7 +1139,7 @@ class Builder
      *
      * @param string $column
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function oldest($column = 'created_at')
     {
@@ -1188,7 +1188,7 @@ class Builder
      *
      * @param int $value
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function skip($value)
     {
@@ -1218,7 +1218,7 @@ class Builder
      *
      * @param int $value
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function take($value)
     {
@@ -1231,7 +1231,7 @@ class Builder
      * @param int $page
      * @param int $perPage
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function forPage($page, $perPage = 15)
     {
@@ -1241,10 +1241,10 @@ class Builder
     /**
      * Add a union statement to the query.
      *
-     * @param \Illuminate\Database\Query\Builder|\Closure $query
+     * @param \Vinelab\NeoEloquent\Query\Builder|\Closure $query
      * @param bool                                        $all
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function union($query, $all = false)
     {
@@ -1262,9 +1262,9 @@ class Builder
     /**
      * Add a union all statement to the query.
      *
-     * @param \Illuminate\Database\Query\Builder|\Closure $query
+     * @param \Vinelab\NeoEloquent\Query\Builder|\Closure $query
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function unionAll($query)
     {
@@ -1288,7 +1288,7 @@ class Builder
     /**
      * Lock the selected rows in the table for updating.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return \Vinelab\NeoEloquent\Query\Builder
      */
     public function lockForUpdate()
     {
@@ -1298,7 +1298,7 @@ class Builder
     /**
      * Share lock the selected rows in the table.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return \Vinelab\NeoEloquent\Query\Builder
      */
     public function sharedLock()
     {
@@ -1382,7 +1382,7 @@ class Builder
      * @param string   $pageName
      * @param int|null $page
      *
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @return \Vinelab\NeoEloquent\Contracts\Pagination\LengthAwarePaginator
      */
     public function paginate($perPage = 15, $columns = ['*'], $pageName = 'page', $page = null)
     {
@@ -1407,7 +1407,7 @@ class Builder
      * @param array  $columns
      * @param string $pageName
      *
-     * @return \Illuminate\Contracts\Pagination\Paginator
+     * @return \Vinelab\NeoEloquent\Contracts\Pagination\Paginator
      */
     public function simplePaginate($perPage = 15, $columns = ['*'], $pageName = 'page')
     {
@@ -1730,7 +1730,7 @@ class Builder
      *
      * @param mixed $value
      *
-     * @return \Illuminate\Database\Query\Expression
+     * @return \Vinelab\NeoEloquent\Query\Expression
      */
     public function raw($value)
     {
@@ -1771,7 +1771,7 @@ class Builder
     /**
      * Merge an array of bindings into our bindings.
      *
-     * @param \Illuminate\Database\Query\Builder $query
+     * @param \Vinelab\NeoEloquent\Query\Builder $query
      *
      * @return $this
      */
@@ -1795,7 +1795,7 @@ class Builder
     /**
      * Get the database query processor instance.
      *
-     * @return \Illuminate\Database\Query\Processors\Processor
+     * @return \Vinelab\NeoEloquent\Query\Processors\Processor
      */
     public function getProcessor()
     {
@@ -1805,7 +1805,7 @@ class Builder
     /**
      * Get the query grammar instance.
      *
-     * @return \Illuminate\Database\Query\Grammars\Grammar
+     * @return \Vinelab\NeoEloquent\Query\Grammars\Grammar
      */
     public function getGrammar()
     {
@@ -1836,7 +1836,7 @@ class Builder
      * @param string $boolean
      * @param bool   $not
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
     {
@@ -1876,7 +1876,7 @@ class Builder
      * @param string $boolean
      * @param bool   $not
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereBetween($column, array $values, $boolean = 'and', $not = false)
     {
@@ -1902,7 +1902,7 @@ class Builder
      * @param string $boolean
      * @param bool   $not
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereNull($column, $boolean = 'and', $not = false)
     {
@@ -1927,7 +1927,7 @@ class Builder
      * @param string $value
      * @param string $boolean
      *
-     * @return \Illuminate\Database\Query\Builder|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function whereCarried($column, $operator = null, $value = null, $boolean = 'and')
     {
@@ -2235,7 +2235,7 @@ class Builder
      * @param mixed  $value
      * @param string $type
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return \Vinelab\NeoEloquent\Query\Builder
      */
     public function addBinding($value, $type = 'where')
     {
@@ -2315,7 +2315,7 @@ class Builder
     /**
      * Get a new instance of the query builder.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return \Vinelab\NeoEloquent\Query\Builder
      */
     public function newQuery()
     {

@@ -8,14 +8,14 @@ use ArrayAccess;
 use Carbon\Carbon;
 use LogicException;
 use JsonSerializable;
-use Illuminate\Contracts\Support\Jsonable;
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Contracts\Routing\UrlRoutable;
-use Illuminate\Contracts\Queue\QueueableEntity;
+use Vinelab\NeoEloquent\Contracts\Support\Jsonable;
+use Vinelab\NeoEloquent\Contracts\Events\Dispatcher;
+use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
+use Vinelab\NeoEloquent\Contracts\Routing\UrlRoutable;
+use Vinelab\NeoEloquent\Contracts\Queue\QueueableEntity;
 use Illuminate\Database\ConnectionResolverInterface as Resolver;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
+use Vinelab\NeoEloquent\Support\Arr;
+use Vinelab\NeoEloquent\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
@@ -202,7 +202,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     /**
      * The event dispatcher instance.
      *
-     * @var \Illuminate\Contracts\Events\Dispatcher
+     * @var \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
      */
     protected static $dispatcher;
 
@@ -664,7 +664,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
      * @param mixed $id
      * @param array $columns
      *
-     * @return \Illuminate\Support\Collection|static
+     * @return \Vinelab\NeoEloquent\Support\Collection|static
      */
     public static function findOrNew($id, $columns = ['*'])
     {
@@ -2808,7 +2808,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
 
         if (!$relations instanceof Relation) {
             throw new LogicException('Relationship method must return an object of type '
-                .'Illuminate\Database\Eloquent\Relations\Relation');
+                .'Vinelab\NeoEloquent\Eloquent\Relations\Relation');
         }
 
         return $this->relations[$method] = $relations->getResults();
@@ -3292,6 +3292,18 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     }
 
     /**
+     * Determine whether a relationship exists on this model.
+     *
+     * @param  string  $relation
+     *
+     * @return boolean
+     */
+    public function hasRelation($relation)
+    {
+        return isset($this->relations[$relation]);
+    }
+
+    /**
      * Set the entire relations array on the model.
      *
      * @param array $relations
@@ -3382,7 +3394,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     /**
      * Get the event dispatcher instance.
      *
-     * @return \Illuminate\Contracts\Events\Dispatcher
+     * @return \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
      */
     public static function getEventDispatcher()
     {
@@ -3442,7 +3454,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     /**
      * Set the event dispatcher instance.
      *
-     * @param \Illuminate\Contracts\Events\Dispatcher $dispatcher
+     * @param \Vinelab\NeoEloquent\Contracts\Events\Dispatcher $dispatcher
      */
     public static function setEventDispatcher(Dispatcher $dispatcher)
     {

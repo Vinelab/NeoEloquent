@@ -2,11 +2,12 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
 use Vinelab\NeoEloquent\Eloquent\Edges\Edge;
+use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
+use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Eloquent\Relationship;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 
 abstract class HasOneOrMany extends Relation implements RelationInterface
@@ -67,6 +68,9 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
             if (is_array($model)) {
                 $model = reset($model);
             }
+            // } else if ($model instanceof Relationship) {
+            //     $model = $model->getEndModel();
+            // }
 
             $model->setRelation($relation, $this->related->newCollection());
         }
@@ -81,8 +85,11 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      */
     public function addEagerConstraints(array $models)
     {
-        $this->query->whereIn($this->foreignKey, $this->getKeys($models, $this->localKey));
+        $this->query->startModel = $this->parent;
+        $this->query->endModel = $this->related;
+        $this->query->relationshipName = $this->relation;
     }
+
     /**
      * Get all of the primary keys for an array of models.
      *
@@ -93,10 +100,21 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      */
     protected function getKeys(array $models, $key = null)
     {
-        return array_unique(array_values(array_map(function ($value) use ($key) {
+        return array_unique(array_values(array_map(function ($value) use ($key, $models) {
             if (is_array($value)) {
-                $value = reset($value);
+                // $models is a collection of associative arrays with the keys being a model and its relation,
+                // our job is to know which one to use since if we use the first element
+                // it might not be what we need, in some cases it's the lat element.
+                // To do that we're going to reversely detect the correct identifier (key)
+                // to use and it's sufficient to detect it from one of the records.
+                $identifier = $this->determineValueIdentifier(reset($models));
+                $value = $value[$identifier];
+                // $value = reset($value);
+                // $value = end($value);
             }
+            // } else if($value instanceof Relationship) {
+            //     $value = $value->getEndModel();
+            // }
 
             return $key ? $value->getAttribute($key) : $value->getKey();
 
@@ -175,6 +193,67 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      */
     public function matchOneOrMany(array $models, Collection $results, $relation, $type)
     {
+        // $map = [];
+
+        // foreach ($models as $model) {
+        //     if (is_array($model)) {
+        //         unset($model[$relation]);
+        //         $model = array_values($model)[0];
+        //     }
+
+        //     $index = 'i-'.$model->getKey();
+        //     $map[$index] = $model;
+        // }
+
+        //  // We will need the parent node placeholder so that we use it to extract related results.
+        // $startNodeIdentifier = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
+
+        // foreach ($results as $result) {
+        //     if (is_array($result)) {
+        //         $model = $result[$startNodeIdentifier];
+        //     }
+
+        //     $index = 'i-'.$model->getKey();
+        //     $model = $map[$index];
+
+        //     switch ($type) {
+        //         case 'one':
+        //         default:
+        //             $model->setRelation($relation, $result[$relation]);
+        //             break;
+        //         case 'many':
+        //             $collection = $model->$relation;
+        //             $collection->push($result[$relation]);
+        //             $model->setRelation($relation, $collection);
+        //             break;
+        //     }
+        // }
+
+        // foreach ($results as $result) {
+        //     $startModel = $result->getStartModel();
+        //     $endModel = $result->getEndModel();
+
+        //     $index = 'i-'.$startModel->getKey();
+        //     $model = $map[$index];
+
+        //     switch ($type) {
+        //         case 'one':
+        //         default:
+        //             $model->setRelation($relation, $endModel);
+        //             break;
+        //         case 'many':
+        //             $collection = $model->$relation;
+        //             $collection->push($endModel);
+        //             $model->setRelation($relation, $collection);
+        //             break;
+        //     }
+        // }
+
+        // return array_values($map);
+
+        /// ---- OLD IMPLEMENTATION ------ //
+
+
         // We will need the parent node placeholder so that we use it to extract related results.
         $parent = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
@@ -185,13 +264,14 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
          * node placeholder.
          */
         foreach ($models as $model) {
-            $matched = $results->filter(function ($result) use ($parent, $model) {
+            $matched = $results->filter(function ($result) use ($parent, $model, $models) {
                 if ($result[$parent] instanceof Model) {
                     // In the case of fetching nested relations, we will get an array
                     // with the first key being the model we need, and the other being
                     // the related model so we'll just take the first model out of the array.
                     if (is_array($model)) {
-                        $model = reset($model);
+                        $identifier = $this->determineValueIdentifier($model);
+                        $model = $model[$identifier];
                     }
 
                     return $model->getKey() == $result[$parent]->getKey();
@@ -205,11 +285,17 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
                 // with the first key being the model we need, and the other being
                 // the related model so we'll just take the first model out of the array.
                 if (is_array($model)) {
-                    $model = reset($model);
+                    $identifier = $this->determineValueIdentifier($model);
+                    $model = $model[$identifier];
                 }
 
                 if ($type == 'many') {
-                    $collection = $model->getRelation($relation);
+                    $collection = $this->related->newCollection();
+
+                    if ($model->hasRelation($relation)) {
+                        $collection = $model->getRelation($relation);
+                    }
+
                     $collection->push($match[$relation]);
                     $model->setRelation($relation, $collection);
                 } else {
@@ -608,7 +694,7 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      * @param mixed $id
      * @param array $columns
      *
-     * @return \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Model
+     * @return \Vinelab\NeoEloquent\Support\Collection|\Illuminate\Database\Eloquent\Model
      */
     public function findOrNew($id, $columns = ['*'])
     {

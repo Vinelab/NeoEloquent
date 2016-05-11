@@ -47,8 +47,8 @@ class ConnectionTest extends TestCase
         $c = $this->getConnectionWithConfig('neo4j');
 
         $config = require(__DIR__.'/../../config/database.php');
-        $this->assertEquals($c->getConfig('port'), $config['connections']['neo4j']['port']);
-        $this->assertEquals($c->getConfig('host'), $config['connections']['neo4j']['host']);
+        $this->assertEquals($c->getConfigOption('connections.neo4j.port'), $config['connections']['neo4j']['port']);
+        $this->assertEquals($c->getConfigOption('connections.neo4j.host'), $config['connections']['neo4j']['host']);
     }
 
     public function testDriverName()
@@ -69,15 +69,15 @@ class ConnectionTest extends TestCase
     {
         $c = $this->getConnectionWithConfig('default');
 
-        $this->assertEquals('localhost', $c->getHost());
-        $this->assertEquals(7474, $c->getPort());
+        $this->assertEquals('localhost', $c->getHost([]));
+        $this->assertEquals(7474, $c->getPort([]));
     }
 
     public function testGettingDefaultPort()
     {
         $c = $this->getConnectionWithConfig('default');
 
-        $port = $c->getPort();
+        $port = $c->getPort([]);
 
         $this->assertEquals(7474, $port);
         $this->assertInternalType('int', $port);
@@ -112,7 +112,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection();
         $connection->logQuery('foo', array(), time());
-        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('illuminate.query', array('foo', array(), null, null));
         $connection->logQuery('foo', array(), null);
     }
@@ -429,7 +429,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.beganTransaction', $connection);
         $connection->beginTransaction();
     }
@@ -438,7 +438,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.committed', $connection);
         $connection->commit();
     }
@@ -447,7 +447,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.rollingBack', $connection);
         $connection->rollback();
     }
@@ -524,7 +524,7 @@ class ConnectionTest extends TestCase
         return $this->getMock(
             'Vinelab\NeoEloquent\Connection',
             array_merge($defaults, $methods),
-            array($this->dbConfig['connections']['default'])
+            array($this->dbConfig)
         );
     }
 }

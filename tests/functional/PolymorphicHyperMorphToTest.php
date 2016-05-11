@@ -367,7 +367,7 @@ class PolymorphicHyperMorphToTest extends TestCase
         $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
         $this->assertTrue(in_array($commentOnPost->id, $edgesIds));
 
-        $expectedEdgesTypes = ['happy', 'sad'];
+        $expectedEdgesTypes = ['sad', 'happy'];
 
         foreach ($edges as $key => $edge) {
             $attributes = $edge->toArray();

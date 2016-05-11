@@ -72,6 +72,8 @@ class BelongsTo extends OneRelation
          * our eagerly loading query so it returns the proper models from execution.
          */
 
+        parent::addEagerConstraints($models);
+
         // Grab the parent node placeholder
         $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
@@ -88,6 +90,10 @@ class BelongsTo extends OneRelation
         $this->query->matchIn($this->parent, $this->related, $this->relation, $this->relationType, $this->otherKey, $this->parent->{$this->otherKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->otherKey, $this->getEagerModelKeys($models));
+
+        $this->query->startModel = $this->parent;
+        $this->query->endModel = $this->related;
+        $this->query->relationshipName = $this->relation;
     }
 
     /**

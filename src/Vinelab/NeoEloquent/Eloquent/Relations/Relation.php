@@ -173,6 +173,27 @@ abstract class Relation
     }
 
     /**
+     * When matching eager loaded data, we need to determine
+     * which identifier should be used to set the related models to.
+     * This is done by iterating the given models and checking for
+     * the matching class between the result and this relation's
+     * parent model. When there's a match, the identifier at which
+     * the match occurred is returned.
+     *
+     * @param  array  $models
+     *
+     * @return string
+     */
+    protected function determineValueIdentifier(array $models)
+    {
+        foreach ($models as $resultIdentifier => $model) {
+            if (get_class($this->parent) === get_class($model)) {
+                return $resultIdentifier;
+            }
+        }
+    }
+
+    /**
      * Get all of the primary keys for an array of models.
      *
      * @param array  $models

@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Vinelab\NeoEloquent\Query\Expression;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 
 abstract class OneRelation extends Relation implements RelationInterface
@@ -53,6 +52,18 @@ abstract class OneRelation extends Relation implements RelationInterface
         $this->relationType = $relationType;
 
         parent::__construct($query, $parent);
+    }
+
+    /**
+     * Set the constraints for an eager load of the relation.
+     *
+     * @param array $models
+     */
+    public function addEagerConstraints(array $models)
+    {
+        $this->query->startModel = $this->parent;
+        $this->query->endModel = $this->related;
+        $this->query->relationshipName = $this->relation;
     }
 
     /**
@@ -152,7 +163,11 @@ abstract class OneRelation extends Relation implements RelationInterface
          * it is a relationship with an edge incoming towards the $parent model and we call it
          * an "Edge" relationship.
          */
-        return $this->getEdge($model, $attributes);
+        $relation = $this->getEdge($model, $attributes);
+
+        $relation->save();
+
+        return $relation;
     }
 
     /**
@@ -282,7 +297,8 @@ abstract class OneRelation extends Relation implements RelationInterface
                     // with the first key being the model we need, and the other being
                     // the related model so we'll just take the first model out of the array.
                     if (is_array($model)) {
-                        $model = reset($model);
+                        $identifier = $this->determineValueIdentifier($model);
+                        $model = $model[$identifier];
                     }
 
                     return $model->getKey() == $result[$parent]->getKey();
@@ -296,7 +312,8 @@ abstract class OneRelation extends Relation implements RelationInterface
                 // with the first key being the model we need, and the other being
                 // the related model so we'll just take the first model out of the array.
                 if (is_array($model)) {
-                    $model = reset($model);
+                    $identifier = $this->determineValueIdentifier($model);
+                    $model = $model[$identifier];
                 }
 
                 $model->setRelation($relation, $match[$relation]);

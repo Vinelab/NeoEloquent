@@ -5,21 +5,26 @@ namespace Vinelab\NeoEloquent;
 use Closure;
 use DateTime;
 use Exception;
-use Illuminate\Contracts\Events\Dispatcher;
 use LogicException;
 use Neoxygen\NeoClient\Client;
 use Neoxygen\NeoClient\ClientBuilder;
 use Throwable;
-use Vinelab\NeoEloquent\ConnectionInterface;
+use Vinelab\NeoEloquent\Contracts\Events\Dispatcher;
+use Vinelab\NeoEloquent\Exceptions\ConnectionException;
 use Vinelab\NeoEloquent\Exceptions\Exception as QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
+use Vinelab\NeoEloquent\Support\Arr;
 
 class Connection implements ConnectionInterface
 {
+    const TYPE_HA = 'ha';
+    const TYPE_MULTI = 'multi';
+    const TYPE_SINGLE = 'single';
+
     /**
      * The reconnector instance for the connection.
      *
@@ -51,7 +56,7 @@ class Connection implements ConnectionInterface
     /**
      * The event dispatcher instance.
      *
-     * @var \Illuminate\Contracts\Events\Dispatcher
+     * @var \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
      */
     protected $events;
 
@@ -117,6 +122,7 @@ class Connection implements ConnectionInterface
      * @var array
      */
     protected $defaults = array(
+        'scheme' => 'http',
         'host' => 'localhost',
         'port' => 7474,
         'username' => null,
@@ -138,22 +144,17 @@ class Connection implements ConnectionInterface
     public function __construct(array $config = array())
     {
         $this->config = $config;
-
-        // activate and set the database client connection
-        $this->neo = $this->createConnection();
     }
 
     /**
      * Set the query grammar used by the connection.
      *
-     * @param  \Illuminate\Database\Query\Grammars\Grammar  $grammar
-     * @return void
+     * @param \Illuminate\Database\Query\Grammars\Grammar $grammar
      */
     public function setQueryGrammar(Grammar $grammar)
     {
         $this->queryGrammar = $grammar;
     }
-
 
     /**
      * Set the query grammar to the default implementation.
@@ -202,7 +203,7 @@ class Connection implements ConnectionInterface
     /**
      * Get the event dispatcher used by the connection.
      *
-     * @return \Illuminate\Contracts\Events\Dispatcher
+     * @return \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
      */
     public function getEventDispatcher()
     {
@@ -284,28 +285,6 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * Get the name of the connected database.
-     *
-     * @return string
-     */
-    public function getDatabaseName()
-    {
-        return $this->database;
-    }
-
-    /**
-     * Set the name of the connected database.
-     *
-     * @param string $database
-     *
-     * @return string
-     */
-    public function setDatabaseName($database)
-    {
-        $this->database = $database;
-    }
-
-    /**
      * Set the default fetch mode for the connection.
      *
      * @param int $fetchMode
@@ -320,7 +299,7 @@ class Connection implements ConnectionInterface
     /**
      * Set the event dispatcher instance on the connection.
      *
-     * @param \Illuminate\Contracts\Events\Dispatcher $events
+     * @param \Vinelab\NeoEloquent\Contracts\Events\Dispatcher $events
      */
     public function setEventDispatcher(Dispatcher $events)
     {
@@ -367,17 +346,96 @@ class Connection implements ConnectionInterface
         return $this->select($query, $bindings, false);
     }
 
+    public function createConnection()
+    {
+        return $this->getClient();
+    }
+
     /**
      * Create a new Neo4j client.
      *
      * @return Neoxygen\NeoClient\Client
      */
-    public function createConnection()
+    public function createSingleConnectionClient()
     {
+        $connections = $this->getConfigOption('connections');
+        if (!count($connections) > 0) {
+            throw new ConnectionException('No connection configuration found');
+        }
+
+        $config = array_values($connections)[0];
+
         return ClientBuilder::create()
-            ->addConnection('default', 'http', $this->getHost(), $this->getPort(), $this->isSecured(), $this->getUsername(), $this->getPassword())
+            ->addConnection(
+                'default',
+                $this->getScheme($config),
+                $this->getHost($config),
+                $this->getPort($config),
+                $this->isSecured($config),
+                $this->getUsername($config),
+                $this->getPassword($config)
+            )
             ->setAutoFormatResponse(true)
             ->build();
+    }
+
+    public function createMultipleConnectionsClient()
+    {
+        $clientBuilder = ClientBuilder::create();
+
+        $default = $this->getConfigOption('default');
+
+        foreach ($this->getConfigOption('connections') as $connection => $config) {
+            if ($default === $connection) {
+                $connection = 'default';
+            }
+
+            $clientBuilder->addConnection(
+                $connection,
+                $this->getScheme($config),
+                $this->getHost($config),
+                $this->getPort($config),
+                $this->isSecured($config),
+                $this->getUsername($config),
+                $this->getPassword($config)
+            );
+        }
+
+        return $clientBuilder->setAutoFormatResponse(true)->build();
+    }
+
+    public function createHAClient()
+    {
+        $connections = $this->getConfigOption('connections');
+
+        $clientBuilder = ClientBuilder::create();
+
+        $master = $connections['master'];
+        $clientBuilder->addConnection(
+            'master',
+            $this->getScheme($master),
+            $this->getHost($master),
+            $this->getPort($master),
+            $this->isSecured($master),
+            $this->getUsername($master),
+            $this->getPassword($master)
+        )->setMasterConnection('master');
+
+        if (isset($connections['slaves'])) {
+            foreach ($connections['slaves'] as $connection => $config) {
+                $clientBuilder->addConnection(
+                    $connection,
+                    $this->getScheme($config),
+                    $this->getHost($config),
+                    $this->getPort($config),
+                    $this->isSecured($config),
+                    $this->getUsername($config),
+                    $this->getPassword($config)
+                )->setSlaveConnection($connection);
+            }
+        }
+
+        return $clientBuilder->enableHAMode()->setAutoFormatResponse(true)->build();
     }
 
     /**
@@ -387,6 +445,10 @@ class Connection implements ConnectionInterface
      */
     public function getClient()
     {
+        if (!$this->neo) {
+            $this->setClient($this->createSingleConnectionClient());
+        }
+
         return $this->neo;
     }
 
@@ -401,14 +463,19 @@ class Connection implements ConnectionInterface
         $this->neo = $client;
     }
 
+    public function getScheme(array $config)
+    {
+        return Arr::get($config, 'scheme', $this->defaults['scheme']);
+    }
+
     /**
      * Get the connection host.
      *
      * @return string
      */
-    public function getHost()
+    public function getHost(array $config)
     {
-        return $this->getConfig('host', $this->defaults['host']);
+        return Arr::get($config, 'host', $this->defaults['host']);
     }
 
     /**
@@ -416,9 +483,9 @@ class Connection implements ConnectionInterface
      *
      * @return int|string
      */
-    public function getPort()
+    public function getPort(array $config)
     {
-        return $this->getConfig('port', $this->defaults['port']);
+        return Arr::get($config, 'port', $this->defaults['port']);
     }
 
     /**
@@ -426,9 +493,9 @@ class Connection implements ConnectionInterface
      *
      * @return int|string
      */
-    public function getUsername()
+    public function getUsername(array $config)
     {
-        return $this->getConfig('username', $this->defaults['username']);
+        return Arr::get($config, 'username', $this->defaults['username']);
     }
 
     /**
@@ -436,9 +503,9 @@ class Connection implements ConnectionInterface
      *
      * @return bool
      */
-    public function isSecured()
+    public function isSecured(array $config)
     {
-        return null !== $this->getUsername() && null !== $this->getPassword();
+        return Arr::get($config, 'username') !== null && Arr::get($config, 'password') !== null;
     }
 
     /**
@@ -446,9 +513,14 @@ class Connection implements ConnectionInterface
      *
      * @return int|strings
      */
-    public function getPassword()
+    public function getPassword(array $config)
     {
-        return $this->getConfig('password', $this->defaults['password']);
+        return Arr::get($config, 'password', $this->defaults['password']);
+    }
+
+    public function getConfig()
+    {
+        return $this->config;
     }
 
     /**
@@ -459,9 +531,9 @@ class Connection implements ConnectionInterface
      *
      * @return mixed
      */
-    public function getConfig($option, $default = null)
+    public function getConfigOption($option, $default = null)
     {
-        return array_get($this->config, $option, $default);
+        return Arr::get($this->getConfig(), $option, $default);
     }
 
     /**
@@ -471,7 +543,7 @@ class Connection implements ConnectionInterface
      */
     public function getName()
     {
-        return $this->getConfig('name');
+        return $this->getConfigOption('name');
     }
 
     /**
@@ -787,7 +859,8 @@ class Connection implements ConnectionInterface
         ++$this->transactions;
 
         if ($this->transactions == 1) {
-            $this->transaction = $this->getClient()->createTransaction();
+            $client = $this->getClient();
+            $this->transaction = $client->createTransaction();
         }
 
         $this->fireConnectionEvent('beganTransaction');

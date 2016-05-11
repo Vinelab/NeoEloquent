@@ -3,11 +3,12 @@
 namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
 use Mockery as M;
-use Illuminate\Support\Collection;
 use Neoxygen\NeoClient\Formatter\Node;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class EloquentBuilderTest extends TestCase
 {
@@ -362,7 +363,10 @@ class EloquentBuilderTest extends TestCase
 
     public function testFindingById()
     {
+        $this->query->shouldReceive('getGrammar')->andReturn(new CypherGrammar());
+
         $resultSet = M::mock('Neoxygen\NeoClient\Formatter\Result');
+        $resultSet->shouldReceive('getRelationships')->once()->withNoArgs()->andReturn([]);
         $resultSet->shouldReceive('getAllByIdentifier')->withNoArgs()->andReturn([new Node('id', [])]);
 
         $this->query->shouldReceive('where')->once()->with('id(n)', '=', 1);
@@ -374,7 +378,8 @@ class EloquentBuilderTest extends TestCase
         $this->model->shouldReceive('nodeLabel')->once()->andReturn('Model');
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
-        $collection = new \Illuminate\Support\Collection(array(M::mock('Neoxygen\NeoClient\Formatter\Result')));
+        $result = M::mock('Neoxygen\NeoClient\Formatter\Result');
+        $collection = new \Vinelab\NeoEloquent\Support\Collection(array($result));
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection);
 
         $this->builder->setModel($this->model);
@@ -417,7 +422,7 @@ class EloquentBuilderTest extends TestCase
         $attributes = array_merge($result, array('id' => $id));
 
         // the Collection that represents the returned result by Eloquent holding the User as an item
-        $collection = new \Illuminate\Support\Collection(array($user));
+        $collection = new \Vinelab\NeoEloquent\Support\Collection(array($user));
 
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection)
                     ->shouldReceive('getKeyName')->twice()->andReturn('id')

@@ -3,7 +3,7 @@
 namespace Vinelab\NeoEloquent;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Illuminate\Support\ServiceProvider;
+use Vinelab\NeoEloquent\Support\ServiceProvider;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 
 class NeoEloquentServiceProvider extends ServiceProvider
