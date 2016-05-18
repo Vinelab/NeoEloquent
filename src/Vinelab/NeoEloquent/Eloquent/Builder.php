@@ -461,10 +461,11 @@ class Builder extends IlluminateBuilder {
      * @param  int $perPage
      * @param  array $columns
      * @param string $pageName
+     * @param null $page
      * @return \Illuminate\Pagination\Paginator
      * @internal param \Illuminate\Pagination\Factory $paginator
      */
-    public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page')
+    public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page', $page = null)
     {
         $paginator = $this->query->getConnection()->getPaginator();
         $page = $paginator->getCurrentPage();
