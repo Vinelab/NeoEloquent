@@ -155,6 +155,7 @@ abstract class Delegate {
         else
         {
             $node->setProperty($model->getKeyName(), $model->getKey());
+            $node->setId($model->id);
         }
 
         return $node;
