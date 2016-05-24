@@ -145,20 +145,22 @@ class CypherGrammar extends Grammar
         $property = $match['property'];
         $direction = $match['direction'];
         $relationship = $match['relationship'];
+        $parentNode = $parent['node'];
+        $relatedNode = $related['node'];
 
-        // Prepare labels for query
+        // Prepare labels for query.
         $parentLabels = $this->prepareLabels($parent['labels']);
         $relatedLabels = $this->prepareLabels($related['labels']);
 
         // Get the relationship ready for query
-        $relationshipLabel = $this->prepareRelation($relationship, $related['node']);
+        $relationshipLabel = $this->prepareRelation($relationship, $relatedNode);
 
         // We treat node ids differently here in Cypher
         // so we will have to turn it into something like id(node)
-        $property = $property == 'id' ? 'id('.$parent['node'].')' : $parent['node'].'.'.$property;
+        $property = $property == 'id' ? 'id('.$parentNode.')' : $parentNode.'.'.$property;
 
-        return '('.$parent['node'].$parentLabels.'), '
-                .$this->craftRelation($parent['node'], $relationshipLabel, $related['node'], $relatedLabels, $direction);
+        return '('.$parentNode.$parentLabels.'), '
+                .$this->craftRelation($parentNode, $relationshipLabel, $relatedNode, $relatedLabels, $direction);
     }
 
     /**
@@ -686,12 +688,31 @@ class CypherGrammar extends Grammar
     {
         // We always need the MATCH clause in our Cypher which
         // is the responsibility of compiling the From component.
-        $match = $this->compileComponents($query, array('from'));
-        $match = $match['from'];
+        // $match = $this->compileComponents($query, array('from'));
+        // $match = $match['from'];
+        if (empty($query->matches)) {
+            $matches = $this->compileComponents($query, ['from']);
+            $matches = $matches['from'];
+            $node = $query->modelAsNode();
+        } else {
+            $matches = $this->compileMatches($query, $query->matches);
+            $node = $query->matches[0]['related']['node'];
+        }
 
         $where = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
-        return "$match $where DELETE ".$query->modelAsNode();
+        $identifiers = [];
+        foreach ($query->matches as $match) {
+            $identifiers[] = $this->getRelationIdentifier($match['relationship'], $match['related']['node']);
+        }
+
+        $cypher = "$matches $where DELETE ".$node;
+
+        if (!empty($identifiers)) {
+            $cypher = $cypher.', '.implode(', ', $identifiers);
+        }
+
+        return $cypher;
     }
 
     public function compileWith(Builder $query, $with)

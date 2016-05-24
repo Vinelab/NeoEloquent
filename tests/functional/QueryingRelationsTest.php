@@ -693,6 +693,34 @@ class QueryingRelationsTest extends TestCase
         $this->assertEquals('http://another.url', $posts[1]->cover->url);
         $this->assertEquals('anotherTag', $posts[1]->tags->first()->title);
     }
+
+    public function testBulkDeletingOutgoingRelation()
+    {
+        $fooPost = Post::createWith(
+            ['title' => 'foo tit', 'body' => 'some body'],
+            [
+                'cover' => ['url' => 'http://url'],
+                'tags' => [
+                    ['title' => 'theTag'],
+                    ['title' => 'anotherTag'],
+                ],
+            ]
+        );
+
+        $fooPost->tags()->delete();
+
+        $this->assertEquals(0, count(Post::first()->tags));
+    }
+
+    public function testBulkDeletingIncomingRelation()
+    {
+        $users = [new User(['name' => 'safastak']), new User(['name' => 'boukharest'])];
+        $role = Role::createWith(['alias' => 'admin'], compact('users'));
+
+        $role->users()->delete();
+
+        $this->assertEquals(0, count(Role::first()->users));
+    }
 }
 
 class User extends Model
