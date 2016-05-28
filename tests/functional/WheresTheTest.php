@@ -213,13 +213,12 @@ class WheresTheTest extends TestCase
          * WHERE actor NOT IN coactors
          * RETURN actor
          */
-        $this->markTestIncomplete();
-
-        $u = User::whereNotIn('alias', ['ab', 'cd', 'eg'])->get();
+        $u = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->get();
         $still = new Collection(array($this->gh, $this->ij));
+        $rest = [$this->gh->toArray(), $this->ij->toArray()];
 
         $this->assertCount(2, $u);
-        $this->assertEquals($buddies->toArray(), $still->toArray());
+        $this->assertEquals($rest, $still->toArray());
     }
 
     public function testWhereBetween()

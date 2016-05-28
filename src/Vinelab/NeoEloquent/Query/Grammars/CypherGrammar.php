@@ -282,7 +282,7 @@ class CypherGrammar extends Grammar
         // for actually creating the where clauses Cypher. This helps keep the code nice
         // and maintainable since each clause has a very small method that it uses.
         foreach ($query->wheres as $where) {
-            $method = "Where{$where['type']}";
+            $method = "where{$where['type']}";
 
             $cypher[] = $where['boolean'].' '.$this->$method($query, $where);
         }
@@ -513,6 +513,21 @@ class CypherGrammar extends Grammar
         $values = $this->valufy($where['values']);
 
         return $this->wrap($where['column']).' IN ['.$values.']';
+    }
+
+    /**
+     * Compile a "where not in" clause.
+     *
+     * @param \Illuminate\Database\Query\Builder $query
+     * @param array                              $where
+     *
+     * @return string
+     */
+    protected function whereNotIn(Builder $query, $where)
+    {
+        $values = $this->valufy($where['values']);
+
+        return 'NOT '.$this->wrap($where['column']).' IN ['.$values.']';
     }
 
     /**
