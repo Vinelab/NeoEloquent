@@ -102,7 +102,7 @@ class Builder
 
         if (is_array($id)) {
             return $this->findMany(array_map(function ($id) { return (int) $id; }, $id), $properties);
-        } else if (is_numeric($id)){
+        } elseif (is_numeric($id)) {
             $id = (int) $id;
         }
 
@@ -1322,16 +1322,16 @@ class Builder
      */
     public function has($relation, $operator = '>=', $count = 1, $boolean = 'and', Closure $callback = null)
     {
+        if (strpos($relation, '.') !== false) {
+            return $this->hasNested($relation, $operator, $count, $boolean, $callback);
+        }
+
         $relation = $this->getHasRelationQuery($relation);
 
         $query = $relation->getRelated()->newQuery();
         // This will make sure that any query we add here will consider the related
-        // model as our reference Node.
+        // model as our reference Node. Similar to switching contexts.
         $this->getQuery()->from = $query->getModel()->nodeLabel();
-
-        if ($callback) {
-            call_user_func($callback, $query);
-        }
 
         /*
          * In graph we do not need to act on the count of the relationships when dealing
@@ -1340,7 +1340,12 @@ class Builder
          */
         $prefix = $relation->getRelatedNode();
 
-        if (!$callback) {
+        if ($callback) {
+            call_user_func($callback, $query);
+            $this->query->matches = array_merge($this->query->matches, $query->getQuery()->matches);
+            $this->query->with = array_merge($this->query->with, $query->getQuery()->with);
+            $this->carry([$relation->getParentNode(), $relation->getRelatedNode()]);
+        } else {
             /*
              * The Cypher we're trying to build here would look like this:
              *
@@ -1368,7 +1373,8 @@ class Builder
             $relatedNode,
             $relation->getRelationType(),
             $relation->getLocalKey(),
-            $relation->getParentLocalKeyValue());
+            $relation->getParentLocalKeyValue()
+        );
 
         // Prefix all the columns with the relation's node placeholder in the query
         // and merge the queries that needs to be merged.
@@ -1892,8 +1898,10 @@ class Builder
     {
         if (is_array($query->getQuery()->wheres)) {
             $query->getQuery()->wheres = array_map(function ($where) use ($prefix) {
-                $column = $where['column'];
-                $where['column'] = ($this->isId($column)) ? $column : $prefix.'.'.$column;
+                if ($where['type'] != 'Carried' && strpos($where['column'], '.') == false) {
+                    $column = $where['column'];
+                    $where['column'] = ($this->isId($column)) ? $column : $prefix.'.'.$column;
+                }
 
                 return $where;
             }, $query->getQuery()->wheres);
