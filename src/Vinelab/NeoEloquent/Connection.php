@@ -737,8 +737,6 @@ class Connection implements ConnectionInterface
                 $binding = $value->format($grammar->getDateFormat());
             }
 
-            $property = is_array($binding) ? key($binding) : $key;
-
             // We will set the binding key and value, then
             // we replace the binding property of the id (if found)
             // with a _nodeId instead since the client
@@ -751,7 +749,7 @@ class Connection implements ConnectionInterface
 
             foreach ($binding as $property => $real) {
                 // We should not pass any numeric key-value items since the Neo4j client expects
-                // a JSON map parameters.
+                // a JSON dictionary.
                 if (is_numeric($property)) {
                     $property = (!is_numeric($key)) ? $key : 'id';
                 }
@@ -760,7 +758,14 @@ class Connection implements ConnectionInterface
                     $property = $grammar->getIdReplacement($property);
                 }
 
-                $prepared[$property] = $real;
+                // when the value is an array means we have
+                // a property as an array so we'll
+                // keep adding to it.
+                if (is_array($value)) {
+                    $prepared[$property][] = $real;
+                } else {
+                    $prepared[$property] = $real;
+                }
             }
         }
 

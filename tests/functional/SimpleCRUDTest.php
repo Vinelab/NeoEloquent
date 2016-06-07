@@ -84,6 +84,21 @@ class SimpleCRUDTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
     }
 
+    public function testCreatingRecordWithArrayProperties()
+    {
+        $w = Wiz::create(['fiz' => ['not', '123', 'helping']]);
+
+        $expected = [
+            $w->getKeyName() => $w->getKey(),
+            'fiz' => ['not', '123', 'helping'],
+            'created_at' => $w->created_at,
+            'updated_at' => $w->updated_at,
+        ];
+
+        $fetched = Wiz::first();
+        $this->assertEquals($expected, $fetched->toArray());
+    }
+
     /**
      * @depends testCreatingRecord
      */
