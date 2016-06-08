@@ -35,7 +35,8 @@ class Connection extends IlluminateConnection {
         'host' => 'localhost',
         'port' => 7474,
         'username' => null,
-        'password' => null
+        'password' => null,
+        'ssl' => false
     );
 
     /**
@@ -80,7 +81,7 @@ class Connection extends IlluminateConnection {
     public function createConnection()
     {
         $client = new NeoClient($this->getHost(), $this->getPort());
-        $client->getTransport()->setAuth($this->getUsername(), $this->getPassword());
+        $client->getTransport()->useHttps($this->getSsl())->setAuth($this->getUsername(), $this->getPassword());
         return $client;
     }
 
@@ -142,6 +143,15 @@ class Connection extends IlluminateConnection {
     public function getPassword()
     {
         return $this->getConfig('password', $this->defaults['password']);
+    }
+
+    /**
+     * Get if the connection has to be secure
+     * @return int|strings
+     */
+    public function getSsl()
+    {
+        return $this->getConfig('ssl', $this->defaults['ssl']);
     }
 
     /**

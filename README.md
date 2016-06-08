@@ -85,7 +85,8 @@ Add the connection defaults:
         'host'   => 'localhost',
         'port'   => '7474',
         'username' => null,
-        'password' => null
+        'password' => null,
+        'ssl' => false
     ]
 ]
 ```
