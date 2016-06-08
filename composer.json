@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0",
+        "php": ">=5.5.9",
         "vinelab/neoeloquent-support": "5.2.*",
         "vinelab/neoeloquent-pagination": "5.2.*",
         "vinelab/neoeloquent-contracts": "5.2.*",
