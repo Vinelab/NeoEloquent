@@ -23,7 +23,7 @@ class ConnectionTest extends TestCase
     {
         M::close();
 
-        // parent::tearDown();
+        parent::tearDown();
     }
 
     public function testConnection()
@@ -145,8 +145,8 @@ class ConnectionTest extends TestCase
     public function testPreparingWheresBindings()
     {
         $bindings = array(
-            array('username' => 'jd'),
-            array('email' => 'marie@curie.sci'),
+            'username' => 'jd',
+            'email' => 'marie@curie.sci',
         );
 
         $c = $this->getConnectionWithConfig('default');
@@ -164,7 +164,7 @@ class ConnectionTest extends TestCase
     public function testPreparingFindByIdBindings()
     {
         $bindings = array(
-            array('id' => 6),
+            'id' => 6,
         );
 
         $c = $this->getConnectionWithConfig('default');
@@ -242,7 +242,7 @@ class ConnectionTest extends TestCase
 
         $query = 'MATCH (n:`User`) WHERE n.username = {username} RETURN * LIMIT 1';
 
-        $bindings = array(array('username' => $this->user['username']));
+        $bindings = ['username' => $this->user['username']];
 
         $c = $this->getConnectionWithConfig('default');
 
@@ -278,13 +278,13 @@ class ConnectionTest extends TestCase
         $query = 'MATCH (n:`User`) WHERE n.username = {username} RETURN * LIMIT 1';
 
         // Get the ID of the created record
-        $results = $c->select($query, array(array('username' => $this->user['username'])));
+        $results = $c->select($query, array('username' => $this->user['username']));
 
         $node = $results->getSingleNode();
         $id = $node->getId();
 
         $bindings = array(
-            array('id' => $id),
+            'id' => $id,
         );
 
         // Select the Node containing the User record by its id
@@ -317,9 +317,9 @@ class ConnectionTest extends TestCase
                  'RETURN count(n)';
 
         $bindings = array(
-            array('type' => $type),
-            array('updated_at' => '2014-05-11 13:37:15'),
-            array('username' => $this->user['username']),
+            'type' => $type,
+            'updated_at' => '2014-05-11 13:37:15',
+            'username' => $this->user['username'],
         );
 
         $results = $c->affectingStatement($query, $bindings);
@@ -333,7 +333,7 @@ class ConnectionTest extends TestCase
 
         // Try to find the updated one and make sure it was updated successfully
         $query = 'MATCH (n:User) WHERE n.username = {username} RETURN n';
-        $cypher = $c->getCypherQuery($query, array(array('username' => $this->user['username'])));
+        $cypher = $c->getCypherQuery($query, array('username' => $this->user['username']));
 
         $results = $this->client->sendCypherQuery($cypher['statement'], $cypher['parameters'])->getResult();
 
@@ -509,9 +509,9 @@ class ConnectionTest extends TestCase
         // but this is how they are collected internally
         // so bare with it =)
         $createCypher = $c->getCypherQuery($create, array(
-            array('name' => $this->user['name']),
-            array('email' => $this->user['email']),
-            array('username' => $this->user['username']),
+            'name' => $this->user['name'],
+            'email' => $this->user['email'],
+            'username' => $this->user['username'],
         ));
 
         return $this->client->sendCypherQuery($createCypher['statement'], $createCypher['parameters']);

@@ -31,7 +31,7 @@
         "classmap": [
             "tests/TestCase.php"
         ],
-        "psr-0": {
+        "psr-4": {
             "Vinelab\\NeoEloquent\\": "src/"
         }
     },
