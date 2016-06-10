@@ -1,4 +1,5 @@
 language: php
+sudo: false
 
 php:
   - 5.6
@@ -11,9 +12,10 @@ matrix:
 
 before_script:
   # install Neo4j
-  - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
-  - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
-  - neo4j-community-$NEO4J_VERSION/bin/neo4j start
+  - wget dist.neo4j.org/neo4j-enterprise-$NEO4J_VERSION-unix.tar.gz
+  - tar -xzf neo4j-enterprise-$NEO4J_VERSION-unix.tar.gz
+   - sed -i.bak 's/^\(dbms\.security\.auth_enabled=\).*/\1false/' neo4j-enterprise-$NEO_VERSION/conf/neo4j-server.properties
+  - neo4j-enterprise-$NEO4J_VERSION/bin/neo4j start
   - sleep 3 # give neo4j some time to start
 
   # install composer
@@ -26,8 +28,8 @@ jdk:
   - oraclejdk7  # needed for local Neo4j 2.0+
 
 env:
-  - NEO4J_VERSION="2.2.2"
-  - NEO4J_VERSION="2.3.2"
+  - NEO4J_VERSION="2.2.6"
+  - NEO4J_VERSION="2.3.4"
 
 notifications:
   slack:
