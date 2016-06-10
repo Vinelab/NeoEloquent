@@ -372,7 +372,9 @@ class PolymorphicHyperMorphToTest extends TestCase
         foreach ($edges as $key => $edge) {
             $attributes = $edge->toArray();
             $this->assertArrayHasKey('feeling', $attributes);
-            $this->assertEquals($expectedEdgesTypes[$key], $edge->feeling);
+            $this->assertTrue(in_array($edge->feeling, $expectedEdgesTypes));
+            $index = array_search($edge->feeling, $expectedEdgesTypes);
+            unset($expectedEdgesTypes[$index]);
             $edge->delete();
         }
     }
