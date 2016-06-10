@@ -292,7 +292,9 @@ class BelongsToManyRelationTest extends TestCase
         foreach ($edges as $key => $edge) {
             $attributes = $edge->toArray();
             $this->assertArrayHasKey('type', $attributes);
-            $this->assertEquals($expectedEdgesTypes[$key], $edge->type);
+            $this->assertTrue(in_array($edge->type, $expectedEdgesTypes));
+            $index = array_search($edge->type, $expectedEdgesTypes);
+            unset($expectedEdgesTypes[$index]);
             $edge->delete();
         }
     }
