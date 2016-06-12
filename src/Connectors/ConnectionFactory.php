@@ -44,14 +44,10 @@ class ConnectionFactory
      */
     public function make(array $config, $name = null)
     {
-        $config = $this->parseConfig($config, $name);
-
-        $connections = $config['connections'];
-
-        if (isset($config['replication']) && $config['replication']) {
+        if (isset($config['replication']) && $config['replication'] == true && isset($config['connections'])) {
             // HA / Replication configuration
             $connection = $this->createHAConnection($config);
-        } elseif (count($connections) > 1) {
+        } elseif (isset($config['connections']) && count($config['connections']) > 1) {
             // multi-server configuration
             $connection = $this->createMultiServerConnection($config);
         } else {

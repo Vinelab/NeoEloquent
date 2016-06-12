@@ -47,8 +47,8 @@ class ConnectionTest extends TestCase
         $c = $this->getConnectionWithConfig('neo4j');
 
         $config = require(__DIR__.'/../../config/database.php');
-        $this->assertEquals($c->getConfigOption('connections.neo4j.port'), $config['connections']['neo4j']['port']);
-        $this->assertEquals($c->getConfigOption('connections.neo4j.host'), $config['connections']['neo4j']['host']);
+        $this->assertEquals($c->getConfigOption('port'), $config['connections']['neo4j']['port']);
+        $this->assertEquals($c->getConfigOption('host'), $config['connections']['neo4j']['host']);
     }
 
     public function testDriverName()
@@ -524,7 +524,7 @@ class ConnectionTest extends TestCase
         return $this->getMock(
             'Vinelab\NeoEloquent\Connection',
             array_merge($defaults, $methods),
-            array($this->dbConfig)
+            array($this->dbConfig['connections']['neo4j'])
         );
     }
 }

@@ -21,16 +21,11 @@ class ConnectionFactoryTest extends TestCase
     public function testSingleConnection()
     {
         $config = [
-            'connections' => [
-
-                'default' => [
-                    'host' => 'server.host',
-                    'port' => 7474,
-                    'username' => 'theuser',
-                    'password' => 'thepass',
-                ],
-
-            ],
+            'type' => 'single',
+            'host' => 'server.host',
+            'port' => 7474,
+            'username' => 'theuser',
+            'password' => 'thepass',
         ];
 
         $connection = $this->factory->make($config);
@@ -39,16 +34,16 @@ class ConnectionFactoryTest extends TestCase
         $this->assertInstanceOf(Connection::class, $connection);
         $this->assertInstanceOf(Client::class, $client);
 
-        $this->assertEquals($config['connections'], $connection->getConfig()['connections']);
+        $this->assertEquals($config, $connection->getConfig());
 
         $clientConnection = $client->getConnection();
-        $params = $config['connections']['default'];
+        // $params = $config['connections']['default'];
 
         $this->assertEquals('default', $clientConnection->getAlias());
-        $this->assertEquals($params['host'], $clientConnection->getHost());
-        $this->assertEquals($params['port'], $clientConnection->getPort());
-        $this->assertEquals($params['username'], $clientConnection->getAuthUser());
-        $this->assertEquals($params['password'], $clientConnection->getAuthPassword());
+        $this->assertEquals($config['host'], $clientConnection->getHost());
+        $this->assertEquals($config['port'], $clientConnection->getPort());
+        $this->assertEquals($config['username'], $clientConnection->getAuthUser());
+        $this->assertEquals($config['password'], $clientConnection->getAuthPassword());
     }
 
     public function testMultipleConnections()

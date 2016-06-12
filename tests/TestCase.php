@@ -57,7 +57,7 @@ class TestCase extends PHPUnit
         $connection = is_null($config) ? $this->dbConfig['connections']['default'] :
                                          $this->dbConfig['connections'][$config];
 
-        return new Connection($this->dbConfig);
+        return new Connection($connection);
     }
 
     /**

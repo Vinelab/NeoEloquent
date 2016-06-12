@@ -15,6 +15,7 @@ use Vinelab\NeoEloquent\Exceptions\Exception as QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
 use Vinelab\NeoEloquent\Support\Arr;
@@ -141,7 +142,7 @@ class Connection implements ConnectionInterface
      *
      * @param array $config The database connection configuration
      */
-    public function __construct(array $config = array())
+    public function __construct(array $config = [])
     {
         $this->config = $config;
     }
@@ -358,12 +359,7 @@ class Connection implements ConnectionInterface
      */
     public function createSingleConnectionClient()
     {
-        $connections = $this->getConfigOption('connections');
-        if (!count($connections) > 0) {
-            throw new ConnectionException('No connection configuration found');
-        }
-
-        $config = array_values($connections)[0];
+        $config = $this->getConfig();
 
         return ClientBuilder::create()
             ->addConnection(
@@ -1061,6 +1057,18 @@ class Connection implements ConnectionInterface
     }
 
     /**
+     * Determine if the given exception was caused by a lost connection.
+     *
+     * @param  \Illuminate\Database\QueryException
+     * @return bool
+     */
+    protected function causedByLostConnection(QueryException $e)
+    {
+        return str_contains($e->getPrevious()->getMessage(), 'server has gone away');
+    }
+
+
+    /**
      * Disconnect from the underlying PDO connection.
      */
     public function disconnect()
@@ -1166,7 +1174,7 @@ class Connection implements ConnectionInterface
      *
      * @param  \Illuminate\Database\Schema\Grammars\Grammar
      */
-    public function setSchemaGrammar(CypherGrammar $grammar)
+    public function setSchemaGrammar(SchemaGrammar $grammar)
     {
         $this->schemaGrammar = $grammar;
     }
