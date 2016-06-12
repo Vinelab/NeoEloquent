@@ -6,6 +6,7 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 use Vinelab\NeoEloquent\Events\Dispatcher;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
 
 class NeoEloquentServiceProvider52 extends ServiceProvider
 {
