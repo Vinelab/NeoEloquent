@@ -10,6 +10,7 @@ use Vinelab\NeoEloquent\Support\Str;
 use BadMethodCallException;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\Connection;
+use Vinelab\NeoEloquent\ConnectionInterface;
 use Vinelab\NeoEloquent\Pagination\Paginator;
 use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
@@ -214,7 +215,7 @@ class Builder
      *
      * @param Vinelab\NeoEloquent\Connection $connection
      */
-    public function __construct(Connection $connection, Grammar $grammar)
+    public function __construct(ConnectionInterface $connection, Grammar $grammar)
     {
         $this->grammar = $grammar;
         $this->grammar->setQuery($this);
