@@ -16,6 +16,7 @@
         "vinelab/neoeloquent-contracts": "5.2.*",
         "vinelab/neoeloquent-container": "5.2.*",
         "vinelab/neoeloquent-events": "5.2.*",
+        "illuminate/database": "5.2.*",
         "neoxygen/neoclient": "~2.1",
         "nesbot/carbon": "~1.0"
     },

@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
-use Illuminate\Foundation\Composer;
+use Illuminate\Support\Composer;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Vinelab\NeoEloquent\Migrations\MigrationCreator;
