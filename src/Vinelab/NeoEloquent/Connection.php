@@ -57,6 +57,13 @@ class Connection extends IlluminateConnection
 
         // activate and set the database client connection
         $this->neo = $this->createConnection();
+
+        // We need to initialize a query grammar and the query post processors
+        // which are both very important parts of the database abstractions
+        // so we initialize these to their default values while starting.
+        $this->useDefaultQueryGrammar();
+
+        $this->useDefaultPostProcessor();
     }
 
     /**
@@ -433,7 +440,7 @@ class Connection extends IlluminateConnection
      */
     public function table($table)
     {
-        $query = new Builder($this, $this->getQueryGrammar());
+        $query = new Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
 
         return $query->from($table);
     }

@@ -72,7 +72,9 @@ abstract class Model extends IlluminateModel
 
         $grammar = $conn->getQueryGrammar();
 
-        return new QueryBuilder($conn, $grammar);
+        $processor = $conn->getPostProcessor();
+
+        return new QueryBuilder($conn, $grammar, $processor);
     }
 
     /**

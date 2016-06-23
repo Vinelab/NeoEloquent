@@ -7,6 +7,7 @@ use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Illuminate\Database\Query\Expression;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
+use Illuminate\Database\Query\Processors\Processor;
 
 class GrammarTest extends TestCase
 {
@@ -15,6 +16,7 @@ class GrammarTest extends TestCase
         parent::setUp();
 
         $this->grammar = new Grammar();
+        $this->processor = new Processor();
     }
 
     public function tearDown()
@@ -86,7 +88,7 @@ class GrammarTest extends TestCase
     {
         $mConnection = M::mock('Vinelab\NeoEloquent\Connection');
         $mConnection->shouldReceive('getClient');
-        $query = new Builder($mConnection, $this->grammar);
+        $query = new Builder($mConnection, $this->grammar, $this->processor);
 
         $this->assertEquals('n.value', $this->grammar->wrap('value'));
 

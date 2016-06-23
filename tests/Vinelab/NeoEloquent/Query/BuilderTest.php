@@ -6,6 +6,7 @@ use Mockery as M;
 use Neoxygen\NeoClient\Formatter\Node;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Illuminate\Database\Query\Processors\Processor;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
 class BuilderTest extends TestCase
@@ -17,10 +18,12 @@ class BuilderTest extends TestCase
         $this->grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->connection = M::mock('Vinelab\NeoEloquent\Connection')->makePartial();
 
+        $this->processor = new Processor;
+
         $this->neoClient = M::mock('Neoxygen\NeoClient\Client');
         $this->connection->shouldReceive('getClient')->andReturn($this->neoClient);
 
-        $this->builder = new Builder($this->connection, $this->grammar);
+        $this->builder = new Builder($this->connection, $this->grammar, $this->processor);
     }
 
     public function tearDown()
@@ -319,6 +322,6 @@ class BuilderTest extends TestCase
         $connection->shouldReceive('getClient')->once()->andReturn($client);
         $grammar = new CypherGrammar();
 
-        return new Builder($connection, $grammar);
+        return new Builder($connection, $grammar, $this->processor);
     }
 }
