@@ -219,7 +219,7 @@ abstract class Relation extends Delegate {
             // Let's refresh the relation we alreay have set so that
             // we make sure that it is totally in sync with the saved one.
             $this->setRelation($this->relation);
-
+            event('neo4j.relationship.saved');
             return true;
         }
 
