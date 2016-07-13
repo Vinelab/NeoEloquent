@@ -182,7 +182,7 @@ abstract class Relation extends Delegate {
     {
         $relation = $this->finder->firstRelation($this->parent, $this->related, $this->type, $this->direction);
 
-        return ( ! is_null($relation)) ? $this->newFromRelation($relation) : null;
+        return ( ! empty($relation)) ? $this->newFromRelation($relation) : null;
     }
 
     /**

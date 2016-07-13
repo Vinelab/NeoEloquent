@@ -1,0 +1,102 @@
+Relation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^abstract class Relation extends Delegate {$/;"	class	line:11
+finder	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $finder;$/;"	variable	line:18
+start	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $start;$/;"	variable	line:25
+end	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $end;$/;"	variable	line:31
+parent	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $parent;$/;"	variable	line:38
+related	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $related;$/;"	variable	line:45
+type	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $type;$/;"	variable	line:52
+attributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $attributes = array();$/;"	variable	line:59
+attributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $attributes = array();$/;"	variable	line:59
+dates	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $dates = array();$/;"	variable	line:66
+dates	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $dates = array();$/;"	variable	line:66
+unique	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $unique = false;$/;"	variable	line:75
+unique	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $unique = false;$/;"	variable	line:75
+primaryKey	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $primaryKey = 'id';$/;"	variable	line:83
+primaryKey	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $primaryKey = 'id';$/;"	variable	line:83
+relation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $relation;$/;"	variable	line:90
+must	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^     * WARNING: Every inheriting class must set this value$/;"	class	line:114
+direction	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected $direction;$/;"	variable	line:118
+__construct	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = array(), $unique = false)$/;"	function	line:128
+attributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = array(), $unique = false)$/;"	variable	line:128
+type	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->type       = $type;$/;"	variable	line:132
+parent	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->parent     = $parent;$/;"	variable	line:133
+related	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->related    = $related;$/;"	variable	line:134
+unique	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->unique     = $unique;$/;"	variable	line:135
+attributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->attributes = $attributes;$/;"	variable	line:136
+finder	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->finder     = $this->newFinder();$/;"	variable	line:137
+initRelation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function initRelation()$/;"	function	line:149
+start	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^                $this->start = $this->asNode($this->related);$/;"	variable	line:155
+end	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^                $this->end   = $this->asNode($this->parent);$/;"	variable	line:156
+relation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^                $this->relation = $this->makeRelationship($this->type, $this->relation, $this->parent, $this->attributes);$/;"	variable	line:158
+start	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^                $this->start = $this->asNode($this->parent);$/;"	variable	line:163
+end	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^                $this->end   = $this->asNode($this->related);$/;"	variable	line:164
+relation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^                $this->relation = $this->makeRelationship($this->type, $this->parent, $this->related, $this->attributes);$/;"	variable	line:166
+current	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function current()$/;"	function	line:181
+relation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $relation = $this->finder->firstRelation($this->parent, $this->related, $this->type, $this->direction);$/;"	variable	line:183
+save	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function save()$/;"	function	line:193
+parent	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $parent = $this->asNode($this->parent);$/;"	variable	line:204
+existing	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $existing = $parent->getFirstRelationship((array) $this->type, $this->getRealDirection($this->direction));$/;"	variable	line:205
+saved	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $saved = $this->relation->save();$/;"	variable	line:215
+delete	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function delete()$/;"	function	line:234
+deleted	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $deleted = $this->relation->delete();$/;"	variable	line:238
+newFromRelation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function newFromRelation(Relationship $relation)$/;"	function	line:253
+instance	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);$/;"	variable	line:255
+getReal	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getReal()$/;"	function	line:267
+getKey	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getKey()$/;"	function	line:277
+getKeyName	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getKeyName()$/;"	function	line:287
+setRelation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setRelation(Relationship $relation, $debug = false)$/;"	function	line:297
+debug	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setRelation(Relationship $relation, $debug = false)$/;"	variable	line:297
+relation	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->relation = $relation;$/;"	variable	line:300
+attributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->attributes = $relation->getProperties();$/;"	variable	line:303
+start	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->start = $relation->getStartNode();$/;"	variable	line:307
+end	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->end   = $relation->getEndNode();$/;"	variable	line:308
+relatedNode	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;$/;"	variable	line:311
+attributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $attributes = array_merge(['id' => $relatedNode->getId()], $relatedNode->getProperties());$/;"	variable	line:312
+related	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->related = $this->related->newFromBuilder($attributes);$/;"	variable	line:315
+setRelationProperties	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setRelationProperties(array $properties = array())$/;"	function	line:319
+properties	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setRelationProperties(array $properties = array())$/;"	variable	line:319
+key	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        foreach ($properties as $key => $value)$/;"	variable	line:323
+fill	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function fill(array $properties)$/;"	function	line:336
+key	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        foreach ($properties as $key => $value)$/;"	variable	line:338
+setAttribute	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setAttribute($key, $value)$/;"	function	line:353
+value	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^                $value = $this->fromDateTime($value);$/;"	variable	line:359
+getAttribute	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getAttribute($key)$/;"	function	line:372
+value	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $value = $this->attributes[$key];$/;"	variable	line:376
+getDates	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getDates()$/;"	function	line:392
+defaults	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $defaults = array(static::CREATED_AT, static::UPDATED_AT);$/;"	variable	line:394
+setRawAttributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setRawAttributes(array $attributes)$/;"	function	line:404
+attributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $this->attributes = $attributes;$/;"	variable	line:406
+getAttributes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getAttributes()$/;"	function	line:414
+getModels	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getModels()$/;"	function	line:424
+parent	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function parent()$/;"	function	line:435
+getParent	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getParent()$/;"	function	line:445
+to	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^     * Just a convenient function to get$/;"	function	line:451
+related	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function related()$/;"	function	line:456
+getRelated	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getRelated()$/;"	function	line:466
+getNodes	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getNodes()$/;"	function	line:476
+isUnique	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function isUnique()$/;"	function	line:486
+exists	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function exists()$/;"	function	line:496
+getDateFormat	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected function getDateFormat()$/;"	function	line:511
+fromDateTime	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function fromDateTime($value)$/;"	function	line:522
+format	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        $format = $this->getDateFormat();$/;"	variable	line:524
+value	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $value = Carbon::createFromTimestamp($value);$/;"	variable	line:539
+value	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $value = Carbon::createFromFormat('Y-m-d', $value)->startOfDay();$/;"	variable	line:547
+value	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $value = Carbon::createFromFormat($format, $value);$/;"	variable	line:555
+asDateTime	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected function asDateTime($value)$/;"	function	line:567
+format	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $format = $this->getDateFormat();$/;"	variable	line:590
+toArray	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function toArray()$/;"	function	line:603
+getStartNode	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getStartNode()$/;"	function	line:613
+getEndNode	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function getEndNode()$/;"	function	line:623
+updateTimestamps	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    protected function updateTimestamps()$/;"	function	line:633
+time	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^            $time = $this->freshTimestamp();$/;"	variable	line:637
+setCreatedAt	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setCreatedAt($value)$/;"	function	line:654
+setUpdatedAt	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function setUpdatedAt($value)$/;"	function	line:665
+freshTimestamp	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function freshTimestamp()$/;"	function	line:675
+isDirectionOut	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function isDirectionOut()$/;"	function	line:685
+direction	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        return $this->direction == 'out';$/;"	variable	line:687
+isDirectionIn	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function isDirectionIn()$/;"	function	line:695
+direction	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        return $this->direction == 'in';$/;"	variable	line:697
+isDirectionAny	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function isDirectionAny()$/;"	function	line:705
+direction	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^        return $this->direction == 'any';$/;"	variable	line:707
+__set	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function __set($key, $value)$/;"	function	line:717
+__get	/Users/soto/Code/NeoEloquent/src/Vinelab/NeoEloquent/Eloquent/Edges/Relation.php	/^    public function __get($key)$/;"	function	line:728
