@@ -11,9 +11,9 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "illuminate/support": "5.2.*",
-        "illuminate/database": "5.2.*",
-        "illuminate/pagination": "5.2.*",
+        "illuminate/support": "5.3.*",
+        "illuminate/database": "5.3.*",
+        "illuminate/pagination": "5.3.*",
         "heydavid713/neo4jphp": "0.1.*",
         "nesbot/carbon": "~1.0"
     },
