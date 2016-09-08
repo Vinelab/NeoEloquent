@@ -27,7 +27,7 @@ Add the package to your `composer.json` and run `composer update`.
 
 ### Laravel 5
 
-#### 5.2
+#### 5.3
 
 ```json
 {
