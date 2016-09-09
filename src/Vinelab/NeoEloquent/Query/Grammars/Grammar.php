@@ -57,10 +57,10 @@ class Grammar extends IlluminateGrammar {
      * @var  string  $label
      * @return string
      */
-    public function prepareLabels(array $labels = null)
+    public function prepareLabels(array $labels)
     {
         // get the labels prepared and back to a string imploded by : they go.
-        return implode('', array_map(array($this, 'wrapLabel'), $labels ?? []));
+        return implode('', array_map(array($this, 'wrapLabel'), $labels));
     }
 
     /**

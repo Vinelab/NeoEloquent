@@ -367,7 +367,7 @@ class Builder extends IlluminateQueryBuilder {
     {
         if (is_array($this->wheres))
             return count(array_filter($this->wheres, function($where) use($column) {
-                return isset($where['column']) && $where['column'] == $column;
+                return $where['column'] == $column;
             }));
     }
 

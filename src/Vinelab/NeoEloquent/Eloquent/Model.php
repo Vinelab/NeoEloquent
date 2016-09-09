@@ -1,18 +1,18 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
+use Vinelab\NeoEloquent\Helpers;
 use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
+use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
+use Vinelab\NeoEloquent\Eloquent\Relations\MorphTo;
+use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Eloquent\Relations\MorphMany;
+use Vinelab\NeoEloquent\Eloquent\Relations\HyperMorph;
+use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
+use Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne;
+use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model as IlluminateModel;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
-use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
-use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
-use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
-use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
-use Vinelab\NeoEloquent\Eloquent\Relations\HyperMorph;
-use Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne;
-use Vinelab\NeoEloquent\Eloquent\Relations\MorphMany;
-use Vinelab\NeoEloquent\Eloquent\Relations\MorphTo;
-use Vinelab\NeoEloquent\Helpers;
-use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 
 abstract class Model extends IlluminateModel {
 
@@ -23,97 +23,65 @@ abstract class Model extends IlluminateModel {
      */
     protected $label = null;
 
-    public static function createWith(array $attributes, array $relations, array $options = [])
+    /**
+     * Set the node label for this model
+     *
+     * @param  string|array  $labels
+     */
+    public function setLabel($label)
     {
-        // we need to fire model events on all the models that are involved with our operaiton,
-        // including the ones from the relations, starting with this model.
-        $me = new static();
-        $me->fill($attributes);
-        $models = [$me];
+        return $this->label = $label;
+    }
 
-        $query = static::query();
-        $grammar = $query->getQuery()->getGrammar();
+    /**
+     * @override
+     * Get the node label for this model.
+     *
+     * @return string|array
+     */
+    public function getLabel()
+    {
+        return $this->label;
+    }
 
-        // add parent model's mutation constraints
-        $label = $grammar->modelAsNode($me->getDefaultNodeLabel());
-        $query->addManyMutation($label, $me);
+    /**
+     * @override
+     * Create a new Eloquent query builder for the model.
+     *
+     * @param  Vinelab\NeoEloquent\Query\Builder $query
+     * @return Vinelab\NeoEloquent\Eloquent\Builder|static
+     */
+    public function newEloquentBuilder($query)
+    {
+        return new EloquentBuilder($query);
+    }
 
-        // setup relations
-        foreach ($relations as $relation => $values) {
-            $related = $me->$relation()->getRelated();
-            // if the relation holds the attributes directly instead of an array
-            // of attributes, we transform it into an array of attributes.
-            if ((!is_array($values) || Helpers::isAssocArray($values)) && !$values instanceof Collection) {
-                $values = [$values];
-            }
+    /**
+     * @override
+     * Get a new query builder instance for the connection.
+     *
+     * @return Vinelab\NeoEloquent\Query\Builder
+     */
+    protected function newBaseQueryBuilder()
+    {
+        $conn = $this->getConnection();
 
-            // create instances with the related attributes so that we fire model
-            // events on each of them.
-            foreach ($values as $relatedModel) {
-                // one may pass in either instances or arrays of attributes, when we get
-                // attributes we will dynamically fill a new model instance of the related model.
-                if (is_array($relatedModel)) {
-                    $model = $related->newInstance();
-                    $model->fill($relatedModel);
-                    $relatedModel = $model;
-                }
+        $grammar = $conn->getQueryGrammar();
 
-                $models[$relation][] = $relatedModel;
-                $query->addManyMutation($relation, $related);
-            }
-        }
+        $processor = $conn->getPostProcessor();
 
-        // fire 'creating' and 'saving' events on all models.
-        foreach ($models as $relation => $related) {
-            if (!is_array($related)) {
-                $related = [$related];
-            }
-            foreach ($related as $model) {
-                // we will fire model events on actual models, however attached models using IDs will not be considered.
-                if ($model instanceof Model) {
-                    if ($model->fireModelEvent('creating') === false) {
-                        return false;
-                    }
-                    if ($model->fireModelEvent('saving') === false) {
-                        return false;
-                    }
-                }
-            }
-        }
+        return new QueryBuilder($conn, $grammar, $processor);
+    }
 
-        array_shift($models);
-        // run the query and create the records.
-        $result = $query->createWith($me->toArray(), $models);
-        // take the parent model that was created out of the results array based on
-        // this model's label.
-        $created = reset($result[$label]);
-
-        // fire 'saved' and 'created' events on parent model.
-        $created->finishSave($options);
-        $created->fireModelEvent('created', false);
-
-        // set related models as relations on the parent model.
-        foreach ($relations as $method => $values) {
-            $relation = $created->$method();
-            // is this a one-to-one relation ? If so then we add the model directly,
-            // otherwise we create a collection of the loaded models.
-            $related = new Collection($result[$method]);
-            // fire model events 'created' and 'saved' on related models.
-            $related->each(function ($model) use ($options) {
-                $model->finishSave($options);
-                $model->fireModelEvent('created', false);
-            });
-
-            // when the relation is 'One' instead of 'Many' we will only return the retrieved instance
-            // instead of colletion.
-            if ($relation instanceof OneRelation || $relation instanceof HasOne || $relation instanceof BelongsTo) {
-                $related = $related->first();
-            }
-
-            $created->setRelation($method, $related);
-        }
-
-        return $created;
+    /**
+     * @override
+     * Get the format for database stored dates.
+     *
+     * @return string
+     */
+    protected function getDateFormat()
+    {
+        return 'Y-m-d H:i:s';
     }
 
     /**
@@ -147,40 +115,7 @@ abstract class Model extends IlluminateModel {
         // Since there was no label for this model
         // we take the fully qualified (namespaced) class name and
         // pluck out backslashes to get a clean 'WordsUp' class name and use it as default
-        // return array(str_replace('\\', '', get_class($this)));
-    }
-
-    /**
-     * @override
-     * Get the node label for this model.
-     *
-     * @return string|array
-     */
-    public function getLabel()
-    {
-        return $this->label;
-    }
-
-    /**
-     * Set the node label for this model
-     *
-     * @param  string|array $labels
-     */
-    public function setLabel($label)
-    {
-        return $this->label = $label;
-    }
-
-    /**
-     * @override
-     * Create a new Eloquent query builder for the model.
-     *
-     * @param  Vinelab\NeoEloquent\Query\Builder $query
-     * @return Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    public function newEloquentBuilder($query)
-    {
-        return new EloquentBuilder($query);
+        return array(str_replace('\\', '', get_class($this)));
     }
 
     /**
@@ -456,6 +391,49 @@ abstract class Model extends IlluminateModel {
 
     /**
      * @override
+     * Create an inverse one-to-one polymorphic relationship with specified model and relation.
+     *
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related
+     * @param  string $type
+     * @param  string $key
+     * @param  string $relation
+     * @return \Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne
+     */
+    public function morphedByOne($related, $type, $key = null, $relation = null)
+    {
+        // If no relation name was given, we will use this debug backtrace to extract
+        // the calling method's name and use that as the relationship name as most
+        // of the time this will be what we desire to use for the relationships.
+        if (is_null($relation))
+        {
+            list(, $caller) = debug_backtrace(false);
+
+            $relation = $caller['function'];
+        }
+
+        // If no $key was provided we will consider it the key name of this model.
+        $key = $key ?: $this->getKeyName();
+
+        // If no relationship type was provided, we can use the previously traced back
+        // $relation being the function name that called this method and using it in its
+        // all uppercase form.
+        if (is_null($type))
+        {
+            $type = mb_strtoupper($relation);
+        }
+
+        $instance = new $related;
+
+        // Now we're ready to create a new query builder for the related model and
+        // the relationship instances for the relation. The relations will set
+        // appropriate query constraint and entirely manages the hydrations.
+        $query = $instance->newQuery();
+
+        return new MorphedByOne($query, $this, $type, $key, $relation);
+    }
+
+    /**
+     * @override
      * Define a polymorphic, inverse one-to-one or many relationship.
      *
      * @param  string  $name
@@ -512,49 +490,104 @@ abstract class Model extends IlluminateModel {
         }
     }
 
-    /**
-     * @override
-     * Create an inverse one-to-one polymorphic relationship with specified model and relation.
-     *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related
-     * @param  string $type
-     * @param  string $key
-     * @param  string $relation
-     * @return \Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne
-     */
-    public function morphedByOne($related, $type, $key = null, $relation = null)
+    public static function createWith(array $attributes, array $relations, array $options = [])
     {
-        // If no relation name was given, we will use this debug backtrace to extract
-        // the calling method's name and use that as the relationship name as most
-        // of the time this will be what we desire to use for the relationships.
-        if (is_null($relation))
-        {
-            list(, $caller) = debug_backtrace(false);
+        // we need to fire model events on all the models that are involved with our operaiton,
+        // including the ones from the relations, starting with this model.
+        $me = new static();
+        $me->fill($attributes);
+        $models = [$me];
 
-            $relation = $caller['function'];
+        $query = static::query();
+        $grammar = $query->getQuery()->getGrammar();
+
+        // add parent model's mutation constraints
+        $label = $grammar->modelAsNode($me->getDefaultNodeLabel());
+        $query->addManyMutation($label, $me);
+
+        // setup relations
+        foreach ($relations as $relation => $values)
+        {
+            $related = $me->$relation()->getRelated();
+            // if the relation holds the attributes directly instead of an array
+            // of attributes, we transform it into an array of attributes.
+            if ((!is_array($values) || Helpers::isAssocArray($values)) && !$values instanceof Collection)
+            {
+                $values = [$values];
+            }
+
+            // create instances with the related attributes so that we fire model
+            // events on each of them.
+            foreach ($values as $relatedModel)
+            {
+                // one may pass in either instances or arrays of attributes, when we get
+                // attributes we will dynamically fill a new model instance of the related model.
+                if (is_array($relatedModel))
+                {
+                    $model = $related->newInstance();
+                    $model->fill($relatedModel);
+                    $relatedModel = $model;
+                }
+
+                $models[$relation][] = $relatedModel;
+                $query->addManyMutation($relation, $related);
+            }
         }
 
-        // If no $key was provided we will consider it the key name of this model.
-        $key = $key ?: $this->getKeyName();
-
-        // If no relationship type was provided, we can use the previously traced back
-        // $relation being the function name that called this method and using it in its
-        // all uppercase form.
-        if (is_null($type))
-        {
-            $type = mb_strtoupper($relation);
+        // fire 'creating' and 'saving' events on all models.
+        foreach ($models as $relation => $related) {
+            if (!is_array($related)) {
+                $related = [$related];
+            }
+            foreach ($related as $model) {
+                // we will fire model events on actual models, however attached models using IDs will not be considered.
+                if ($model instanceof Model) {
+                    if ($model->fireModelEvent('creating') === false) {
+                        return false;
+                    }
+                    if ($model->fireModelEvent('saving') === false) {
+                        return false;
+                    }
+                }
+            }
         }
 
-        $instance = new $related;
+        array_shift($models);
+        // run the query and create the records.
+        $result = $query->createWith($me->toArray(), $models);
+        // take the parent model that was created out of the results array based on
+        // this model's label.
+        $created = reset($result[$label]);
 
-        // Now we're ready to create a new query builder for the related model and
-        // the relationship instances for the relation. The relations will set
-        // appropriate query constraint and entirely manages the hydrations.
-        $query = $instance->newQuery();
+        // fire 'saved' and 'created' events on parent model.
+        $created->finishSave($options);
+        $created->fireModelEvent('created', false);
 
-        return new MorphedByOne($query, $this, $type, $key, $relation);
+        // set related models as relations on the parent model.
+        foreach ($relations as $method => $values)
+        {
+            $relation = $created->$method();
+            // is this a one-to-one relation ? If so then we add the model directly,
+            // otherwise we create a collection of the loaded models.
+            $related = new Collection($result[$method]);
+            // fire model events 'created' and 'saved' on related models.
+            $related->each(function ($model) use ($options) {
+                $model->finishSave($options);
+                $model->fireModelEvent('created', false);
+            });
+
+            // when the relation is 'One' instead of 'Many' we will only return the retrieved instance
+            // instead of colletion.
+            if ($relation instanceof OneRelation || $relation instanceof HasOne || $relation instanceof BelongsTo)
+            {
+                $related = $related->first();
+            }
+
+            $created->setRelation($method, $related);
+        }
+
+        return $created;
     }
-
     /**
      * Get the polymorphic relationship columns.
      *
@@ -610,11 +643,32 @@ abstract class Model extends IlluminateModel {
         return $dirty;
     }
 
+    /*
+     * Adds more labels
+     * @param $labels array of strings containing labels to be added
+     * @return bull true if success, false if failure
+     */
     function addLabels($labels)
     {
         return $this->updateLabels($labels, 'add');
     }
 
+    /*
+     * Drops labels
+     * @param $labels array of strings containing labels to be dropped
+     * @return bull true if success, false if failure
+     */
+    function dropLabels($labels)
+    {
+        return $this->updateLabels($labels, 'drop');
+    }
+
+    /*
+     * Adds or Drops labels
+     * @param $labels array of strings containing labels to be dropped
+     * @param $operation string can be 'add' or 'drop'
+     * @return bull true if success, false if failure
+     */
     function updateLabels($labels, $operation = 'add')
     {
         $query = $this->newQueryWithoutScopes();
@@ -632,13 +686,13 @@ abstract class Model extends IlluminateModel {
             return false;
         }
 
-//        foreach($labels as $label)
-//        {
-//            if( ! preg_match( '/^[a-z]([a-z0-9]+)$/i', $label))
-//            {
-//                return false;
-//            }
-//        }
+        foreach($labels as $label)
+        {
+            if( ! preg_match( '/^[a-z]([a-z0-9]+)$/i', $label))
+            {
+                return false;
+            }
+        }
 
         // If the model already exists in the database we can just update our record
         // that is already in this database using the current IDs in this "where"
@@ -651,96 +705,5 @@ abstract class Model extends IlluminateModel {
         {
             return false;
         }
-    }
-
-    /*
-     * Adds more labels
-     * @param $labels array of strings containing labels to be added
-     * @return bull true if success, false if failure
-     */
-
-    function dropLabels($labels)
-    {
-        return $this->updateLabels($labels, 'drop');
-    }
-
-    /*
-     * Drops labels
-     * @param $labels array of strings containing labels to be dropped
-     * @return bull true if success, false if failure
-     */
-
-    /**
-     * Create a new model instance that is existing.
-     *
-     * @param  array $attributes
-     * @param  string|null $connection
-     * @return static
-     */
-    public function newFromBuilder($attributes = [], $connection = null)
-    {
-        $model = $this->newInstance($attributes, true);
-
-        $model->setRawAttributes((array)$attributes, true);
-
-        $model->setConnection($connection ?: $this->connection);
-
-        return $model;
-    }
-
-    /*
-     * Adds or Drops labels
-     * @param $labels array of strings containing labels to be dropped
-     * @param $operation string can be 'add' or 'drop'
-     * @return bull true if success, false if failure
-     */
-
-    /**
-     * Create a new instance of the given model.
-     *
-     * @param  array  $attributes
-     * @param  bool  $exists
-     * @return static
-     */
-    public function newInstance($attributes = [], $exists = false)
-    {
-        // This method just provides a convenient way for us to generate fresh model
-        // instances of this current model. It is particularly useful during the
-        // hydration of new objects via the Eloquent query builder instances.
-
-        $class = $attributes['className'] ?? static::class;
-        $model = new $class((array) $attributes);
-
-        $model->exists = $exists;
-
-        return $model;
-    }
-
-    /**
-     * @override
-     * Get a new query builder instance for the connection.
-     *
-     * @return Vinelab\NeoEloquent\Query\Builder
-     */
-    protected function newBaseQueryBuilder()
-    {
-        $conn = $this->getConnection();
-
-        $grammar = $conn->getQueryGrammar();
-
-        $processor = $conn->getPostProcessor();
-
-        return new QueryBuilder($conn, $grammar, $processor);
-    }
-
-    /**
-     * @override
-     * Get the format for database stored dates.
-     *
-     * @return string
-     */
-    protected function getDateFormat()
-    {
-        return 'Y-m-d H:i:s';
     }
 }
