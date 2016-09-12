@@ -5,7 +5,8 @@ use Illuminate\Database\ConnectionResolverInterface;
 use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
-class DatabaseMigrationRepository implements MigrationRepositoryInterface {
+class DatabaseMigrationRepository implements MigrationRepositoryInterface
+{
 
     /**
      * The database connection resolver instance.
@@ -30,9 +31,9 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
 
 
     /**
-     * @param  \Illuminate\Database\ConnectionResolverInterface  $resolver
-     * @param  \Vinelab\NeoEloquent\Schema\Builder  $schema
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param  \Illuminate\Database\ConnectionResolverInterface $resolver
+     * @param  \Vinelab\NeoEloquent\Schema\Builder $schema
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $model
      * @return void
      */
     public function __construct(ConnectionResolverInterface $resolver, SchemaBuilder $schema, Model $model)
@@ -169,7 +170,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     /**
      * Set migration model.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      */
     public function setMigrationModel(Model $model)
     {
@@ -185,5 +186,19 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     {
         return $this->model;
     }
+
+    /**
+     * Get list of migrations.
+     *
+     * @param  int $steps
+     * @return array
+     */
+    public function getMigrations($steps)
+    {
+        $query = $this->label()->where('batch', '>=', '1');
+
+        return $query->orderBy('migration', 'desc')->take($steps)->get()->all();
+    }
+
 
 }
