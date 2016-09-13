@@ -507,7 +507,6 @@ class Connection extends IlluminateConnection {
         return new Schema\Builder($this);
     }
 
-    +
      /**
      * Get the last Id created by Neo4J
      *
