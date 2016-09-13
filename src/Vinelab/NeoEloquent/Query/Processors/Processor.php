@@ -2,9 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Query\Processors;
 
-use \Illuminate\Database\Query\Processors\Processor as BaseProcessor;
+use \Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
+use \Illuminate\Database\Query\Builder as IlluminateBuilder;
 
-class Processor extends BaseProcessor
+class Processor extends IlluminateProcessor
 {
     /**
      * Process an  "insert get ID" query.
@@ -15,11 +16,10 @@ class Processor extends BaseProcessor
      * @param  string  $sequence
      * @return int
      */
-    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
+    public function processInsertGetId(IlluminateBuilder $query, $sql, $values, $sequence = NULL)
     {
         $query->getConnection()->insert($sql, $values);
-        dd($query->getConnection());
-        $id = $query->getConnection()->getPdo()->lastInsertId($sequence);
+        $id = $query->getConnection()->lastInsertedId();
 
         return is_numeric($id) ? (int) $id : $id;
     }
