@@ -1,9 +1,6 @@
 language: php
 sudo: false
 
-jdk:
-  - oraclejdk8
-
 php:
   - 5.6
   - 7.0
@@ -14,10 +11,18 @@ matrix:
     - php: 7.0
 
 before_script:
+  # install dependencies to add repos
+  - apt-get install -y python-software-properties
+  - add-apt-repository -y ppa:webupd8team/java
+  - apt-get update
+  # install oracle jdk 8
+  - sudo apt-get install -y oracle-java8-installer
+  - sudo update-alternatives --auto java
+  - sudo update-alternatives --auto javac
   # install Neo4j
-  - jdk_switcher use oraclejdk8
   - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
   - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
+  - sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' ./neo/conf/neo4j.conf
   - neo4j-community-$NEO4J_VERSION/bin/neo4j start
   - sleep 3 # give neo4j some time to start
 
@@ -29,6 +34,8 @@ script: phpunit
 
 env:
   - NEO4J_VERSION="3.0.4"
+  - JAVA_HOME="/usr/lib/jvm/java-8-oracle"
+  - JRE_HOME="/usr/lib/jvm/java-8-oracle"
 
 notifications:
   slack:
