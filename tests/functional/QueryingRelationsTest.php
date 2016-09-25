@@ -81,7 +81,7 @@ class QueryingRelationsTest extends TestCase {
         // check admins
         $admins = User::whereHas('roles', function($q) { $q->where('alias', 'admin'); })->get();
         $this->assertEquals(2, count($admins));
-        $expectedAdmins = [$mrAdmin, $anotherAdmin];
+        $expectedAdmins = [$anotherAdmin, $mrAdmin];
         foreach ($admins as $key => $admin)
         {
             $this->assertEquals($admin->toArray(), $expectedAdmins[$key]->toArray());
@@ -91,7 +91,7 @@ class QueryingRelationsTest extends TestCase {
         $this->assertEquals(1, count($editors));
         $this->assertEquals($mrsEditor->toArray(), $editors->first()->toArray());
         // check managers
-        $expectedManagers = [$mrsManager, $anotherManager];
+        $expectedManagers = [$anotherManager, $mrsManager];
         $managers = User::whereHas('roles', function($q) { $q->where('alias', 'manager'); })->get();
         $this->assertEquals(2, count($managers));
         foreach ($managers as $key => $manager)
@@ -627,7 +627,7 @@ class QueryingRelationsTest extends TestCase {
     public function testSavingRelationWithDateTimeAndCarbonInstances()
     {
         $user = User::create(['name' => 'Andrew Hale']);
-        $yesterday = Carbon::now()->subDay();
+        $yesterday = Carbon::now();
         $brother = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
 
         $dt = new DateTime();

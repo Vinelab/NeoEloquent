@@ -355,8 +355,8 @@ class PolymorphicHyperMorphToTest extends TestCase {
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $user->comments($post)->sync([
+            $anotherCommentOnPost->id => ['feeling' => 'sad'],
             $commentOnPost->id => ['feeling' => 'happy'],
-            $anotherCommentOnPost->id => ['feeling' => 'sad']
         ]);
 
         $edges = $user->comments($post)->edges();

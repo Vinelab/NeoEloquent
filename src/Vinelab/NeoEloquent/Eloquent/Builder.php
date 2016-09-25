@@ -84,7 +84,7 @@ class Builder extends IlluminateBuilder {
         // Once we have the results, we can spin through them and instantiate a fresh
         // model instance for each records we retrieved from the database. We will
         // also set the proper connection name for the model after we create it.
-        return $this->resultsToModels($this->model->getConnectionName(), $results);
+        return $this->resultsToModels($this->model->getConnectionName(), $results, $properties);
     }
 
     /**
@@ -93,17 +93,17 @@ class Builder extends IlluminateBuilder {
      * @param  \Everyman\Neo4j\Query\ResultSet $results
      * @return array
      */
-    protected function resultsToModels($connection, ResultSet $results)
+    protected function resultsToModels($connection, ResultSet $results, array $columns = [])
     {
         $models = [];
 
         if ($results->valid())
         {
-            $columns = $results->getColumns();
+            $resultColumns = $results->getColumns();
 
             foreach ($results as $result)
             {
-                $attributes = $this->getProperties($columns, $result);
+                $attributes = $this->getProperties($resultColumns, $result, $columns);
 
                 // Now that we have the attributes, we first check for mutations
                 // and if exists, we will need to mutate the attributes accordingly.
@@ -297,12 +297,15 @@ class Builder extends IlluminateBuilder {
      * @param  array $columns
      * @return array
      */
-    public function getProperties(array $resultColumns, Row $row)
+    public function getProperties(array $resultColumns, Row $row, array $columns = [])
     {
         $attributes = array();
 
-        $columns = $this->query->columns;
-
+        // when no columns are specified (*) we look for them in the query instead,
+        // this is a workaround to be able to override the columns expected.
+        if ($columns == ['*']) {
+            $columns = $this->query->columns;
+        }
         // What we get returned from the client is a result set
         // and each result is either a Node or a single column value
         // so we first extract the returned value and retrieve
