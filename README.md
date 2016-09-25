@@ -27,6 +27,26 @@ Add the package to your `composer.json` and run `composer update`.
 
 ### Laravel 5
 
+#### 5.3
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "1.4.*"
+    }
+}
+```
+
+#### 5.2
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "1.4.*"
+    }
+}
+```
+
 #### 5.2
 
 ```json
@@ -781,7 +801,7 @@ $edge = $location->user()->edge();
 
 You may also specify the model at the other side of the edge.
 
-> Note: By default NeoEloquent will try to pefrorm the `$location->user` internally to figure
+> Note: By default NeoEloquent will try to perform the `$location->user` internally to figure
 out the related side of the edge based on the relation function name, in this case it's
 `user()`.
 

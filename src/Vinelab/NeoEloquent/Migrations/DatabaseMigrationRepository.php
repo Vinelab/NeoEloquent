@@ -186,4 +186,16 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
         return $this->model;
     }
 
+    /**
+     * Get list of migrations.
+     *
+     * @param  int $steps
+     * @return array
+     */
+    public function getMigrations($steps)
+    {
+        $query = $this->label()->where('batch', '>=', '1');
+        return $query->orderBy('migration', 'desc')->take($steps)->get()->all();
+    }
+
 }

@@ -7,7 +7,8 @@ use Vinelab\NeoEloquent\Connection;
 use Illuminadte\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
-use Illuminate\Database\Query\Processors\Processor;
+use Vinelab\NeoEloquent\Query\Processors\Processor;
+use Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
 use Illuminate\Database\Query\Builder as IlluminateQueryBuilder;
 
 class Builder extends IlluminateQueryBuilder {
@@ -76,7 +77,7 @@ class Builder extends IlluminateQueryBuilder {
      * @param  \Illuminate\Database\Query\Processors\Processor  $processor
      * @return void
      */
-    public function __construct(Connection $connection, Grammar $grammar, Processor $processor)
+    public function __construct(Connection $connection, Grammar $grammar, IlluminateProcessor $processor)
     {
         $this->grammar = $grammar;
         $this->grammar->setQuery($this);
@@ -892,5 +893,26 @@ class Builder extends IlluminateQueryBuilder {
         $updated = $this->connection->update($cypher, $this->getBindings());
 
         return (isset($updated[0]) && isset($updated[0][0])) ? $updated[0][0] : 0;
+    }
+
+    /**
+     * Execute the query as a "select" statement.
+     *
+     * @param  array  $columns
+     * @return \Illuminate\Support\Collection
+     */
+    public function get($columns = ['*'])
+    {
+        $original = $this->columns;
+
+        if (is_null($original)) {
+            $this->columns = $columns;
+        }
+
+        $results = $this->processor->processSelect($this, $this->runSelect());
+
+        $this->columns = $original;
+
+        return $results;
     }
 }

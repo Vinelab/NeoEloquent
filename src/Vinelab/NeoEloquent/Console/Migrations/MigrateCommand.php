@@ -61,7 +61,10 @@ class MigrateCommand extends BaseCommand {
         $path = $this->getMigrationPath();
 
         $this->migrator->setConnection($this->input->getOption('database'));
-        $this->migrator->run($path, array($pretend));
+        $this->migrator->run($path, [
+            'pretend' => $pretend,
+            'step' => $this->input->getOption('step'),
+        ]);
 
         // Once the migrator has run we will grab the note output and send it out to
         // the console screen, since the migrator itself functions without having
@@ -99,6 +102,8 @@ class MigrateCommand extends BaseCommand {
             array('pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'),
 
             array('seed', null, InputOption::VALUE_NONE, 'Indicates if the seed task should be re-run.'),
+
+            array('step', null, InputOption::VALUE_NONE, 'Force the migrations to be run so they can be rolled back individually.'),
         );
     }
 

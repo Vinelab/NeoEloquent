@@ -4,6 +4,7 @@ use Exception;
 use DateTime, Closure;
 use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Query\Builder;
+use Vinelab\NeoEloquent\Query\Processors\Processor;
 use Vinelab\NeoEloquent\QueryException;
 use Everyman\Neo4j\Client as NeoClient;
 use Everyman\Neo4j\Cypher\Query as CypherQuery;
@@ -504,5 +505,20 @@ class Connection extends IlluminateConnection {
         }
 
         return new Schema\Builder($this);
+    }
+
+     /**
+     * Get the last Id created by Neo4J
+     *
+     * @return int
+     */
+    public function lastInsertedId()
+    {
+        $query = "MATCH (n) RETURN MAX(id(n)) AS lastIdCreated";
+
+        $statement = $this->getCypherQuery($query, []);
+        $result = $statement->getResultSet();
+
+        return $result[0][0];
     }
 }
