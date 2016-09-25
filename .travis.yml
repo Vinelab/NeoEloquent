@@ -15,6 +15,7 @@ matrix:
 
 before_script:
   # install Neo4j
+  - jdk_switcher use oraclejdk8
   - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
   - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
   - neo4j-community-$NEO4J_VERSION/bin/neo4j start
