@@ -1,6 +1,9 @@
 language: php
 sudo: false
 
+jdk:
+  - oraclejdk8
+
 php:
   - 5.6
   - 7.0
