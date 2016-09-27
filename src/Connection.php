@@ -823,7 +823,7 @@ class Connection implements ConnectionInterface
      *
      * @throws \Throwable
      */
-    public function transaction(Closure $callback)
+    public function transaction(Closure $callback, $attempts = 1)
     {
         $this->beginTransaction();
 

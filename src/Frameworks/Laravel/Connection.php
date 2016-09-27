@@ -227,9 +227,9 @@ class Connection extends BaseConnection implements ConnectionInterface
 	 *
 	 * @throws \Exception
 	 */
-	public function transaction(Closure $callback)
+	public function transaction(Closure $callback, $attempts = 1)
 	{
-        $this->neoeloquent->transaction($callback);
+        $this->neoeloquent->transaction($callback, $attempts);
 	}
 
 	/**
