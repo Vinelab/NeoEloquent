@@ -1709,7 +1709,13 @@ class Builder
 
         $cypher = $this->grammar->compileDelete($this);
 
-        return $this->connection->delete($cypher, $this->getBindings());
+        $result = $this->connection->delete($cypher, $this->getBindings());
+
+        if ($result instanceof Result) {
+            $result = true;
+        }
+
+        return $result;
     }
 
     /**

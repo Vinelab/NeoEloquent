@@ -34,7 +34,7 @@ class EloquentBuilderTest extends TestCase
     {
         $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
-        $builder->getQuery()->shouldReceive('where')->once()->with('foo(n)', '=', 'bar');
+        $builder->getQuery()->shouldReceive('where')->once()->with('foo', '=', 'bar');
         $builder->shouldReceive('first')->with(array('column'))->andReturn('baz');
 
         $result = $builder->find('bar', array('column'));
@@ -48,7 +48,7 @@ class EloquentBuilderTest extends TestCase
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
-        $builder->getQuery()->shouldReceive('where')->once()->with('foo(n)', '=', 'bar');
+        $builder->getQuery()->shouldReceive('where')->once()->with('foo', '=', 'bar');
         $builder->shouldReceive('first')->with(array('column'))->andReturn(null);
         $result = $builder->findOrFail('bar', array('column'));
     }
@@ -374,7 +374,7 @@ class EloquentBuilderTest extends TestCase
         $this->query->shouldReceive('take')->once()->with(1)->andReturn($this->query);
         $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet);
 
-        $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
+        $this->model->shouldReceive('getKeyName')->times()->andReturn('id');
         $this->model->shouldReceive('nodeLabel')->once()->andReturn('Model');
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
@@ -425,7 +425,7 @@ class EloquentBuilderTest extends TestCase
         $collection = new \Vinelab\NeoEloquent\Support\Collection(array($user));
 
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection)
-                    ->shouldReceive('getKeyName')->twice()->andReturn('id')
+                    ->shouldReceive('getKeyName')->times(3)->andReturn('id')
                     ->shouldReceive('nodeLabel')->once()->andReturn('Model')
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()->with($attributes)->andReturn($user);

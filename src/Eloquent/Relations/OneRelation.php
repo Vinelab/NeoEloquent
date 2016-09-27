@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent\Eloquent\Relations;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
 
 abstract class OneRelation extends Relation implements RelationInterface
 {
@@ -98,6 +99,11 @@ abstract class OneRelation extends Relation implements RelationInterface
         }
 
         return $models;
+    }
+
+    public function delete($shouldKeepEndNode = false)
+    {
+        return (new Finder($this->query))->delete($shouldKeepEndNode);
     }
 
     /**

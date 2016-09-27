@@ -123,7 +123,7 @@ class HasOne extends HasOneOrMany
      */
     public function getEdge(Model $model = null, $attributes = array())
     {
-        $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
+        $model = (!is_null($model)) ? $model : $this->related;
 
        // Indicate a unique relation since this only involves one other model.
         $unique = true;

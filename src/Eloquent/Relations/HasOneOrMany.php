@@ -538,6 +538,11 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
         return !in_array(false, $results);
     }
 
+    public function delete($shouldKeepEndNode = false)
+    {
+        return $this->finder->delete($shouldKeepEndNode);
+    }
+
     /**
      * Sync the intermediate tables with a list of IDs or collection of models.
      *
@@ -555,6 +560,8 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
         // get them as collection
         if ($ids instanceof Collection) {
             $ids = $ids->modelKeys();
+        } elseif (!is_array($ids)) {
+            $ids = [$ids];
         }
 
         // First we need to attach the relationships that do not exist

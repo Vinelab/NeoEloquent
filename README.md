@@ -598,6 +598,14 @@ Due to the fact that relationships in Graph are much different than other databa
 we will have to handle them accordingly. Relationships have directions that can vary between
 **In** and **Out** respectively towards the parent node.
 
+Edges give you the ability to manipulate relationships properties the same way you do with models.
+
+```php
+$edge = $location->associate($user);
+$edge->last_visited = 'today';
+$edge->save(); // true
+```
+
 #### EdgeIn
 
 Represents an `INCOMING` direction relationship from the related model towards the parent model.

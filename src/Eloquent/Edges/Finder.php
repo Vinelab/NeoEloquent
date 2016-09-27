@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Neoxygen\NeoClient\Formatter\Relationship;
@@ -74,6 +75,27 @@ class Finder extends Delegate
     }
 
     /**
+     * Delete the current relation in the query.
+     *
+     * @return bool
+     */
+    public function delete($shouldKeepEndNode)
+    {
+        $builder = $this->query->getQuery();
+        $grammar = $builder->getGrammar();
+
+        $cypher = $grammar->compileDelete($builder, true, $shouldKeepEndNode);
+
+        $result = $this->connection->delete($cypher, $builder->getBindings());
+
+        if ($result instanceof Result) {
+            $result = true;
+        }
+
+        return $result;
+    }
+
+    /**
      * Get the first HyperEdge between three models.
      *
      * @param \Vinelab\NeoEloquent\Eloquent\Model $parent
@@ -119,7 +141,9 @@ class Finder extends Delegate
         // we match and find otherwise.
         $direction = 'in';
 
-        if ($node->getId() === $parent->getKey()) {
+        $id = ($parent->getKeyName() === 'id') ? $id = $node->getId() : $node->getProperty($parent->getKeyName());
+
+        if ($id === $parent->getKey()) {
             $direction = 'out';
         }
 

@@ -106,7 +106,12 @@ class Builder
             $id = (int) $id;
         }
 
-        $this->query->where($this->model->getKeyName().'('.$this->query->modelAsNode().')', '=', $id);
+        if ($this->model->getKeyName() === 'id') {
+            // ids are treated differently in neo4j so we have to adapt the query to them.
+            $this->query->where($this->model->getKeyName().'('.$this->query->modelAsNode().')', '=', $id);
+        } else {
+            $this->query->where($this->model->getKeyName(), '=', $id);
+        }
 
         return $this->first($properties);
     }
@@ -980,7 +985,7 @@ class Builder
         // Add the node id to the attributes since \Everyman\Neo4j\Node
         // does not consider it to be a property, it is treated differently
         // and available through the getId() method.
-        $attributes[$this->model->getKeyName()] = $node->getId();
+        $attributes['id'] = $node->getId();
 
         return $attributes;
     }
@@ -1798,6 +1803,7 @@ class Builder
                 $values = [$values];
             }
 
+            $id = $relatedModel->getKeyName();
             $label = $relationship->getRelated()->nodeLabel();
             $direction = $relationship->getEdgeDirection();
             $type = $relationship->getRelationType();
@@ -1823,7 +1829,7 @@ class Builder
                 // then this is assumed to be the model Id that the dev means to attach and since
                 // Neo4j node Ids are always an int then we take that as a value.
                 elseif (!is_array($value) && !$value instanceof Model) {
-                    $attach[] = intval($value);
+                    $attach[] = $value;
                 }
                 // In this case the record is considered to be new to the market so let's create it.
                 else {
@@ -1832,7 +1838,7 @@ class Builder
             }
 
             $relation = compact('name', 'type', 'direction');
-            $related[] = compact('relation', 'label', 'create', 'attach');
+            $related[] = compact('relation', 'label', 'create', 'attach', 'id');
         }
 
         $results = $this->query->createWith($model, $related);

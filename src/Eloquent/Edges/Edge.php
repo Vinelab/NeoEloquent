@@ -259,9 +259,7 @@ abstract class Edge extends Delegate
 
             // we need to delete any relationship b/w the start and end models
             // so we only need the label out of the end model and not the ID.
-            $endInstance = $endModel->newInstance();
-
-            $attributes = $this->getRelationshipAttributes($startModel, $endInstance);
+            $attributes = $this->getRelationshipAttributes($startModel, $endModel);
             $query = $grammar->compileDeleteRelationship($this->query->getQuery(), $attributes);
 
             $deleted = $this->connection->affectingStatement($query, []);
