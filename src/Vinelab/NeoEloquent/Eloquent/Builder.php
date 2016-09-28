@@ -785,7 +785,7 @@ class Builder extends IlluminateBuilder {
                 // accordingly, which guarantees sending an Eloquent result straight in would work.
                 elseif ($value instanceof Collection)
                 {
-                    $attach = array_merge($attach, $value->lists('id')->toArray());
+                    $attach = array_merge($attach, $value->pluck('id')->toArray());
                 }
                 // Or in the case where the attributes are neither an array nor a model instance
                 // then this is assumed to be the model Id that the dev means to attach and since
