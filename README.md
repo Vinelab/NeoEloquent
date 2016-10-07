@@ -109,6 +109,37 @@ Add the connection defaults:
     ]
 ]
 ```
+### Lumen 
+
+For Lumen you need to create a new folder called `config` in the application root and there add a file called `database.php`. There you will add the following code.
+
+```php
+<?php
+
+return ['connections' => [
+            'neo4j' => [
+                'driver' => 'neo4j',
+                'host'   => 'localhost',
+                'port'   => '7474',
+                'username' => null,
+                'password' => null
+            ]
+        ]
+    ];
+```
+And add the following line in `bootstrap/app.php`
+
+```php
+$app->configure('database');
+```
+
+This is to enable Lumen to read other configurations other than the provided default ones.
+
+In the case of adding the Service Provider. You must add it in the Register Providers section of `bootstrap/app.php`. You can add it like so:
+
+```php
+$app->register('Vinelab\NeoEloquent\NeoEloquentServiceProvider');
+```
 
 ### Migration Setup
 
