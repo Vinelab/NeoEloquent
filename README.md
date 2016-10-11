@@ -3,10 +3,10 @@
 [![Build Status](https://travis-ci.org/Vinelab/NeoEloquent.svg?branch=master)](https://travis-ci.org/Vinelab/NeoEloquent)
 
 # NeoEloquent
-
-[![Join the chat at https://gitter.im/Vinelab/NeoEloquent](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Vinelab/NeoEloquent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 Neo4j Graph Eloquent Driver for Laravel
+
+## Chat & Support
+Join the [Official Neo4j Slack Group](https://neo4j.com/blog/public-neo4j-users-slack-group/) and use the #neo4j-php channel.
 
 ## Quick Reference
 
@@ -109,7 +109,7 @@ Add the connection defaults:
     ]
 ]
 ```
-### Lumen 
+### Lumen
 
 For Lumen you need to create a new folder called `config` in the application root and there add a file called `database.php`. There you will add the following code.
 
