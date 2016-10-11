@@ -126,7 +126,8 @@ class MigrationServiceProvider extends ServiceProvider {
     protected function registerMigrateCommand()
     {
         $this->app->singleton('command.neoeloquent.migrate', function($app) {
-            $packagePath = $app['path.base'].'/vendor';
+
+            $packagePath = $app->basePath().'/vendor';
 
             return new MigrateCommand($app['neoeloquent.migrator'], $packagePath);
         });
@@ -188,7 +189,7 @@ class MigrationServiceProvider extends ServiceProvider {
             // creation of the migrations, and may be extended by these developers.
             $creator = $app['migration.neoeloquent.creator'];
 
-            $packagePath = $app['path.base'].'/vendor';
+            $packagePath = $app->basePath().'/vendor';
 
             $composer = $app->make('Illuminate\Support\Composer');
 
