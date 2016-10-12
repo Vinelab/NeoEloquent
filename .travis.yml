@@ -28,7 +28,7 @@ before_script:
   #- wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
   #- tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
   #- sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' "neo4j-community-$NEO4J_VERSION/conf/neo4j.conf"
-  - sudo sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' "etc/neo4j/neo4j.conf"
+  - sudo sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' "/etc/neo4j/neo4j.conf"
   #- neo4j-community-$NEO4J_VERSION/bin/neo4j start
   - sudo service neo4j restart
   - sleep 3 # give neo4j some time to start
