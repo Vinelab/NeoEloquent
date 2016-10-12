@@ -20,6 +20,7 @@ before_script:
   - sudo update-alternatives --auto javac
   - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
   # install Neo4j
+  - sudo rm -fv /etc/init.d/neo4j
   - wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -
   - echo 'deb http://debian.neo4j.org/repo stable/' | sudo tee /etc/apt/sources.list.d/neo4j.list
   - sudo apt-get update
