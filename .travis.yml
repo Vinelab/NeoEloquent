@@ -20,10 +20,13 @@ before_script:
   - sudo update-alternatives --auto javac
   - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
   # install Neo4j
-  - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
-  - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
-  - sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' "neo4j-community-$NEO4J_VERSION/conf/neo4j.conf"
-  - neo4j-community-$NEO4J_VERSION/bin/neo4j start
+  - sudo rm -fv /etc/init.d/neo4j
+  - wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -
+  - echo 'deb http://debian.neo4j.org/repo stable/' | sudo tee /etc/apt/sources.list.d/neo4j.list
+  - sudo apt-get update
+  - sudo apt-get install -y neo4j
+  - sudo sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' "/etc/neo4j/neo4j.conf"
+  - sudo service neo4j restart
   - sleep 3 # give neo4j some time to start
 
   # install composer
