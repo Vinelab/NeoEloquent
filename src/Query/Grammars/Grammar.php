@@ -4,6 +4,8 @@ use DateTime;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
+use Vinelab\NeoEloquent\Exceptions\Exception;
+
 class Grammar extends IlluminateGrammar {
 
     /**
@@ -134,7 +136,8 @@ class Grammar extends IlluminateGrammar {
     public function valufy($values)
     {
         // we'll only deal with arrays so let's turn it into one if it isn't
-        if ( ! is_array($values)) $values = [$values];
+        // if ( ! is_array($values))
+        $values = [$values];
 
         // escape and wrap them with a quote.
         $values = array_map(function ($value)
@@ -151,13 +154,29 @@ class Grammar extends IlluminateGrammar {
             // escape wrap them.
             if (is_string($value))
             {
-                $value = "'" . addslashes($value) . "'";
+                $value = $this->formatString($value);
             }
             // In order to support boolean value types and not have PHP convert them to their
             // corresponding string values, we'll have to handle boolean values and add their literal string representation.
             elseif (is_bool($value))
             {
                 $value = ($value) ? 'true' : 'false';
+            }
+            // We need to generate a string of the form "[1, 3, 5]" or "['foo', 'bar']"
+            elseif (is_array($value))
+            {
+                if (empty($value))
+                {
+                    $value = '[]';
+                } elseif (is_string($value[0])) {
+                    $value = array_map(function ($val) {
+                        if (!is_string($val)) {
+                            throw new Exception("All values of an array need to have the same type", 1);
+                        }
+                        return $this->formatString($val);
+                    }, $value);
+                }
+                $value = '['.implode(', ', $value).']';
             }
 
             return $value;
@@ -166,6 +185,11 @@ class Grammar extends IlluminateGrammar {
 
         // stringify them.
         return implode(', ', $values);
+    }
+
+    protected function formatString($string)
+    {
+        return "'" . addslashes($string) . "'";
     }
 
     /**

@@ -260,7 +260,6 @@ class CypherGrammar extends Grammar {
         return sprintf("MATCH (%s)", $labels);
     }
 
-    
     /**
      * Compile a "where not in" clause.
      *
@@ -476,7 +475,7 @@ class CypherGrammar extends Grammar {
 
         $where = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
-       
+
         return "$match $where OPTIONAL $match-[r]-()  $where DELETE  " . $query->modelAsNode().",r";
 
     }

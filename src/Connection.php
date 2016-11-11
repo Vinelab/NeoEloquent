@@ -293,31 +293,47 @@ class Connection extends IlluminateConnection {
                 $binding = $value->format($grammar->getDateFormat());
             }
 
-            $property = is_array($binding) ? key($binding) : $key;
+            // We test for whether the binding is an array that should be put in
+            // the query as an array rather than as a key-value pair.
+            // example: $bindings = ["myarray" => ["val1", "val2"]]
+            if (is_array($binding) && !is_numeric($key)) {
 
-            // We will set the binding key and value, then
-            // we replace the binding property of the id (if found)
-            // with a _nodeId instead since the client
-            // will not accept replacing "id(n)" with a value
-            // which have been previously processed by the grammar
-            // to be _nodeId instead.
-            if ( ! is_array($binding))
-            {
-                $binding = [$binding];
+                $prepared[$key] = $value;
+
             }
+            // The binding is not an array or should be parsed instead of being
+            // passed in as is.
+            // examples:
+            // $bindings = [ ["key" => "val"] ]
+            // $bindings = ["key" => "val"]
+            else {
 
-            foreach ($binding as $property => $real)
-            {
-                // We should not pass any numeric key-value items since the Neo4j client expects
-                // a JSON map parameters.
-                if (is_numeric($property))
+                $property = is_array($binding) ? key($binding) : $key;
+
+                // We will set the binding key and value, then
+                // we replace the binding property of the id (if found)
+                // with a _nodeId instead since the client
+                // will not accept replacing "id(n)" with a value
+                // which have been previously processed by the grammar
+                // to be _nodeId instead.
+                if ( ! is_array($binding))
                 {
-                    $property = (! is_numeric($key)) ? $key : 'id';
+                    $binding = [$binding];
                 }
 
-                if ($property == 'id') $property = $grammar->getIdReplacement($property);
+                foreach ($binding as $property => $real)
+                {
+                    // We should not pass any numeric key-value items since the Neo4j client expects
+                    // a JSON map parameters.
+                    if (is_numeric($property))
+                    {
+                        $property = (! is_numeric($key)) ? $key : 'id';
+                    }
 
-                $prepared[$property] = $real;
+                    if ($property == 'id') $property = $grammar->getIdReplacement($property);
+
+                    $prepared[$property] = $real;
+                }
             }
         }
 

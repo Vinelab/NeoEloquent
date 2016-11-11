@@ -101,9 +101,13 @@ class GrammarTest extends TestCase {
     {
     	$this->assertEquals("'val'", $this->grammar->valufy('val'));
     	$this->assertEquals("'\'va\\\l\''", $this->grammar->valufy("'va\l'"));
-    	$this->assertEquals("'valu1', 'valu2', 'valu3'", $this->grammar->valufy(['valu1', 'valu2', 'valu3']));
-    	$this->assertEquals('\'valu\\\1\', \'valu\\\'2\\\'\', \'val/u3\'', $this->grammar->valufy(['valu\1', "valu'2'", 'val/u3']));
+    	$this->assertEquals("['valu1', 'valu2', 'valu3']", $this->grammar->valufy(['valu1', 'valu2', 'valu3']));
+    	$this->assertEquals('[\'valu\\\1\', \'valu\\\'2\\\'\', \'val/u3\']', $this->grammar->valufy(['valu\1', "valu'2'", 'val/u3']));
     	$this->assertEquals('\'\\\u123\'', $this->grammar->valufy('\u123'));
+        $this->assertEquals("['foo']", $this->grammar->valufy(['foo']));
+        $this->assertEquals("['foo', 'bar']", $this->grammar->valufy(['foo', 'bar']));
+        $this->assertEquals('true', $this->grammar->valufy(true));
+        $this->assertEquals('false', $this->grammar->valufy(false));
     }
 
     public function testGeneratingNodeIdentifier()
