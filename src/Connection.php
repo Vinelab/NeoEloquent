@@ -296,7 +296,7 @@ class Connection extends IlluminateConnection {
             // We test for whether the binding is an array that should be put in
             // the query as an array rather than as a key-value pair.
             // example: $bindings = ["myarray" => ["val1", "val2"]]
-            if (is_array($binding) && !is_numeric($key)) {
+            if (is_array($binding) && !is_numeric($key) && is_numeric(key($binding))) {
 
                 $prepared[$key] = $value;
 
