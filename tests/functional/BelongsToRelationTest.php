@@ -247,5 +247,4 @@ class BelongsToRelationTest extends TestCase
         $remainingUser = User::find($user->getKey());
         $this->assertEquals($user->toArray(), $remainingUser->toArray());
     }
-
 }

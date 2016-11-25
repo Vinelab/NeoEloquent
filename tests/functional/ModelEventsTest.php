@@ -300,7 +300,7 @@ class OBOne extends Model
         });
 
         static::$dispatcher = $dispatcher;
-        OBOne::observe(new UserObserver());
+        self::observe(new UserObserver());
     }
 }
 

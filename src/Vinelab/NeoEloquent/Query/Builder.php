@@ -62,12 +62,12 @@ class Builder extends IlluminateQueryBuilder
      * @var array
      */
     protected $operators = array(
-        '+', '-', '*', '/', '%', '^',    // Mathematical
+        '+', '-', '*', '/', '%', '^', // Mathematical
         '=', '<>', '<', '>', '<=', '>=', // Comparison
         'is null', 'is not null',
-        'and', 'or', 'xor', 'not',       // Boolean
-        'in', '[x]', '[x .. y]',         // Collection
-        '=~',                             // Regular Expression
+        'and', 'or', 'xor', 'not', // Boolean
+        'in', '[x]', '[x .. y]', // Collection
+        '=~', // Regular Expression
     );
 
     /**
@@ -247,10 +247,10 @@ class Builder extends IlluminateQueryBuilder
         // received when the method was called and pass it into the nested where.
         if (is_array($column)) {
             return $this->whereNested(function (IlluminateQueryBuilder $query) use ($column) {
-                foreach ($column as $key => $value) {
-                    $query->where($key, '=', $value);
-                }
-            }, $boolean);
+                    foreach ($column as $key => $value) {
+                        $query->where($key, '=', $value);
+                    }
+                }, $boolean);
         }
 
         if (func_num_args() == 2) {
@@ -351,8 +351,8 @@ class Builder extends IlluminateQueryBuilder
     {
         if (is_array($this->wheres)) {
             return count(array_filter($this->wheres, function ($where) use ($column) {
-                return $where['column'] == $column;
-            }));
+                    return $where['column'] == $column;
+                }));
         }
     }
 
@@ -439,6 +439,34 @@ class Builder extends IlluminateQueryBuilder
         $binding = $this->prepareBindingColumn($column);
 
         $this->wheres[] = compact('type', 'column', 'boolean', 'binding');
+
+        return $this;
+    }
+
+    /**
+     * WhereSoftDeleted is a special kind of WHERE clause used to include or exclude soft deleted models.
+     * It is similar to whereNull, but needs more arguments because it is called in SoftDeletingScope
+     * and must record additional information needed later in the compilation process.  In particular
+     * at the time that the SoftDeletingScope is applied we cannot yet tell whether the node placeholder
+     * based on the model's labels will be used ($placeholderType = 'node'), or whether we will need to use a placeholder based
+     * on a relation name ($placeholderType = 'relation'). 
+     * 
+     * @param string $placeholderType
+     * @param string $nodePlaceholder placeholder to be used as prefix to qualified deleted column
+     * @param string $column          qualified deleted at column
+     * @param string $boolean         same as with whereNull
+     * @param string $not             if false soft deleted models will not be returned, if true only soft deleted models will be returned
+     *
+     * @return \Vinelab\NeoEloquent\Query\Builder
+     */
+    public function WhereSoftDeleted($placeholderType, $nodePlaceholder, $column, $boolean = 'and', $not = false)
+    {
+        $type = 'SoftDeleted';
+        $operator = $not ? 'IS NOT NULL' : 'IS NULL';
+        $placeholder = $nodePlaceholder;
+        $placeholderType = $placeholderType;
+        $binding = null;
+        $this->wheres[] = compact('type', 'placeholderType', 'placeholder', 'column', 'operator', 'boolean', 'binding');
 
         return $this;
     }
@@ -735,7 +763,7 @@ class Builder extends IlluminateQueryBuilder
     {
         $this->aggregate = array_merge([
             'label' => $this->from,
-        ], compact('function', 'columns', 'percentile'));
+            ], compact('function', 'columns', 'percentile'));
 
         $previousColumns = $this->columns;
 
@@ -831,6 +859,16 @@ class Builder extends IlluminateQueryBuilder
         $this->bindings['where'] = array_merge_recursive($this->bindings['where'], (array) $bindings);
     }
 
+    /**
+     * Merge an array of with clauses.
+     *
+     * @param array $with
+     */
+    public function mergeWith($with)
+    {
+        $this->with = array_merge((array) $this->with, (array) $with);
+    }
+
     public function wrap($property)
     {
         return $this->grammar->getIdReplacement($property);
@@ -863,13 +901,13 @@ class Builder extends IlluminateQueryBuilder
 
         return $value;
     }
-
     /*
      * Add/Drop labels
      * @param $labels array array of strings(labels)
      * @param $operation string 'add' or 'drop'
      * @return bool true if success, otherwise false
      */
+
     public function updateLabels($labels, $operation = 'add')
     {
         $cypher = $this->grammar->compileUpdateLabels($this, $labels, $operation);
