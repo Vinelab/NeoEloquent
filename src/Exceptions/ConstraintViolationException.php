@@ -4,7 +4,10 @@ namespace Vinelab\NeoEloquent\Exceptions;
 
 class ConstraintViolationException extends Exception
 {
-    public function __construct($e)
+    protected $query;
+    protected $bindings;
+
+    public function __construct($query, $bindings, $e)
     {
         $this->code = $e->getCode();
         $this->line = $e->getLine();
@@ -16,5 +19,15 @@ class ConstraintViolationException extends Exception
 
         // Curated message sample: "Node 534 already exists with label Talent and property "name"=[السيدة ميسا عابدين]"
         $this->message = $curatedMessage;
+    }
+
+    public function getQuery()
+    {
+        return $this->query;
+    }
+
+    public function getBindings()
+    {
+        return $this->bindings;
     }
 }
