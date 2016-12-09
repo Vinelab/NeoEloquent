@@ -15,6 +15,6 @@ class ConstraintViolationException extends Exception
         $curatedMessage = substr($e->getMessage(), strpos($e->getMessage(), 'message') + 8);
 
         // Curated message sample: "Node 534 already exists with label Talent and property "name"=[السيدة ميسا عابدين]"
-        $this->message $curatedMessage;
+        $this->message = $curatedMessage;
     }
 }
