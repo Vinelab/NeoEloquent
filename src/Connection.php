@@ -9,6 +9,7 @@ use LogicException;
 use Neoxygen\NeoClient\Client;
 use Neoxygen\NeoClient\ClientBuilder;
 use Throwable;
+use Vinelab\NeoEloquent\Exceptions\ConstraintViolationException;
 use Vinelab\NeoEloquent\Contracts\Events\Dispatcher;
 use Vinelab\NeoEloquent\Exceptions\ConnectionException;
 use Vinelab\NeoEloquent\Exceptions\Exception as QueryException;
@@ -988,7 +989,7 @@ class Connection implements ConnectionInterface
             // message to include the bindings with Cypher, which will make this exception a
             // lot more helpful to the developer instead of just the database's errors.
         catch (Exception $e) {
-            throw new QueryException($query, $bindings, $e);
+            $this->handleExceptions($query, $bindings, $e);
         }
 
         // Once we have run the query we will calculate the time that it took to run and
@@ -1210,5 +1211,19 @@ class Connection implements ConnectionInterface
         }
 
         return new Schema\Builder($this);
+    }
+
+    /**
+     * Handle exceptions thrown in $this::run()
+     *
+     * @throws mixed
+     */
+    protected function handleExceptions($query, $bindings, $e)
+    {
+        if(strpos($e->getMessage(), '"Neo.ClientError.Schema.ConstraintValidationFailed"') !== false) {
+                throw new ConstraintViolationException($query, $bindings, $e);
+            }
+
+        throw new QueryException($query, $bindings, $e);
     }
 }
