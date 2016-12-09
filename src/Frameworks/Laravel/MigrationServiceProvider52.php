@@ -169,7 +169,7 @@ class MigrationServiceProvider52 extends ServiceProvider {
     {
         $this->app->singleton('command.neoeloquent.migrate.refresh', function($app)
         {
-            return new MigrateRefreshCommand;
+            return new MigrateRefreshCommand();
         });
     }
 
