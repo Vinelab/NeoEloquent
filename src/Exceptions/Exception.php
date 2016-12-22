@@ -35,7 +35,7 @@ class Exception extends RuntimeException
     public function __construct($query, $bindings, $exception)
     {
         $this->query = $query;
-        $this->bindings = $bindingd;
+        $this->bindings = $bindings;
         $this->exception = $exception;
     }
 
