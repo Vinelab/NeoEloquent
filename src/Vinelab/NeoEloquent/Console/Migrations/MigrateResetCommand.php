@@ -5,7 +5,7 @@ use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Database\Migrations\Migrator;
 use Symfony\Component\Console\Input\InputOption;
 
-class MigrateResetCommand extends Command {
+class MigrateResetCommand extends BaseCommand {
 
     use ConfirmableTrait;
 
@@ -48,20 +48,15 @@ class MigrateResetCommand extends Command {
 
         $pretend = $this->input->getOption('pretend');
 
-        while (true)
-        {
-            $count = $this->migrator->rollback($pretend);
+        $this->migrator->reset($this->getMigrationPath(), $pretend);
 
-            // Once the migrator has run we will grab the note output and send it out to
-            // the console screen, since the migrator itself functions without having
-            // any instances of the OutputInterface contract passed into the class.
-            foreach ($this->migrator->getNotes() as $note)
-            {
-                $this->output->writeln($note);
-            }
-
-            if ($count == 0) break;
+        // Once the migrator has run we will grab the note output and send it out to
+        // the console screen, since the migrator itself functions without having
+        // any instances of the OutputInterface contract passed into the class.
+        foreach ($this->migrator->getNotes() as $note) {
+            $this->output->writeln($note);
         }
+
     }
 
     /**
