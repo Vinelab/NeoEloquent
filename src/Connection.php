@@ -19,7 +19,7 @@ use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
-use Vinelab\NeoEloquent\Support\Arr;
+use Illuminate\Support\Arr;
 
 class Connection implements ConnectionInterface
 {

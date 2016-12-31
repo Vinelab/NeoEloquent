@@ -5,7 +5,7 @@ namespace Vinelab\NeoEloquent\Connectors;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Contracts\Container\Container;
-use Vinelab\NeoEloquent\Support\Arr;
+use Illuminate\Support\Arr;
 
 class ConnectionFactory
 {

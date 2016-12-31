@@ -5,11 +5,8 @@ namespace Vinelab\NeoEloquent\Query;
 use Closure;
 use DateTime;
 use Carbon\Carbon;
-use Vinelab\NeoEloquent\Support\Arr;
-use Vinelab\NeoEloquent\Support\Str;
 use BadMethodCallException;
 use InvalidArgumentException;
-use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\ConnectionInterface;
 use Vinelab\NeoEloquent\Pagination\Paginator;
 use Neoxygen\NeoClient\Formatter\Result;
@@ -17,7 +14,8 @@ use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Pagination\LengthAwarePaginator;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
-use Vinelab\NeoEloquent\Query\Processors\Processor;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class Builder
 {

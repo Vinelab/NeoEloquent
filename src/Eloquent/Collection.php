@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
-use Vinelab\NeoEloquent\Support\Arr;
-use Vinelab\NeoEloquent\Support\Collection as BaseCollection;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection as BaseCollection;
 
 class Collection extends BaseCollection
 {
@@ -241,7 +241,7 @@ class Collection extends BaseCollection
     /**
      * Get a base Support collection instance from this collection.
      *
-     * @return \Vinelab\NeoEloquent\Support\Collection
+     * @return \Illuminate\Support\Collection
      */
     public function toBase()
     {

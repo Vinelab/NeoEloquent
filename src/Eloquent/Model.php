@@ -14,8 +14,6 @@ use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
 use Vinelab\NeoEloquent\Contracts\Routing\UrlRoutable;
 use Vinelab\NeoEloquent\Contracts\Queue\QueueableEntity;
 use Illuminate\Database\ConnectionResolverInterface as Resolver;
-use Vinelab\NeoEloquent\Support\Arr;
-use Vinelab\NeoEloquent\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
@@ -28,6 +26,8 @@ use Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Helpers;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializable, QueueableEntity, UrlRoutable
 {
@@ -664,7 +664,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
      * @param mixed $id
      * @param array $columns
      *
-     * @return \Vinelab\NeoEloquent\Support\Collection|static
+     * @return \Illuminate\Support\Collection|static
      */
     public static function findOrNew($id, $columns = ['*'])
     {

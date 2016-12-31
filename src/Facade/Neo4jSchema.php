@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Facade;
 
-use Vinelab\NeoEloquent\Support\Facades\Facade;
+use Illuminate\Support\Facades\Facade;
 
 /**
  * @see \Vinelab\NeoEloquent\Schema\Builder
