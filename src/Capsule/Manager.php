@@ -2,9 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Capsule;
 
-use Vinelab\NeoEloquent\Container\Container;
 use Vinelab\NeoEloquent\Eloquent\Model as Eloquent;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Connectors\ConnectionFactory;
