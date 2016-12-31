@@ -11,11 +11,6 @@
     ],
     "require": {
         "php": ">=5.6",
-        "vinelab/neoeloquent-support": "5.2.*",
-        "vinelab/neoeloquent-pagination": "5.2.*",
-        "vinelab/neoeloquent-contracts": "5.2.*",
-        "vinelab/neoeloquent-container": "5.2.*",
-        "vinelab/neoeloquent-events": "5.2.*",
         "illuminate/database": "5.3.*",
         "vinelab/neoclient": "~3.4",
         "nesbot/carbon": "~1.0"
