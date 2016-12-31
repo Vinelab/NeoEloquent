@@ -9,9 +9,10 @@ use BadMethodCallException;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\ConnectionInterface;
 use Neoxygen\NeoClient\Formatter\Result;
-use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
+
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -1391,7 +1392,7 @@ class Builder
      * @param string   $pageName
      * @param int|null $page
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Pagination\LengthAwarePaginator
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function paginate($perPage = 15, $columns = ['*'], $pageName = 'page', $page = null)
     {
@@ -1416,7 +1417,7 @@ class Builder
      * @param array  $columns
      * @param string $pageName
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Pagination\Paginator
+     * @return \Illuminate\Contracts\Pagination\Paginator
      */
     public function simplePaginate($perPage = 15, $columns = ['*'], $pageName = 'page')
     {

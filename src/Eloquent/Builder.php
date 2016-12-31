@@ -12,6 +12,7 @@ use Vinelab\NeoEloquent\Helpers;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
+
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -1069,7 +1070,7 @@ class Builder
      * @param string   $pageName
      * @param int|null $page
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Pagination\LengthAwarePaginator
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      *
      * @throws \InvalidArgumentException
      */

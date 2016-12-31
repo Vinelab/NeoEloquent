@@ -10,15 +10,14 @@ use Neoxygen\NeoClient\Client;
 use Neoxygen\NeoClient\ClientBuilder;
 use Throwable;
 use Vinelab\NeoEloquent\Exceptions\ConstraintViolationException;
-use Vinelab\NeoEloquent\Contracts\Events\Dispatcher;
-use Vinelab\NeoEloquent\Exceptions\ConnectionException;
 use Vinelab\NeoEloquent\Exceptions\Exception as QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
-use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
+
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 
 class Connection implements ConnectionInterface
@@ -58,7 +57,7 @@ class Connection implements ConnectionInterface
     /**
      * The event dispatcher instance.
      *
-     * @var \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
+     * @var \Illuminate\Contracts\Events\Dispatcher
      */
     protected $events;
 
@@ -205,7 +204,7 @@ class Connection implements ConnectionInterface
     /**
      * Get the event dispatcher used by the connection.
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
+     * @return \Illuminate\Contracts\Events\Dispatcher
      */
     public function getEventDispatcher()
     {
@@ -301,7 +300,7 @@ class Connection implements ConnectionInterface
     /**
      * Set the event dispatcher instance on the connection.
      *
-     * @param \Vinelab\NeoEloquent\Contracts\Events\Dispatcher $events
+     * @param \Illuminate\Contracts\Events\Dispatcher $events
      */
     public function setEventDispatcher(Dispatcher $events)
     {
