@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Frameworks\Laravel;
 
+use Closure;
 use Exception;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Events\Dispatcher;
