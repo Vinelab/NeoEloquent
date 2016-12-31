@@ -9,13 +9,13 @@ use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Eloquent\Relationship as EloquentRelationship;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 use Vinelab\NeoEloquent\Helpers;
-use Vinelab\NeoEloquent\Pagination\LengthAwarePaginator;
-use Vinelab\NeoEloquent\Pagination\Paginator;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class Builder
 {
@@ -1109,9 +1109,9 @@ class Builder
      * @param array  $columns
      * @param string $pageName
      *
-     * @return \Vinelab\NeoEloquent\Pagination\Paginator
+     * @return \Illuminate\Pagination\Paginator
      *
-     * @internal param \Vinelab\NeoEloquent\Pagination\Factory $paginator
+     * @internal param \Illuminate\Pagination\Factory $paginator
      */
     public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page')
     {

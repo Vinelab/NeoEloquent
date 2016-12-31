@@ -8,14 +8,14 @@ use Carbon\Carbon;
 use BadMethodCallException;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\ConnectionInterface;
-use Vinelab\NeoEloquent\Pagination\Paginator;
 use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
 use Vinelab\NeoEloquent\Eloquent\Collection;
-use Vinelab\NeoEloquent\Pagination\LengthAwarePaginator;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class Builder
 {
