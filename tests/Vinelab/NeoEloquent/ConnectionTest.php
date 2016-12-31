@@ -112,7 +112,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection();
         $connection->logQuery('foo', array(), time());
-        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('illuminate.query', array('foo', array(), null, null));
         $connection->logQuery('foo', array(), null);
     }
@@ -429,7 +429,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.beganTransaction', $connection);
         $connection->beginTransaction();
     }
@@ -438,7 +438,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.committed', $connection);
         $connection->commit();
     }
@@ -447,7 +447,7 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
-        $connection->setEventDispatcher($events = M::mock('Vinelab\NeoEloquent\Contracts\Events\Dispatcher'));
+        $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('connection.name.rollingBack', $connection);
         $connection->rollback();
     }

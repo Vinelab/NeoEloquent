@@ -4,8 +4,8 @@ namespace Vinelab\NeoEloquent\Tests;
 
 use Neoxygen\NeoClient\Client;
 use Vinelab\NeoEloquent\Connection;
-use Vinelab\NeoEloquent\Container\Container;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
+use Illuminate\Container\Container;
 
 class ConnectionFactoryTest extends TestCase
 {
