@@ -3,10 +3,11 @@
 namespace Vinelab\NeoEloquent\Frameworks\Laravel;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Illuminate\Support\ServiceProvider;
-use Vinelab\NeoEloquent\Events\Dispatcher;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
+
+use Illuminate\Events\Dispatcher;
+use Illuminate\Support\ServiceProvider;
 
 class NeoEloquentServiceProvider52 extends ServiceProvider
 {

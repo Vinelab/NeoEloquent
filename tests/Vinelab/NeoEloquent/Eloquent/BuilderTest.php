@@ -379,7 +379,7 @@ class EloquentBuilderTest extends TestCase
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
         $result = M::mock('Neoxygen\NeoClient\Formatter\Result');
-        $collection = new \Vinelab\NeoEloquent\Support\Collection(array($result));
+        $collection = new \Illuminate\Support\Collection(array($result));
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection);
 
         $this->builder->setModel($this->model);
@@ -422,7 +422,7 @@ class EloquentBuilderTest extends TestCase
         $attributes = array_merge($result, array('id' => $id));
 
         // the Collection that represents the returned result by Eloquent holding the User as an item
-        $collection = new \Vinelab\NeoEloquent\Support\Collection(array($user));
+        $collection = new \Illuminate\Support\Collection(array($user));
 
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection)
                     ->shouldReceive('getKeyName')->times(3)->andReturn('id')

@@ -2,8 +2,6 @@
 
 namespace Vinelab\NeoEloquent;
 
-use Vinelab\NeoEloquent\Support\ServiceProvider;
-use Illuminate\Database\Migrations\Migrator;
 use Vinelab\NeoEloquent\Migrations\MigrationModel;
 use Vinelab\NeoEloquent\Migrations\MigrationCreator;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateCommand;
@@ -12,6 +10,8 @@ use Vinelab\NeoEloquent\Console\Migrations\MigrateResetCommand;
 use Vinelab\NeoEloquent\Migrations\DatabaseMigrationRepository;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateRefreshCommand;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateRollbackCommand;
+use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Support\ServiceProvider;
 
 class MigrationServiceProvider extends ServiceProvider
 {

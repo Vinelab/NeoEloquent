@@ -5,7 +5,7 @@ namespace Vinelab\NeoEloquent\Schema;
 use Closure;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
-use Vinelab\NeoEloquent\Support\Fluent;
+use Illuminate\Support\Fluent;
 
 class Blueprint
 {
@@ -80,7 +80,7 @@ class Blueprint
     /**
      * Indicate that the label should be dropped.
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     public function drop()
     {
@@ -90,7 +90,7 @@ class Blueprint
     /**
      * Indicate that the label should be dropped if it exists.
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     public function dropIfExists()
     {
@@ -102,7 +102,7 @@ class Blueprint
      *
      * @param string $to
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     public function renameLabel($to)
     {
@@ -114,7 +114,7 @@ class Blueprint
      *
      * @param string|array $properties
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     public function dropUnique($properties)
     {
@@ -130,7 +130,7 @@ class Blueprint
      *
      * @param string|array $properties
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     public function dropIndex($properties)
     {
@@ -146,7 +146,7 @@ class Blueprint
      *
      * @param string|array $properties
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     public function unique($properties)
     {
@@ -162,7 +162,7 @@ class Blueprint
      *
      * @param string|array $properties
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     public function index($properties)
     {
@@ -179,7 +179,7 @@ class Blueprint
      * @param string $name
      * @param array  $parameters
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     protected function addCommand($name, array $parameters = [])
     {
@@ -194,7 +194,7 @@ class Blueprint
      * @param string $name
      * @param array  $parameters
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     protected function createCommand($name, array $parameters = [])
     {
@@ -212,7 +212,7 @@ class Blueprint
      * @param string|array $property
      * @param string       $index
      *
-     * @return \Vinelab\NeoEloquent\Support\Fluent
+     * @return \Illuminate\Support\Fluent
      */
     protected function indexCommand($type, $property)
     {

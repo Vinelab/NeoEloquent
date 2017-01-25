@@ -5,15 +5,15 @@ namespace Vinelab\NeoEloquent\Frameworks\Laravel;
 use Closure;
 use Exception;
 use Vinelab\NeoEloquent\QueryException;
-use Vinelab\NeoEloquent\Events\Dispatcher;
 use Vinelab\NeoEloquent\ConnectionInterface;
+
+use Illuminate\Contracts\Events\Dispatcher as IlluminateDispatcher;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\Connection as BaseConnection;
-use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
 use Illuminate\Database\Schema\Grammars\Grammar as SchemaGrammar;
 use Illuminate\Database\QueryException as IlluminateQueryException;
-use Illuminate\Contracts\Events\Dispatcher as IlluminateDispatcher;
+use Illuminate\Events\Dispatcher;
 
 class Connection extends BaseConnection implements ConnectionInterface
 {

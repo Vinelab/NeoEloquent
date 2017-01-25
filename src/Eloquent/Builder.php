@@ -4,19 +4,19 @@ namespace Vinelab\NeoEloquent\Eloquent;
 
 use Closure;
 use Neoxygen\NeoClient\Formatter\Node;
-use Neoxygen\NeoClient\Formatter\Relationship;
 use Neoxygen\NeoClient\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Eloquent\Relationship as EloquentRelationship;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 use Vinelab\NeoEloquent\Helpers;
-use Vinelab\NeoEloquent\Pagination\LengthAwarePaginator;
-use Vinelab\NeoEloquent\Pagination\Paginator;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
-use Vinelab\NeoEloquent\Support\Arr;
-use Vinelab\NeoEloquent\Support\Str;
+
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class Builder
 {
@@ -273,7 +273,7 @@ class Builder
      * @param string $column
      * @param string $key
      *
-     * @return \Vinelab\NeoEloquent\Support\Collection
+     * @return \Illuminate\Support\Collection
      */
     public function lists($column, $key = null)
     {
@@ -1070,7 +1070,7 @@ class Builder
      * @param string   $pageName
      * @param int|null $page
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Pagination\LengthAwarePaginator
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      *
      * @throws \InvalidArgumentException
      */
@@ -1110,9 +1110,9 @@ class Builder
      * @param array  $columns
      * @param string $pageName
      *
-     * @return \Vinelab\NeoEloquent\Pagination\Paginator
+     * @return \Illuminate\Pagination\Paginator
      *
-     * @internal param \Vinelab\NeoEloquent\Pagination\Factory $paginator
+     * @internal param \Illuminate\Pagination\Factory $paginator
      */
     public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page')
     {

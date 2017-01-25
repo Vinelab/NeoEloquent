@@ -8,14 +8,6 @@ use ArrayAccess;
 use Carbon\Carbon;
 use LogicException;
 use JsonSerializable;
-use Vinelab\NeoEloquent\Contracts\Support\Jsonable;
-use Vinelab\NeoEloquent\Contracts\Events\Dispatcher;
-use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
-use Vinelab\NeoEloquent\Contracts\Routing\UrlRoutable;
-use Vinelab\NeoEloquent\Contracts\Queue\QueueableEntity;
-use Illuminate\Database\ConnectionResolverInterface as Resolver;
-use Vinelab\NeoEloquent\Support\Arr;
-use Vinelab\NeoEloquent\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
@@ -28,6 +20,15 @@ use Vinelab\NeoEloquent\Eloquent\Relations\MorphedByOne;
 use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Helpers;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
+
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Queue\QueueableEntity;
+use Illuminate\Contracts\Routing\UrlRoutable;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Database\ConnectionResolverInterface as Resolver;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializable, QueueableEntity, UrlRoutable
 {
@@ -202,7 +203,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     /**
      * The event dispatcher instance.
      *
-     * @var \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
+     * @var \Illuminate\Contracts\Events\Dispatcher
      */
     protected static $dispatcher;
 
@@ -664,7 +665,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
      * @param mixed $id
      * @param array $columns
      *
-     * @return \Vinelab\NeoEloquent\Support\Collection|static
+     * @return \Illuminate\Support\Collection|static
      */
     public static function findOrNew($id, $columns = ['*'])
     {
@@ -3405,7 +3406,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     /**
      * Get the event dispatcher instance.
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Events\Dispatcher
+     * @return \Illuminate\Contracts\Events\Dispatcher
      */
     public static function getEventDispatcher()
     {
@@ -3465,7 +3466,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     /**
      * Set the event dispatcher instance.
      *
-     * @param \Vinelab\NeoEloquent\Contracts\Events\Dispatcher $dispatcher
+     * @param \Illuminate\Contracts\Events\Dispatcher $dispatcher
      */
     public static function setEventDispatcher(Dispatcher $dispatcher)
     {

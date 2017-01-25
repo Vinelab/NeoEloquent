@@ -5,19 +5,18 @@ namespace Vinelab\NeoEloquent\Query;
 use Closure;
 use DateTime;
 use Carbon\Carbon;
-use Vinelab\NeoEloquent\Support\Arr;
-use Vinelab\NeoEloquent\Support\Str;
 use BadMethodCallException;
 use InvalidArgumentException;
-use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\ConnectionInterface;
-use Vinelab\NeoEloquent\Pagination\Paginator;
 use Neoxygen\NeoClient\Formatter\Result;
-use Vinelab\NeoEloquent\Contracts\Support\Arrayable;
 use Vinelab\NeoEloquent\Eloquent\Collection;
-use Vinelab\NeoEloquent\Pagination\LengthAwarePaginator;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
-use Vinelab\NeoEloquent\Query\Processors\Processor;
+
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class Builder
 {
@@ -1393,7 +1392,7 @@ class Builder
      * @param string   $pageName
      * @param int|null $page
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Pagination\LengthAwarePaginator
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function paginate($perPage = 15, $columns = ['*'], $pageName = 'page', $page = null)
     {
@@ -1418,7 +1417,7 @@ class Builder
      * @param array  $columns
      * @param string $pageName
      *
-     * @return \Vinelab\NeoEloquent\Contracts\Pagination\Paginator
+     * @return \Illuminate\Contracts\Pagination\Paginator
      */
     public function simplePaginate($perPage = 15, $columns = ['*'], $pageName = 'page')
     {

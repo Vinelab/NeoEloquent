@@ -7,7 +7,6 @@ use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\Edge;
 use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Relationship;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 
 abstract class HasOneOrMany extends Relation implements RelationInterface
@@ -701,7 +700,7 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      * @param mixed $id
      * @param array $columns
      *
-     * @return \Vinelab\NeoEloquent\Support\Collection|\Illuminate\Database\Eloquent\Model
+     * @return \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Model
      */
     public function findOrNew($id, $columns = ['*'])
     {
