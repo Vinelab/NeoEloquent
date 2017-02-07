@@ -46,7 +46,7 @@ class Builder extends IlluminateQueryBuilder {
      *
      * @var array
      */
-    protected $bindings = array(
+    public $bindings = array(
         'matches'=> [],
         'select' => [],
         'join'   => [],
