@@ -18,7 +18,7 @@ class Builder extends IlluminateQueryBuilder {
      *
      * @var Vinelab\NeoEloquent\Connection
      */
-    protected $connection;
+    public $connection;
 
     /**
      * The database active client handler
