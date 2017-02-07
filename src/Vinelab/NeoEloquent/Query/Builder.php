@@ -60,7 +60,7 @@ class Builder extends IlluminateQueryBuilder {
 	 *
 	 * @var array
 	 */
-    protected $operators = array(
+    public $operators = array(
         '+', '-', '*', '/', '%', '^',    // Mathematical
         '=', '<>', '<', '>', '<=', '>=', // Comparison
         'is null', 'is not null',
