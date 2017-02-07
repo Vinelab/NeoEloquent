@@ -405,7 +405,7 @@ class Connection extends IlluminateConnection {
      *
      * @return void
      */
-    public function rollBack()
+    public function rollBack($toLevel = null)
     {
         if ($this->transactions == 1)
         {
@@ -489,7 +489,7 @@ class Connection extends IlluminateConnection {
     /**
      * Get the schema grammar used by the connection.
      *
-     * @return \Illuminate\Database\Query\Grammars\Grammar
+     * @return \Illuminate\Database\Schema\Grammars\Grammar
      */
     public function getSchemaGrammar()
     {
