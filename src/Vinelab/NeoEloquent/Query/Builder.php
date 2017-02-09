@@ -4,7 +4,7 @@ use Closure;
 use DateTime;
 use Carbon\Carbon;
 use Vinelab\NeoEloquent\Connection;
-use Illuminadte\Database\Query\Expression;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;

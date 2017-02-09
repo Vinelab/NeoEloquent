@@ -46,7 +46,7 @@ class MigrateCommand extends BaseCommand {
     /**
      * {@inheritDoc}
      */
-    public function fire()
+    public function dispatch()
     {
         if ( ! $this->confirmToProceed())
         {
