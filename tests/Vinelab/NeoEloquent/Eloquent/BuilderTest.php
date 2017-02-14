@@ -149,35 +149,35 @@ class EloquentBuilderTest extends TestCase {
         $this->assertNull($builder->pluck('name'));
     }
 
-//    public function testChunkExecuteCallbackOverPaginatedRequest()
-//    {
-//        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[forPage,get,orderBy]', array($this->getMockQueryBuilder()));
-////        $builder = $this->getBuilder();
-//
-////        $builder->mockery_allocateOrder()
-//        $model = $this->getMockModel();
-//
-//        $builder->setModel($model);
-//
-//        $builder->shouldReceive('orderBy');
-//        $builder->shouldReceive('forPage')->once()->with(1, 1)->andReturn($builder);
-//        $builder->shouldReceive('forPage')->once()->with(2, 1)->andReturn($builder);
-//        $builder->shouldReceive('forPage')->once()->with(3, 1)->andReturn($builder);
-//        $builder->shouldReceive('get')->times(3)->andReturn(new Collection(['foo1', 'foo2']), new Collection(['foo3']), new Collection([]));
-//
-//
-//
-//        $callbackExecutionAssertor = m::mock('StdClass');
-//        $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo1')->once();
-//        $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo2')->once();
-//        $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo3')->once();
-//
-//        $builder->chunk(1, function($results) use($callbackExecutionAssertor) {
-//            foreach ($results as $result) {
-//                $callbackExecutionAssertor->doSomething($result);
-//            }
-//        });
-//    }
+    public function testChunkExecuteCallbackOverPaginatedRequest()
+    {
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[forPage,get,orderBy]', array($this->getMockQueryBuilder()));
+//        $builder = $this->getBuilder();
+
+//        $builder->mockery_allocateOrder()
+        $model = $this->getMockModel();
+
+        $builder->setModel($model);
+
+        $builder->shouldReceive('orderBy');
+        $builder->shouldReceive('forPage')->once()->with(1, 1)->andReturn($builder);
+        $builder->shouldReceive('forPage')->once()->with(2, 1)->andReturn($builder);
+        $builder->shouldReceive('forPage')->once()->with(3, 1)->andReturn($builder);
+        $builder->shouldReceive('get')->times(3)->andReturn(new Collection(['foo1', 'foo2']), new Collection(['foo3']), new Collection([]));
+
+
+
+        $callbackExecutionAssertor = m::mock('StdClass');
+        $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo1')->once();
+        $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo2')->once();
+        $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo3')->once();
+
+        $builder->chunk(1, function($results) use($callbackExecutionAssertor) {
+            foreach ($results as $result) {
+                $callbackExecutionAssertor->doSomething($result);
+            }
+        });
+    }
 
     public function testGetModelsProperlyHydratesModels()
     {
