@@ -16,7 +16,7 @@ class Connection extends IlluminateConnection {
     /**
      * The Neo4j active client connection
      *
-     * @var Everyman\Neo4j\Client
+     * @var \Everyman\Neo4j\Client
      */
     protected $neo;
 
@@ -77,7 +77,7 @@ class Connection extends IlluminateConnection {
     /**
      * Create a new Neo4j client
      *
-     * @return Everyman\Neo4j\Client
+     * @return \Everyman\Neo4j\Client
      */
     public function createConnection()
     {
@@ -89,7 +89,7 @@ class Connection extends IlluminateConnection {
     /**
      * Get the currenty active database client
      *
-     * @return Everyman\Neo4j\Client
+     * @return \Everyman\Neo4j\Client
      */
     public function getClient()
     {
@@ -139,7 +139,7 @@ class Connection extends IlluminateConnection {
 
     /**
      * Get the connection password
-     * @return int|strings
+     * @return int|string
      */
     public function getPassword()
     {
@@ -182,9 +182,10 @@ class Connection extends IlluminateConnection {
      *
      * @param  string  $query
      * @param  array   $bindings
+     * @param  bool    $useReadPdo
      * @return array
      */
-    public function select($query, $bindings = array())
+    public function select($query, $bindings = array(),$useReadPdo = false)
     {
         return $this->run($query, $bindings, function(self $me, $query, array $bindings)
         {
@@ -248,6 +249,7 @@ class Connection extends IlluminateConnection {
      *
      * @param  string  $query
      * @param  array  $bindings
+     * @return CypherQuery
      */
     public function getCypherQuery($query, array $bindings)
     {
