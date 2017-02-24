@@ -4,10 +4,9 @@ namespace Vinelab\NeoEloquent\Query\Grammars;
 
 use DateTime;
 use Carbon\Carbon;
-
 use Vinelab\NeoEloquent\Query\Builder;
-use Vinelab\NeoEloquent\Query\Expression;
 
+use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
 abstract class Grammar extends IlluminateGrammar

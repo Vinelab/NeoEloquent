@@ -2,17 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
-interface ScopeInterface
-{
-    /**
-     * Apply the scope to a given Eloquent query builder.
-     *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Builder  $builder
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
-     * @return void
-     */
-    public function apply(Builder $builder, Model $model);
+use Illuminate\Database\Eloquent\Scope;
 
+interface ScopeInterface extends Scope
+{
     /**
      * Remove the scope from the given Eloquent query builder.
      *

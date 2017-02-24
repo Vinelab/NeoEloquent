@@ -3,11 +3,12 @@
 namespace Vinelab\NeoEloquent\Schema;
 
 use Closure;
-use Illuminate\Database\ConnectionInterface;
-use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
-use Illuminate\Support\Fluent;
 
-class Blueprint
+use Illuminate\Database\Connection;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
+use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
+
+class Blueprint extends IlluminateBlueprint
 {
     /**
      * The label the blueprint describes.
@@ -15,13 +16,6 @@ class Blueprint
      * @var string
      */
     protected $label;
-
-    /**
-     * The commands that should be run for the label.
-     *
-     * @var array
-     */
-    protected $commands = [];
 
     /**
      * @param string  $label
@@ -42,7 +36,7 @@ class Blueprint
      * @param \Illuminate\Database\ConnectionInterface     $connection
      * @param \Illuminate\Database\Schema\Grammars\Grammar $grammar
      */
-    public function build(ConnectionInterface $connection, IlluminateSchemaGrammar $grammar)
+    public function build(Connection $connection, IlluminateSchemaGrammar $grammar)
     {
         foreach ($this->toCypher($connection, $grammar) as $statement) {
             $connection->statement($statement);
@@ -57,7 +51,7 @@ class Blueprint
      *
      * @return array
      */
-    public function toCypher(ConnectionInterface $connection, IlluminateSchemaGrammar $grammar)
+    public function toCypher(Connection $connection, IlluminateSchemaGrammar $grammar)
     {
         $statements = [];
 
@@ -75,26 +69,6 @@ class Blueprint
         }
 
         return $statements;
-    }
-
-    /**
-     * Indicate that the label should be dropped.
-     *
-     * @return \Illuminate\Support\Fluent
-     */
-    public function drop()
-    {
-        return $this->addCommand('drop');
-    }
-
-    /**
-     * Indicate that the label should be dropped if it exists.
-     *
-     * @return \Illuminate\Support\Fluent
-     */
-    public function dropIfExists()
-    {
-        return $this->addCommand('dropIfExists');
     }
 
     /**
@@ -148,7 +122,7 @@ class Blueprint
      *
      * @return \Illuminate\Support\Fluent
      */
-    public function unique($properties)
+    public function unique($properties, $name = null, $algorithm = null)
     {
         $properties = (array) $properties;
 
@@ -164,45 +138,13 @@ class Blueprint
      *
      * @return \Illuminate\Support\Fluent
      */
-    public function index($properties)
+    public function index($properties, $name = null, $algorithm = null)
     {
         $properties = (array) $properties;
 
         foreach ($properties as $property) {
             $this->addCommand('index', ['property' => $property]);
         }
-    }
-
-    /**
-     * Add a new command to the blueprint.
-     *
-     * @param string $name
-     * @param array  $parameters
-     *
-     * @return \Illuminate\Support\Fluent
-     */
-    protected function addCommand($name, array $parameters = [])
-    {
-        $this->commands[] = $command = $this->createCommand($name, $parameters);
-
-        return $command;
-    }
-
-    /**
-     * Create a new Fluent command.
-     *
-     * @param string $name
-     * @param array  $parameters
-     *
-     * @return \Illuminate\Support\Fluent
-     */
-    protected function createCommand($name, array $parameters = [])
-    {
-        return new Fluent(
-            array_merge(
-                compact('name'),
-                $parameters)
-        );
     }
 
     /**
@@ -214,7 +156,7 @@ class Blueprint
      *
      * @return \Illuminate\Support\Fluent
      */
-    protected function indexCommand($type, $property)
+    protected function indexCommand($type, $property, $index, $algorithm = null)
     {
         return $this->addCommand($type, compact('property'));
     }

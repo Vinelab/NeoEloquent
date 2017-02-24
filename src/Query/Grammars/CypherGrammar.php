@@ -23,7 +23,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    public function compileSelect(Builder $query)
+    public function compileSelect(\Illuminate\Database\Query\Builder $query)
     {
         if (is_null($query->columns)) {
             $query->columns = array('*');
@@ -40,7 +40,7 @@ class CypherGrammar extends Grammar
      *
      * @return array
      */
-    protected function compileComponents(Builder $query, $specified = null)
+    protected function compileComponents(\Illuminate\Database\Query\Builder $query, $specified = null)
     {
         $cypher = array();
 
@@ -84,7 +84,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function compileComponent(Builder $query, $components, $component)
+    protected function compileComponent(\Illuminate\Database\Query\Builder $query, $components, $component)
     {
         $cypher = '';
 
@@ -245,7 +245,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    public function compileFrom(Builder $query, $labels)
+    public function compileFrom(\Illuminate\Database\Query\Builder $query, $labels)
     {
         // Only compile when no relational matches are specified,
         // mostly used for simple queries.
@@ -272,7 +272,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function compileWheres(Builder $query)
+    protected function compileWheres(\Illuminate\Database\Query\Builder $query)
     {
         $cypher = array();
 
@@ -309,7 +309,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function whereBasic(Builder $query, $where)
+    protected function whereBasic(\Illuminate\Database\Query\Builder $query, $where)
     {
         $value = $this->parameter($where);
 
@@ -337,7 +337,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function compileLimit(Builder $query, $limit)
+    protected function compileLimit(\Illuminate\Database\Query\Builder $query, $limit)
     {
         return 'LIMIT '.(int) $limit;
     }
@@ -350,7 +350,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function compileOffset(Builder $query, $offset)
+    protected function compileOffset(\Illuminate\Database\Query\Builder $query, $offset)
     {
         return 'SKIP '.(int) $offset;
     }
@@ -363,7 +363,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function compileColumns(Builder $query, $properties)
+    protected function compileColumns(\Illuminate\Database\Query\Builder $query, $properties)
     {
         // When we have an aggregate we will have to return it instead of the plain columns
         // since aggregates for Cypher are not calculated at the beginning of the query like Cypher
@@ -416,7 +416,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    public function compileOrders(Builder $query, $orders)
+    public function compileOrders(\Illuminate\Database\Query\Builder $query, $orders)
     {
         return 'ORDER BY '.implode(', ', array_map(function ($order) {
                 return $this->wrap($order['column']).' '.mb_strtoupper($order['direction']);
@@ -450,7 +450,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    public function compileUpdate(Builder $query, $values)
+    public function compileUpdate(\Illuminate\Database\Query\Builder $query, $values)
     {
         $columns = $this->columnsFromValues($values, true);
 
@@ -510,7 +510,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function whereIn(Builder $query, $where)
+    protected function whereIn(\Illuminate\Database\Query\Builder $query, $where)
     {
         $values = $this->valufy($where['values']);
 
@@ -525,7 +525,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function whereNotIn(Builder $query, $where)
+    protected function whereNotIn(\Illuminate\Database\Query\Builder $query, $where)
     {
         $values = $this->valufy($where['values']);
 
@@ -540,120 +540,11 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function whereNested(Builder $query, $where)
+    protected function whereNested(\Illuminate\Database\Query\Builder $query, $where)
     {
         $nested = $where['query'];
 
         return '('.substr($this->compileWheres($nested), 6).')';
-    }
-
-    /**
-     * Compile a where condition with a sub-select.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function whereSub(Builder $query, $where)
-    {
-        $select = $this->compileSelect($where['query']);
-
-        return $this->wrap($where['column']).' '.$where['operator']." ($select)";
-    }
-
-    /**
-     * Compile a "where null" clause.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function whereNull(Builder $query, $where)
-    {
-        return $this->wrap($where['column']).' is null';
-    }
-
-    /**
-     * Compile a "where not null" clause.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function whereNotNull(Builder $query, $where)
-    {
-        return $this->wrap($where['column']).' is not null';
-    }
-
-    /**
-     * Compile a "where date" clause.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function whereDate(Builder $query, $where)
-    {
-        return $this->dateBasedWhere('date', $query, $where);
-    }
-
-    /**
-     * Compile a "where day" clause.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function whereDay(Builder $query, $where)
-    {
-        return $this->dateBasedWhere('day', $query, $where);
-    }
-
-    /**
-     * Compile a "where month" clause.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function whereMonth(Builder $query, $where)
-    {
-        return $this->dateBasedWhere('month', $query, $where);
-    }
-
-    /**
-     * Compile a "where year" clause.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function whereYear(Builder $query, $where)
-    {
-        return $this->dateBasedWhere('year', $query, $where);
-    }
-
-    /**
-     * Compile a date based where clause.
-     *
-     * @param string                             $type
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $where
-     *
-     * @return string
-     */
-    protected function dateBasedWhere($type, Builder $query, $where)
-    {
-        $value = $this->parameter($where['value']);
-
-        return $type.'('.$this->wrap($where['column']).') '.$where['operator'].' '.$value;
     }
 
     /**
@@ -664,7 +555,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    protected function compileHavings(Builder $query, $havings)
+    protected function compileHavings(\Illuminate\Database\Query\Builder $query, $havings)
     {
         $cypher = implode(' ', array_map([$this, 'compileHaving'], $havings));
 
@@ -691,29 +582,13 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * Compile a basic having clause.
-     *
-     * @param array $having
-     *
-     * @return string
-     */
-    protected function compileBasicHaving($having)
-    {
-        $column = $this->wrap($having['column']);
-
-        $parameter = $this->parameter($having['value']);
-
-        return $having['boolean'].' '.$column.' '.$having['operator'].' '.$parameter;
-    }
-
-    /**
      * Compile a delete statement into Cypher.
      *
      * @param \Illuminate\Database\Query\Builder $query
      *
      * @return string
      */
-    public function compileDelete(Builder $query, $isRelationship = false, $shouldKeepEndNode = false)
+    public function compileDelete(\Illuminate\Database\Query\Builder $query, $isRelationship = false, $shouldKeepEndNode = false)
     {
         // We always need the MATCH clause in our Cypher which
         // is the responsibility of compiling the From component.
@@ -778,7 +653,7 @@ class CypherGrammar extends Grammar
      *
      * @return string
      */
-    public function compileInsert(Builder $query, array $values)
+    public function compileInsert(\Illuminate\Database\Query\Builder $query, array $values)
     {
         /*
          *  Essentially we will force every insert to be treated as a batch insert which
@@ -819,7 +694,11 @@ class CypherGrammar extends Grammar
             $startId = (int) $attributes['start']['id']['value'];
         } else {
             $startKey = $startNode.'.'.$startKey;
-            $startId = '"'.addslashes($attributes['start']['id']['value']).'"';
+            if (is_int($attributes['start']['id']['value'])) {
+                $startId = $attributes['start']['id']['value'];
+            } else {
+                $startId = '"'.addslashes($attributes['start']['id']['value']).'"';
+            }
         }
 
         $startCondition = $startKey.'='.$startId;
@@ -839,7 +718,11 @@ class CypherGrammar extends Grammar
                     $endId = (int) $attributes['end']['id']['value'];
                 } else {
                     $endKey = $endNode.'.'.$endKey;
-                    $endId = '"'.addslashes($attributes['end']['id']['value']).'"';
+                    if (is_int($attributes['end']['id']['value'])) {
+                        $endId = $attributes['end']['id']['value'];
+                    } else {
+                        $endId = '"'.addslashes($attributes['end']['id']['value']).'"';
+                    }
                 }
             }
 
@@ -1062,7 +945,7 @@ class CypherGrammar extends Grammar
         return $cypher;
     }
 
-    public function compileAggregate(Builder $query, $aggregate)
+    public function compileAggregate(\Illuminate\Database\Query\Builder $query, $aggregate)
     {
         $distinct = null;
         $function = $aggregate['function'];
