@@ -2,8 +2,11 @@
 
 namespace Vinelab\NeoEloquent;
 
+use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
+
+use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 
 class NeoEloquentServiceProvider extends ServiceProvider
@@ -31,7 +34,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
     {
         Model::setConnectionResolver($this->app['db']);
 
-        Model::setEventDispatcher($this->app['events']);
+        Model::setEventDispatcher($this->app->make(Dispatcher::class));
     }
 
     /**
@@ -40,11 +43,22 @@ class NeoEloquentServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app['db']->extend('neo4j', function ($config) {
+            $this->config = $config;
             $conn = new Connection($config);
             $conn->setSchemaGrammar(new CypherGrammar());
 
             return $conn;
         });
+
+         $this->app->bind('neoeloquent.connection', function() {
+             // $config is set by the previous binding,
+             // so that we get the correct configuration
+             // set by the user.
+             $conn = new NeoEloquentConnection($this->config);
+             $conn->setSchemaGrammar(new CypherGrammar());
+
+             return $conn;
+         });
 
         $this->app->booting(function () {
             $loader = \Illuminate\Foundation\AliasLoader::getInstance();
@@ -53,6 +67,16 @@ class NeoEloquentServiceProvider extends ServiceProvider
         });
 
         $this->registerComponents();
+    }
+
+    protected function registerNeoEloquentConnection($app, $config)
+    {
+        $app->bind('neoeloquent.connection', function() use($config) {
+            $conn = new NeoEloquentConnection($config);
+            $conn->setSchemaGrammar(new CypherGrammar());
+
+            return $conn;
+        });
     }
 
     /**
@@ -72,7 +96,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
      */
     protected function registerMigration()
     {
-        $this->app->register('Vinelab\NeoEloquent\MigrationServiceProvider');
+        $this->app->register(MigrationServiceProvider::class);
     }
 
     /**
