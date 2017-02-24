@@ -4,10 +4,13 @@ namespace Vinelab\NeoEloquent\Query\Grammars;
 
 use DateTime;
 use Carbon\Carbon;
+
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\Expression;
 
-abstract class Grammar
+use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
+
+abstract class Grammar extends IlluminateGrammar
 {
     /**
      * The Query builder instance.
@@ -24,18 +27,6 @@ abstract class Grammar
     protected $labelPostfix = '_neoeloquent_';
 
     /**
-     * Create query parameter place-holders for an array.
-     *
-     * @param array $values
-     *
-     * @return string
-     */
-    public function parameterize(array $values)
-    {
-        return implode(', ', array_map([$this, 'parameter'], $values));
-    }
-
-    /**
      * Determine if the given value is a raw expression.
      *
      * @param mixed $value
@@ -45,28 +36,6 @@ abstract class Grammar
     public function isExpression($value)
     {
         return $value instanceof Expression;
-    }
-
-    /**
-     * Get the format for database stored dates.
-     *
-     * @return string
-     */
-    public function getDateFormat()
-    {
-        return 'Y-m-d H:i:s';
-    }
-
-    /**
-     * Get the value of a raw expression.
-     *
-     * @param \Illuminate\Database\Query\Expression $expression
-     *
-     * @return string
-     */
-    public function getValue($expression)
-    {
-        return $expression->getValue();
     }
 
     /**
@@ -199,34 +168,6 @@ abstract class Grammar
         }
 
         return $this->query->modelAsNode().'.'.$value;
-    }
-
-    /**
-     * Wrap a single string in keyword identifiers.
-     *
-     * @param string $value
-     *
-     * @return string
-     */
-    protected function wrapValue($value)
-    {
-        if ($value === '*') {
-            return $value;
-        }
-
-        return '"'.str_replace('"', '""', $value).'"';
-    }
-
-    /**
-     * Wrap an array of values.
-     *
-     * @param array $values
-     *
-     * @return array
-     */
-    public function wrapArray(array $values)
-    {
-        return array_map([$this, 'wrap'], $values);
     }
 
     /**
@@ -386,19 +327,6 @@ abstract class Grammar
     }
 
     /**
-     * Concatenate an array of segments, removing empties.
-     *
-     * @param  array   $segments
-     * @return string
-     */
-    protected function concatenate($segments)
-    {
-        return implode(' ', array_filter($segments, function ($value) {
-            return (string) $value !== '';
-        }));
-    }
-
-    /**
      * Turn a string into a valid property for a query.
      *
      * @param string $property
@@ -447,18 +375,6 @@ abstract class Grammar
     public function cropLabelIdentifier($id)
     {
         return preg_replace('/_neoeloquent_.*/', '', $id);
-    }
-
-    /**
-     * Convert an array of column names into a delimited string.
-     *
-     * @param array $columns
-     *
-     * @return string
-     */
-    public function columnize(array $columns)
-    {
-        return implode(', ', array_map([$this, 'wrap'], $columns));
     }
 
     /**

@@ -2,7 +2,6 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
-use Exception;
 use LogicException;
 
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
