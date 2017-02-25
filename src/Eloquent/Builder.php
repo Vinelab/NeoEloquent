@@ -1084,21 +1084,6 @@ class Builder extends IlluminateBuilder
     }
 
     /**
-     * Call the given model scope on the underlying model.
-     *
-     * @param string $scope
-     * @param array  $parameters
-     *
-     * @return \Vinelab\NeoEloquent\Query\Builder
-     */
-    protected function callScope(callable $scope, $parameters = [])
-    {
-        array_unshift($parameters, $this);
-
-        return call_user_func_array([$this->model, $scope], $parameters) ?: $this;
-    }
-
-    /**
      * Set a model instance for the model being queried.
      *
      * @param \Illuminate\Database\Eloquent\Model $model

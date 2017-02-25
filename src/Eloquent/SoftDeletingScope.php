@@ -4,8 +4,9 @@ namespace Vinelab\NeoEloquent\Eloquent;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope as IlluminateSoftDeletingScope;
 
-class SoftDeletingScope implements ScopeInterface
+class SoftDeletingScope extends IlluminateSoftDeletingScope implements ScopeInterface
 {
     /**
      * Apply the scope to a given Eloquent query builder.
