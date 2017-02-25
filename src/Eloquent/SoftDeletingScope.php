@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
+use Illuminate\Database\Eloquent\Model as IlluminateModel;
 use Illuminate\Database\Eloquent\SoftDeletingScope as IlluminateSoftDeletingScope;
 
 class SoftDeletingScope extends IlluminateSoftDeletingScope implements ScopeInterface
@@ -14,7 +14,7 @@ class SoftDeletingScope extends IlluminateSoftDeletingScope implements ScopeInte
      * @param \Illuminate\Database\Eloquent\Builder $builder
      * @param \Illuminate\Database\Eloquent\Model   $model
      */
-    public function apply(Builder $builder, Model $model)
+    public function apply(IlluminateBuilder $builder, IlluminateModel $model)
     {
         $builder->whereNull($model->getQualifiedDeletedAtColumn());
 
@@ -27,7 +27,7 @@ class SoftDeletingScope extends IlluminateSoftDeletingScope implements ScopeInte
      * @param \Illuminate\Database\Eloquent\Builder $builder
      * @param \Illuminate\Database\Eloquent\Model   $model
      */
-    public function remove(\Vinelab\NeoEloquent\Eloquent\Builder $builder, \Vinelab\NeoEloquent\Eloquent\Model $model)
+    public function remove(Builder $builder, Model $model)
     {
         $column = $model->getQualifiedDeletedAtColumn();
 
