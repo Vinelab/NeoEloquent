@@ -87,7 +87,7 @@ class GrammarTest extends TestCase
     {
         $mConnection = M::mock('Vinelab\NeoEloquent\Connection');
         $mConnection->shouldReceive('getClient');
-        $query = new Builder($mConnection, $this->grammar);
+        $query = new Builder($mConnection, $this->grammar, new \Illuminate\Database\Query\Processors\Processor());
 
         $this->assertEquals('n.value', $this->grammar->wrap('value'));
 

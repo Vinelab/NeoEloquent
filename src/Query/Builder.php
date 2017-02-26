@@ -1156,6 +1156,18 @@ class Builder extends IlluminateBuilder
         return $this->grammar->modelAsNode($labels);
     }
 
+    /**
+     * Merge an array of where clauses and bindings.
+     *
+     * @param array $wheres
+     * @param array $bindings
+     */
+    public function mergeWheres($wheres, $bindings)
+    {
+        $this->wheres = array_merge((array) $this->wheres, (array) $wheres);
+        $this->bindings['where'] = array_merge_recursive($this->bindings['where'], (array) $bindings);
+    }
+
     public function wrap($property)
     {
         return $this->grammar->getIdReplacement($property);

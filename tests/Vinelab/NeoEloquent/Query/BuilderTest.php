@@ -318,7 +318,8 @@ class BuilderTest extends TestCase
         $client = M::mock('Everyman\Neo4j\Client');
         $connection->shouldReceive('getClient')->once()->andReturn($client);
         $grammar = new CypherGrammar();
+		$processor = new \Illuminate\Database\Query\Processors\Processor();
 
-        return new Builder($connection, $grammar);
+        return new Builder($connection, $grammar, $processor);
     }
 }

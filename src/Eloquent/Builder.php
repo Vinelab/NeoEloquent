@@ -71,6 +71,27 @@ class Builder extends IlluminateBuilder
     }
 
     /**
+     * Chunk the results of the query.
+     *
+     * @param int      $count
+     * @param callable $callback
+     */
+    public function chunk($count, callable $callback)
+    {
+        $results = $this->forPage($page = 1, $count)->get();
+        while (count($results) > 0) {
+            // On each chunk result set, we will pass them to the callback and then let the
+            // developer take care of everything within the callback, which allows us to
+            // keep the memory low for spinning through large result sets for working.
+            if (call_user_func($callback, $results) === false) {
+                break;
+            }
+            ++$page;
+            $results = $this->forPage($page, $count)->get();
+        }
+    }
+
+    /**
      * Get an array with the values of a given column.
      *
      * @param string $column
