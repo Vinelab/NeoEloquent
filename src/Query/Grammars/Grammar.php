@@ -237,7 +237,7 @@ abstract class Grammar extends IlluminateGrammar
             $labels = 'with_'.$relation.'_'.$labels;
         }
 
-        return mb_strtolower($labels);
+        return $labels;
     }
 
     /**
