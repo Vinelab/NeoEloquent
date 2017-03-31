@@ -662,7 +662,7 @@ class Builder extends IlluminateBuilder {
          * with a whereHas() since the database will not return the result unless a relationship
          * exists between two nodes.
          */
-        $prefix = $relation->getRelatedNode();
+        $prefix = "related_" . $relation->getRelatedNode();
 
         if ( ! $callback)
         {
@@ -682,7 +682,7 @@ class Builder extends IlluminateBuilder {
         }
 
         $parentNode = $relation->getParentNode();
-        $relatedNode = $relation->getRelatedNode();
+        $relatedNode = "related_" . $relation->getRelatedNode();
         // Tell the query to select our parent node only.
         $this->select($parentNode);
         // Set the relationship match clause.
