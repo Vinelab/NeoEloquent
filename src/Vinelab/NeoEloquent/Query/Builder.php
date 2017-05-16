@@ -207,7 +207,8 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function getCountForPagination($columns = ['*'])
     {
-        $this->backupFieldsForCount();
+        // if I comment this paginate will work
+//        $this->backupFieldsForCount();
 
         $this->aggregate = ['function' => 'count', 'columns' => $columns];
 
@@ -215,7 +216,8 @@ class Builder extends IlluminateQueryBuilder {
 
         $this->aggregate = null;
 
-        $this->restoreFieldsForCount();
+        // if I comment this paginate will work
+//        $this->restoreFieldsForCount();
 
         if (isset($this->groups)) {
             return count($results);
