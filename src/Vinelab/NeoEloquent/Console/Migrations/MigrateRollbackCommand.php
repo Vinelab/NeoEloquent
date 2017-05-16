@@ -44,7 +44,7 @@ class MigrateRollbackCommand extends Command {
     /**
      * {@inheritDoc}
      */
-    public function fire()
+    public function dispatch()
     {
 
         if ( ! $this->confirmToProceed()) return;

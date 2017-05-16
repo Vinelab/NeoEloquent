@@ -53,7 +53,7 @@ class MigrateMakeCommand extends BaseCommand
     /**
      * {@inheritDoc}
      */
-    public function fire()
+    public function dispatch()
     {
         // It's possible for the developer to specify the tables to modify in this
         // schema operation. The developer may also specify if this label needs

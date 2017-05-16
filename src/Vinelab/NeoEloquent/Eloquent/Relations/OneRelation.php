@@ -133,7 +133,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
             // the related model so we'll just take the first model out of the array.
             if (is_array($model)) $model = reset($model);
 
-            if ( ! is_null($value = $model->{$this->otherKey}))
+            if ( ! is_null($value = $model->{$this->ownerKey}))
             {
                 $keys[] = $value;
             }
@@ -224,12 +224,12 @@ abstract class OneRelation extends BelongsTo implements RelationInterface {
 
     public function getLocalKey()
     {
-        return $this->otherKey;
+        return $this->ownerKey;
     }
 
     public function getParentLocalKeyValue()
     {
-        return $this->parent->{$this->otherKey};
+        return $this->parent->{$this->ownerKey};
     }
 
 }
