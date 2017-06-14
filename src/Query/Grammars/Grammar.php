@@ -239,11 +239,11 @@ abstract class Grammar
      */
     public function valufy($values)
     {
-        $arrayValues = true;
+        $arrayValue = true;
 
         // we'll only deal with arrays so let's turn it into one if it isn't
         if (!is_array($values)) {
-            $arrayValues = false;
+            $arrayValue = false;
             $values = [$values];
         }
 
