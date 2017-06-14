@@ -379,7 +379,7 @@ abstract class Grammar
 
             $key = $this->propertize($key);
             $value = $this->valufy($value);
-            $properties[] = "$key: $value";
+            $properties[] = strpos($value, ',') ?  "$key: [$value]" : "$key: $value";
         }
 
         return "($label { ".implode(', ', $properties).'})';
