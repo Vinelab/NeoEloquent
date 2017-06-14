@@ -239,8 +239,11 @@ abstract class Grammar
      */
     public function valufy($values)
     {
+        $arrayValues = true;
+
         // we'll only deal with arrays so let's turn it into one if it isn't
         if (!is_array($values)) {
+            $arrayValues = false;
             $values = [$values];
         }
 
@@ -269,7 +272,7 @@ abstract class Grammar
         }, $values);
 
         // stringify them.
-        return implode(', ', $values);
+        return $arrayValue ? '['.implode(',', $values).']' : implode(', ', $values);
     }
 
     /**
@@ -379,7 +382,7 @@ abstract class Grammar
 
             $key = $this->propertize($key);
             $value = $this->valufy($value);
-            $properties[] = strpos($value, ',') ?  "$key: [$value]" : "$key: $value";
+            $properties[] = "$key: $value";
         }
 
         return "($label { ".implode(', ', $properties).'})';
