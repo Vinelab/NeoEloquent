@@ -3,58 +3,22 @@
 namespace Vinelab\NeoEloquent\Eloquent;
 
 use Closure;
-use Neoxygen\NeoClient\Formatter\Node;
-use Neoxygen\NeoClient\Formatter\Result;
+
 use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Eloquent\Relationship as EloquentRelationship;
-use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 use Vinelab\NeoEloquent\Helpers;
 use Vinelab\NeoEloquent\QueryException;
-use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
-use Vinelab\NeoEloquent\Query\Expression;
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 
-class Builder
+use Neoxygen\NeoClient\Formatter\Node;
+use Neoxygen\NeoClient\Formatter\Result;
+
+class Builder extends IlluminateBuilder
 {
-    /**
-     * The base query builder instance.
-     *
-     * @var \Vinelab\NeoEloquent\Query\Builder
-     */
-    protected $query;
-
-    /**
-     * The model being queried.
-     *
-     * @var \Vinelab\NeoEloquent\Eloquent\Model
-     */
-    protected $model;
-
-    /**
-     * The relationships that should be eager loaded.
-     *
-     * @var array
-     */
-    protected $eagerLoad = [];
-
-    /**
-     * A replacement for the typical delete function.
-     *
-     * @var \Closure
-     */
-    protected $onDelete;
-
-    /**
-     * All of the registered builder macros.
-     *
-     * @var array
-     */
-    protected $macros = [];
-
     /**
      * The loaded models that should be transformed back
      * to Models. Sometimes we might ask for more than
@@ -76,16 +40,6 @@ class Builder
         'insert', 'insertGetId', 'getBindings', 'toSql',
         'exists', 'count', 'min', 'max', 'avg', 'sum',
     ];
-
-    /**
-     * Create a new Eloquent query builder instance.
-     *
-     * @param \Vinelab\NeoEloquent\Query\Builder $query
-     */
-    public function __construct(QueryBuilder $query)
-    {
-        $this->query = $query;
-    }
 
     /**
      * Find a model by its primary key.
@@ -117,133 +71,6 @@ class Builder
     }
 
     /**
-     * Find a model by its primary key.
-     *
-     * @param array $ids
-     * @param array $columns
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Collection
-     */
-    public function findMany($ids, $columns = ['*'])
-    {
-        if (empty($ids)) {
-            return $this->model->newCollection();
-        }
-
-        $this->query->whereIn($this->model->getQualifiedKeyName(), $ids);
-
-        return $this->get($columns);
-    }
-
-    /**
-     * Find a model by its primary key or throw an exception.
-     *
-     * @param mixed $id
-     * @param array $columns
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Model|\Vinelab\NeoEloquent\Eloquent\Collection
-     *
-     * @throws \Vinelab\NeoEloquent\Eloquent\ModelNotFoundException
-     */
-    public function findOrFail($id, $columns = ['*'])
-    {
-        $result = $this->find($id, $columns);
-
-        if (is_array($id)) {
-            if (count($result) == count(array_unique($id))) {
-                return $result;
-            }
-        } elseif (!is_null($result)) {
-            return $result;
-        }
-
-        throw (new ModelNotFoundException())->setModel(get_class($this->model));
-    }
-
-    /**
-     * Execute the query and get the first result.
-     *
-     * @param array $columns
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Model|static|null
-     */
-    public function first($columns = ['*'])
-    {
-        return $this->take(1)->get($columns)->first();
-    }
-
-    /**
-     * Execute the query and get the first result or throw an exception.
-     *
-     * @param array $columns
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Model|static
-     *
-     * @throws \Vinelab\NeoEloquent\Eloquent\ModelNotFoundException
-     */
-    public function firstOrFail($columns = ['*'])
-    {
-        if (!is_null($model = $this->first($columns))) {
-            return $model;
-        }
-
-        throw (new ModelNotFoundException())->setModel(get_class($this->model));
-    }
-
-    /**
-     * Execute the query as a "select" statement.
-     *
-     * @param array $columns
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Collection|static[]
-     */
-    public function get($columns = ['*'])
-    {
-        $models = $this->getModels($columns);
-
-        // If we actually found models we will also eager load any relationships that
-        // have been specified as needing to be eager loaded, which will solve the
-        // n+1 query issue for the developers to avoid running a lot of queries.
-        if (count($models) > 0) {
-            $models = $this->eagerLoadRelations($models);
-        }
-
-        return $this->model->newCollection($models);
-    }
-
-    /**
-     * Get a single column's value from the first result of a query.
-     *
-     * @param string $column
-     *
-     * @return mixed
-     */
-    public function value($column)
-    {
-        $result = $this->first([$column]);
-
-        if ($result) {
-            return $result->{$column};
-        }
-    }
-
-    /**
-     * Get a single column's value from the first result of a query.
-     *
-     * This is an alias for the "value" method.
-     *
-     * @param string $column
-     *
-     * @return mixed
-     *
-     * @deprecated since version 5.1.
-     */
-    public function pluck($column)
-    {
-        return $this->value($column);
-    }
-
-    /**
      * Chunk the results of the query.
      *
      * @param int      $count
@@ -252,7 +79,6 @@ class Builder
     public function chunk($count, callable $callback)
     {
         $results = $this->forPage($page = 1, $count)->get();
-
         while (count($results) > 0) {
             // On each chunk result set, we will pass them to the callback and then let the
             // developer take care of everything within the callback, which allows us to
@@ -260,9 +86,7 @@ class Builder
             if (call_user_func($callback, $results) === false) {
                 break;
             }
-
             ++$page;
-
             $results = $this->forPage($page, $count)->get();
         }
     }
@@ -291,90 +115,6 @@ class Builder
         }
 
         return new Collection($results);
-    }
-
-    /**
-     * Increment a column's value by a given amount.
-     *
-     * @param string $column
-     * @param int    $amount
-     * @param array  $extra
-     *
-     * @return int
-     */
-    public function increment($column, $amount = 1, array $extra = [])
-    {
-        $extra = $this->addUpdatedAtColumn($extra);
-
-        return $this->query->increment($column, $amount, $extra);
-    }
-
-    /**
-     * Decrement a column's value by a given amount.
-     *
-     * @param string $column
-     * @param int    $amount
-     * @param array  $extra
-     *
-     * @return int
-     */
-    public function decrement($column, $amount = 1, array $extra = [])
-    {
-        $extra = $this->addUpdatedAtColumn($extra);
-
-        return $this->query->decrement($column, $amount, $extra);
-    }
-
-    /**
-     * Add the "updated at" column to an array of values.
-     *
-     * @param array $values
-     *
-     * @return array
-     */
-    protected function addUpdatedAtColumn(array $values)
-    {
-        if (!$this->model->usesTimestamps()) {
-            return $values;
-        }
-
-        $column = $this->model->getUpdatedAtColumn();
-
-        return Arr::add($values, $column, $this->model->freshTimestampString());
-    }
-
-    /**
-     * Delete a record from the database.
-     *
-     * @return mixed
-     */
-    public function delete()
-    {
-        if (isset($this->onDelete)) {
-            return call_user_func($this->onDelete, $this);
-        }
-
-        return $this->query->delete();
-    }
-
-    /**
-     * Run the default delete function on the builder.
-     *
-     * @return mixed
-     */
-    public function forceDelete()
-    {
-        return $this->query->delete();
-    }
-
-    /**
-     * Register a replacement for the default delete function.
-     *
-     * @param \Closure $callback
-     */
-    public function onDelete(Closure $callback)
-    {
-        $this->onDelete = $callback;
     }
 
     /**
@@ -431,68 +171,6 @@ class Builder
     }
 
     /**
-     * Eager load the relationships for the models.
-     *
-     * @param array $models
-     *
-     * @return array
-     */
-    public function eagerLoadRelations(array $models)
-    {
-        foreach ($this->eagerLoad as $name => $constraints) {
-            // For nested eager loads we'll skip loading them here and they will be set as an
-            // eager load on the query to retrieve the relation so that they will be eager
-            // loaded on that query, because that is where they get hydrated as models.
-            if (strpos($name, '.') === false) {
-                $models = $this->loadRelation($models, $name, $constraints);
-            }
-        }
-
-        return $models;
-    }
-
-    /**
-     * Eagerly load the relationship on a set of models.
-     *
-     * @param array    $models
-     * @param string   $name
-     * @param \Closure $constraints
-     *
-     * @return array
-     */
-    protected function loadRelation(array $models, $name, Closure $constraints)
-    {
-        // First we will "back up" the existing where conditions on the query so we can
-        // add our eager constraints. Then we will merge the wheres that were on the
-        // query back to it in order that any where conditions might be specified
-        // to be taken into consideration with the query.
-        $relation = $this->getRelation($name);
-
-        // First we will check for existing relationships in models
-        // if that exists then we'll have to take out the end models
-        // from the relationships - this happens in the case of
-        // nested relations.
-        // if ($this->hasRelationships($models)) {
-        //     $models = array_map(function($model) {
-        //         return $model->getEndModel();
-        //     }, $models);
-        // }
-
-        $relation->addEagerConstraints($models);
-
-        call_user_func($constraints, $relation);
-
-        $models = $relation->initRelation($models, $name);
-
-        // Once we have the results, we just match those back up to their parent models
-        // using the relationship instance. Then we just return the finished arrays
-        // of models which have been eagerly hydrated and are readied for return.
-        $results = $relation->getEager();
-
-        return $relation->match($models, $results, $name);
-    }
-
-    /**
      * Determines whether the given array includes instances
      * of \Vinelab\NeoEloquent\Eloquent\Relationship.
      *
@@ -540,83 +218,6 @@ class Builder
         }
 
         return $query;
-    }
-
-    /**
-     * Get the deeply nested relations for a given top-level relation.
-     *
-     * @param string $relation
-     *
-     * @return array
-     */
-    protected function nestedRelations($relation)
-    {
-        $nested = [];
-
-        // We are basically looking for any relationships that are nested deeper than
-        // the given top-level relationship. We will just check for any relations
-        // that start with the given top relations and adds them to our arrays.
-        foreach ($this->eagerLoad as $name => $constraints) {
-            if ($this->isNested($name, $relation)) {
-                $nested[substr($name, strlen($relation.'.'))] = $constraints;
-            }
-        }
-
-        return $nested;
-    }
-
-    /**
-     * Determine if the relationship is nested.
-     *
-     * @param string $name
-     * @param string $relation
-     *
-     * @return bool
-     */
-    protected function isNested($name, $relation)
-    {
-        $dots = Str::contains($name, '.');
-
-        return $dots && Str::startsWith($name, $relation.'.');
-    }
-
-    /**
-     * Add a basic where clause to the query.
-     *
-     * @param string $column
-     * @param string $operator
-     * @param mixed  $value
-     * @param string $boolean
-     *
-     * @return $this
-     */
-    public function where($column, $operator = null, $value = null, $boolean = 'and')
-    {
-        if ($column instanceof Closure) {
-            $query = $this->model->newQueryWithoutScopes();
-
-            call_user_func($column, $query);
-
-            $this->query->addNestedWhereQuery($query->getQuery(), $boolean);
-        } else {
-            call_user_func_array([$this->query, 'where'], func_get_args());
-        }
-
-        return $this;
-    }
-
-    /**
-     * Add an "or where" clause to the query.
-     *
-     * @param string $column
-     * @param string $operator
-     * @param mixed  $value
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    public function orWhere($column, $operator = null, $value = null)
-    {
-        return $this->where($column, $operator, $value, 'or');
     }
 
     /**
@@ -886,7 +487,7 @@ class Builder
      * a mutation only when the attributes' keys
      * and mutations keys match.
      *
-     * @param array $attributes
+     * @param array $identifier
      *
      * @return bool
      */
@@ -1090,18 +691,6 @@ class Builder
     }
 
     /**
-     * Update a record in the database.
-     *
-     * @param array $values
-     *
-     * @return int
-     */
-    public function update(array $values)
-    {
-        return $this->query->update($this->addUpdatedAtColumn($values));
-    }
-
-    /**
      * Get a paginator only supporting simple next and previous links.
      *
      * This is more efficient on larger data-sets, etc.
@@ -1114,7 +703,7 @@ class Builder
      *
      * @internal param \Illuminate\Pagination\Factory $paginator
      */
-    public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page')
+    public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page', $page = null)
     {
         $paginator = $this->query->getConnection()->getPaginator();
         $page = $paginator->getCurrentPage();
@@ -1400,117 +989,17 @@ class Builder
     }
 
     /**
-     * Add nested relationship count conditions to the query.
-     *
-     * @param string        $relations
-     * @param string        $operator
-     * @param int           $count
-     * @param string        $boolean
-     * @param \Closure|null $callback
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    protected function hasNested($relations, $operator = '>=', $count = 1, $boolean = 'and', $callback = null)
-    {
-        $relations = explode('.', $relations);
-
-        // In order to nest "has", we need to add count relation constraints on the
-        // callback Closure. We'll do this by simply passing the Closure its own
-        // reference to itself so it calls itself recursively on each segment.
-        $closure = function ($q) use (&$closure, &$relations, $operator, $count, $boolean, $callback) {
-            if (count($relations) > 1) {
-                $q->whereHas(array_shift($relations), $closure);
-            } else {
-                $q->has(array_shift($relations), $operator, $count, 'and', $callback);
-            }
-        };
-
-        return $this->has(array_shift($relations), '>=', 1, $boolean, $closure);
-    }
-
-    /**
-     * Add a relationship count condition to the query.
-     *
-     * @param string        $relation
-     * @param string        $boolean
-     * @param \Closure|null $callback
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    public function doesntHave($relation, $boolean = 'and', Closure $callback = null)
-    {
-        return $this->has($relation, '<', 1, $boolean, $callback);
-    }
-
-    /**
-     * Add a relationship count condition to the query with where clauses.
-     *
-     * @param string   $relation
-     * @param \Closure $callback
-     * @param string   $operator
-     * @param int      $count
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    public function whereHas($relation, Closure $callback, $operator = '>=', $count = 1)
-    {
-        return $this->has($relation, $operator, $count, 'and', $callback);
-    }
-
-    /**
-     * Add a relationship count condition to the query with an "or".
-     *
-     * @param string $relation
-     * @param string $operator
-     * @param int    $count
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    public function orHas($relation, $operator = '>=', $count = 1)
-    {
-        return $this->has($relation, $operator, $count, 'or');
-    }
-
-    /**
-     * Add a relationship count condition to the query with where clauses.
-     *
-     * @param string        $relation
-     * @param \Closure|null $callback
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    public function whereDoesntHave($relation, Closure $callback = null)
-    {
-        return $this->doesntHave($relation, 'and', $callback);
-    }
-
-    /**
-     * Add a relationship count condition to the query with where clauses and an "or".
-     *
-     * @param string   $relation
-     * @param \Closure $callback
-     * @param string   $operator
-     * @param int      $count
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Builder|static
-     */
-    public function orWhereHas($relation, Closure $callback, $operator = '>=', $count = 1)
-    {
-        return $this->has($relation, $operator, $count, 'or', $callback);
-    }
-
-    /**
      * Add the "has" condition where clause to the query.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Builder            $hasQuery
-     * @param \Vinelab\NeoEloquent\Eloquent\Relations\Relation $relation
+     * @param \Illuminate\Database\Eloquent\Builder            $hasQuery
+     * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
      * @param string                                           $operator
      * @param int                                              $count
      * @param string                                           $boolean
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Builder
      */
-    protected function addHasWhere(Builder $hasQuery, Relation $relation, $operator, $count, $boolean)
+    protected function addHasWhere(\Illuminate\Database\Eloquent\Builder $hasQuery, \Illuminate\Database\Eloquent\Relations\Relation $relation, $operator, $count, $boolean)
     {
         $this->mergeWheresToHas($hasQuery, $relation);
 
@@ -1555,26 +1044,6 @@ class Builder
         return Relation::noConstraints(function () use ($relation) {
             return $this->getModel()->$relation();
         });
-    }
-
-    /**
-     * Set the relationships that should be eager loaded.
-     *
-     * @param mixed $relations
-     *
-     * @return $this
-     */
-    public function with($relations)
-    {
-        if (is_string($relations)) {
-            $relations = func_get_args();
-        }
-
-        $eagers = $this->parseRelations($relations);
-
-        $this->eagerLoad = array_merge($this->eagerLoad, $eagers);
-
-        return $this;
     }
 
     /**
@@ -1636,115 +1105,19 @@ class Builder
     }
 
     /**
-     * Call the given model scope on the underlying model.
-     *
-     * @param string $scope
-     * @param array  $parameters
-     *
-     * @return \Vinelab\NeoEloquent\Query\Builder
-     */
-    protected function callScope($scope, $parameters)
-    {
-        array_unshift($parameters, $this);
-
-        return call_user_func_array([$this->model, $scope], $parameters) ?: $this;
-    }
-
-    /**
-     * Get the underlying query builder instance.
-     *
-     * @return \Vinelab\NeoEloquent\Query\Builder|static
-     */
-    public function getQuery()
-    {
-        return $this->query;
-    }
-
-    /**
-     * Set the underlying query builder instance.
-     *
-     * @param \Vinelab\NeoEloquent\Query\Builder $query
-     *
-     * @return $this
-     */
-    public function setQuery($query)
-    {
-        $this->query = $query;
-
-        return $this;
-    }
-
-    /**
-     * Get the relationships being eagerly loaded.
-     *
-     * @return array
-     */
-    public function getEagerLoads()
-    {
-        return $this->eagerLoad;
-    }
-
-    /**
-     * Set the relationships being eagerly loaded.
-     *
-     * @param array $eagerLoad
-     *
-     * @return $this
-     */
-    public function setEagerLoads(array $eagerLoad)
-    {
-        $this->eagerLoad = $eagerLoad;
-
-        return $this;
-    }
-
-    /**
-     * Get the model instance being queried.
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Model
-     */
-    public function getModel()
-    {
-        return $this->model;
-    }
-
-    /**
      * Set a model instance for the model being queried.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
+     * @param \Illuminate\Database\Eloquent\Model $model
      *
      * @return $this
      */
-    public function setModel(Model $model)
+    public function setModel(\Illuminate\Database\Eloquent\Model $model)
     {
         $this->model = $model;
 
         $this->query->from($model->nodeLabel());
 
         return $this;
-    }
-
-    /**
-     * Extend the builder with a given callback.
-     *
-     * @param string   $name
-     * @param \Closure $callback
-     */
-    public function macro($name, Closure $callback)
-    {
-        $this->macros[$name] = $callback;
-    }
-
-    /**
-     * Get the given macro by name.
-     *
-     * @param string $name
-     *
-     * @return \Closure
-     */
-    public function getMacro($name)
-    {
-        return Arr::get($this->macros, $name);
     }
 
     /**
@@ -1936,36 +1309,5 @@ class Builder
     protected function getMatchMethodName($relation)
     {
         return 'match'.ucfirst(mb_strtolower($relation->getEdgeDirection()));
-    }
-
-    /**
-     * Dynamically handle calls into the query instance.
-     *
-     * @param string $method
-     * @param array  $parameters
-     *
-     * @return mixed
-     */
-    public function __call($method, $parameters)
-    {
-        if (isset($this->macros[$method])) {
-            array_unshift($parameters, $this);
-
-            return call_user_func_array($this->macros[$method], $parameters);
-        } elseif (method_exists($this->model, $scope = 'scope'.ucfirst($method))) {
-            return $this->callScope($scope, $parameters);
-        }
-
-        $result = call_user_func_array([$this->query, $method], $parameters);
-
-        return in_array($method, $this->passthru) ? $result : $this;
-    }
-
-    /**
-     * Force a clone of the underlying query builder when cloning.
-     */
-    public function __clone()
-    {
-        $this->query = clone $this->query;
     }
 }

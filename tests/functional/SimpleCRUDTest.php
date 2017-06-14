@@ -50,7 +50,7 @@ class SimpleCRUDTest extends TestCase
     }
 
     /**
-     * @expectedException \Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
+     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function testFindingAndFailing()
     {

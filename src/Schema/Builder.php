@@ -3,32 +3,11 @@
 namespace Vinelab\NeoEloquent\Schema;
 
 use Closure;
-use Vinelab\NeoEloquent\ConnectionInterface;
 
-class Builder
+use Illuminate\Database\Schema\Builder as IlluminateBuilder;
+
+class Builder extends IlluminateBuilder
 {
-    /**
-     * The database connection resolver.
-     *
-     * @var \Illuminate\Database\ConnectionInterface
-     */
-    protected $conn;
-
-    /**
-     * The Blueprint resolver callback.
-     *
-     * @var Closure
-     */
-    protected $resolver;
-
-    /**
-     * @param \Illuminate\Database\ConnectionInterface $conn
-     */
-    public function __construct(ConnectionInterface $conn)
-    {
-        $this->conn = $conn;
-    }
-
     /**
      * Fallback.
      *
@@ -69,38 +48,6 @@ you can do so by passing additional arguments to default migration command like:
     }
 
     /**
-     * Drop a label from the schema.
-     *
-     * @param string $label
-     *
-     * @return \Vinelab\NeoEloquent\Schema\Blueprint
-     */
-    public function drop($label)
-    {
-        $blueprint = $this->createBlueprint($label);
-
-        $blueprint->drop();
-
-        return $this->build($blueprint);
-    }
-
-    /**
-     * Drop a label from the schema if it exists.
-     *
-     * @param string $label
-     *
-     * @return \Vinelab\NeoEloquent\Schema\Blueprint
-     */
-    public function dropIfExists($label)
-    {
-        $blueprint = $this->createBlueprint($label);
-
-        $blueprint->dropIfExists();
-
-        return $this->build($blueprint);
-    }
-
-    /**
      * Determine if the given label exists.
      *
      * @param string $label
@@ -109,7 +56,7 @@ you can do so by passing additional arguments to default migration command like:
      */
     public function hasLabel($label)
     {
-        $cypher = $this->conn->getSchemaGrammar()->compileLabelExists($label);
+        $cypher = $this->connection->getSchemaGrammar()->compileLabelExists($label);
 
         return $this->getConnection()->select($cypher, [])->count() > 0;
     }
@@ -123,7 +70,7 @@ you can do so by passing additional arguments to default migration command like:
      */
     public function hasRelation($relation)
     {
-        $cypher = $this->conn->getSchemaGrammar()->compileRelationExists($relation);
+        $cypher = $this->connection->getSchemaGrammar()->compileRelationExists($relation);
 
         return $this->getConnection()->select($cypher, [])->count() > 0;
     }
@@ -146,19 +93,6 @@ you can do so by passing additional arguments to default migration command like:
     }
 
     /**
-     * Execute the blueprint to modify the label.
-     *
-     * @param Blueprint $blueprint
-     */
-    protected function build(Blueprint $blueprint)
-    {
-        return $blueprint->build(
-            $this->getConnection(),
-            $this->conn->getSchemaGrammar()
-        );
-    }
-
-    /**
      * Create a new command set with a Closure.
      *
      * @param string  $label
@@ -173,39 +107,5 @@ you can do so by passing additional arguments to default migration command like:
         } else {
             return new Blueprint($label, $callback);
         }
-    }
-
-    /**
-     * Set the database connection instance.
-     *
-     * @param  \Illuminate\Database\ConnectionResolverInterface
-     *
-     * @return \Vinelab\NeoEloquent\Schema\Builder
-     */
-    public function setConnection(ConnectionInterface $connection)
-    {
-        $this->conn = $connection;
-
-        return $this;
-    }
-
-    /**
-     * Get the database connection instance.
-     *
-     * @return \Illuminate\Database\ConnectionResolverInterface
-     */
-    public function getConnection()
-    {
-        return $this->conn;
-    }
-
-    /**
-     * Set the Schema Blueprint resolver callback.
-     *
-     * @param \Closure $resolver
-     */
-    public function blueprintResolver(Closure $resolver)
-    {
-        $this->resolver = $resolver;
     }
 }

@@ -42,7 +42,7 @@ class EloquentBuilderTest extends TestCase
     }
 
     /**
-     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
+     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function testFindOrFailMethodThrowsModelNotFoundException()
     {
@@ -54,7 +54,7 @@ class EloquentBuilderTest extends TestCase
     }
 
     /**
-     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
+     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
     {
@@ -66,7 +66,7 @@ class EloquentBuilderTest extends TestCase
     }
 
     /**
-     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
+     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function testFirstOrFailMethodThrowsModelNotFoundException()
     {
@@ -119,24 +119,6 @@ class EloquentBuilderTest extends TestCase
 
         $results = $builder->get(array('foo'));
         $this->assertEquals(array(), $results->all());
-    }
-
-    public function testPluckMethodWithModelFound()
-    {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
-        $mockModel = new \StdClass();
-        $mockModel->name = 'foo';
-        $builder->shouldReceive('first')->with(array('name'))->andReturn($mockModel);
-
-        $this->assertEquals('foo', $builder->pluck('name'));
-    }
-
-    public function testPluckMethodWithModelNotFound()
-    {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
-        $builder->shouldReceive('first')->with(array('name'))->andReturn(null);
-
-        $this->assertNull($builder->pluck('name'));
     }
 
     public function testChunkExecuteCallbackOverPaginatedRequest()

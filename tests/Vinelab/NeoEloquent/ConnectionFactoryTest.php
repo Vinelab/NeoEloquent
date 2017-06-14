@@ -34,7 +34,7 @@ class ConnectionFactoryTest extends TestCase
         $this->assertInstanceOf(Connection::class, $connection);
         $this->assertInstanceOf(Client::class, $client);
 
-        $this->assertEquals($config, $connection->getConfig());
+        $this->assertEquals($config, $connection->getConfig(null));
 
         $clientConnection = $client->getConnection();
         // $params = $config['connections']['default'];
@@ -83,8 +83,8 @@ class ConnectionFactoryTest extends TestCase
         $this->assertEquals($config['connections']['server1']['username'], $defaultConnection->getAuthUser());
         $this->assertEquals($config['connections']['server1']['password'], $defaultConnection->getAuthPassword());
 
-        $this->assertEquals($config['default'], $connection->getConfig()['default']);
-        $this->assertEquals($config['connections'], $connection->getConfig()['connections']);
+        $this->assertEquals($config['default'], $connection->getConfig(null)['default']);
+        $this->assertEquals($config['connections'], $connection->getConfig(null)['connections']);
     }
 
     public function testHAConnection()
