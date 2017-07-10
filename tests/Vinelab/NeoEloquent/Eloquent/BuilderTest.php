@@ -38,7 +38,7 @@ class EloquentBuilderTest extends TestCase {
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function testFindOrFailMethodThrowsModelNotFoundException()
     {
@@ -50,7 +50,7 @@ class EloquentBuilderTest extends TestCase {
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
     {
@@ -62,7 +62,7 @@ class EloquentBuilderTest extends TestCase {
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
      */
     public function testFirstOrFailMethodThrowsModelNotFoundException()
     {
@@ -151,11 +151,21 @@ class EloquentBuilderTest extends TestCase {
 
     public function testChunkExecuteCallbackOverPaginatedRequest()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[forPage,get]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[forPage,get,orderBy]', array($this->getMockQueryBuilder()));
+//        $builder = $this->getBuilder();
+
+//        $builder->mockery_allocateOrder()
+        $model = $this->getMockModel();
+
+        $builder->setModel($model);
+
+        $builder->shouldReceive('orderBy');
         $builder->shouldReceive('forPage')->once()->with(1, 1)->andReturn($builder);
         $builder->shouldReceive('forPage')->once()->with(2, 1)->andReturn($builder);
         $builder->shouldReceive('forPage')->once()->with(3, 1)->andReturn($builder);
         $builder->shouldReceive('get')->times(3)->andReturn(new Collection(['foo1', 'foo2']), new Collection(['foo3']), new Collection([]));
+
+
 
         $callbackExecutionAssertor = m::mock('StdClass');
         $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo1')->once();
@@ -204,11 +214,11 @@ class EloquentBuilderTest extends TestCase {
 
     public function testEagerLoadRelationsLoadTopLevelRelationships()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[loadRelation]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[eagerLoadRelation]', array($this->getMockQueryBuilder()));
         $nop1 = function() {};
         $nop2 = function() {};
         $builder->setEagerLoads(array('foo' => $nop1, 'foo.bar' => $nop2));
-        $builder->shouldAllowMockingProtectedMethods()->shouldReceive('loadRelation')->with(array('models'), 'foo', $nop1)->andReturn(array('foo'));
+        $builder->shouldAllowMockingProtectedMethods()->shouldReceive('eagerLoadRelation')->with(array('models'), 'foo', $nop1)->andReturn(array('foo'));
 
         $results = $builder->eagerLoadRelations(array('models'));
         $this->assertEquals(array('foo'), $results);
@@ -588,7 +598,7 @@ class EloquentBuilderTest extends TestCase {
      *             [ [name => something, username => here] ]
      *             or specify the attributes straight in the array
      * @param  array $properties The expected properties (columns)
-     * @return  Everyman\Neo4j\Query\ResultSet
+     * @return  \Everyman\Neo4j\Query\ResultSet
      */
     public function createNodeResultSet($data = array(), $properties = array())
     {
@@ -693,7 +703,6 @@ class EloquentBuilderTest extends TestCase {
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('from')->andReturn('foo_table');
         $query->shouldReceive('modelAsNode')->andReturn('n');
-
         return $query;
     }
 
