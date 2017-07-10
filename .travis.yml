@@ -33,7 +33,7 @@ before_script:
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
 
-script: vendor/bin/phpunit
+script: phpunit
 
 env:
   - NEO4J_VERSION="3.0.4"
