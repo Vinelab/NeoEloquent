@@ -4,7 +4,7 @@ use Closure;
 use DateTime;
 use Carbon\Carbon;
 use Vinelab\NeoEloquent\Connection;
-use Illuminate\Database\Query\Expression;
+use Illuminadte\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
@@ -18,7 +18,7 @@ class Builder extends IlluminateQueryBuilder {
      *
      * @var Vinelab\NeoEloquent\Connection
      */
-    public $connection;
+    protected $connection;
 
     /**
      * The database active client handler
@@ -46,7 +46,7 @@ class Builder extends IlluminateQueryBuilder {
      *
      * @var array
      */
-    public $bindings = array(
+    protected $bindings = array(
         'matches'=> [],
         'select' => [],
         'join'   => [],
@@ -60,7 +60,7 @@ class Builder extends IlluminateQueryBuilder {
 	 *
 	 * @var array
 	 */
-    public $operators = array(
+    protected $operators = array(
         '+', '-', '*', '/', '%', '^',    // Mathematical
         '=', '<>', '<', '>', '<=', '>=', // Comparison
         'is null', 'is not null',
@@ -207,8 +207,7 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function getCountForPagination($columns = ['*'])
     {
-        // if I comment this paginate will work
-//        $this->backupFieldsForCount();
+        $this->backupFieldsForCount();
 
         $this->aggregate = ['function' => 'count', 'columns' => $columns];
 
@@ -216,8 +215,7 @@ class Builder extends IlluminateQueryBuilder {
 
         $this->aggregate = null;
 
-        // if I comment this paginate will work
-//        $this->restoreFieldsForCount();
+        $this->restoreFieldsForCount();
 
         if (isset($this->groups)) {
             return count($results);

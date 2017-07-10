@@ -2,11 +2,10 @@
 
 use Exception;
 use DateTime, Closure;
-use Illuminate\Support\Arr;
 use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Query\Builder;
-use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
+use Vinelab\NeoEloquent\QueryException;
 use Everyman\Neo4j\Client as NeoClient;
 use Everyman\Neo4j\Cypher\Query as CypherQuery;
 use Illuminate\Database\Connection as IlluminateConnection;
@@ -17,7 +16,7 @@ class Connection extends IlluminateConnection {
     /**
      * The Neo4j active client connection
      *
-     * @var \Everyman\Neo4j\Client
+     * @var Everyman\Neo4j\Client
      */
     protected $neo;
 
@@ -78,7 +77,7 @@ class Connection extends IlluminateConnection {
     /**
      * Create a new Neo4j client
      *
-     * @return \Everyman\Neo4j\Client
+     * @return Everyman\Neo4j\Client
      */
     public function createConnection()
     {
@@ -90,7 +89,7 @@ class Connection extends IlluminateConnection {
     /**
      * Get the currenty active database client
      *
-     * @return \Everyman\Neo4j\Client
+     * @return Everyman\Neo4j\Client
      */
     public function getClient()
     {
@@ -116,7 +115,7 @@ class Connection extends IlluminateConnection {
      */
     public function getHost()
     {
-        return $this->getConfig('host');
+        return $this->getConfig('host', $this->defaults['host']);
     }
 
     /**
@@ -126,7 +125,7 @@ class Connection extends IlluminateConnection {
      */
     public function getPort()
     {
-        return $this->getConfig('port');
+        return $this->getConfig('port', $this->defaults['port']);
     }
 
     /**
@@ -135,16 +134,16 @@ class Connection extends IlluminateConnection {
      */
     public function getUsername()
     {
-        return $this->getConfig('username');
+        return $this->getConfig('username', $this->defaults['username']);
     }
 
     /**
      * Get the connection password
-     * @return int|string
+     * @return int|strings
      */
     public function getPassword()
     {
-        return $this->getConfig('password');
+        return $this->getConfig('password', $this->defaults['password']);
     }
 
     /**
@@ -153,18 +152,19 @@ class Connection extends IlluminateConnection {
      */
     public function getSsl()
     {
-        return $this->getConfig('ssl');
+        return $this->getConfig('ssl', $this->defaults['ssl']);
     }
 
     /**
      * Get an option from the configuration options.
      *
-     * @param  string|null  $option
+     * @param  string   $option
+     * @param  mixed    $default
      * @return mixed
      */
-    public function getConfig($option = null)
+    public function getConfig($option, $default = null)
     {
-        return Arr::get($this->config, $option);
+        return array_get($this->config, $option, $default);
     }
 
     /**
@@ -182,10 +182,9 @@ class Connection extends IlluminateConnection {
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @param  bool    $useReadPdo
      * @return array
      */
-    public function select($query, $bindings = array(),$useReadPdo = false)
+    public function select($query, $bindings = array())
     {
         return $this->run($query, $bindings, function(self $me, $query, array $bindings)
         {
@@ -249,7 +248,6 @@ class Connection extends IlluminateConnection {
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @return CypherQuery
      */
     public function getCypherQuery($query, array $bindings)
     {
@@ -407,7 +405,7 @@ class Connection extends IlluminateConnection {
      *
      * @return void
      */
-    public function rollBack($toLevel = null)
+    public function rollBack()
     {
         if ($this->transactions == 1)
         {
@@ -491,7 +489,7 @@ class Connection extends IlluminateConnection {
     /**
      * Get the schema grammar used by the connection.
      *
-     * @return \Illuminate\Database\Schema\Grammars\Grammar
+     * @return \Illuminate\Database\Query\Grammars\Grammar
      */
     public function getSchemaGrammar()
     {
