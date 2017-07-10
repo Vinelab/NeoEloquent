@@ -128,7 +128,7 @@ class User extends Model {
     public static function boot()
     {
         // Mock a dispatcher
-        $dispatcher = M::mock('EventDispatcher');
+        $dispatcher = M::mock('Illuminate\Events\dispatcher');
         $dispatcher->shouldReceive('listen')->andReturnUsing(function($event, $callback)
         {
             static::$listenerStub[$event] = $callback;
@@ -136,7 +136,7 @@ class User extends Model {
         $dispatcher->shouldReceive('until')->andReturnUsing(function($event, $model){
             if (isset(static::$listenerStub[$event])) call_user_func(static::$listenerStub[$event], $model);
         });
-        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function($event, $model)
+        $dispatcher->shouldReceive('fire')->andReturnUsing(function($event, $model)
         {
             if (isset(static::$listenerStub[$event])) call_user_func(static::$listenerStub[$event], $model);
         });
@@ -265,7 +265,7 @@ class OBOne extends Model {
         parent::boot();
 
         // Mock a dispatcher
-        $dispatcher = M::mock('OBEventDispatcher');
+        $dispatcher = M::mock('Illuminate\Events\dispatcher');
         $dispatcher->shouldReceive('listen')->andReturnUsing(function($event, $callback)
         {
             static::$listenerStub[$event] = $callback;
@@ -278,7 +278,7 @@ class OBOne extends Model {
             }
             elseif (isset(static::$listenerStub[$event])) call_user_func(static::$listenerStub[$event], $model);
         });
-        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function($event, $model)
+        $dispatcher->shouldReceive('fire')->andReturnUsing(function($event, $model)
         {
             if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false)
             {
