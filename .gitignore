@@ -1,7 +1,7 @@
 /vendor
 composer.phar
 composer.lock
-
+.idea
 *.sublime-project
 
 *.sublime-workspace
