@@ -1,13 +1,12 @@
 <?php namespace Vinelab\NeoEloquent\Console\Migrations;
 
-use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Database\Migrations\Migrator;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 
-class MigrateRollbackCommand extends Command {
+class MigrateRollbackCommand extends BaseCommand {
 
     use ConfirmableTrait;
 
@@ -51,9 +50,9 @@ class MigrateRollbackCommand extends Command {
 
         $this->migrator->setConnection($this->input->getOption('database'));
 
-        $pretend = $this->input->getOption('pretend');
-
-        $this->migrator->rollback($pretend);
+        $this->migrator->rollback(
+            $this->getMigrationPath(),  ['pretend' => $this->option('pretend'), 'step' => (int) $this->option('step')]
+        );
 
         // Once the migrator has run we will grab the note output and send it out to
         // the console screen, since the migrator itself functions without having
@@ -75,6 +74,14 @@ class MigrateRollbackCommand extends Command {
             array('force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'),
 
             array('pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'),
+
+            array('path', null, InputOption::VALUE_OPTIONAL, 'The path of migrations files to be executed.'),
+
+            array('bench', null, InputOption::VALUE_OPTIONAL, 'The name of the workbench to migrate.', null),
+
+            array('package', null, InputOption::VALUE_OPTIONAL, 'The package to migrate.', null),
+
+            array('step', null, InputOption::VALUE_OPTIONAL, 'The number of migrations to be reverted.'),
         );
     }
 
