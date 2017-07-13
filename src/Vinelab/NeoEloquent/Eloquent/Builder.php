@@ -7,14 +7,17 @@ use Vinelab\NeoEloquent\Helpers;
 use Everyman\Neo4j\Query\ResultSet;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;
-use Vinelab\NeoEloquent\Relations\HasOne;
-use Vinelab\NeoEloquent\Relations\HasMany;
+use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
+use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Collection;
-use Vinelab\NeoEloquent\Relations\OneRelation;
+use Vinelab\NeoEloquent\Eloquent\Relations\OneRelation;
 use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
 use Illuminate\Pagination\Paginator;
 
+
 class Builder extends IlluminateBuilder {
+
+    use Concerns\QueriesRelationships;
 
     /**
      * The loaded models that should be transformed back
@@ -33,7 +36,7 @@ class Builder extends IlluminateBuilder {
      *
      * @param  mixed  $id
      * @param  array  $properties
-     * @return \Illuminate\Database\Eloquent\Model|static|null
+     * @return \Illuminate\Database\Eloquent\Model|static|null|\Illuminate\Database\Eloquent\Collection
      */
     public function find($id, $properties = array('*'))
     {
@@ -409,10 +412,10 @@ class Builder extends IlluminateBuilder {
     /**
      * Add an INCOMING "<-" relationship MATCH to the query.
      *
-     * @param  Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model
-     * @param  Vinelab\NeoEloquent\Eloquent\Model $related      The related model
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related      The related model
      * @param  string                             $relationship
-     * @return Vinelab\NeoEloquent\Eloquent|static
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function matchIn($parent, $related, $relatedNode, $relationship, $property, $value = null)
     {
@@ -425,10 +428,10 @@ class Builder extends IlluminateBuilder {
     /**
      * Add an OUTGOING "->" relationship MATCH to the query.
      *
-     * @param  Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model
-     * @param  Vinelab\NeoEloquent\Eloquent\Model $related      The related model
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related      The related model
      * @param  string                             $relationship
-     * @return Vinelab\NeoEloquent\Eloquent|static
+     * @return \Vinelab\NeoEloquent\Eloquent|static
      */
     public function matchOut($parent, $related, $relatedNode, $relationship, $property, $value = null)
     {
@@ -442,11 +445,11 @@ class Builder extends IlluminateBuilder {
      * a morph relationship usually ignores the end node type since it doesn't know
      * what it would be so we'll only set the start node and hope to get it right when we match it.
      *
-     * @param  Vinelab\NeoEloquent\Eloquent\Model $parent
+     * @param  \Vinelab\NeoEloquent\Eloquent\Model $parent
      * @param  string $relatedNode
      * @param  string $property
      * @param  mixed $value
-     * @return Vinelab\NeoEloquent\Eloquent|static
+     * @return \Vinelab\NeoEloquent\Eloquent|static
      */
     public function matchMorphOut($parent, $relatedNode, $property, $value = null)
     {
@@ -560,7 +563,7 @@ class Builder extends IlluminateBuilder {
      * Get the mutation model.
      *
      * @param  string $mutation
-     * @return Vinelab\NeoEloquent\Eloquent\Model
+     * @return \Vinelab\NeoEloquent\Eloquent\Model
      */
     public function getMutationModel($mutation)
     {
@@ -636,82 +639,7 @@ class Builder extends IlluminateBuilder {
         return  count($matched) > 1 ? true : false;
     }
 
-    /**
-     * Add a relationship query condition.
-     *
-     * @param  string  $relation
-     * @param  string  $operator
-     * @param  int     $count
-     * @param  string  $boolean
-     * @param  \Closure  $callback
-     * @return \Illuminate\Database\Eloquent\Builder|static
-     */
-    public function has($relation, $operator = '>=', $count = 1, $boolean = 'and', Closure $callback = null)
-    {
-        $relation = $this->getHasRelationQuery($relation);
 
-        $query = $relation->getRelated()->newQuery();
-        // This will make sure that any query we add here will consider the related
-        // model as our reference Node.
-        $this->getQuery()->from = $query->getModel()->getTable();
-
-        if ($callback) call_user_func($callback, $query);
-
-        /**
-         * In graph we do not need to act on the count of the relationships when dealing
-         * with a whereHas() since the database will not return the result unless a relationship
-         * exists between two nodes.
-         */
-        $prefix = $relation->getRelatedNode();
-
-        if ( ! $callback)
-        {
-            /**
-             * The Cypher we're trying to build here would look like this:
-             *
-             * MATCH (post:`Post`)-[r:COMMENT]-(comments:`Comment`)
-             * WITH count(comments) AS comments_count, post
-             * WHERE comments_count >= 10
-             * RETURN post;
-             *
-             * Which is the result of Post::has('comments', '>=', 10)->get();
-             */
-            $countPart = $prefix .'_count';
-            $this->carry([$relation->getParentNode(), "count($prefix)" => $countPart]);
-            $this->whereCarried($countPart, $operator, $count);
-        }
-
-        $parentNode = $relation->getParentNode();
-        $relatedNode = $relation->getRelatedNode();
-        // Tell the query to select our parent node only.
-        $this->select($parentNode);
-        // Set the relationship match clause.
-        $method = $this->getMatchMethodName($relation);
-
-        $this->$method($relation->getParent(),
-            $relation->getRelated(),
-            $relatedNode,
-            $relation->getForeignKey(),
-            $relation->getLocalKey(),
-            $relation->getParentLocalKeyValue());
-
-        // Prefix all the columns with the relation's node placeholder in the query
-        // and merge the queries that needs to be merged.
-        $this->prefixAndMerge($query, $prefix);
-
-        /**
-         * After that we've done everything we need with the Has() and related we need
-         * to reset the query for the grammar so that whenever we continu querying we make
-         * sure that we're using the correct grammar. i.e.
-         *
-         * $user->whereHas('roles', function(){})->where('id', $user->id)->first();
-         */
-        $grammar = $this->getQuery()->getGrammar();
-        $grammar->setQuery($this->getQuery());
-        $this->getQuery()->from = $this->getModel()->getTable();
-
-        return $this;
-    }
 
     /**
      * Create a new record from the parent Model and new related records with it.
