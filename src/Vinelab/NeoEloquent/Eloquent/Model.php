@@ -25,6 +25,13 @@ abstract class Model extends IlluminateModel {
     protected $label = null;
 
     /**
+     * Connection Name
+     *
+     * @var string
+     */
+    protected $connectionName = null;
+
+    /**
      * Set the node label for this model
      *
      * @param  string|array  $label
@@ -66,6 +73,11 @@ abstract class Model extends IlluminateModel {
      */
     protected function newBaseQueryBuilder()
     {
+        if(!empty($this->connectionName))
+        {
+            $this->setConnection($this->connectionName);
+        }
+
         $conn = $this->getConnection();
 
         $grammar = $conn->getQueryGrammar();
