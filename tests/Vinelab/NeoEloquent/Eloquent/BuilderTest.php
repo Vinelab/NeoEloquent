@@ -684,7 +684,6 @@ class EloquentBuilderTest extends TestCase {
         $query = m::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('from')->with('foo_table');
         $query->shouldReceive('modelAsNode')->andReturn('n');
-        echo implode(", ", get_class_methods($query)), "\n";
         return $query;
     }
 
