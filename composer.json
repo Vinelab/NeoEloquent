@@ -10,16 +10,28 @@
         }
     ],
     "require": {
+<<<<<<< HEAD
         "php": ">=5.4.0",
         "illuminate/support": "5.4.*",
         "illuminate/database": "5.4.*",
         "illuminate/pagination": "5.4.*",
+=======
+        "php": ">=5.6.4",
+        "illuminate/support": "5.4.*",
+        "illuminate/database": "5.4.*",
+        "illuminate/pagination": "5.4.*",
+        "illuminate/events": "5.4.*",
+>>>>>>> acff98c1b325e6333924a8f31526682a0e235a9b
         "heydavid713/neo4jphp": "0.1.*",
         "nesbot/carbon": "~1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~5.7",
+<<<<<<< HEAD
         "mockery/mockery": "0.9.*"
+=======
+        "mockery/mockery": "0.9.4"
+>>>>>>> acff98c1b325e6333924a8f31526682a0e235a9b
     },
     "repositories": [
 
