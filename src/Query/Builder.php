@@ -1963,9 +1963,17 @@ class Builder
      */
     public function with(array $parts)
     {
-        foreach ($parts as $key => $part) {
-            if (!in_array($part, $this->with)) {
-                $this->with[$key] = $part;
+        if($this->isAssocArray($parts)) {
+            foreach ($parts as $key => $part) {
+                if (!in_array($part, $this->with)) {
+                    $this->with[$key] = $part;
+                }
+            }
+        } else {
+            foreach ($parts as $part) {
+                if (!in_array($part, $this->with)) {
+                    $this->with[] = $part;
+                }
             }
         }
 
@@ -2393,4 +2401,17 @@ class Builder
 
         throw new BadMethodCallException("Call to undefined method {$className}::{$method}()");
     }
+
+    /**
+     * Determine whether an array is associative.
+     *
+     * @param array $array
+     *
+     * @return bool
+     */
+    protected function isAssocArray($array)
+    {
+        return is_array($array) && array_keys($array) !== range(0, count($array) - 1);
+    }
+
 }
