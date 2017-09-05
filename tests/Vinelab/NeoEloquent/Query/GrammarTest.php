@@ -116,7 +116,7 @@ class GrammarTest extends TestCase
     {
         $this->assertEquals('n', $this->grammar->modelAsNode());
         $this->assertEquals('user', $this->grammar->modelAsNode('User'));
-        $this->assertEquals('rock', $this->grammar->modelAsNode(['Rock', 'Paper', 'Scissors']));
+        $this->assertEquals('rock_paper_scissors', $this->grammar->modelAsNode(['Rock', 'Paper', 'Scissors']));
     }
 
     public function testReplacingIdProperty()

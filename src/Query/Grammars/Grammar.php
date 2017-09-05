@@ -290,7 +290,7 @@ abstract class Grammar
         if (is_null($labels)) {
             return 'n';
         } elseif (is_array($labels)) {
-            $labels = reset($labels);
+            $labels = implode('_', $labels);   // Or just replace with this
         }
 
         // When this is a related node we'll just prepend it with 'with_' that way we avoid
