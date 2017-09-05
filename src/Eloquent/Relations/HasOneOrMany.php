@@ -488,7 +488,7 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
             // There must be at least a record found as for the records that do not match
             // they will be ignored and forever forgotten, poor thing.
             if (count($models) < 1) {
-                throw new ModelNotFoundException();
+                throw (new ModelNotFoundException())->setModel(get_class($this->related));
             }
 
             $models = $models->all();
