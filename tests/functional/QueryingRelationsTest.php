@@ -636,7 +636,7 @@ class QueryingRelationsTest extends TestCase {
         $user->colleagues()->save($someone);
         $user->colleagues()->save($brother);
 
-        $andrew = User::first();
+        $andrew = User::where('name', 'Andrew Hale')->first();
 
         $colleagues = $andrew->colleagues()->get();
         $this->assertEquals($dt->format(User::getDateFormat()), $colleagues[0]->dob);
