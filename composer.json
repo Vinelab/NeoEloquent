@@ -32,7 +32,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Vinelab\\NeoEloquent\\": "src/Vinelab/NeoEloquent"
+            "Vinelab\\NeoEloquent\\": "src"
         }
     },
     "autoload-dev": {
