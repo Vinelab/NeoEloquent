@@ -272,10 +272,11 @@ class WheresTheTest extends TestCase {
      */
     public function testWhereMultipleValuesForSameColumn()
     {
-        $u = User::where('alias', '=', 'ab')->orWhere('alias', '=', 'cd')->orderBy('id')->get();
+        $u = User::where('alias', '=', 'ab')->orWhere('alias', '=', 'cd')->get();
         $this->assertCount(2, $u);
-        $this->assertEquals('ab', $u[0]->alias);
-        $this->assertEquals('cd', $u[1]->alias);
+        $u = $u->pluck('alias');
+        $this->assertContains('ab', $u);
+        $this->assertContains('cd', $u);
     }
 
     /**

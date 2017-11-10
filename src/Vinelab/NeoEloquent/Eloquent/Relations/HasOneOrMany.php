@@ -227,7 +227,7 @@ abstract class HasOneOrMany extends IlluminateHasOneOrMany implements RelationIn
      * @param  array   $properties The relationship properites
      * @return \Vinelab\NeoEloquent\Eloquent\Model
      */
-    public function create(array $attributes, array $properties = array())
+    public function create(array $attributes = [], array $properties = array())
     {
         // Here we will set the raw attributes to avoid hitting the "fill" method so
         // that we do not have to worry about a mass accessor rules blocking sets

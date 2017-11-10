@@ -251,12 +251,14 @@ abstract class Model extends IlluminateModel {
      *
      * @param  string  $related
      * @param  string  $table
+     * @param  string  $foreignPivotKey
+     * @param  string  $ownerPivotKey
      * @param  string  $foreignKey
      * @param  string  $ownerKey
      * @param  string  $relation
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany
      */
-    public function belongsToMany($related, $table = null, $foreignKey = null, $ownerKey = null, $relation = null)
+    public function belongsToMany($related, $table = null, $foreignPivotKey = null, $ownerPivotKey = null, $foreignKey = null, $ownerKey = null, $relation = null)
     {
         // To escape the error:
         // PHP Strict standards:  Declaration of Vinelab\NeoEloquent\Eloquent\Model::belongsToMany() should be
