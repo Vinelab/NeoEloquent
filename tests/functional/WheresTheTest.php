@@ -290,7 +290,7 @@ class WheresTheTest extends TestCase {
 
         $this->assertEquals($this->ab->toArray(), $ab->toArray());
 
-        $users = User::where('alias', 'IN', ['cd', 'ef'])->orderBy('id')->get();
+        $users = User::where('alias', 'IN', ['cd', 'ef'])->orderBy('alias')->get();
 
         $l = (new User)->getConnection()->getQueryLog();
 
