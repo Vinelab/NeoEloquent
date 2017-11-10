@@ -1,13 +1,15 @@
 language: php
 
 php:
-  - 5.6
   - 7.0
+  - 7.1
+
+services:
+  - neo4j
 
 matrix:
   allow_failures:
     - hhvm
-    - php: 7.0
 
 before_script:
   # install dependencies to add repos
@@ -20,14 +22,14 @@ before_script:
   - sudo update-alternatives --auto javac
   - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
   # install Neo4j
-  - sudo rm -fv /etc/init.d/neo4j
-  - wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -
-  - echo 'deb http://debian.neo4j.org/repo stable/' | sudo tee /etc/apt/sources.list.d/neo4j.list
-  - sudo apt-get update
-  - sudo apt-get install -y neo4j
-  - sudo sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' "/etc/neo4j/neo4j.conf"
-  - sudo service neo4j restart
-  - sleep 3 # give neo4j some time to start
+#  - sudo rm -fv /etc/init.d/neo4j
+#  - wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -
+#  - echo 'deb http://debian.neo4j.org/repo stable/' | sudo tee /etc/apt/sources.list.d/neo4j.list
+#  - sudo apt-get update
+#  - sudo apt-get install -y neo4j
+#  - sudo sed -i.bak '/\(dbms\.security\.auth_enabled=\).*/s/^#//g' "/etc/neo4j/neo4j.conf"
+#  - sudo service neo4j restart
+#  - sleep 3 # give neo4j some time to start
 
   # install composer
   - composer self-update
@@ -36,7 +38,8 @@ before_script:
 script: vendor/bin/phpunit
 
 env:
-  - NEO4J_VERSION="3.0.4"
+#  - NEO4J_VERSION="3.0.4"
+  - NEO4J_AUTH=none
   - JAVA_HOME="/usr/lib/jvm/java-8-oracle"
   - JRE_HOME="/usr/lib/jvm/java-8-oracle"
 
