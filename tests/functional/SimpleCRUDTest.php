@@ -270,7 +270,7 @@ class SimpleCRUDTest extends TestCase {
 
         $g = WizDel::all()->first();
         $g->delete();
-        $this->assertFalse($g->exists);
+        $this->assertTrue($g->exists);
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
     }
 
@@ -281,7 +281,7 @@ class SimpleCRUDTest extends TestCase {
         $g = WizDel::first();
         $g->delete();
 
-        $this->assertFalse($g->exists);
+        $this->assertTrue($g->exists);
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
 
         $h = WizDel::onlyTrashed()->where('id', $g->getKey())->first();
