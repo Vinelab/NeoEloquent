@@ -1,33 +1,41 @@
-<?php namespace Vinelab\NeoEloquent\Console\Migrations;
+<?php
 
-use Illuminate\Console\Command;
+
+namespace Vinelab\NeoEloquent\Console\Migrations;
+
 use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Database\Migrations\Migrator;
 use Symfony\Component\Console\Input\InputOption;
 
-class MigrateResetCommand extends Command {
-
+class MigrateResetCommand extends BaseCommand
+{
     use ConfirmableTrait;
 
     /**
-     * {@inheritDoc}
+     * The console command name.
+     *
+     * @var string
      */
     protected $name = 'neo4j:migrate:reset';
 
     /**
-     * {@inheritDoc}
+     * The console command description.
+     *
+     * @var string
      */
     protected $description = 'Rollback all database migrations';
 
     /**
      * The migrator instance.
      *
-     * @var \Vinelab\NeoEloquent\Migrations\Migrator
+     * @var \Illuminate\Database\Migrations\Migrator
      */
     protected $migrator;
 
     /**
-     * @param  \Vinelab\NeoEloquent\Migrations\Migrator  $migrator
+     * Create a new migration rollback command instance.
+     *
+     * @param  \Illuminate\Database\Migrations\Migrator  $migrator
      * @return void
      */
     public function __construct(Migrator $migrator)
@@ -38,44 +46,45 @@ class MigrateResetCommand extends Command {
     }
 
     /**
-     * {@inheritDoc}
+     * Execute the console command.
+     *
+     * @return void
      */
-    public function fire()
+    public function handle()
     {
-        if ( ! $this->confirmToProceed()) return;
+        if (! $this->confirmToProceed()) {
+            return;
+        }
 
-        $this->migrator->setConnection($this->input->getOption('database'));
+        $this->migrator->setConnection($this->option('database'));
 
-        $pretend = $this->input->getOption('pretend');
+        $this->migrator->reset(
+            $this->getMigrationPaths(), $this->option('pretend')
+        );
 
-        while (true)
-        {
-            $count = $this->migrator->rollback($pretend);
-
-            // Once the migrator has run we will grab the note output and send it out to
-            // the console screen, since the migrator itself functions without having
-            // any instances of the OutputInterface contract passed into the class.
-            foreach ($this->migrator->getNotes() as $note)
-            {
-                $this->output->writeln($note);
-            }
-
-            if ($count == 0) break;
+        // Once the migrator has run we will grab the note output and send it out to
+        // the console screen, since the migrator itself functions without having
+        // any instances of the OutputInterface contract passed into the class.
+        foreach ($this->migrator->getNotes() as $note) {
+            $this->output->writeln($note);
         }
     }
 
     /**
-     * {@inheritDoc}
+     * Get the console command options.
+     *
+     * @return array
      */
     protected function getOptions()
     {
-        return array(
-            array('database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'),
+        return [
+            ['database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'],
 
-            array('force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'),
+            ['force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'],
 
-            array('pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'),
-        );
+            ['path', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The path(s) of migrations files to be executed.'],
+
+            ['pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'],
+        ];
     }
-
 }
