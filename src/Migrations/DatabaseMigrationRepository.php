@@ -194,8 +194,28 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
      */
     public function getMigrations($steps)
     {
-        $query = $this->label()->where('batch', '>=', '1');
-        return $query->orderBy('migration', 'desc')->take($steps)->get()->all();
+        $query = $this->label()->where('batch', '>=', 1);
+        $results = [];
+
+        $rows = $query->orderBy('batch', 'desc')
+            ->orderBy('migration', 'desc')
+            ->take($steps)->get();
+
+        $columns = $rows->getColumns();
+
+        foreach ($rows as $row) {
+            $attributes = [];
+
+            foreach ($columns as $column) {
+                foreach ($row[$column]->getProperties() as $key => $value) {
+                    $attributes[$key] = $value;
+                }
+            }
+
+            $results[] = $attributes;
+        }
+
+        return $results;
     }
 
 }
