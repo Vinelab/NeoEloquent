@@ -327,7 +327,7 @@ class Grammar extends IlluminateGrammar {
      */
     public function getUniqueLabel($label)
     {
-        return $label.$this->labelPostfix.uniqid();
+        return $label.$this->labelPostfix.bin2hex(random_bytes(8));
     }
 
     /**
