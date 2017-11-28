@@ -123,10 +123,10 @@ Add the connection defaults:
 'connections' => [
     'neo4j' => [
         'driver' => 'neo4j',
-        'host'   => 'localhost',
-        'port'   => '7474',
-        'username' => null,
-        'password' => null
+        'host'   => env('DB_HOST', 'localhost'),
+        'port'   => env('DB_PORT', '7474'),
+        'username' => env('DB_USERNAME', null),
+        'password' => env('DB_PASSWORD', null)
     ]
 ]
 ```
@@ -140,10 +140,10 @@ For Lumen you need to create a new folder called `config` in the application roo
 return ['connections' => [
             'neo4j' => [
                 'driver' => 'neo4j',
-                'host'   => 'localhost',
-                'port'   => '7474',
-                'username' => null,
-                'password' => null
+                'host'   => env('DB_HOST', 'localhost'),
+                'port'   => env('DB_PORT', '7474'),
+                'username' => env('DB_USERNAME', null),
+                'password' => env('DB_PASSWORD', null)
             ]
         ]
     ];
