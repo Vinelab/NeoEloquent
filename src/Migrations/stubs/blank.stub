@@ -3,7 +3,7 @@
 use Vinelab\NeoEloquent\Schema\Blueprint;
 use Vinelab\NeoEloquent\Migrations\Migration;
 
-class {{class}} extends Migration {
+class DummyClass extends Migration {
 
     /**
      * Run the migrations.

@@ -21,6 +21,7 @@
         "illuminate/database": "5.5.*",
         "illuminate/pagination": "5.5.*",
         "illuminate/events": "5.5.*",
+        "illuminate/console": "5.5.*",
         "heydavid713/neo4jphp": "0.1.*",
         "nesbot/carbon": "~1.0"
     },

@@ -627,7 +627,7 @@ class QueryingRelationsTest extends TestCase {
     public function testSavingRelationWithDateTimeAndCarbonInstances()
     {
         $user = User::create(['name' => 'Andrew Hale']);
-        $yesterday = Carbon::now();
+        $yesterday = Carbon::now()->subDay();
         $brother = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
 
         $dt = new DateTime();
@@ -638,7 +638,7 @@ class QueryingRelationsTest extends TestCase {
 
         $andrew = User::where('name', 'Andrew Hale')->first();
 
-        $colleagues = $andrew->colleagues()->get();
+        $colleagues = $andrew->colleagues()->orderBy('dob', 'DESC')->get();
         $this->assertEquals($dt->format(User::getDateFormat()), $colleagues[0]->dob);
         $this->assertEquals($yesterday->format(User::getDateFormat()), $colleagues[1]->dob);
     }
