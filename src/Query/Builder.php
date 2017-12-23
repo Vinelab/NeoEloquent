@@ -121,8 +121,14 @@ class Builder extends IlluminateQueryBuilder {
             $node->setProperty($key, $value);
         }
 
+		//get the cypher query
+        $cypher = $this->grammar->compileInsert($this, $values);
+
         // save the node
         $node->save();
+
+		//log the cypher query
+		$this->connection->logQuery($cypher, $values);
 
         // get the saved node id
         $id = $node->getId();
