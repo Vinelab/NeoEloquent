@@ -290,7 +290,7 @@ class BelongsToManyRelationTest extends TestCase {
         $this->assertTrue(in_array($editor->id, $edgesIds));
         $this->assertTrue(in_array($master->id, $edgesIds));
 
-        $expectedEdgesTypes = array('Master', 'Admin', 'Editor');
+        $expectedEdgesTypes = array('Editor', 'Admin', 'Master');
 
         foreach ($edges as $key => $edge)
         {

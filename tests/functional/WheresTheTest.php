@@ -108,7 +108,7 @@ class WheresTheTest extends TestCase {
 
     public function testWhereGreaterThanOperator()
     {
-        $u = User::where('calls', '>', 10)->first();
+        $u = User::where('calls', '>', 10)->orderBy('calls')->first();
         $this->assertEquals($this->cd->toArray(), $u->toArray());
 
         $others = User::where('calls', '>', 10)->get();
@@ -119,13 +119,13 @@ class WheresTheTest extends TestCase {
                                                             $this->ef,
                                                             $this->gh,
                                                             $this->ij));
-        $this->assertEquals($others->toArray(), $brothers->toArray());
+        $this->assertEquals($others->sortBy('id')->values()->toArray(), $brothers->sortBy('id')->values()->toArray());
 
         $lastTwo = User::where('calls', '>=', 40)->get();
         $this->assertCount(2, $lastTwo);
 
         $mothers = new \Illuminate\Database\Eloquent\Collection(array($this->gh, $this->ij));
-        $this->assertEquals($lastTwo->toArray(), $mothers->toArray());
+        $this->assertEquals($lastTwo->sortBy('id')->values()->toArray(), $mothers->sortBy('id')->values()->toArray());
 
         $none = User::where('calls', '>', 9000)->get();
         $this->assertCount(0, $none);
@@ -145,7 +145,7 @@ class WheresTheTest extends TestCase {
         $cocoa = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
                                                             $this->cd,
                                                             $this->ef));
-        $this->assertEquals($cocoa->toArray(), $three->toArray());
+        $this->assertEquals($cocoa->sortBy('id')->values()->toArray(), $three->sortBy('id')->values()->toArray());
 
         $below = User::where('calls', '<', -100)->get();
         $this->assertCount(0, $below);
@@ -165,7 +165,7 @@ class WheresTheTest extends TestCase {
                                                             $this->ij));
 
         $this->assertCount(4, $notab);
-        $this->assertEquals($notab->toArray(), $dudes->toArray());
+        $this->assertEquals($notab->sortBy('id')->values()->toArray(), $dudes->sortBy('id')->values()->toArray());
     }
 
     public function testWhereIn()
@@ -178,7 +178,7 @@ class WheresTheTest extends TestCase {
                                                             $this->gh,
                                                             $this->ij));
 
-        $this->assertEquals($alpha->toArray(), $crocodile->toArray());
+        $this->assertEquals($alpha->sortBy('id')->values()->toArray(), $crocodile->sortBy('id')->values()->toArray());
     }
 
     public function testWhereNotNull()
@@ -191,7 +191,7 @@ class WheresTheTest extends TestCase {
                                                             $this->gh,
                                                             $this->ij));
 
-        $this->assertEquals($alpha->toArray(), $crocodile->toArray());
+        $this->assertEquals($alpha->sortBy('id')->values()->toArray(), $crocodile->sortBy('id')->values()->toArray());
     }
 
     public function testWhereNull()
@@ -240,7 +240,7 @@ class WheresTheTest extends TestCase {
                                                             $this->gh,
                                                             $this->ij));
 
-        $this->assertEquals($buddies->toArray(), $bigBrothers->toArray());
+        $this->assertEquals($buddies->sortBy('id')->values()->toArray(), $bigBrothers->sortBy('id')->values()->toArray());
     }
 
     public function testOrWhereIn()
@@ -253,7 +253,7 @@ class WheresTheTest extends TestCase {
                                                             $this->ef,
                                                             $this->gh,
                                                             $this->ij));
-        $this->assertEquals($all->toArray(), $padrougas->toArray());
+        $this->assertEquals($all->sortBy('id')->values()->toArray(), $padrougas->sortBy('id')->values()->toArray());
     }
 
     public function testWhereNotFound()
@@ -274,8 +274,9 @@ class WheresTheTest extends TestCase {
     {
         $u = User::where('alias', '=', 'ab')->orWhere('alias', '=', 'cd')->get();
         $this->assertCount(2, $u);
-        $this->assertEquals('ab', $u[0]->alias);
-        $this->assertEquals('cd', $u[1]->alias);
+        $u = $u->pluck('alias');
+        $this->assertContains('ab', $u);
+        $this->assertContains('cd', $u);
     }
 
     /**
@@ -289,7 +290,7 @@ class WheresTheTest extends TestCase {
 
         $this->assertEquals($this->ab->toArray(), $ab->toArray());
 
-        $users = User::where('alias', 'IN', ['cd', 'ef'])->get();
+        $users = User::where('alias', 'IN', ['cd', 'ef'])->orderBy('alias')->get();
 
         $l = (new User)->getConnection()->getQueryLog();
 

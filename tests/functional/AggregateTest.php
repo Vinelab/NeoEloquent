@@ -285,16 +285,16 @@ class AggregateTest extends TestCase {
         $logins = $this->query->collect('logins');
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $logins);
         $this->assertEquals(3, count($logins));
-        $this->assertEquals(33, $logins[0]);
-        $this->assertEquals(44, $logins[1]);
-        $this->assertEquals(55, $logins[2]);
+        $this->assertContains(33, $logins);
+        $this->assertContains(44, $logins);
+        $this->assertContains(55, $logins);
 
         $points = $this->query->collect('points');
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $points);
         $this->assertEquals(3, count($points));
-        $this->assertEquals(1, $points[0]);
-        $this->assertEquals(4, $points[1]);
-        $this->assertEquals(2, $points[2]);
+        $this->assertContains(1, $points);
+        $this->assertContains(4, $points);
+        $this->assertContains(2, $points);
     }
 
     public function testCollectWithQuery()
@@ -306,8 +306,8 @@ class AggregateTest extends TestCase {
         $logins = $this->query->where('points', '>', 1)->collect('logins');
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $logins);
         $this->assertEquals(2, count($logins));
-        $this->assertEquals(44, $logins[0]);
-        $this->assertEquals(55, $logins[1]);
+        $this->assertContains(44, $logins);
+        $this->assertContains(55, $logins);
     }
 }
 
