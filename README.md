@@ -3,10 +3,10 @@
 [![Build Status](https://travis-ci.org/Vinelab/NeoEloquent.svg?branch=master)](https://travis-ci.org/Vinelab/NeoEloquent)
 
 # NeoEloquent
-
-[![Join the chat at https://gitter.im/Vinelab/NeoEloquent](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Vinelab/NeoEloquent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 Neo4j Graph Eloquent Driver for Laravel
+
+## Chat & Support
+Join the [Official Neo4j Slack Group](https://neo4j.com/blog/public-neo4j-users-slack-group/) and use the #neo4j-php channel.
 
 ## Quick Reference
 
@@ -26,6 +26,37 @@ Neo4j Graph Eloquent Driver for Laravel
 Add the package to your `composer.json` and run `composer update`.
 
 ### Laravel 5
+
+#### 5.5
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "^1.4.4"
+    }
+}
+```
+
+
+#### 5.4
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "1.4.3"
+    }
+}
+```
+
+#### 5.3
+
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "1.4.2"
+    }
+}
+```
 
 #### 5.2
 
@@ -92,12 +123,43 @@ Add the connection defaults:
 'connections' => [
     'neo4j' => [
         'driver' => 'neo4j',
-        'host'   => 'localhost',
-        'port'   => '7474',
-        'username' => null,
-        'password' => null
+        'host'   => env('DB_HOST', 'localhost'),
+        'port'   => env('DB_PORT', '7474'),
+        'username' => env('DB_USERNAME', null),
+        'password' => env('DB_PASSWORD', null)
     ]
 ]
+```
+### Lumen
+
+For Lumen you need to create a new folder called `config` in the application root and there add a file called `database.php`. There you will add the following code.
+
+```php
+<?php
+
+return ['connections' => [
+            'neo4j' => [
+                'driver' => 'neo4j',
+                'host'   => env('DB_HOST', 'localhost'),
+                'port'   => env('DB_PORT', '7474'),
+                'username' => env('DB_USERNAME', null),
+                'password' => env('DB_PASSWORD', null)
+            ]
+        ]
+    ];
+```
+And add the following line in `bootstrap/app.php`
+
+```php
+$app->configure('database');
+```
+
+This is to enable Lumen to read other configurations other than the provided default ones.
+
+In the case of adding the Service Provider. You must add it in the Register Providers section of `bootstrap/app.php`. You can add it like so:
+
+```php
+$app->register('Vinelab\NeoEloquent\NeoEloquentServiceProvider');
 ```
 
 ### Migration Setup
@@ -781,7 +843,7 @@ $edge = $location->user()->edge();
 
 You may also specify the model at the other side of the edge.
 
-> Note: By default NeoEloquent will try to pefrorm the `$location->user` internally to figure
+> Note: By default NeoEloquent will try to perform the `$location->user` internally to figure
 out the related side of the edge based on the relation function name, in this case it's
 `user()`.
 

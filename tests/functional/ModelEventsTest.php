@@ -128,7 +128,7 @@ class User extends Model {
     public static function boot()
     {
         // Mock a dispatcher
-        $dispatcher = M::mock('EventDispatcher');
+        $dispatcher = M::mock('Illuminate\Events\dispatcher');
         $dispatcher->shouldReceive('listen')->andReturnUsing(function($event, $callback)
         {
             static::$listenerStub[$event] = $callback;
@@ -265,7 +265,7 @@ class OBOne extends Model {
         parent::boot();
 
         // Mock a dispatcher
-        $dispatcher = M::mock('OBEventDispatcher');
+        $dispatcher = M::mock('Illuminate\Events\dispatcher');
         $dispatcher->shouldReceive('listen')->andReturnUsing(function($event, $callback)
         {
             static::$listenerStub[$event] = $callback;

@@ -3,7 +3,7 @@
 use Mockery as M;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use PHPUnit_Framework_TestCase as PHPUnit;
+use PHPUnit\Framework\TestCase as PHPUnit;
 
 class Stub extends Model {
 
