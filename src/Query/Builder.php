@@ -879,7 +879,7 @@ class Builder
 
         $prefix = $this->from;
         if (is_array($prefix)) {
-            $prefix = reset($prefix);
+            $prefix = implode('_', $prefix);
         }
 
         // we prefix when we do have a prefix ($this->from) and when the column isn't an id (id(abc..)).
