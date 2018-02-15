@@ -209,6 +209,8 @@ class Builder extends IlluminateQueryBuilder {
     {
         // if I comment this paginate will work
 //        $this->backupFieldsForCount();
+        $orders = $this->orders;
+        $this->orders = null;
 
         $this->aggregate = ['function' => 'count', 'columns' => $columns];
 
@@ -218,6 +220,7 @@ class Builder extends IlluminateQueryBuilder {
 
         // if I comment this paginate will work
 //        $this->restoreFieldsForCount();
+        $this->orders = $orders;
 
         if (isset($this->groups)) {
             return count($results);
