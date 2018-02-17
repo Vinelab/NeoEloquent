@@ -81,7 +81,7 @@ abstract class Model extends IlluminateModel {
      *
      * @return string
      */
-    protected function getDateFormat()
+    public function getDateFormat()
     {
         return 'Y-m-d H:i:s';
     }
