@@ -61,6 +61,17 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     /**
      * {@inheritDoc}
      */
+    public function getMigrationBatches()
+    {
+        return $this->label()
+                    ->orderBy('batch', 'asc')
+                    ->orderBy('migration', 'asc')
+                    ->pluck('batch', 'migration')->get();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function log($file, $batch)
     {
         $record = array('migration' => $file, 'batch' => $batch);
