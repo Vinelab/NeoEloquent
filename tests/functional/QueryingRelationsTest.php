@@ -617,16 +617,21 @@ class QueryingRelationsTest extends TestCase {
             ['colleagues' => ['name' => 'Protectron', 'dob' => $dt]
         ]);
 
+        $format = $user->getDateFormat();
+
         $houwe = User::first();
         $colleague = $houwe->colleagues()->first();
 
-        $this->assertEquals($yesterday->format(User::getDateFormat()), $houwe->dob);
-        $this->assertEquals($dt->format(User::getDateFormat()), $colleague->dob);
+        $this->assertEquals($yesterday->format($format), $houwe->dob);
+        $this->assertEquals($dt->format($format), $colleague->dob);
     }
 
     public function testSavingRelationWithDateTimeAndCarbonInstances()
     {
         $user = User::create(['name' => 'Andrew Hale']);
+
+        $format = $user->getDateFormat();
+
         $yesterday = Carbon::now()->subDay();
         $brother = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
 
@@ -639,8 +644,8 @@ class QueryingRelationsTest extends TestCase {
         $andrew = User::where('name', 'Andrew Hale')->first();
 
         $colleagues = $andrew->colleagues()->orderBy('dob', 'DESC')->get();
-        $this->assertEquals($dt->format(User::getDateFormat()), $colleagues[0]->dob);
-        $this->assertEquals($yesterday->format(User::getDateFormat()), $colleagues[1]->dob);
+        $this->assertEquals($dt->format($format), $colleagues[0]->dob);
+        $this->assertEquals($yesterday->format($format), $colleagues[1]->dob);
     }
 
     public function testCreateWithReturnsRelatedModelsAsRelations()
