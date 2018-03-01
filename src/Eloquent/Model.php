@@ -81,7 +81,7 @@ abstract class Model extends IlluminateModel {
      *
      * @return string
      */
-    protected function getDateFormat()
+    public function getDateFormat()
     {
         return 'Y-m-d H:i:s';
     }
@@ -445,9 +445,10 @@ abstract class Model extends IlluminateModel {
      * @param  string  $name
      * @param  string  $type
      * @param  string  $id
+     * @param  string  $ownerKey
      * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
-    public function morphTo($name = null, $type = null, $id = null)
+    public function morphTo($name = null, $type = null, $id = null, $ownerKey = null)
     {
 
         // When the name and the type are specified we'll return a MorphedByOne
