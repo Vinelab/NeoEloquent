@@ -200,6 +200,24 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     /**
+     * Removes the order by clause when counting for the paginator.
+     * @author Gaba93
+     */
+    private function backupFieldsForCount() {
+        $this->orders_backup = $this->orders;
+        $this->orders = null;
+    }
+
+    /**
+     * Readds the order clause.
+     * @author Gaba93
+     */
+    private function restoreFieldsForCount() {
+        $this->orders = $this->orders_backup;
+        $this->orders_backup = null;
+    }
+
+    /**
     * Get the count of the total records for the paginator.
     *
     * @param  array  $columns
@@ -207,17 +225,16 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function getCountForPagination($columns = ['*'])
     {
-        // if I comment this paginate will work
-//        $this->backupFieldsForCount();
+        $this->backupFieldsForCount();
 
         $this->aggregate = ['function' => 'count', 'columns' => $columns];
+
 
         $results = $this->get();
 
         $this->aggregate = null;
 
-        // if I comment this paginate will work
-//        $this->restoreFieldsForCount();
+        $this->restoreFieldsForCount();
 
         if (isset($this->groups)) {
             return count($results);
