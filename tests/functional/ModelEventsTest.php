@@ -370,4 +370,4 @@ class UserObserver
     }
 }
 
-User::observe(new UserObserver());
+OBOne::observe(new UserObserver());
