@@ -13,7 +13,7 @@ class ModelEventsTest extends TestCase
     {
         M::close();
 
-        parent::tearDown();
+        // parent::tearDown();
     }
 
     public function testDispatchedEventsChainCallsObserverMethods()
@@ -64,6 +64,37 @@ class ModelEventsTest extends TestCase
 
         $this->assertTrue($user->restoring_event);
         $this->assertTrue($user->restored_event);
+    }
+
+    public function testCreateWithDispatchedEventsChainSetOnBoot()
+    {
+        User::createWith(['name' => 'a'], ['friends' => ['name' => 'b']]);
+
+        $friend = Friend::first();
+
+        $this->assertTrue($friend->creating_event);
+        $this->assertTrue($friend->created_event);
+        $this->assertTrue($friend->saving_event);
+        $this->assertTrue($friend->saved_event);
+    }
+
+    public function testCreateWithDispatchedEventsChainSetOnBootWithExistingRelationModel()
+    {
+        $friend = Friend::create(['name' => 'b']);
+
+        $friend->creating_event = false;
+        $friend->created_event = false;
+        $friend->saving_event = false;
+        $friend->saved_event = false;
+
+        $friend->save();
+
+        User::createWith(['name' => 'a'], ['friends' => $friend]);
+
+        $this->assertNotTrue($friend->creating_event);
+        $this->assertNotTrue($friend->created_event);
+        $this->assertTrue($friend->saving_event);
+        $this->assertTrue($friend->saved_event);
     }
 }
 
@@ -154,6 +185,78 @@ class User extends Model
             $user->save();
         });
     }
+
+    public function friends()
+    {
+        return $this->hasMany(Friend::class, 'friend');
+    }
+}
+
+class Friend extends Model
+{
+    protected $label = 'Friend';
+
+    protected $fillable = [
+        'name',
+        'creating_event',
+        'created_event',
+        'updating_event',
+        'updated_event',
+        'saving_event',
+        'saved_event',
+    ];
+
+    // Will hold the events and their callbacks
+    protected static $listenerStub = [];
+
+    public static function boot()
+    {
+        // Mock a dispatcher
+        $dispatcher = M::mock('EventDispatcher');
+        $dispatcher->shouldReceive('listen')->andReturnUsing(function ($event, $callback) {
+            static::$listenerStub[$event] = $callback;
+        });
+        $dispatcher->shouldReceive('until')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
+            }
+        });
+        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
+            }
+        });
+
+        static::$dispatcher = $dispatcher;
+
+        // boot up model
+        parent::boot();
+
+        self::creating(function ($friend) {
+            $friend->creating_event = true;
+        });
+
+        self::created(function ($friend) {
+            $friend->created_event = true;
+            $friend->save();
+        });
+
+        self::saving(function ($friend) {
+            $friend->saving_event = true;
+        });
+
+        self::saved(function ($friend) {
+            if (!$friend->saved_event) {
+                $friend->saved_event = true;
+                $friend->save();
+            }
+        });
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'friend');
+    }
 }
 
 class OBOne extends Model
@@ -182,6 +285,57 @@ class OBOne extends Model
 
     // We'll just cancel out the events that were put on
     // the User model at boot time so that we make sure
+    // we're using the observer ones.
+    public static function boot()
+    {
+        parent::boot();
+
+        // Mock a dispatcher
+        $dispatcher = M::mock('OBEventDispatcher');
+        $dispatcher->shouldReceive('listen')->andReturnUsing(function ($event, $callback) {
+            static::$listenerStub[$event] = $callback;
+        });
+        $dispatcher->shouldReceive('until')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false) {
+                list($listener, $method) = explode('@', static::$listenerStub[$event]);
+                if (isset(static::$listenerStub[$event])) {
+                    call_user_func([$listener, $method], $model);
+                }
+            } elseif (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
+            }
+        });
+        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false) {
+                list($listener, $method) = explode('@', static::$listenerStub[$event]);
+                if (isset(static::$listenerStub[$event])) {
+                    call_user_func([$listener, $method], $model);
+                }
+            } elseif (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
+            }
+        });
+
+        static::$dispatcher = $dispatcher;
+    }
+}
+
+class OBTwo extends Model
+{
+    protected $label = 'OBTwo';
+
+    protected static $listenerStub = [];
+
+    protected $fillable = [
+        'name',
+        'ob_creating_event',
+        'ob_created_event',
+        'ob_saving_event',
+        'ob_saved_event'
+    ];
+
+    // We'll just cancel out the events that were put on
+    // the Friend model at boot time so that we make sure
     // we're using the observer ones.
     public static function boot()
     {
@@ -267,4 +421,32 @@ class UserObserver
     }
 }
 
-OBOne::observe(new UserObserver());
+class FriendObserver
+{
+    public function creating($ob)
+    {
+        $ob->ob_creating_event = true;
+    }
+
+    public function created($ob)
+    {
+        $ob->ob_created_event = true;
+        $ob->save();
+    }
+
+    public function saving($ob)
+    {
+        $ob->ob_saving_event = true;
+    }
+
+    public function saved($ob)
+    {
+        if (!$ob->ob_saved_event) {
+            $ob->ob_saved_event = true;
+            $ob->save();
+        }
+    }
+}
+
+// User::observe(new UserObserver());
+// Friend::observe(new FriendObserver());

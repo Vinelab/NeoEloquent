@@ -2116,6 +2116,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
         // setup relations
         foreach ($relations as $relation => $values) {
             $related = $me->$relation()->getRelated();
+
             // if the relation holds the attributes directly instead of an array
             // of attributes, we transform it into an array of attributes.
             if ((!is_array($values) || Helpers::isAssocArray($values)) && !$values instanceof Collection) {
@@ -2138,6 +2139,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
             }
         }
 
+        $existingModelsKeys = [];
         // fire 'creating' and 'saving' events on all models.
         foreach ($models as $relation => $related) {
             if (!is_array($related)) {
@@ -2151,9 +2153,15 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
                         return false;
                     }
 
+                    if($model->exists) {
+                        $existingModelsKeys[] = $model->getKey();
+                    }
+
                     if ($model->fireModelEvent('saving') === false) {
                         return false;
                     }
+                } else {
+                    $existingModelsKeys[] = $model;
                 }
             }
         }
@@ -2176,9 +2184,13 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
             // otherwise we create a collection of the loaded models.
             $related = new Collection($result[$method]);
             // fire model events 'created' and 'saved' on related models.
-            $related->each(function ($model) use ($options) {
+            $related->each(function ($model) use ($options, $existingModelsKeys) {
                 $model->finishSave($options);
-                $model->fireModelEvent('created', false);
+                // var_dump(get_class($model), 'saved');
+
+                if(!in_array($model->getKey(), $existingModelsKeys)) {
+                    $model->fireModelEvent('created', false);
+                }
             });
 
             // when the relation is 'One' instead of 'Many' we will only return the retrieved instance
