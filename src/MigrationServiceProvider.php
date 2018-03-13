@@ -2,6 +2,7 @@
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Migrations\Migrator;
+use Vinelab\NeoEloquent\Console\Migrations\MigrateStatusCommand;
 use Vinelab\NeoEloquent\Migrations\MigrationModel;
 use Vinelab\NeoEloquent\Migrations\MigrationCreator;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateCommand;
@@ -95,7 +96,8 @@ class MigrationServiceProvider extends ServiceProvider {
             'MigrateRollback',
             'MigrateReset',
             'MigrateRefresh',
-            'MigrateMake'
+            'MigrateMake',
+            'MigrateStatus'
         );
 
         // We'll simply spin through the list of commands that are migration related
@@ -114,7 +116,8 @@ class MigrationServiceProvider extends ServiceProvider {
             'command.neoeloquent.migrate.make',
             'command.neoeloquent.migrate.rollback',
             'command.neoeloquent.migrate.reset',
-            'command.neoeloquent.migrate.refresh'
+            'command.neoeloquent.migrate.refresh',
+            'command.neoeloquent.migrate.status'
         );
     }
 
@@ -198,6 +201,19 @@ class MigrationServiceProvider extends ServiceProvider {
     }
 
     /**
+     * Register the "refresh" migration command.
+     *
+     * @return void
+     */
+    protected function registerMigrateStatusCommand()
+    {
+        $this->app->singleton('command.neoeloquent.migrate.status', function($app)
+        {
+            return new MigrateStatusCommand($app['neoeloquent.migrator']);
+        });
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function provides()
@@ -211,6 +227,7 @@ class MigrationServiceProvider extends ServiceProvider {
             'command.neoeloquent.migrate.refresh',
             'migration.neoeloquent.creator',
             'command.neoeloquent.migrate.make',
+            'command.neoeloquent.migrate.status',
         );
     }
 

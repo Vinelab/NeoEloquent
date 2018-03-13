@@ -361,11 +361,11 @@ class SimpleCRUDTest extends TestCase {
         $dt = new DateTime();
         $w = Wiz::create(['fiz' => $now, 'biz' => $dt]);
 
-        $format = Wiz::getDateFormat();
+        $format = $w->getDateFormat();
 
         $fetched = Wiz::first();
-        $this->assertEquals($now->format(Wiz::getDateFormat()), $fetched->fiz);
-        $this->assertEquals($now->format(Wiz::getDateFormat()), $fetched->biz);
+        $this->assertEquals($now->format($format), $fetched->fiz);
+        $this->assertEquals($now->format($format), $fetched->biz);
 
         $tomorrow = Carbon::now()->addDay();
         $after = Carbon::now()->addDays(2);
@@ -375,8 +375,8 @@ class SimpleCRUDTest extends TestCase {
         $fetched->save();
 
         $updated = Wiz::first();
-        $this->assertEquals($tomorrow->format(Wiz::getDateFormat()), $updated->fiz);
-        $this->assertEquals($after->format(Wiz::getDateFormat()), $updated->biz);
+        $this->assertEquals($tomorrow->format($format), $updated->fiz);
+        $this->assertEquals($after->format($format), $updated->biz);
     }
 
 }

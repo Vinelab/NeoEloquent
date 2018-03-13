@@ -61,12 +61,13 @@ class Builder extends IlluminateQueryBuilder {
 	 * @var array
 	 */
     public $operators = array(
-        '+', '-', '*', '/', '%', '^',    // Mathematical
-        '=', '<>', '<', '>', '<=', '>=', // Comparison
+        '+', '-', '*', '/', '%', '^',          // Mathematical
+        '=', '<>', '<', '>', '<=', '>=',       // Comparison
         'is null', 'is not null',
-        'and', 'or', 'xor', 'not',       // Boolean
-        'in', '[x]', '[x .. y]',         // Collection
-        '=~'                             // Regular Expression
+        'and', 'or', 'xor', 'not',             // Boolean
+        'in', '[x]', '[x .. y]',               // Collection
+        '=~',                                  // Regular Expression
+        'starts with', 'ends with', 'contains' // String matching
     );
 
     /**
