@@ -107,5 +107,27 @@ class BelongsTo extends OneRelation {
         $unique = true;
         return new EdgeIn($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
     }
+    
+    /**
+     * Get the plain foreign key.
+     *
+     * @return string
+     */
+    public function getForeignKeyName()
+    {
+        $segments = explode('.', $this->getQualifiedForeignKeyName());
+
+        return end($segments);
+    }
+
+    /**
+     * Get the foreign key for the relationship.
+     *
+     * @return string
+     */
+    public function getQualifiedForeignKeyName()
+    {
+        return $this->foreignKey;
+    }
 
 }
