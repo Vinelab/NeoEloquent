@@ -342,4 +342,17 @@ class Grammar extends IlluminateGrammar {
     {
         return preg_replace('/_neoeloquent_.*/', '', $id);
     }
+    
+    /**
+     * Prepare bindings for cleanBindings function
+     *
+     * @param  array $bindings
+     *
+     * @return array
+     */
+    public function prepareBindingsForDelete(array $bindings)
+    {
+        return $bindings;
+    }
+    
 }
