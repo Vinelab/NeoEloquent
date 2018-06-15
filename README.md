@@ -177,8 +177,8 @@ $app->register('Vinelab\NeoEloquent\NeoEloquentServiceProvider');
 
 If you're willing to have migrations:
 
-- create the folder `app/database/labels`
-- modify `composer.json` and add `app/database/labels` to the `classmap` array
+- create the folder `database/labels`
+- modify `composer.json` and add `database/labels` to the `classmap` array
 - run `composer dump-autoload`
 
 
@@ -1003,8 +1003,8 @@ CREATE (post)-[:TAG]->(tag);
 ## Migration
 For migrations to work please perform the following:
 
-- create the folder `app/database/labels`
-- modify `composer.json` and add `app/database/labels` to the `classmap` array
+- create the folder `database/labels`
+- modify `composer.json` and add `database/labels` to the `classmap` array
 
 Since Neo4j is a schema-less database you don't need to predefine types of properties for labels.
 However you will be able to perform [Indexing](http://neo4j.com/docs/stable/query-schema-index.html) and [Constraints](http://neo4j.com/docs/stable/query-constraints.html) using NeoEloquent's pain-less [Schema](#schema).
@@ -1027,7 +1027,7 @@ Like in Laravel you can create a new migration by using the `make` command with 
 
     php artisan neo4j:migrate:make create_user_label
 
-Label migrations will be placed in `app/database/labels`
+Label migrations will be placed in `database/labels`
 
 You can add additional options to commands like:
 
