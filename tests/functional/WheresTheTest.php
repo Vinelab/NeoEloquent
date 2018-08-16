@@ -297,4 +297,10 @@ class WheresTheTest extends TestCase {
         $this->assertEquals($this->cd->toArray(), $users[0]->toArray());
         $this->assertEquals($this->ef->toArray(), $users[1]->toArray());
     }
+
+    public function testWhereRaw()
+    {
+        $ab = User::whereRaw('name = ?', [$this->ab->name]);
+        $this->assertEquals($this->ab->toArray(), $ab->toArray());
+    }
 }
