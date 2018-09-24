@@ -648,6 +648,16 @@ class Builder
 
             $this->wheres[] = compact('type', 'query', 'boolean');
 
+            // Now that all the nested queries are been compiled,
+            // we need to propagate the matches to the parent model.
+            $this->matches = $query->matches;
+
+            // Set the returned columns.
+            $this->columns = $query->columns;
+
+            // Set to carry the required nodes and relations
+            $this->with = $query->with;
+
             $this->addBinding($query->getBindings(), 'where');
         }
 
