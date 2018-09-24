@@ -86,15 +86,15 @@ class QueryingRelationsTest extends TestCase
         $found = User::has('roles.permissions')->get();
 
         $this->assertEquals(2, count($found));
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
-        $this->assertEquals($userWithTwo->toArray(), $found->first()->toArray());
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[1]);
-        $this->assertEquals($user->toArray(), $found[1]->toArray());
+        $this->assertEquals($userWithTwo->toArray(), $found[1]->toArray());
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[0]);
+        $this->assertEquals($user->toArray(), $found[0]->toArray());
 
         $moreThanOnePermission = User::has('roles.permissions', '>=', 2)->get();
         $this->assertEquals(1, count($moreThanOnePermission));
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $moreThanOnePermission->first());
-        $this->assertEquals($userWithTwo->toArray(), $moreThanOnePermission->first()->toArray());
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $moreThanOnePermission[0]);
+        $this->assertEquals($userWithTwo->toArray(), $moreThanOnePermission[0]->toArray());
     }
 
     public function testQueryingWhereHasOne()
