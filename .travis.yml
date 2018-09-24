@@ -1,35 +1,41 @@
 language: php
-sudo: false
 
 php:
-  - 5.6
-  - 7.0
-  - hhvm
+  - 7.1
+
+services:
+  - neo4j
 
 matrix:
   allow_failures:
-    - php: hhvm
+    - env: NEO4J_VERSION="2.3"
 
 before_script:
-  # install Neo4j
-  - wget dist.neo4j.org/neo4j-enterprise-$NEO4J_VERSION-unix.tar.gz
-  - tar -xzf neo4j-enterprise-$NEO4J_VERSION-unix.tar.gz
-  - sed -i.bak 's/^\(dbms\.security\.auth_enabled=\).*/\1false/' neo4j-enterprise-$NEO4J_VERSION/conf/neo4j-server.properties
-  - neo4j-enterprise-$NEO4J_VERSION/bin/neo4j start
-  - sleep 3 # give neo4j some time to start
+  # install dependencies to add repos
+  - sudo apt-get install -y python-software-properties
+  - sudo add-apt-repository -y ppa:webupd8team/java
+  - sudo apt-get update
+  # install oracle jdk 8
+  - sudo apt-get install -y oracle-java8-installer
+  - sudo update-alternatives --auto java
+  - sudo update-alternatives --auto javac
+  - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
 
   # install composer
-  - composer self-update
-  - composer install --prefer-source --no-interaction --dev
+  - travis_retry composer self-update
+  - travis_retry composer install --prefer-source --no-interaction
 
-script: phpunit
-
-jdk:
-  - oraclejdk7  # needed for local Neo4j 2.0+
+script: vendor/bin/phpunit
 
 env:
-  - NEO4J_VERSION="2.2.6"
-  - NEO4J_VERSION="2.3.4"
+  global:
+    - NEO4J_AUTH=none
+  matrix:
+      - NEO4J_VERSION="2.3"
+      - NEO4J_VERSION="3.0"
+      - NEO4J_VERSION="3.1"
+      - NEO4J_VERSION="3.2"
+      - NEO4J_VERSION="3.3"
 
 notifications:
   slack:
