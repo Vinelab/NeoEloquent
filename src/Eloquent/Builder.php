@@ -1019,10 +1019,10 @@ class Builder
      *
      * @return Vinelab\NeoEloquent\Eloquent|static
      */
-    public function matchIn($parent, $related, $relatedNode, $relationship, $property, $value = null)
+    public function matchIn($parent, $related, $relatedNode, $relationship, $property, $value = null, $boolean = 'and')
     {
         // Add a MATCH clause for a relation to the query
-        $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'in');
+        $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'in', $boolean);
 
         return $this;
     }
@@ -1036,9 +1036,9 @@ class Builder
      *
      * @return Vinelab\NeoEloquent\Eloquent|static
      */
-    public function matchOut($parent, $related, $relatedNode, $relationship, $property, $value = null)
+    public function matchOut($parent, $related, $relatedNode, $relationship, $property, $value = null, $boolean = 'and')
     {
-        $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'out');
+        $this->query->matchRelation($parent, $related, $relatedNode, $relationship, $property, $value, 'out', $boolean);
 
         return $this;
     }
@@ -1055,9 +1055,9 @@ class Builder
      *
      * @return Vinelab\NeoEloquent\Eloquent|static
      */
-    public function matchMorphOut($parent, $relatedNode, $property, $value = null)
+    public function matchMorphOut($parent, $relatedNode, $property, $value = null, $boolean = 'and')
     {
-        $this->query->matchMorphRelation($parent, $relatedNode, $property, $value);
+        $this->query->matchMorphRelation($parent, $relatedNode, $property, $value, $boolean);
 
         return $this;
     }
@@ -1378,7 +1378,8 @@ class Builder
             $relatedNode,
             $relation->getRelationType(),
             $relation->getLocalKey(),
-            $relation->getParentLocalKeyValue()
+            $relation->getParentLocalKeyValue(),
+            $boolean
         );
 
         // Prefix all the columns with the relation's node placeholder in the query

@@ -2090,10 +2090,11 @@ class Builder
      * @param string                              $property     The parent's property we are matching against
      * @param string                              $value
      * @param string                              $direction    Possible values are in, out and in-out
+     * @param string                              $boolean      And, or operators
      *
      * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
-    public function matchRelation($parent, $related, $relatedNode, $relationship, $property, $value = null, $direction = 'out')
+    public function matchRelation($parent, $related, $relatedNode, $relationship, $property, $value = null, $direction = 'out', $boolean = 'and')
     {
         $parentLabels = $parent->nodeLabel();
         $relatedLabels = $related->nodeLabel();
@@ -2101,6 +2102,7 @@ class Builder
 
         $this->matches[] = array(
             'type' => 'Relation',
+            'optional' => $boolean,
             'property' => $property,
             'direction' => $direction,
             'relationship' => $relationship,
@@ -2119,13 +2121,14 @@ class Builder
         return $this;
     }
 
-    public function matchMorphRelation($parent, $relatedNode, $property, $value = null, $direction = 'out')
+    public function matchMorphRelation($parent, $relatedNode, $property, $value = null, $direction = 'out', $boolean = 'and')
     {
         $parentLabels = $parent->nodeLabel();
         $parentNode = $this->modelAsNode($parentLabels);
 
         $this->matches[] = array(
             'type' => 'MorphTo',
+            'optional' => 'and',
             'property' => $property,
             'direction' => $direction,
             'related' => array('node' => $relatedNode),

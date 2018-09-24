@@ -120,17 +120,52 @@ class CypherGrammar extends Grammar
             $component = $this->compileComponents($query, ['from']);
             $cypher = $component['from'];
         } else {
-            $prepared = array();
-
+            $optionalMatches = [];
+            $mandatoryMatches = [];
             foreach ($matches as $match) {
-                $method = 'prepareMatch'.ucfirst($match['type']);
-                $prepared[] = $this->$method($match);
+
+                switch($match['optional']) {
+                    case 'or':
+                        $optionalMatches[] = $match;
+
+                    break;
+
+                    case 'and':
+                        $mandatoryMatches[] = $match;
+
+                    break;
+                }
             }
 
-            $cypher = 'MATCH '.implode(', ', $prepared);
+            $cypher = $this->compileMandatoryMatchesCypher($query, $mandatoryMatches);
+
+            $cypher = $cypher.' '.$this->compileOptionalMatchesCypher($optionalMatches);
         }
 
         return $cypher;
+    }
+
+    public function compileMandatoryMatchesCypher($query, $matches)
+    {
+        $prepared = [];
+        foreach ($matches as $match) {
+            $method = 'prepareMatch'.ucfirst($match['type']);
+            $prepared[] = $this->$method($match);
+        }
+
+        // If no mandatory matches are available force match the base model.
+        return !empty($prepared) ? 'MATCH '.implode(', ', $prepared) : $this->compileFrom($query, $query->from, true);
+    }
+
+    public function compileOptionalMatchesCypher($matches)
+    {
+        $optional = '';
+        foreach ($matches as $match) {
+            $method = 'prepareMatch'.ucfirst($match['type']);
+            $optional =  $optional.' OPTIONAL MATCH '.$this->$method($match);
+        }
+
+        return isset($optional) ? $optional : '';
     }
 
     /**
@@ -239,20 +274,25 @@ class CypherGrammar extends Grammar
     /**
      * Compile the "from" portion of the query
      * which in cypher represents the nodes we're MATCHing.
+     * The forceMatch flag, forces the "from" model to be matched and thus returned in the query.
+     * This is required in cases where all matches are optional, leading to an invalid syntax where
+     * a query starts with an `OPTIONAL MATCH`. This flag would force a `MATCH` to preced it.
      *
      * @param \Vinelab\NeoEloquent\Query\Builder $query
      * @param string                             $labels
+     * @param bool                               $forceMatch
      *
      * @return string
      */
-    public function compileFrom(Builder $query, $labels)
+    public function compileFrom(Builder $query, $labels, $forceMatch = false)
     {
-        // Only compile when no relational matches are specified,
-        // mostly used for simple queries.
-        if (!empty($query->matches)) {
-            return '';
+        if(!$forceMatch) {
+            // Only compile when no relational matches are specified,
+            // mostly used for simple queries.
+            if (!empty($query->matches)) {
+                return '';
+            }
         }
-
         $labels = $this->prepareLabels($labels);
 
         // every label must begin with a ':' so we need to check
