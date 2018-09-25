@@ -19,6 +19,11 @@ class Misfit extends Model {
     {
         return $query->where('alias', 'edison');
     }
+
+    public function scopeWhereName($query, $name)
+    {
+        return $query->where('name', $name);
+    }
 }
 
 class QueryScopesTest extends TestCase {
@@ -58,6 +63,9 @@ class QueryScopesTest extends TestCase {
         $this->assertEquals($this->t->toArray(), $t->toArray());
 
         $e = Misfit::stupidDickhead()->first();
+        $this->assertEquals($this->e->toArray(), $e->toArray());
+
+        $e = Misfit::whereName('Thomas Edison')->stupidDickhead()->first();
         $this->assertEquals($this->e->toArray(), $e->toArray());
     }
 }
