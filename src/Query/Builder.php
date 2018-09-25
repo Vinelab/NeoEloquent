@@ -388,7 +388,7 @@ class Builder extends IlluminateQueryBuilder {
     {
         if (is_array($this->wheres))
             return count(array_filter($this->wheres, function($where) use($column) {
-                return $where['column'] == $column;
+                return $where['type'] !== 'raw' && $where['column'] == $column;
             }));
     }
 
@@ -792,7 +792,7 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function addBinding($value, $type = 'where')
     {
-        if (is_array($value))
+        if (is_array($value) && count($value) > 0)
         {
             $key = array_keys($value)[0];
 
