@@ -1,5 +1,5 @@
 {
-    "name": "digitalcloud/neoeloquent",
+    "name": "vinelab/neoeloquent",
     "description": "Laravel wrapper for the Neo4j graph database REST interface",
     "keywords": [
         "laravel",
@@ -11,8 +11,8 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "yassir awad",
-            "email": "yassir.awad@dce.sa"
+            "name": "Abed Halawi",
+            "email": "abed.halawi@vinelab.com"
         }
     ],
     "require": {
