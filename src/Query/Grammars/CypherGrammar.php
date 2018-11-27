@@ -270,13 +270,9 @@ class CypherGrammar extends Grammar {
      */
     protected function whereNotIn(Builder $query, $where)
     {
-        if (empty($where['values'])) {
-            return '1 = 1';
-        }
+        $values = $this->valufy($where['values']);
 
-        $values = $this->parameterize($where['values']);
-        $values = str_replace(['{','}'], "'", $values);
-        return 'not '. $this->wrap($where['column']).' in ['.$values.']';
+        return 'NOT '.$this->wrap($where['column']).' IN ['.$values.']';
     }
 
         /**
