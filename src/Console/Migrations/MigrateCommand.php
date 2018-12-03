@@ -70,7 +70,7 @@ class MigrateCommand extends BaseCommand
         // Once the migrator has run we will grab the note output and send it out to
         // the console screen, since the migrator itself functions without having
         // any instances of the OutputInterface contract passed into the class.
-        foreach ($this->migrator->getNotes() as $note) {
+        foreach ($this->migrator->setOutput($this->output) as $note) {
             $this->output->writeln($note);
         }
         // Finally, if the "seed" option has been given, we will re-run the database
