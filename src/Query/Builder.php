@@ -386,10 +386,26 @@ class Builder extends IlluminateQueryBuilder {
      */
     protected function columnCountForWhereClause($column)
     {
-        if (is_array($this->wheres))
-            return count(array_filter($this->wheres, function($where) use($column) {
-                return $where['column'] == $column;
-            }));
+        if (is_array($this->wheres)) {
+            $queue = $this->wheres;
+            $count = 0;
+            while (! empty($queue)) {
+                $where = array_pop($queue);
+                if ($where['type'] == 'Nested') {
+                    $nestedQuery = $where['query'];
+                    if (is_array($nestedQuery->wheres)) {
+                        $queue = array_merge($queue, $nestedQuery->wheres);
+                    }
+                } elseif ($where['type'] == 'Basic') {
+                    if ($where['column'] == $column) {
+                        $count++;
+                    }
+                }
+            }
+            return $count;
+        } else {
+            return 0;
+        }
     }
 
     /**
