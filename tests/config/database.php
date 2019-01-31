@@ -9,18 +9,18 @@ return array(
             'name' => 'neo4j',
             'driver' => 'neo4j',
             'host' => 'localhost',
-            'port' => 11002,
+            'port' => 7474,
             'username' => 'neo4j',
-            'password' => '123123'
+            'password' => 'neo4j'
         ),
 
         'default' => array(
             'name' => 'default',
             'driver' => 'neo4j',
             'host' => 'localhost',
-            'port' => 11002,
-            'username' => 'neo4j',
-            'password' => '123123'
+            'port' => 7474,
+            'username' => '',
+            'password' => ''
         ),
         'sqlite' => [
             'name' => 'sqlite',

@@ -7,4 +7,3 @@ composer.lock
 *.sublime-workspace
 
 .idea
-tests/config/database.php
