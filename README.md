@@ -14,6 +14,7 @@ Join the [Official Neo4j Slack Group](https://neo4j.com/blog/public-neo4j-users-
  - [Configuration](#configuration)
  - [Models](#models)
  - [Relationships](#relationships)
+ - [Hybrid Relashions](#hybrid-relations)
  - [Edges](#edges)
  - [Migration](#migration)
  - [Schema](#schema)
@@ -698,6 +699,77 @@ Only two Cypher queries will be run in the loop above:
 MATCH (book:`Book`) RETURN *;
 
 MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
+```
+
+
+## Hybrid-Relations
+
+- [has-one](#has-one)
+- [belongs-to](#belongs-to)
+
+If you are looking for a hybrid relation between neo4j and SQL like(MySQL or PGSQL), you are in luck. now you can add relations from NEO4J to SQL and vice versa
+you will need to use this trait `Vinelab\NeoEloquent\Eloquent\Relations\Hybrid\HybridRelations` inside your Eloquent or NeoEloquent models to 
+and explicitly override $connection property in your models
+Let's go through some examples for currently supported relations.
+
+### Has-One
+you can lazy and egar loading a has one relation between neo4j and sql
+```php
+class User extends Eloquent
+{
+    use HybridRelations;
+
+    protected $connection = "mysql";
+    protected $fillable = ['name', 'email'];
+
+    public function profile()
+    {
+        return $this->hasOneHybrid(Profile::class, 'user_id');
+    }
+}
+```
+- Example: first create an object and add foreign to another object
+```php
+   $user = User::create(['name' => 'Tests', 'email' => 'B']);
+   Profile::create(['guid' => uniqid(), 'service' => 'twitter', 'user_id' => $user->id]);
+```
+then, you can lazy loading a relation
+```php
+   $profile = $user->profile;
+```
+or, you can egar loading a relation
+```php
+   User::with('profile')->get()
+```
+### Belongs-To
+you can lazy and egar loading a belongs to relation between neo4j and sql
+```php
+class Profile extends NeoEloquent
+{
+    use HybridRelations;
+
+    protected $label = 'Profile';
+    protected $connection = "neo4j";
+    protected $fillable = ['guid', 'service', 'user_id'];
+
+    public function user()
+    {
+        return $this->belongsToHybrid(User::class, 'user_id');
+    }
+}
+```
+- Example: first create an object and add foreign to another object
+```php
+   $user = User::create(['name' => 'Tests', 'email' => 'B']);
+   $profile = $user->profile()->create(['guid' => uniqid(), 'service' => 'twitter']);
+```
+then, you can lazy loading a relation
+```php
+   $user = $profile->user;
+```
+or, you can egar loading a relation
+```php
+   Profile::with('user')->get()
 ```
 
 ## Edges
