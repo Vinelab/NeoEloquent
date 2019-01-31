@@ -772,6 +772,8 @@ or, you can egar loading a relation
    Profile::with('user')->get()
 ```
 
+> Don't forget to set `$connection` property value explicitly.
+
 ## Edges
 
 - [EdgeIn](#edgein)
