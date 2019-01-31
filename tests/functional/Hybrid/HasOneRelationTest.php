@@ -68,8 +68,7 @@ class HasOneHybridRelationTest extends TestCase
     public function testDynamicLoadingHasOne()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        Profile::create(['guid' => uniqid(), 'service' => 'twitter', 'user_id' => $user->id]);
-        $profile = $user->profile;
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter', 'user_id' => $user->id]);
 
         $this->assertNotNull($user->profile);
         $this->assertEquals($profile->toArray(), $user->profile->toArray());
