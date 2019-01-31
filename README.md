@@ -709,7 +709,7 @@ MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2,
 
 If you are looking for a hybrid relation between neo4j and SQL like(MySQL or PGSQL), you are in luck. now you can add relations from NEO4J to SQL and vice versa
 you will need to use this trait `Vinelab\NeoEloquent\Eloquent\Relations\Hybrid\HybridRelations` inside your Eloquent or NeoEloquent models to 
-and explicitly override $connection property in your models
+and explicitly override `$connection` property in your models
 Let's go through some examples for currently supported relations.
 
 ### Has-One
