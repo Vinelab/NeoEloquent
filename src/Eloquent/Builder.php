@@ -1891,28 +1891,33 @@ class Builder
      */
     protected function prefixAndMerge(Builder $query, $prefix)
     {
-        $this->prefixWheres($query, $prefix);
+        if (is_array($query->getQuery()->wheres)) {
+            $query->getQuery()->wheres = $this->prefixWheres($query->getQuery()->wheres, $prefix);
+        }
+
         $this->query->mergeWheres($query->getQuery()->wheres, $query->getQuery()->getBindings());
     }
 
     /**
      * Prefix where clauses' columns.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
-     * @param string                                $prefix
+     * @param array  $wheres
+     * @param string $prefix
+     *
+     * @return array
      */
-    protected function prefixWheres(Builder $query, $prefix)
+    protected function prefixWheres(array $wheres, $prefix)
     {
-        if (is_array($query->getQuery()->wheres)) {
-            $query->getQuery()->wheres = array_map(function ($where) use ($prefix) {
-                if ($where['type'] != 'Carried' && strpos($where['column'], '.') == false) {
-                    $column = $where['column'];
-                    $where['column'] = ($this->isId($column)) ? $column : $prefix.'.'.$column;
-                }
+        return array_map(function ($where) use ($prefix) {
+            if ($where['type'] == 'Nested') {
+                $where['query']->wheres = $this->prefixWheres($where['query']->wheres, $prefix);
+            } else if ($where['type'] != 'Carried' && strpos($where['column'], '.') == false) {
+                $column = $where['column'];
+                $where['column'] = ($this->isId($column)) ? $column : $prefix.'.'.$column;
+            }
 
-                return $where;
-            }, $query->getQuery()->wheres);
-        }
+            return $where;
+        }, $wheres);
     }
 
     /**
