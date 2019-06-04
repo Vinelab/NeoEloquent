@@ -11,7 +11,7 @@ return array(
             'host' => 'neo4j',
             'port' => 7474,
             'username' => 'neo4j',
-            'password' => 'neo4jneo4j',
+            'password' => 'test',
         ),
 
         'default' => array(
@@ -19,7 +19,7 @@ return array(
             'host' => 'neo4j',
             'port' => 7474,
             'username' => 'neo4j',
-            'password' => 'neo4jneo4j',
+            'password' => 'test',
         ),
     ),
 );

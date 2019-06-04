@@ -54,7 +54,7 @@ class EloquentBuilderTest extends TestCase
     }
 
     /**
-     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
+     * @expectedException \Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
     {

@@ -521,11 +521,11 @@ class ConnectionTest extends TestCase
     {
         $defaults = array('getDefaultQueryGrammar', 'getDefaultPostProcessor', 'getDefaultSchemaGrammar');
 
-        return $this->getMock(
-            'Vinelab\NeoEloquent\Connection',
-            array_merge($defaults, $methods),
-            array($this->dbConfig['connections']['neo4j'])
-        );
+        return $this->getMockBuilder('Vinelab\NeoEloquent\Connection')
+            ->setMethods(array_merge($defaults, $methods))
+            ->setConstructorArgs( array($this->dbConfig['connections']['neo4j']))
+            ->getMock();
+
     }
 }
 
