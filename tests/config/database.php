@@ -8,17 +8,18 @@ return array(
 
         'neo4j' => array(
             'driver' => 'neo4j',
-            'host' => 'localhost',
+            'host' => 'neo4j',
             'port' => 7474,
             'username' => 'neo4j',
-            'password' => 'test',
+            'password' => 'neo4jneo4j',
         ),
 
         'default' => array(
             'driver' => 'neo4j',
-            'host' => 'localhost',
+            'host' => 'neo4j',
+            'port' => 7474,
             'username' => 'neo4j',
-            'password' => 'test',
+            'password' => 'neo4jneo4j',
         ),
     ),
 );
