@@ -446,7 +446,7 @@ class Connection extends BaseConnection implements ConnectionInterface
 	 * @param  string  $option
 	 * @return mixed
 	 */
-	public function getConfig($option)
+	public function getConfig($option = null)
 	{
 		return $this->neoeloquent->getConfigOption($option);
 	}

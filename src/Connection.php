@@ -106,14 +106,14 @@ class Connection implements ConnectionInterface
     /**
      * The Neo4j active client connection.
      *
-     * @var Neoxygen\NeoClient\Client
+     * @var \Neoxygen\NeoClient\Client
      */
     protected $neo;
 
     /**
      * The Neo4j database transaction.
      *
-     * @var Neoxygen\NeoClient\Transaction\Transaction
+     * @var \Neoxygen\NeoClient\Transaction\Transaction
      */
     protected $transaction;
 
@@ -649,7 +649,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return bool|\Everyman\Neo4j\Query\ResultSet When $result is set to true.
+     * @return mixed.
      */
     public function statement($query, $bindings = array(), $rawResults = false)
     {
