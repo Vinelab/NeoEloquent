@@ -5,7 +5,6 @@ namespace Vinelab\NeoEloquent;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
-use Vinelab\NeoEloquent\Frameworks\Laravel\Connection;
 
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
@@ -45,7 +44,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
     {
         $this->app['db']->extend('neo4j', function ($config) {
             $this->config = $config;
-            $conn = new Connection($config);
+            $conn = new ConnectionAdapter($config);
             $conn->setSchemaGrammar(new CypherGrammar());
 
             return $conn;
