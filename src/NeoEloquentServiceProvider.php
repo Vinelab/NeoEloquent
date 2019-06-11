@@ -69,16 +69,6 @@ class NeoEloquentServiceProvider extends ServiceProvider
         $this->registerComponents();
     }
 
-    protected function registerNeoEloquentConnection($app, $config)
-    {
-        $app->bind('neoeloquent.connection', function() use($config) {
-            $conn = new NeoEloquentConnection($config);
-            $conn->setSchemaGrammar(new CypherGrammar());
-
-            return $conn;
-        });
-    }
-
     /**
      * Register components on the provider.
      *
