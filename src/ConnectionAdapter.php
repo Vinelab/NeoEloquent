@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Frameworks\Laravel;
+namespace Vinelab\NeoEloquent;
 
 use Closure;
 use Exception;
@@ -15,7 +15,7 @@ use Illuminate\Database\Schema\Grammars\Grammar as SchemaGrammar;
 use Illuminate\Database\QueryException as IlluminateQueryException;
 use Illuminate\Events\Dispatcher;
 
-class Connection extends BaseConnection implements ConnectionInterface
+class ConnectionAdapter extends BaseConnection implements ConnectionInterface
 {
     public function __construct(array $config = [])
     {
@@ -446,7 +446,7 @@ class Connection extends BaseConnection implements ConnectionInterface
 	 * @param  string  $option
 	 * @return mixed
 	 */
-	public function getConfig($option)
+	public function getConfig($option = null)
 	{
 		return $this->neoeloquent->getConfigOption($option);
 	}

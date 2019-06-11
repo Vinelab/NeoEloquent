@@ -68,8 +68,7 @@ class TestCase extends PHPUnit
         $client = $this->getClient();
 
         $statements = [
-           ['statement' => 'MATCH (n)-[r]-(c) DELETE n,r,c'],
-           ['statement' => 'MATCH (n) DELETE n'],
+           ['statement' => 'MATCH (n) DETACH DELETE n'],
         ];
 
         $client->sendMultiple($statements);

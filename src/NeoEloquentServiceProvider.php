@@ -4,6 +4,9 @@ namespace Vinelab\NeoEloquent;
 
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
+
+use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 
 class NeoEloquentServiceProvider extends ServiceProvider
@@ -31,7 +34,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
     {
         Model::setConnectionResolver($this->app['db']);
 
-        Model::setEventDispatcher($this->app['events']);
+        Model::setEventDispatcher($this->app->make(Dispatcher::class));
     }
 
     /**
@@ -40,7 +43,18 @@ class NeoEloquentServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app['db']->extend('neo4j', function ($config) {
-            $conn = new Connection($config);
+            $this->config = $config;
+            $conn = new ConnectionAdapter($config);
+            $conn->setSchemaGrammar(new CypherGrammar());
+
+            return $conn;
+        });
+
+        $this->app->bind('neoeloquent.connection', function() {
+            // $config is set by the previous binding,
+            // so that we get the correct configuration
+            // set by the user.
+            $conn = new NeoEloquentConnection($this->config);
             $conn->setSchemaGrammar(new CypherGrammar());
 
             return $conn;
@@ -72,7 +86,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
      */
     protected function registerMigration()
     {
-        $this->app->register('Vinelab\NeoEloquent\MigrationServiceProvider');
+        $this->app->register(MigrationServiceProvider::class);
     }
 
     /**

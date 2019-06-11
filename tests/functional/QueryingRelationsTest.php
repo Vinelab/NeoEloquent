@@ -68,7 +68,7 @@ class QueryingRelationsTest extends TestCase
         $user->roles()->save($role);
 
         // user with a role that has 2 permissions
-        $userWithTwo = User::create(['name' => 'cappuccino']);
+        $userWithTwo = User::create(['name' => 'frappe']);
         $roleWithTwo = Role::create(['alias' => 'pikachu']);
         $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
         $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
@@ -87,9 +87,9 @@ class QueryingRelationsTest extends TestCase
 
         $this->assertEquals(2, count($found));
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[1]);
-        $this->assertEquals($userWithTwo->toArray(), $found[1]->toArray());
+        $this->assertEquals($userWithTwo->toArray(), $found->where('name', 'frappe')->first()->toArray());
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[0]);
-        $this->assertEquals($user->toArray(), $found[0]->toArray());
+        $this->assertEquals($user->toArray(), $found->where('name', 'cappuccino')->first()->toArray());
 
         $moreThanOnePermission = User::has('roles.permissions', '>=', 2)->get();
         $this->assertEquals(1, count($moreThanOnePermission));
