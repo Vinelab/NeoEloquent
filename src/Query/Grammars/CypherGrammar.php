@@ -8,8 +8,8 @@ class CypherGrammar extends Grammar {
     protected $selectComponents = array(
         'matches',
         'from',
-        'with',
         'wheres',
+        'with',
         'unions',
         'columns',
         'orders',
