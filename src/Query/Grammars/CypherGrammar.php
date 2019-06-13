@@ -10,6 +10,7 @@ class CypherGrammar extends Grammar {
         'from',
         'wheres',
         'with',
+        'withWheres',
         'unions',
         'columns',
         'orders',
@@ -295,6 +296,38 @@ class CypherGrammar extends Grammar {
         // for actually creating the where clauses Cypher. This helps keep the code nice
         // and maintainable since each clause has a very small method that it uses.
         foreach ($query->wheres as $where)
+        {
+            $method = "WHERE{$where['type']}";
+
+            $cypher[] = $where['boolean'].' '.$this->$method($query, $where);
+        }
+
+        // If we actually have some where clauses, we will strip off the first boolean
+        // operator, which is added by the query builders for convenience so we can
+        // avoid checking for the first clauses in each of the compilers methods.
+        if (count($cypher) > 0)
+        {
+            $cypher = implode(' ', $cypher);
+
+            return 'WHERE '.preg_replace('/and |or /', '', $cypher, 1);
+        }
+
+        return '';
+    }
+
+    /**
+     * Compile whereas after the WITH statement
+     */
+    protected function compileWithWheres(Builder $query)
+    {
+        $cypher = array();
+
+        if (is_null($query->withWheres)) return '';
+
+        // Each type of where clauses has its own compiler function which is responsible
+        // for actually creating the where clauses Cypher. This helps keep the code nice
+        // and maintainable since each clause has a very small method that it uses.
+        foreach ($query->withWheres as $where)
         {
             $method = "WHERE{$where['type']}";
 

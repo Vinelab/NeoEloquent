@@ -42,6 +42,13 @@ class Builder extends IlluminateQueryBuilder {
     public $with = array();
 
     /**
+     * The WHERE statements to be executed after the WITH statement
+     * 
+     * @var array
+     */
+    public $withWheres = array();
+    
+    /**
      * The current query value bindings.
      *
      * @var array
@@ -484,7 +491,7 @@ class Builder extends IlluminateQueryBuilder {
     {
         $type = 'Carried';
 
-        $this->wheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
+        $this->withWheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
 
         return $this;
     }
