@@ -10,7 +10,6 @@ class ModelEventsTest extends TestCase {
     public function tearDown()
     {
         M::close();
-
         parent::tearDown();
     }
 
