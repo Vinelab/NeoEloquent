@@ -618,8 +618,7 @@ class QueryingRelationsTest extends TestCase {
         ]);
 
         $format = $user->getDateFormat();
-
-        $houwe = User::first();
+        $houwe = User::find($user->id);
         $colleague = $houwe->colleagues()->first();
 
         $this->assertEquals($yesterday->format($format), $houwe->dob);
