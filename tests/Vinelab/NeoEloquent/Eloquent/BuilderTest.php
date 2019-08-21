@@ -218,7 +218,7 @@ class EloquentBuilderTest extends TestCase {
     {
         $builder = $this->getBuilder();
         $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('orders')->once()->andReturn($relation = m::mock('stdClass'));
+        $builder->getModel()->shouldReceive('newInstance->orders')->once()->andReturn($relation = m::mock('stdClass'));
         $relationQuery = m::mock('stdClass');
         $relation->shouldReceive('getQuery')->andReturn($relationQuery);
         $relationQuery->shouldReceive('with')->once()->with(array('lines' => null, 'lines.details' => null));
@@ -231,8 +231,8 @@ class EloquentBuilderTest extends TestCase {
     {
         $builder = $this->getBuilder();
         $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('orders')->once()->andReturn($relation = m::mock('stdClass'));
-        $builder->getModel()->shouldReceive('ordersGroups')->once()->andReturn($groupsRelation = m::mock('stdClass'));
+        $builder->getModel()->shouldReceive('newInstance->orders')->once()->andReturn($relation = m::mock('stdClass'));
+        $builder->getModel()->shouldReceive('newInstance->ordersGroups')->once()->andReturn($groupsRelation = m::mock('stdClass'));
 
         $relationQuery = m::mock('stdClass');
         $relation->shouldReceive('getQuery')->andReturn($relationQuery);
@@ -684,7 +684,6 @@ class EloquentBuilderTest extends TestCase {
         $query = m::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('from')->with('foo_table');
         $query->shouldReceive('modelAsNode')->andReturn('n');
-        echo implode(", ", get_class_methods($query)), "\n";
         return $query;
     }
 

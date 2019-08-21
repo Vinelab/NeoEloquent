@@ -233,7 +233,7 @@ class SimpleCRUDTest extends TestCase {
             $this->assertArrayHasKey('id', $values);
             $this->assertGreaterThanOrEqual(0, $values['id']);
             unset($values['id']);
-            $this->assertEquals($batch[$key], $values);
+            $this->assertContains($values, $batch);
         }
     }
 

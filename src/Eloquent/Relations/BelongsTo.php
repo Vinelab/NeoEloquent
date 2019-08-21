@@ -109,6 +109,16 @@ class BelongsTo extends OneRelation {
     }
     
     /**
+     * Get the results of the relationship.
+     *
+     * @return mixed
+     */
+    public function getResults()
+    {
+        return $this->query->first() ?: $this->getDefaultFor($this->parent);
+    }
+
+    /**
      * Get the plain foreign key.
      *
      * @return string
