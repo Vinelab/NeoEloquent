@@ -970,15 +970,22 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany
      */
-    public function belongsToMany($related, $table = null, $foreignKey = null, $otherKey = null, $relation = null)
-    {
+    public function belongsToMany(
+        $related,
+        $table = null,
+        $foreignPivotKey = null,
+        $relatedPivotKey = null,
+        $parentKey = null,
+        $relatedKey = null,
+        $relation = null
+    ) {
         // To escape the error:
         // PHP Strict standards:  Declaration of Vinelab\NeoEloquent\Eloquent\Model::belongsToMany() should be
         //      compatible with Illuminate\Database\Eloquent\Model::belongsToMany()
         // We'll just map them in with the variables we want.
         $type = $table;
-        $key = $foreignKey;
-        $relation = $otherKey;
+        $key = $foreignPivotKey;
+        $relation = $relatedPivotKey;
         // If no relation name was given, we will use this debug backtrace to extract
         // the calling method's name and use that as the relationship name as most
         // of the time this will be what we desire to use for the relationships.
@@ -3704,4 +3711,26 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     {
         $this->bootIfNotBooted();
     }
+
+    /**
+     * Get the queueable connection for the entity.
+     *
+     * @return mixed
+     */
+    public function getQueueableConnection()
+    {
+        return $this->getConnectionName();
+    }
+
+    /**
+     * Retrieve the model for a bound value.
+     *
+     * @param  mixed  $value
+     * @return \Illuminate\Database\Eloquent\Model|null
+     */
+    public function resolveRouteBinding($value)
+    {
+        return $this->where($this->getRouteKeyName(), $value)->first();
+    }
+
 }

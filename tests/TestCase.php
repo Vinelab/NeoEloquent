@@ -4,8 +4,8 @@ namespace Vinelab\NeoEloquent\Tests;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Connection;
+use PHPUnit\Framework\TestCase as PHPUnit;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use PHPUnit_Framework_TestCase as PHPUnit;
 
 class Stub extends Model
 {
