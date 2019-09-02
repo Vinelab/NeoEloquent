@@ -8,7 +8,7 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Neoxygen\NeoClient\Formatter\Relationship;
-use Vinelab\NeoEloquent\NoEdgeDirectionException;
+use Vinelab\NeoEloquent\Exceptions\NoEdgeDirectionException;
 
 abstract class Edge extends Delegate
 {
@@ -146,7 +146,7 @@ abstract class Edge extends Delegate
      * Initialize the relationship setting the start node,
      * end node and relation type.
      *
-     * @throws \Vinelab\NeoEloquent\NoEdgeDirectionException If $direction is not set on the inheriting relation.
+     * @throws \Vinelab\NeoEloquent\Exceptions\NoEdgeDirectionException If $direction is not set on the inheriting relation.
      */
     public function initRelation()
     {

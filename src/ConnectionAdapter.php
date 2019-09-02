@@ -4,7 +4,7 @@ namespace Vinelab\NeoEloquent;
 
 use Closure;
 use Exception;
-use Vinelab\NeoEloquent\QueryException;
+use Vinelab\NeoEloquent\Exceptions\QueryException;
 use Vinelab\NeoEloquent\ConnectionInterface;
 
 use Illuminate\Contracts\Events\Dispatcher as IlluminateDispatcher;

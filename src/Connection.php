@@ -9,8 +9,7 @@ use LogicException;
 use Neoxygen\NeoClient\Client;
 use Neoxygen\NeoClient\ClientBuilder;
 use Throwable;
-use Vinelab\NeoEloquent\Exceptions\ConstraintViolationException;
-use Vinelab\NeoEloquent\Exceptions\Exception as QueryException;
+use Vinelab\NeoEloquent\Exceptions\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
@@ -1219,10 +1218,6 @@ class Connection implements ConnectionInterface
      */
     protected function handleExceptions($query, $bindings, $e)
     {
-        if(strpos($e->getMessage(), '"Neo.ClientError.Schema.ConstraintValidationFailed"') !== false) {
-                throw new ConstraintViolationException($query, $bindings, $e);
-            }
-
         throw new QueryException($query, $bindings, $e);
     }
 }

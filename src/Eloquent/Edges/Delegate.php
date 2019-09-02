@@ -8,7 +8,7 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Neoxygen\NeoClient\Formatter\Relationship;
-use Vinelab\NeoEloquent\UnknownDirectionException;
+use Vinelab\NeoEloquent\Exceptions\UnknownDirectionException;
 
 abstract class Delegate
 {
@@ -211,7 +211,7 @@ abstract class Delegate
      * @deprecated 2.0 No longer using Everyman's Relationship to get the value
      *                   of the direction constant
      *
-     * @throws UnknownDirectionException If the specified $direction is not one of in, out or inout
+     * @throws \Vinelab\NeoEloquent\Exceptions\UnknownDirectionException If the specified $direction is not one of in, out or inout
      */
     public function getRealDirection($direction)
     {
