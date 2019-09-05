@@ -6,8 +6,10 @@ use Closure;
 use DateTime;
 use Exception;
 use LogicException;
-use Neoxygen\NeoClient\Client;
-use Neoxygen\NeoClient\ClientBuilder;
+//use Neoxygen\NeoClient\Client;
+//use Neoxygen\NeoClient\ClientBuilder;
+use GraphAware\Neo4j\Client\Client;
+use GraphAware\Neo4j\Client\ClientBuilder;
 use Throwable;
 use Vinelab\NeoEloquent\Exceptions\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
@@ -360,17 +362,21 @@ class Connection implements ConnectionInterface
     {
         $config = $this->getConfig();
 
+//        return ClientBuilder::create()
+//            ->addConnection(
+//                'default',
+//                $this->getScheme($config),
+//                $this->getHost($config),
+//                $this->getPort($config),
+//                $this->isSecured($config),
+//                $this->getUsername($config),
+//                $this->getPassword($config)
+//            )
+//            ->setAutoFormatResponse(true)
+//            ->build();
+
         return ClientBuilder::create()
-            ->addConnection(
-                'default',
-                $this->getScheme($config),
-                $this->getHost($config),
-                $this->getPort($config),
-                $this->isSecured($config),
-                $this->getUsername($config),
-                $this->getPassword($config)
-            )
-            ->setAutoFormatResponse(true)
+            ->addConnection('default', 'http://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
             ->build();
     }
 
@@ -395,6 +401,12 @@ class Connection implements ConnectionInterface
                 $this->getPassword($config)
             );
         }
+
+//        $client = ClientBuilder::create()
+//            ->addConnection('default', 'http://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
+//            ->addConnection('bolt', 'bolt://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
+//            ->addConnection('cluster', 'bolt+routing://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
+//            ->build();
 
         return $clientBuilder->setAutoFormatResponse(true)->build();
     }
@@ -572,8 +584,11 @@ class Connection implements ConnectionInterface
             $query = $me->getCypherQuery($query, $bindings);
 
             return $this->getClient()
-                ->sendCypherQuery($query['statement'], $query['parameters'])
-                ->getResult();
+                ->run($query['statement'], $query['parameters']);
+
+//            return $this->getClient()
+//                ->sendCypherQuery($query['statement'], $query['parameters'])
+//                ->getResult();
         });
     }
 
@@ -637,8 +652,11 @@ class Connection implements ConnectionInterface
             $query = $me->getCypherQuery($query, $bindings);
 
             return $this->getClient()
-                ->sendCypherQuery($query['statement'], $query['parameters'])
-                ->getResult();
+                ->run($query['statement'], $query['parameters']);
+
+//            return $this->getClient()
+//                ->sendCypherQuery($query['statement'], $query['parameters'])
+//                ->getResult();
         });
     }
 
@@ -659,9 +677,12 @@ class Connection implements ConnectionInterface
 
             $query = $me->getCypherQuery($query, $bindings);
 
+//            $results = $this->getClient()
+//                ->sendCypherQuery($query['statement'], $query['parameters'])
+//                ->getResult();
+
             $results = $this->getClient()
-                ->sendCypherQuery($query['statement'], $query['parameters'])
-                ->getResult();
+                ->run($query['statement'], $query['parameters']);
 
             return ($rawResults === true) ? $results : !!$results;
         });

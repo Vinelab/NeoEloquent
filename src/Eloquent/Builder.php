@@ -3,8 +3,12 @@
 namespace Vinelab\NeoEloquent\Eloquent;
 
 use Closure;
-use Neoxygen\NeoClient\Formatter\Node;
-use Neoxygen\NeoClient\Formatter\Result;
+//use Neoxygen\NeoClient\Formatter\Node;
+//use Neoxygen\NeoClient\Formatter\Result;
+use GraphAware\Neo4j\Client\Formatter\Type\Node;
+use GraphAware\Neo4j\Client\Formatter\Type\Relationship;
+use GraphAware\Neo4j\Client\Formatter\Result;
+
 use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Eloquent\Relationship as EloquentRelationship;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
@@ -622,8 +626,8 @@ class Builder
     /**
      * Turn Neo4j result set into the corresponding model.
      *
-     * @param string                               $connection
-     * @param \Neoxygen\NeoClient\Formatter\Result $results
+     * @param string                                            $connection
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Result    $results
      *
      * @return array
      */
@@ -632,13 +636,59 @@ class Builder
         $models = [];
 
         if ($results) {
-            $resultsByIdentifier = $results->getAllByIdentifier();
-            $relationships = $results->getRelationships();
+
+            $recordsView = $results->getRecords();
+
+//            $resultsByIdentifier = $results->getAllByIdentifier();
+//            $relationships = $results->getRelationships();
+
+            $recordsByPlaceholders = $this->getRecordsByPlaceholders($results->getRecords());
+//
+            $relationships = $this->getRelationshipRecords($recordsByPlaceholders);
+
+//            if (!empty($relationships) && !empty($this->mutations)) {
+//                $startIdentifier = $this->getStartNodeIdentifier($resultsByIdentifier, $relationships);
+//                $endIdentifier = $this->getEndNodeIdentifier($resultsByIdentifier, $relationships);
+//
+//                foreach ($relationships as $resultRelationship) {
+//                    $startModelClass = $this->getMutationModel($startIdentifier);
+//                    $endModelClass = $this->getMutationModel($endIdentifier);
+//
+//                    if ($this->shouldMutate($endIdentifier) && $this->isMorphMutation($endIdentifier)) {
+//                        $models[] = $this->mutateToOrigin($results, $resultsByIdentifier);
+//                    } else {
+//                        $models[] = [
+//                            $startIdentifier => $this->newModelFromNode($resultRelationship->getStartNode(), $startModelClass, $connection),
+//                            $endIdentifier => $this->newModelFromNode($resultRelationship->getEndNode(), $endModelClass, $connection),
+//                        ];
+//                    }
+//                }
+//            } else {
+//                foreach ($resultsByIdentifier as $identifier => $nodes) {
+//                    if ($this->shouldMutate($identifier)) {
+//                        $models[] = $this->mutateToOrigin($results, $resultsByIdentifier);
+//                    } else {
+//                        foreach ($nodes as $result) {
+//                            if ($result instanceof Node) {
+//                                // Now that we have the attributes, we first check for mutations
+//                                // and if exists, we will need to mutate the attributes accordingly.
+//                                // if ($this->shouldMutate($identifier)) {
+//                                //     $model = $this->mutateToOrigin($results, $resultsByIdentifier);
+//                                // } else {
+//                                    $model = $this->newModelFromNode($result, $this->model, $connection);
+//                                // }
+//
+//                                $models[] = $model;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
 
             if (!empty($relationships) && !empty($this->mutations)) {
-                $startIdentifier = $this->getStartNodeIdentifier($resultsByIdentifier, $relationships);
-                $endIdentifier = $this->getEndNodeIdentifier($resultsByIdentifier, $relationships);
-
+                $startIdentifier = $this->getStartNodeIdentifier($recordsByPlaceholders, $relationships);
+                $endIdentifier = $this->getEndNodeIdentifier($recordsByPlaceholders, $relationships);
+dd($startIdentifier, $endIdentifier);
                 foreach ($relationships as $resultRelationship) {
                     $startModelClass = $this->getMutationModel($startIdentifier);
                     $endModelClass = $this->getMutationModel($endIdentifier);
@@ -653,9 +703,9 @@ class Builder
                     }
                 }
             } else {
-                foreach ($resultsByIdentifier as $identifier => $nodes) {
-                    if ($this->shouldMutate($identifier)) {
-                        $models[] = $this->mutateToOrigin($results, $resultsByIdentifier);
+                foreach ($recordsByPlaceholders as $placeholder => $nodes) {
+                    if ($this->shouldMutate($placeholder)) {
+                        $models[] = $this->mutateToOrigin($results, $recordsByPlaceholders);
                     } else {
                         foreach ($nodes as $result) {
                             if ($result instanceof Node) {
@@ -664,7 +714,7 @@ class Builder
                                 // if ($this->shouldMutate($identifier)) {
                                 //     $model = $this->mutateToOrigin($results, $resultsByIdentifier);
                                 // } else {
-                                    $model = $this->newModelFromNode($result, $this->model, $connection);
+                                $model = $this->newModelFromNode($result, $this->model, $connection);
                                 // }
 
                                 $models[] = $model;
@@ -673,9 +723,36 @@ class Builder
                     }
                 }
             }
+
         }
 
         return $models;
+    }
+
+    protected function getRelationshipRecords(array $recordsByPlaceholders)
+    {
+        $relationships = [];
+
+        foreach ($recordsByPlaceholders as $placeholder => $record) {
+            if($record instanceof Relationship) {
+                $relationships[$placeholder] = $record;
+            }
+        }
+
+        return $relationships;
+    }
+
+    protected function getNodeRecords(array $recordsByPlaceholders)
+    {
+        $nodes = [];
+
+        foreach ($recordsByPlaceholders as $placeholder => $record) {
+            if($record instanceof Node) {
+                $nodes[$placeholder] = $record;
+            }
+        }
+
+        return $nodes;
     }
 
     protected function getStartNodeIdentifier($resultsByIdentifier, $relationships)
@@ -710,9 +787,9 @@ class Builder
     /**
      * Get a Model instance out of the given node.
      *
-     * @param \Neoxygen\NeoClient\Formatter\Node $node
-     * @param string                             $identifier
-     * @param string                             $connection
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Node  $node
+     * @param string                                        $identifier
+     * @param string                                        $connection
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Model
      */
@@ -724,7 +801,8 @@ class Builder
         }
 
         // get the attributes ready
-        $attributes = $node->getProperties();
+//        $attributes = $node->getProperties();
+        $attributes = $node->values();
 
         // we will check to see whether we should use Neo4j's built-in ID.
         if ($model->getKeyName() === 'id') {
@@ -742,8 +820,8 @@ class Builder
     /**
      * Turn Neo4j result set into the corresponding model with its relations.
      *
-     * @param string                               $connection
-     * @param \Neoxygen\NeoClient\Formatter\Result $results
+     * @param string                                            $connection
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Result    $results
      *
      * @return array
      */
@@ -754,30 +832,65 @@ class Builder
         if ($results) {
             $grammar = $this->getQuery()->getGrammar();
 
-            $nodesByIdentifier = $results->getAllByIdentifier();
+//            $nodesByIdentifier = $results->getAllByIdentifier();
+//
+//            foreach ($nodesByIdentifier as $identifier => $nodes) {
+//                // Now that we have the attributes, we first check for mutations
+//                // and if exists, we will need to mutate the attributes accordingly.
+//                if ($this->shouldMutate($identifier)) {
+//                    foreach ($nodes as $node) {
+//                        $attributes = $node->getProperties();
+//                        $cropped = $grammar->cropLabelIdentifier($identifier);
+//
+//                        if (!isset($models[$cropped])) {
+//                            $models[$cropped] = [];
+//                        }
+//
+//                        if (isset($this->mutations[$cropped])) {
+//                            $mutationModel = $this->getMutationModel($cropped);
+//                            $models[$cropped][] = $this->newModelFromNode($node, $mutationModel);
+//                        }
+//                    }
+//                }
+//            }
 
-            foreach ($nodesByIdentifier as $identifier => $nodes) {
+            $recordsByPlaceholders = $this->getRecordsByPlaceholders($results->getRecords());
+
+            foreach ($recordsByPlaceholders as $placeholder => $record) {
+
                 // Now that we have the attributes, we first check for mutations
                 // and if exists, we will need to mutate the attributes accordingly.
-                if ($this->shouldMutate($identifier)) {
-                    foreach ($nodes as $node) {
-                        $attributes = $node->getProperties();
-                        $cropped = $grammar->cropLabelIdentifier($identifier);
+                if ($this->shouldMutate($placeholder)) {
+                    $cropped = $grammar->cropLabelIdentifier($placeholder);
+//                    $attributes = $recordnode->values();
 
-                        if (!isset($models[$cropped])) {
-                            $models[$cropped] = [];
-                        }
+                    if (!isset($models[$cropped])) {
+                        $models[$cropped] = [];
+                    }
 
-                        if (isset($this->mutations[$cropped])) {
-                            $mutationModel = $this->getMutationModel($cropped);
-                            $models[$cropped][] = $this->newModelFromNode($node, $mutationModel);
-                        }
+                    if (isset($this->mutations[$cropped])) {
+                        $mutationModel = $this->getMutationModel($cropped);
+                        $models[$cropped][] = $this->newModelFromNode($record, $mutationModel);
                     }
                 }
             }
         }
 
         return $models;
+    }
+
+    public function getRecordsByPlaceholders(array $recordViews)
+    {
+        $recordsByKeys = [];
+
+        foreach ($recordViews as $recordView) {
+            $keys = $recordView->keys();
+            foreach ($keys as $key) {
+                $recordsByKeys[$key] = $recordView->value($key);
+            }
+        }
+
+        return $recordsByKeys;
     }
 
     /**
@@ -856,10 +969,10 @@ class Builder
             // value being the model that we should mutate to as set earlier by a HyperEdge.
             // NOTE: 'r' is statically set in CypherGrammer to represent the relationship.
             // Now we have an \Everyman\Neo4j\Relationship instance that has our morph class name.
-            $relationship = current($result->getRelationships());
-
+//            $relationship = current($result->getRelationships());
+            $relationship = current($this->getRelationshipRecords($result->getRecords()));
             // Get the morph class name.
-            $class = $relationship->getProperty($mutationModelProperty);
+            $class = $relationship->get($mutationModelProperty);
             // we need the model attributes though we might receive a nested
             // array that includes them on level 2 so we check
             // whether what we have is the array of attrs
@@ -913,6 +1026,7 @@ class Builder
      */
     public function getProperties(array $resultColumns, Row $row)
     {
+        dd('Get Properties, Everyman dependent');
         $attributes = array();
 
         $columns = $this->query->columns;

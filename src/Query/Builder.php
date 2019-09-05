@@ -8,7 +8,8 @@ use Carbon\Carbon;
 use BadMethodCallException;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\ConnectionInterface;
-use Neoxygen\NeoClient\Formatter\Result;
+//use Neoxygen\NeoClient\Formatter\Result;
+use GraphAware\Neo4j\Client\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 
@@ -368,7 +369,21 @@ class Builder
 
         $updated = $this->connection->update($cypher, $bindings);
 
-        return ($updated) ? count(current($updated->getAllByIdentifier())) : 0;
+        return ($updated) ? count(current($this->getRecordsByPlaceholders($updated->getRecords()))) : 0;
+    }
+
+    public function getRecordsByPlaceholders(array $recordViews)
+    {
+        $recordsByKeys = [];
+
+        foreach ($recordViews as $recordView) {
+            $keys = $recordView->keys();
+            foreach ($keys as $key) {
+                $recordsByKeys[$key] = $recordView->value($key);
+            }
+        }
+
+        return $recordsByKeys;
     }
 
     /**
@@ -2263,9 +2278,14 @@ class Builder
 
         $this->columns = $previousColumns;
 
-        $values = $results->getAllByIdentifier();
+        $values = $this->getRecordsByPlaceholders($results->getRecords());
 
-        return current(reset($values));
+        $value = reset($values);
+        if(is_array($value)) {
+            return current($value);
+        } else {
+            return $value;
+        }
     }
 
     /**
