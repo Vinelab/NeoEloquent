@@ -685,13 +685,13 @@ class Builder
             if (!empty($relationships) && !empty($this->mutations)) {
                 $startIdentifier = $this->getStartNodeIdentifier($recordsByPlaceholders, $relationships);
                 $endIdentifier = $this->getEndNodeIdentifier($recordsByPlaceholders, $relationships);
-dd($startIdentifier, $endIdentifier);
+
                 foreach ($relationships as $resultRelationship) {
                     $startModelClass = $this->getMutationModel($startIdentifier);
                     $endModelClass = $this->getMutationModel($endIdentifier);
 
                     if ($this->shouldMutate($endIdentifier) && $this->isMorphMutation($endIdentifier)) {
-                        $models[] = $this->mutateToOrigin($results, $resultsByIdentifier);
+                        $models[] = $this->mutateToOrigin($results, $recordsByPlaceholders);
                     } else {
                         $models[] = [
                             $startIdentifier => $this->newModelFromNode($resultRelationship->getStartNode(), $startModelClass, $connection),
@@ -733,7 +733,7 @@ dd($startIdentifier, $endIdentifier);
 
         foreach ($recordsByPlaceholders as $placeholder => $record) {
             if($record instanceof Relationship) {
-                $relationships[$placeholder] = $record;
+                $relationships[$placeholder][] = $record;
             }
         }
 
@@ -804,7 +804,7 @@ dd($startIdentifier, $endIdentifier);
 
         // we will check to see whether we should use Neo4j's built-in ID.
         if ($model->getKeyName() === 'id') {
-            $attributes['id'] = $node->getId();
+            $attributes['id'] = $node->identity();
         }
 
         // This is a regular record that we should deal with the normal way, creating an instance
