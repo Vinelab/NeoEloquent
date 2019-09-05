@@ -635,6 +635,32 @@ class Builder
     {
         $models = [];
 
+
+        if ($results) {
+            $resultsByIdentifier = $this->getRecordsByPlaceholders($results->getRecords());
+            $relationships = $this->getRelationshipRecords($resultsByIdentifier);
+
+            if (!empty($relationships) && !empty($this->mutations)) {
+                // FIXME: Implement returning relations
+            } else {
+                foreach ($resultsByIdentifier as $identifier => $nodes) {
+                    if ($this->shouldMutate($identifier)) {
+                        // FIXME: Mutate to origin implementation
+                        $models[] = $this->mutateToOrigin($results, $resultsByIdentifier);
+                    } else {
+                        foreach ($nodes as $result) {
+                            if ($result instanceof Node) {
+                                $model = $this->newModelFromNode($result, $this->model, $connection);
+                                $models[] = $model;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $models;
+
         if ($results) {
 //            $resultsByIdentifier = $results->getAllByIdentifier();
 //            $relationships = $results->getRelationships();
@@ -799,7 +825,6 @@ class Builder
         }
 
         // get the attributes ready
-//        $attributes = $node->getProperties();
         $attributes = $node->values();
 
         // we will check to see whether we should use Neo4j's built-in ID.

@@ -347,8 +347,9 @@ class Builder
 
         $id = null;
 
-        if ($results instanceof Result) {
-            $id = $results->getSingleNode()->getId();
+        if ($results instanceof Result && $results->hasRecord()) {
+            $node = $results->firstRecord()->valueByIndex(0);
+            $id = (!$sequence || $sequence == 'id') ? $node->identity() : $node->get($sequence);
         }
 
         return $id;
