@@ -643,27 +643,27 @@ class Builder
             $relationships = $this->getRelationshipRecords($results);
 
             if (!empty($relationships) && !empty($this->mutations)) {
-                // FIXME: Implement returning relations
                 $startIdentifier = $this->getStartNodeIdentifier($resultsByIdentifier, $relationships);
                 $endIdentifier = $this->getEndNodeIdentifier($resultsByIdentifier, $relationships);
 
-                foreach ($relationships as $resultRelationship) {
+                foreach ($relationships as $index => $resultRelationship) {
                     $startModelClass = $this->getMutationModel($startIdentifier);
                     $endModelClass = $this->getMutationModel($endIdentifier);
 
                     if ($this->shouldMutate($endIdentifier) && $this->isMorphMutation($endIdentifier)) {
                         $models[] = $this->mutateToOrigin($results, $resultsByIdentifier);
                     } else {
+                        $startNode = (is_array($resultsByIdentifier[$startIdentifier])) ? $resultsByIdentifier[$startIdentifier][$index] : reset($resultsByIdentifier[$startIdentifier]);
+                        $endNode = (is_array($resultsByIdentifier[$endIdentifier])) ? $resultsByIdentifier[$endIdentifier][$index] : reset($resultsByIdentifier[$endIdentifier]);
                         $models[] = [
-                            $startIdentifier => $this->newModelFromNode(reset($resultsByIdentifier[$startIdentifier]), $startModelClass, $connection),
-                            $endIdentifier => $this->newModelFromNode(reset($resultsByIdentifier[$endIdentifier]), $endModelClass, $connection),
+                            $startIdentifier => $this->newModelFromNode($startNode, $startModelClass, $connection),
+                            $endIdentifier => $this->newModelFromNode($endNode, $endModelClass, $connection),
                         ];
                     }
                 }
             } else {
                 foreach ($resultsByIdentifier as $identifier => $nodes) {
                     if ($this->shouldMutate($identifier)) {
-                        // FIXME: Mutate to origin implementation
                         $models[] = $this->mutateToOrigin($results, $resultsByIdentifier);
                     } else {
                         foreach ($nodes as $result) {
