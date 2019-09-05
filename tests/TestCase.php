@@ -67,11 +67,9 @@ class TestCase extends PHPUnit
     {
         $client = $this->getClient();
 
-        $statements = [
-           ['statement' => 'MATCH (n) DETACH DELETE n'],
-        ];
+        $flushQuery = 'MATCH (n) DETACH DELETE n';
 
-        $client->sendMultiple($statements);
+        $client->run($flushQuery);
     }
 
     protected function getClient()
