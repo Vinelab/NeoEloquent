@@ -636,14 +636,11 @@ class Builder
         $models = [];
 
         if ($results) {
-
-            $recordsView = $results->getRecords();
-
 //            $resultsByIdentifier = $results->getAllByIdentifier();
 //            $relationships = $results->getRelationships();
 
             $recordsByPlaceholders = $this->getRecordsByPlaceholders($results->getRecords());
-//
+
             $relationships = $this->getRelationshipRecords($recordsByPlaceholders);
 
 //            if (!empty($relationships) && !empty($this->mutations)) {
@@ -704,6 +701,7 @@ dd($startIdentifier, $endIdentifier);
                 }
             } else {
                 foreach ($recordsByPlaceholders as $placeholder => $nodes) {
+
                     if ($this->shouldMutate($placeholder)) {
                         $models[] = $this->mutateToOrigin($results, $recordsByPlaceholders);
                     } else {
@@ -856,21 +854,23 @@ dd($startIdentifier, $endIdentifier);
 
             $recordsByPlaceholders = $this->getRecordsByPlaceholders($results->getRecords());
 
-            foreach ($recordsByPlaceholders as $placeholder => $record) {
+            foreach ($recordsByPlaceholders as $placeholder => $records) {
 
                 // Now that we have the attributes, we first check for mutations
                 // and if exists, we will need to mutate the attributes accordingly.
                 if ($this->shouldMutate($placeholder)) {
                     $cropped = $grammar->cropLabelIdentifier($placeholder);
-//                    $attributes = $recordnode->values();
+//                    $attributes = $record->values();
 
-                    if (!isset($models[$cropped])) {
-                        $models[$cropped] = [];
-                    }
+                    foreach ($records as $record) {
+                        if (!isset($models[$cropped])) {
+                            $models[$cropped] = [];
+                        }
 
-                    if (isset($this->mutations[$cropped])) {
-                        $mutationModel = $this->getMutationModel($cropped);
-                        $models[$cropped][] = $this->newModelFromNode($record, $mutationModel);
+                        if (isset($this->mutations[$cropped])) {
+                            $mutationModel = $this->getMutationModel($cropped);
+                            $models[$cropped][] = $this->newModelFromNode($record, $mutationModel);
+                        }
                     }
                 }
             }
@@ -886,7 +886,7 @@ dd($startIdentifier, $endIdentifier);
         foreach ($recordViews as $recordView) {
             $keys = $recordView->keys();
             foreach ($keys as $key) {
-                $recordsByKeys[$key] = $recordView->value($key);
+                $recordsByKeys[$key][] = $recordView->value($key);
             }
         }
 

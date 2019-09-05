@@ -379,7 +379,7 @@ class Builder
         foreach ($recordViews as $recordView) {
             $keys = $recordView->keys();
             foreach ($keys as $key) {
-                $recordsByKeys[$key] = $recordView->value($key);
+                $recordsByKeys[$key][] = $recordView->value($key);
             }
         }
 
