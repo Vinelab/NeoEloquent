@@ -1,0 +1,40 @@
+language: php
+
+php:
+  - 7.1
+
+services:
+  - neo4j
+
+matrix:
+  allow_failures:
+    - env: NEO4J_VERSION="2.3"
+
+before_script:
+  # install dependencies to add repos
+  - sudo apt-get install -y python-software-properties
+  - sudo apt-get update
+
+  #install openjdk for java
+  - sudo apt-get install openjdk-8-jdk
+
+  # install composer
+  - travis_retry composer self-update
+  - travis_retry composer install --prefer-source --no-interaction
+
+script: vendor/bin/phpunit
+
+env:
+  global:
+    - NEO4J_AUTH=none
+  matrix:
+      - NEO4J_VERSION="2.3"
+      - NEO4J_VERSION="3.0"
+      - NEO4J_VERSION="3.1"
+      - NEO4J_VERSION="3.2"
+      - NEO4J_VERSION="3.3"
+
+notifications:
+  slack:
+    rooms:
+      - vinelab:52MiVOHdct34FRg2o9sPBlJJ#graphdb
