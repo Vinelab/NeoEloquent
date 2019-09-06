@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent\Eloquent\Edges;
 use DateTime;
 use Carbon\Carbon;
 use GraphAware\Neo4j\Client\Formatter\Result;
+use GraphAware\Neo4j\Client\Formatter\RecordView;
 use GraphAware\Neo4j\Client\Formatter\Type\Relationship;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
@@ -189,7 +190,7 @@ abstract class Edge extends Delegate
     {
         $results = $this->finder->firstRelationWithNodes($this->parent, $this->related, $this->type, $this->direction);
 
-        return ($results->hasRecord()) ? $this->newFromRelation($results) : null;
+        return ($results->hasRecord()) ? $this->newFromRelation($results->firstRecord()) : null;
     }
 
     /**
@@ -208,10 +209,10 @@ abstract class Edge extends Delegate
          */
         if ($this->unique && !$this->exists()) {
             $endModel = $this->related->newInstance();
-            $existing = $this->firstRelation($this->parent, $endModel, $this->type, $this->direction);
+            $existing = $this->firstRelationWithNodes($this->parent, $endModel, $this->type, $this->direction);
 
-            if ($existing && $existing instanceof Relationship) {
-                $instance = $this->newFromRelation($existing);
+            if($existing->hasRecord()) {
+                $instance = $this->newFromRelation($existing->firstRecord());
                 $instance->delete();
             }
         }
@@ -224,7 +225,7 @@ abstract class Edge extends Delegate
             // at this point $saved is an instance of GraphAware\Neo4j\Client\Formatter\RecordView
             // that only contains the relationship as a record.
             // We will pull that out of the Result instance
-            $this->setRelation($saved);
+            $this->setRelation($saved->firstRecord());
 
             return true;
         }
@@ -290,10 +291,11 @@ abstract class Edge extends Delegate
      *
      * @return static
      */
-    public function newFromRelation(Result $results)
+    public function newFromRelation(RecordView $record)
     {
         $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);
-        $instance->setRelation($results);
+
+        $instance->setRelation($record);
 
         return $instance;
     }
@@ -333,10 +335,10 @@ abstract class Edge extends Delegate
      *
      * @param \GraphAware\Neo4j\Client\Formatter\Result $results
      */
-    public function setRelation(Result $results)
+    public function setRelation(RecordView $record)
     {
-        $nodes = $this->getNodeRecords($results);
-        $relationships = $this->getRelationshipRecords($results);
+        $nodes = $this->getRecordNodes($record);
+        $relationships = $this->getRecordRelationships($record);
         $relation = reset($relationships);
 
         // Set the relation object.

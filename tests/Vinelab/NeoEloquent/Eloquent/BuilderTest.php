@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
 use Mockery as M;
-use Neoxygen\NeoClient\Formatter\Node;
-use Neoxygen\NeoClient\Formatter\Result;
+use GraphAware\Neo4j\Client\Formatter\Type\Node;
+use GraphAware\Neo4j\Client\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;

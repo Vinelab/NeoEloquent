@@ -3,7 +3,7 @@
 namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Mockery as M;
-use Neoxygen\NeoClient\Formatter\Node;
+use GraphAware\Neo4j\Client\Formatter\Type\Node;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
@@ -61,7 +61,7 @@ class BuilderTest extends TestCase
 
         $id = 69;
         $node = new Node($id, $values);
-        $result = M::mock('Neoxygen\neoClient\Formatter\Result');
+        $result = M::mock('GraphAware\Neo4j\Client\Formatter\Result');
         $result->shouldReceive('getSingleNode')->once()->andReturn($node);
 
         $this->neoClient->shouldReceive('getResult')->once()->andReturn($result);

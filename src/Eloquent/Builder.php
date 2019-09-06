@@ -974,8 +974,7 @@ class Builder
             // value being the model that we should mutate to as set earlier by a HyperEdge.
             // NOTE: 'r' is statically set in CypherGrammer to represent the relationship.
             // Now we have an \Everyman\Neo4j\Relationship instance that has our morph class name.
-//            $relationship = current($result->getRelationships());
-            $relationship = current($this->getRelationshipRecords($result->getRecords()));
+            $relationship = current($this->getRelationshipRecords($result));
             // Get the morph class name.
             $class = $relationship->get($mutationModelProperty);
             // we need the model attributes though we might receive a nested
@@ -1099,12 +1098,12 @@ class Builder
     public function getNodeAttributes(Node $node)
     {
         // Extract the properties of the node
-        $attributes = $node->getProperties();
+        $attributes = $node->values();
 
         // Add the node id to the attributes since \Everyman\Neo4j\Node
         // does not consider it to be a property, it is treated differently
         // and available through the getId() method.
-        $attributes['id'] = $node->getId();
+        $attributes['id'] = $node->identity();
 
         return $attributes;
     }

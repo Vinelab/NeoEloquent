@@ -6,8 +6,8 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use GraphAware\Neo4j\Client\Formatter\Result;
-use GraphAware\Neo4j\Client\Formatter\Type\Relationship;
 use Vinelab\NeoEloquent\Traits\ResultTrait;
+use GraphAware\Neo4j\Client\Formatter\RecordView;
 
 class Finder extends Delegate
 {
@@ -42,12 +42,14 @@ class Finder extends Delegate
         $results = $this->firstRelationWithNodes($parentModel, $relatedModel, $type, $direction);
 
         // Let's stop here if there is no relationship between them.
-        if (!$results) {
+        if (!$results || !$results->hasRecord()) {
             return;
         }
 
+        $record = $results->firstRecord();
+
         // Now we can return the determined edge out of the relation and direction.
-        return $this->edgeFromRelationWithDirection($results, $parentModel, $relatedModel, $direction);
+        return $this->edgeFromRelationWithDirection($record, $parentModel, $relatedModel, $direction);
     }
 
     /**
@@ -63,14 +65,14 @@ class Finder extends Delegate
     {
         // Get the relationships for the parent node of the given type.
         $results = $this->firstRelationWithNodes($parent, $related, $type, $direction);
-        $relationships = $this->getRelationshipRecords($results);
+        $records = $this->getResultRecords($results);
 
         $edges = [];
         // Collect the edges out of the found relationships.
-        foreach ($relationships as $index => $relationship) {
+        foreach ($records as $index => $record) {
             // Now that we have the direction and the relationship all we need to do is generate the edge
             // and add it to our collection of edges.
-            $edges[] = $this->edgeFromRelationWithDirection($results, $parent, $related, $direction, $index);
+            $edges[] = $this->edgeFromRelationWithDirection($record, $parent, $related, $direction, $index);
         }
 
         return new Collection($edges);
@@ -159,27 +161,24 @@ class Finder extends Delegate
     /**
      * Get the Edge instance out of a Relationship based on a direction.
      *
-     * @param \GraphAware\Neo4j\Client\Formatter\Result $results
+     * @param \GraphAware\Neo4j\Client\Formatter\RecordView $record
      * @param string                       $direction can be 'in' or 'out'
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
-    public function edgeFromRelationWithDirection(Result $results, Model $parent, Model $related, $direction, $index = 0)
+    public function edgeFromRelationWithDirection(RecordView $record, Model $parent, Model $related, $direction, $index = 0)
     {
         // assume there is no relation received until we determine that there is one
         $relation = null;
-        $records = $this->getRelationshipRecords($results);
-
-        if (isset($records[$index])) {
-            $relation = $records[$index];
-        }
+        $relationships = $this->getRecordRelationships($record);
+        $relation = reset($relationships);
 
         if ($relation) {
             // Based on the direction we are now able to construct the edge class name and call for
             // an instance of it then pass it the actual relationship that was previously found.
             $class = $this->getEdgeClass($direction);
             $edge = new $class($this->query, $parent, $related, $relation->type());
-            $edge->setRelation($results);
+            $edge->setRelation($record);
 
             return $edge;
         }

@@ -230,7 +230,7 @@ class BelongsToManyRelationTest extends TestCase
 
         $this->assertTrue(in_array($admin->getKey(), $edgesIds));
         $this->assertTrue(in_array($editor->getKey(), $edgesIds));
-        $this->assertFalse(in_array($master->getKey(), $edgesIds)); 
+        $this->assertFalse(in_array($master->getKey(), $edgesIds));
 
         foreach ($edges as $edge) {
             $edge->delete();

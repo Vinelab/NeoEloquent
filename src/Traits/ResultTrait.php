@@ -99,12 +99,12 @@ trait ResultTrait
     }
 
     /**
-     * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship[ $relation
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship $relation
      * @param array $nodes
      * @param string $type
      * @return Node
      */
-    protected function getNodeByType(Relationship $relation, array $nodes, string $type = 'start')
+    public function getNodeByType(Relationship $relation, array $nodes, string $type = 'start')
     {
         if($type != 'start') {
             $type = 'end';
@@ -119,5 +119,43 @@ trait ResultTrait
                 return $node;
             }
         }
+    }
+
+    /**
+     * @param RecordViewInterface $record
+     * @return array
+     */
+    public function getRecordNodes(RecordViewInterface $record)
+    {
+        $nodes = [];
+
+        $keys = $record->keys();
+        foreach ($keys as $key) {
+            $item = $record->get($key);
+            if($item instanceof Node) {
+                $nodes[] = $item;
+            }
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * @param RecordViewInterface $record
+     * @return array
+     */
+    public function getRecordRelationships(RecordViewInterface $record)
+    {
+        $relationships = [];
+
+        $keys = $record->keys();
+        foreach ($keys as $key) {
+            $item = $record->get($key);
+            if($item instanceof Relationship) {
+                $relationships[] = $item;
+            }
+        }
+
+        return $relationships;
     }
 }
