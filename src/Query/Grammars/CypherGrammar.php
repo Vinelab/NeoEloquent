@@ -953,7 +953,9 @@ class CypherGrammar extends Grammar
         $match = $this->compileMatchRelationship($query, $attributes);
         $relationQuery = $this->compileRelationship($query, $attributes);
         $query = "$match CREATE UNIQUE $relationQuery";
-        $query .= ' RETURN r';
+        $startIdentifier = $this->modelAsNode($attributes['start']['label']);
+        $endIdentifier = 'rel_'.$this->modelAsNode($attributes['label']);
+        $query .= " RETURN r,$startIdentifier,$endIdentifier";
 
         return $query;
     }
@@ -971,7 +973,9 @@ class CypherGrammar extends Grammar
     {
         $match = $this->compileMatchRelationship($builder, $attributes);
         $relation = $this->compileRelationship($builder, $attributes, true);
-        $query = "$match MATCH $relation RETURN r";
+        $startIdentifier = $this->modelAsNode($attributes['start']['label']);
+        $endIdentifier = 'rel_'.$this->modelAsNode($attributes['label']);
+        $query = "$match MATCH $relation RETURN r,$startIdentifier,$endIdentifier";
 
         return $query;
     }

@@ -150,6 +150,22 @@ abstract class Delegate
      */
     public function firstRelation(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
     {
+        $result = $this->firstRelationWithNodes($parentModel, $relatedModel, $type, $direction);
+
+        if ($result->hasRecord()) {
+            return $result->firstRecord()->valueByIndex(0);
+        }
+    }
+
+    /**
+     * @param Model $parentModel
+     * @param Model $relatedModel
+     * @param $type
+     * @param string $direction
+     * @return \GraphAware\Neo4j\Client\Formatter\Result
+     */
+    public function firstRelationWithNodes(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
+    {
         $this->type = $type;
         $this->start = $this->asNode($parentModel);
         $this->end = $this->asNode($relatedModel);
@@ -166,11 +182,8 @@ abstract class Delegate
 
         $attributes = $this->getRelationshipAttributes($parentModel, $relatedModel);
         $query = $grammar->compileGetRelationship($this->query->getQuery(), $attributes);
-        $result = $this->connection->select($query);
 
-        if ($result->hasRecord()) {
-            return $result->firstRecord()->valueByIndex(0);
-        }
+        return $this->connection->select($query);
     }
 
     /**

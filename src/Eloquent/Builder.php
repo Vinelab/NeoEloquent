@@ -108,13 +108,15 @@ class Builder
 
         if (is_array($id)) {
             return $this->findMany(array_map(function ($id) { return (int) $id; }, $id), $properties);
-        } elseif (is_numeric($id)) {
-            $id = (int) $id;
         }
+
+//        elseif (is_numeric($id)) {
+//            $id = (int) $id;
+//        }
 
         if ($this->model->getKeyName() === 'id') {
             // ids are treated differently in neo4j so we have to adapt the query to them.
-            $this->query->where($this->model->getKeyName().'('.$this->query->modelAsNode().')', '=', $id);
+            $this->query->where($this->model->getKeyName().'('.$this->query->modelAsNode().')', '=', (int) $id);
         } else {
             $this->query->where($this->model->getKeyName(), '=', $id);
         }

@@ -140,7 +140,7 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      */
     public function edge(Model $model = null)
     {
-        return $this->finder->first($this->parent, $model, $this->type);
+        return $this->finder->first($this->parent, $model, $this->type, $this->edgeDirection);
     }
 
     /**
@@ -652,7 +652,7 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      */
     public function updateEdge($id, array $properties)
     {
-        $edge = $this->finder->first($this->parent, $this->related->findOrFail($id), $this->type);
+        $edge = $this->finder->first($this->parent, $this->related->findOrFail($id), $this->type, $this->edgeDirection);
         $edge->fill($properties);
 
         return $edge->save();

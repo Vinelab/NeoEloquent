@@ -4,14 +4,18 @@ namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use DateTime;
 use Carbon\Carbon;
+use GraphAware\Neo4j\Client\Formatter\Result;
 use GraphAware\Neo4j\Client\Formatter\Type\Relationship;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Exceptions\NoEdgeDirectionException;
+use Vinelab\NeoEloquent\Traits\ResultTrait;
 
 abstract class Edge extends Delegate
 {
+    use ResultTrait;
+
     /**
      * The edges finder instance.
      *
@@ -183,9 +187,9 @@ abstract class Edge extends Delegate
      */
     public function current()
     {
-        $relation = $this->finder->firstRelation($this->parent, $this->related, $this->type, $this->direction);
+        $results = $this->finder->firstRelationWithNodes($this->parent, $this->related, $this->type, $this->direction);
 
-        return ($relation) ? $this->newFromRelation($relation) : null;
+        return ($results->hasRecord()) ? $this->newFromRelation($results) : null;
     }
 
     /**
@@ -220,7 +224,7 @@ abstract class Edge extends Delegate
             // at this point $saved is an instance of GraphAware\Neo4j\Client\Formatter\RecordView
             // that only contains the relationship as a record.
             // We will pull that out of the Result instance
-            $this->setRelation($saved->firstRecord()->valueByIndex(0), $this->related);
+            $this->setRelation($saved);
 
             return true;
         }
@@ -228,6 +232,13 @@ abstract class Edge extends Delegate
         return  false;
     }
 
+    /**
+     * @param string $type
+     * @param Model $start
+     * @param Model $end
+     * @param array $properties
+     * @return \GraphAware\Neo4j\Client\Formatter\Result
+     */
     public function saveRelationship($type, $start, $end, $properties)
     {
         $grammar = $this->query->getQuery()->getGrammar();
@@ -275,14 +286,14 @@ abstract class Edge extends Delegate
      * Create a new Relation of the current instance
      * from an existing database relation.
      *
-     * @param Everyman\Neo4j\Relationship $relation
+     * @param \GraphAware\Neo4j\Client\Formatter\Result $results
      *
      * @return static
      */
-    public function newFromRelation(Relationship $relation)
+    public function newFromRelation(Result $results)
     {
         $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);
-        $instance->setRelation($relation);
+        $instance->setRelation($results);
 
         return $instance;
     }
@@ -320,10 +331,14 @@ abstract class Edge extends Delegate
     /**
      * Set a given relationship on this relation.
      *
-     * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship $relation
+     * @param \GraphAware\Neo4j\Client\Formatter\Result $results
      */
-    public function setRelation(Relationship $relation)
+    public function setRelation(Result $results)
     {
+        $nodes = $this->getNodeRecords($results);
+        $relationships = $this->getRelationshipRecords($results);
+        $relation = reset($relationships);
+
         // Set the relation object.
         $this->relation = $relation;
 
@@ -333,17 +348,23 @@ abstract class Edge extends Delegate
 
         // Set the start and end nodes.
         // FIXME: See if we will need $this->start and $this->end for they've been removed.
+        $this->start = $this->getNodeByType($relation, $nodes, 'start');
+        $this->end = $this->getNodeByType($relation, $nodes, 'end');
+
+        $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;
+        $attributes = array_merge(['id' => $relatedNode->identity()], $relatedNode->values());
+
+        $this->related = $this->related->newFromBuilder($attributes);
+        $this->related->setConnection($this->related->getConnectionName());
+
 //        $this->start = $relation->getStartNode();
 //        $this->end = $relation->getEndNode();
-
-        // Instantiate and fill out the related model.
+//
+//        // Instantiate and fill out the related model.
 //        $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;
-//        $attributes = array_merge(['id' => $relatedNode->identity()], $relatedNode->values());
-//        $relatedNodeID = ($this->isDirectionOut()) ? $relation->endNodeIdentity() : $relation->startNodeIdentity();
-//        $relatedNodeAttributes = '';
-////        $attributes = array_merge(['id' => $relatedNodeID, $relatedNodeAttributes]);
-
-        // This is an existing relationship.
+//        $attributes = array_merge(['id' => $relatedNode->getId()], $relatedNode->getProperties());
+//
+//        // This is an existing relationship.
 //        $this->related = $this->related->newFromBuilder($attributes);
 //        $this->related->setConnection($this->related->getConnectionName());
     }

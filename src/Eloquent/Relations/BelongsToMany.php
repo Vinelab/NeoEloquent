@@ -157,7 +157,7 @@ class BelongsToMany extends HasOneOrMany
      */
     public function edge(Model $model = null)
     {
-        return $this->finder->first($this->parent, $model, $this->type);
+        return $this->finder->first($this->parent, $model, $this->type, $this->edgeDirection);
     }
 
     /**

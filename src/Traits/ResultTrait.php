@@ -97,4 +97,27 @@ trait ResultTrait
     {
         return $this->getRecords($result)->firstRecord()->valueByIndex(0);
     }
+
+    /**
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship[ $relation
+     * @param array $nodes
+     * @param string $type
+     * @return Node
+     */
+    protected function getNodeByType(Relationship $relation, array $nodes, string $type = 'start')
+    {
+        if($type != 'start') {
+            $type = 'end';
+        }
+
+        $method = $type.'NodeIdentity';
+
+        $id = $relation->{$method}();
+
+        foreach ($nodes as $node) {
+            if($id === $node->identity()) {
+                return $node;
+            }
+        }
+    }
 }
