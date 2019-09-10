@@ -4,14 +4,14 @@ namespace Vinelab\NeoEloquent\Traits;
 
 use GraphAware\Common\Type\Node;
 use GraphAware\Common\Type\Relationship;
-use GraphAware\Neo4j\Client\Formatter\Result;
+use GraphAware\Common\Result\AbstractRecordCursor as Result;
 use GraphAware\Common\Result\RecordViewInterface;
 
 trait ResultTrait
 {
     /**
      * @param Result $result
-     * @return \GraphAware\Neo4j\Client\Formatter\RecordView[]
+     * @return \GraphAware\Common\Result\RecordViewInterface[]
      */
     public function getResultRecords(Result $result)
     {
@@ -99,7 +99,7 @@ trait ResultTrait
     }
 
     /**
-     * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship $relation
+     * @param \GraphAware\Bolt\Result\Type\Relationship $relation
      * @param array $nodes
      * @param string $type
      * @return Node

@@ -2,14 +2,14 @@
 
 return array(
 
-    'default' => 'default',
+    'default' => 'bolt+routing',
 
     'connections' => array(
 
         'neo4j' => array(
             'driver' => 'neo4j',
             'host' => 'localhost',
-            'port' => 7474,
+            'port' => 7687,
             'username' => 'neo4j',
             'password' => 'test',
         ),
@@ -17,7 +17,7 @@ return array(
         'default' => array(
             'driver' => 'neo4j',
             'host' => 'localhost',
-            'port' => 7474,
+            'port' => 7687,
             'username' => 'neo4j',
             'password' => 'test',
         ),

@@ -65,7 +65,7 @@ class TestCase extends PHPUnit
      */
     protected function flushDb()
     {
-        $client = $this->getClient();
+        $client = $this->getClient()->writeSession();
 
         $flushQuery = 'MATCH (n) DETACH DELETE n';
 
@@ -91,7 +91,7 @@ class TestCase extends PHPUnit
         //get the labels using NeoClient
         $connection = $this->getConnectionWithConfig('neo4j');
         $client = $connection->getClient();
-        $result = $client->run("MATCH (n) WHERE id(n)=$id RETURN n");
+        $result = $client->session()->run("MATCH (n) WHERE id(n)=$id RETURN n");
 
         return $result->firstRecord()->valueByIndex(0);
     }

@@ -7,7 +7,7 @@ use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use GraphAware\Neo4j\Client\Formatter\Result;
 use Vinelab\NeoEloquent\Traits\ResultTrait;
-use GraphAware\Neo4j\Client\Formatter\RecordView;
+use GraphAware\Common\Result\RecordViewInterface;
 
 class Finder extends Delegate
 {
@@ -42,7 +42,7 @@ class Finder extends Delegate
         $results = $this->firstRelationWithNodes($parentModel, $relatedModel, $type, $direction);
 
         // Let's stop here if there is no relationship between them.
-        if (!$results || !$results->hasRecord()) {
+        if (!$results || !count($results->getRecords()) > 0) {
             return;
         }
 
@@ -161,12 +161,12 @@ class Finder extends Delegate
     /**
      * Get the Edge instance out of a Relationship based on a direction.
      *
-     * @param \GraphAware\Neo4j\Client\Formatter\RecordView $record
+     * @param \GraphAware\Common\Result\RecordViewInterface $record
      * @param string                       $direction can be 'in' or 'out'
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
-    public function edgeFromRelationWithDirection(RecordView $record, Model $parent, Model $related, $direction, $index = 0)
+    public function edgeFromRelationWithDirection(RecordViewInterface $record, Model $parent, Model $related, $direction, $index = 0)
     {
         // assume there is no relation received until we determine that there is one
         $relation = null;

@@ -5,6 +5,9 @@ namespace Vinelab\NeoEloquent;
 use Closure;
 use DateTime;
 use Exception;
+use GraphAware\Bolt\Configuration;
+use GraphAware\Bolt\Driver;
+use GraphAware\Bolt\GraphDatabase;
 use LogicException;
 //use Neoxygen\NeoClient\Client;
 //use Neoxygen\NeoClient\ClientBuilder;
@@ -375,9 +378,14 @@ class Connection implements ConnectionInterface
 //            ->setAutoFormatResponse(true)
 //            ->build();
 
-        return ClientBuilder::create()
-            ->addConnection('default', 'http://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
-            ->build();
+//        return ClientBuilder::create()
+//            ->addConnection('bolt', 'bolt://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
+//            ->addConnection('bolt+routing', 'bolt+routing://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
+//            ->addConnection('default', 'http://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
+//            ->build();
+        $boltConfig = Configuration::create($this->getUsername($config), $this->getPassword($config));
+
+        return GraphDatabase::driver('bolt://'.$this->getHost($config).':'.$this->getPort($config), $boltConfig);
     }
 
     public function createMultipleConnectionsClient()
@@ -463,9 +471,9 @@ class Connection implements ConnectionInterface
      * Set the client responsible for the
      * database communication.
      *
-     * @param \Neoxygen\NeoClient\Client $client
+     * @param \Graphaware\Bolt\Driver $client
      */
-    public function setClient(Client $client)
+    public function setClient(Driver $client)
     {
         $this->neo = $client;
     }
@@ -583,7 +591,7 @@ class Connection implements ConnectionInterface
             // node from the database, and will either be an array or objects.
             $query = $me->getCypherQuery($query, $bindings);
 
-            return $this->getClient()
+            return $this->getClient()->session()
                 ->run($query['statement'], $query['parameters']);
 
 //            return $this->getClient()
@@ -651,7 +659,7 @@ class Connection implements ConnectionInterface
             // to execute the statement and then we'll use CypherQuery to fetch the affected.
             $query = $me->getCypherQuery($query, $bindings);
 
-            return $this->getClient()
+            return $this->getClient()->writeSession()
                 ->run($query['statement'], $query['parameters']);
 
 //            return $this->getClient()
@@ -681,7 +689,7 @@ class Connection implements ConnectionInterface
 //                ->sendCypherQuery($query['statement'], $query['parameters'])
 //                ->getResult();
 
-            $results = $this->getClient()
+            $results = $this->getClient()->writeSession()
                 ->run($query['statement'], $query['parameters']);
 
             return ($rawResults === true) ? $results : !!$results;

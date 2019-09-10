@@ -8,7 +8,7 @@ use Carbon\Carbon;
 use BadMethodCallException;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\ConnectionInterface;
-use GraphAware\Neo4j\Client\Formatter\Result;
+use GraphAware\Common\Result\AbstractRecordCursor as Result;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 
@@ -349,7 +349,7 @@ class Builder
 
         $id = null;
 
-        if ($results instanceof Result && $results->hasRecord()) {
+        if ($results instanceof Result && count($results->getRecords())> 0) {
             $node = $results->firstRecord()->valueByIndex(0);
             $id = (!$sequence || $sequence == 'id') ? $node->identity() : $node->get($sequence);
         }

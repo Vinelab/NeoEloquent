@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
-use GraphAware\Neo4j\Client\Formatter\Type\Node;
-use GraphAware\Neo4j\Client\Formatter\Type\Relationship;
+use GraphAware\Bolt\Result\Type\Node;
+use GraphAware\Bolt\Result\Type\Relationship;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;
@@ -152,7 +152,7 @@ abstract class Delegate
     {
         $result = $this->firstRelationWithNodes($parentModel, $relatedModel, $type, $direction);
 
-        if ($result->hasRecord()) {
+        if (count($result->getRecords()) > 0) {
             return $result->firstRecord()->valueByIndex(0);
         }
     }

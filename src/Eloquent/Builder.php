@@ -3,11 +3,8 @@
 namespace Vinelab\NeoEloquent\Eloquent;
 
 use Closure;
-//use Neoxygen\NeoClient\Formatter\Node;
-//use Neoxygen\NeoClient\Formatter\Result;
-use GraphAware\Neo4j\Client\Formatter\Type\Node;
-use GraphAware\Neo4j\Client\Formatter\Result;
-
+use GraphAware\Bolt\Result\Type\Node;
+use GraphAware\Common\Result\AbstractRecordCursor as Result;
 use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Eloquent\Relationship as EloquentRelationship;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
@@ -805,7 +802,7 @@ class Builder
     /**
      * Get a Model instance out of the given node.
      *
-     * @param \GraphAware\Neo4j\Client\Formatter\Type\Node  $node
+     * @param \GraphAware\Bolt\Result\Type\Node  $node
      * @param string                                        $identifier
      * @param string                                        $connection
      *
