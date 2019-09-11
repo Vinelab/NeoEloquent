@@ -383,7 +383,7 @@ class Connection implements ConnectionInterface
 //            ->addConnection('bolt+routing', 'bolt+routing://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
 //            ->addConnection('default', 'http://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
 //            ->build();
-        $boltConfig = Configuration::create($this->getUsername($config), $this->getPassword($config));
+        $boltConfig = Configuration::create()->withCredentials($this->getUsername($config), $this->getPassword($config));
 
         return GraphDatabase::driver('bolt://'.$this->getHost($config).':'.$this->getPort($config), $boltConfig);
     }
