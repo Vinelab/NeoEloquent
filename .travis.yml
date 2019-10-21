@@ -1,19 +1,10 @@
 language: php
 php:
 - 7.2
-jdk:
-    # Needed for local Neo4j 2.0+
-    - openjdk8
 before_script:
 - travis_retry composer self-update
 - travis_retry composer install --prefer-source --no-interaction
 script: vendor/bin/phpunit
-env:
-  global:
-  - NEO4J_AUTH=none
-  matrix:
-  - NEO4J_VERSION="3.5.1"
-  - NEO4J_VERSION="3.4.16"
 notifications:
   slack:
     secure: RUGzdDgmVfytH9PItjMFUK+S9SN9WyJvoxXlUjiIjMv4tpdplUzMIIlZ7SRWKf9xL5nunrrMsSmGIL4bbqcePjl6R7LqjUVHx05+gbGrUwZoFv/4bRmYgna8lZbEnWmHsnuKG3Pd8001kOWcddBwC8rM5eS/NR13wsB3CVCV1vt8HDkTBul/TLLx2XuW7DeeUL90Mebh+N/VNydSjZ5MEoTWuA6Ppna0E4NVCBfrVFKgNWSVN/2NDzD9CZ87u7bD4l173ioKTU8/KTkVgcYxfZMiNHac1DWHArOxEvFOi5gfv5va32hoUDFqdGggMcS+JlDqfPGTLTPqj/7NyP7LtfSxk3fm+xP/w0TOl9BkkNLg36QggVMYl3epqYygr2g1unLNEtLAV/hLmAaC5vYk+sjirxHOAK6pVAQc76NLhwc6MTdDi4mlPq/a2XHoYtNJ11og19PpA4SZ6AdqDRug+/+K9ObHZ4sFkKejfSSLAcRCopuF6TPh4FpeCVT+9GJyPcvwNPE5GZcebV1h3ckB4RqxOqW3gtfp0HiexYSX5KQrDAs6d/ftmP9tG9Q3rNXdrZwSD0Tcfro1CMZZBo0WKXwwVBSQzgWvlIWx4cPQtVnNL+YiIL4auBDF4INrzi/vp7DNFRjpJLROHngnZ6Q2kiBTltFN4UUmHKBFDKt+Bnc=
@@ -23,14 +14,7 @@ addons:
       - sourceline: 'deb https://debian.neo4j.org/repo stable/'
         key_url: 'https://debian.neo4j.org/neotechnology.gpg.key'
     packages:
-      - neo4j
-
-before_install:
-  # Install Neo4j locally:
-  - wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
-  - tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
-  - neo4j-community-$NEO4J_VERSION/bin/neo4j start
-  # HACK need to change the password initially; changing it and then reverting:
-  - sleep 10  # give Neo4J some time to start
-  - curl -v POST http://neo4j:neo4j@localhost:7474/user/neo4j/password -d"password=neo4j2"
-  - curl -v POST http://neo4j:neo4j2@localhost:7474/user/neo4j/password -d"password=neo4j"
+      - neo4j=1:3.5.*
+before_install:  # disable auth for neo4j and restart it...
+  - sudo sed -i 's/#dbms.security.auth_enabled=false/dbms.security.auth_enabled=false/g' /etc/neo4j/neo4j.conf
+  - sudo systemctl restart neo4j
