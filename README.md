@@ -32,79 +32,7 @@ Add the package to your `composer.json` and run `composer update`.
 ```json
 {
     "require": {
-        "vinelab/neoeloquent": "^1.4.6"
-    }
-}
-```
-
-
-#### 5.5
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "^1.4.5"
-    }
-}
-```
-
-
-#### 5.4
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "1.4.3"
-    }
-}
-```
-
-#### 5.3
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "1.4.2"
-    }
-}
-```
-
-#### 5.2
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "1.3.*"
-    }
-}
-```
-
-#### 5.1
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "1.2.*"
-    }
-}
-```
-
-#### 5.0
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "1.2.5"
-    }
-}
-```
-
-### Laravel 4
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "1.1.*"
+        "ulobby/neoeloquent": "^1.4.6"
     }
 }
 ```
@@ -140,37 +68,6 @@ Add the connection defaults:
         'password' => env('DB_PASSWORD', null)
     ]
 ]
-```
-### Lumen
-
-For Lumen you need to create a new folder called `config` in the application root and there add a file called `database.php`. There you will add the following code.
-
-```php
-<?php
-
-return ['connections' => [
-            'neo4j' => [
-                'driver' => 'neo4j',
-                'host'   => env('DB_HOST', 'localhost'),
-                'port'   => env('DB_PORT', '7474'),
-                'username' => env('DB_USERNAME', null),
-                'password' => env('DB_PASSWORD', null)
-            ]
-        ]
-    ];
-```
-And add the following line in `bootstrap/app.php`
-
-```php
-$app->configure('database');
-```
-
-This is to enable Lumen to read other configurations other than the provided default ones.
-
-In the case of adding the Service Provider. You must add it in the Register Providers section of `bootstrap/app.php`. You can add it like so:
-
-```php
-$app->register('Vinelab\NeoEloquent\NeoEloquentServiceProvider');
 ```
 
 ### Migration Setup
