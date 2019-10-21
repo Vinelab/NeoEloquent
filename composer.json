@@ -1,5 +1,5 @@
 {
-    "name": "vinelab/neoeloquent",
+    "name": "ulobby/neoeloquent",
     "description": "Laravel wrapper for the Neo4j graph database REST interface",
     "keywords": [
         "laravel",
@@ -13,6 +13,10 @@
         {
             "name": "Abed Halawi",
             "email": "abed.halawi@vinelab.com"
+        },
+        {
+            "name": "Ulobby",
+            "email": "ulobby@ulobby.eu"
         }
     ],
     "require": {
