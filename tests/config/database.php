@@ -2,7 +2,7 @@
 
 return array(
 
-    'default' => 'default',
+    'default' => 'neo4j',
 
     'connections' => array(
 
