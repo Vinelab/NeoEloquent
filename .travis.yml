@@ -1,42 +1,26 @@
 language: php
-
 php:
-  - 7.1
-
+- 7.2
 services:
-  - neo4j
-
-matrix:
-  allow_failures:
-    - env: NEO4J_VERSION="2.3"
+- neo4j
 
 before_script:
-  # install dependencies to add repos
-  - sudo apt-get install -y python-software-properties
-  - sudo add-apt-repository -y ppa:webupd8team/java
-  - sudo apt-get update
-  # install oracle jdk 8
-  - sudo apt-get install -y oracle-java8-installer
-  - sudo update-alternatives --auto java
-  - sudo update-alternatives --auto javac
-  - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
-
-  # install composer
-  - travis_retry composer self-update
-  - travis_retry composer install --prefer-source --no-interaction
-
+- sudo apt-get install -y python-software-properties
+- sudo add-apt-repository -y ppa:webupd8team/java
+- sudo apt-get update
+- sudo apt-get install -y oracle-java8-installer
+- sudo update-alternatives --auto java
+- sudo update-alternatives --auto javac
+- export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
+- travis_retry composer self-update
+- travis_retry composer install --prefer-source --no-interaction
 script: vendor/bin/phpunit
-
 env:
   global:
-    - NEO4J_AUTH=none
+  - NEO4J_AUTH=none
   matrix:
-      - NEO4J_VERSION="2.3"
-      - NEO4J_VERSION="3.0"
-      - NEO4J_VERSION="3.1"
-      - NEO4J_VERSION="3.2"
-      - NEO4J_VERSION="3.3"
-
+  - NEO4J_VERSION="3.3"
+  - NEO4J_VERSION="3.4"
 notifications:
   slack:
     secure: Ug+Ff+2pdoVNjNBIEtSrPUDRqxl9u2atQT3fjuxj+tyfQGLZE/lSDuakTwPQ1eLM9UIz8w1bW5oKLkgDXURCztdmrSl6ggToUrM2aqwyDQlFqYBSb3p/B9H72rzo3pbIp9/tjYc7dlSFmODayqktvC8AAV5J69yEi4KABQeyjlwexeWpvmd9/cAf4dhUgXN6yYKBJq1bASoA3jPVuZSYxje9oDHeWRmveVZ0qaa1m7JAsdLPV5WuD1wIii3RTaT6tzzgWv2LOlsrWFjAX1hiot62xIjgW7+PI4wJOOtAGzgtMPKkmfQBYtvIeK14CxR2iNZGPKYXH/lZ1+cMHKYXhgsCoJhx32qW/JM6vAIQIHfCR6KtexMgizm0rwtgYYYyHqbBtneZ2dqlVHT86HOWsN8eoe2EvN1Ep2o67hwScp2IKE+DFgBjsOVjV/d4inrM3wMfzX2iQH9xzRJnxnv9TqV71cz2Ea4UcKx9TlD7uGmdHce73SwSlCtkz0q5gamseeYI3I5d4wPJpQXIcNneaSnmpR2xOvqMcGbvVidk1vWK8N9uBE1MVGSNK8/z2r60RDhMB7j2BjTes5aQWcVbMwhAVMmwdhAa/CWDx0VZhBxExJfJcrpFY/NLu0n66evfvzv3H39gq9RoVfBlK+nVt5eSpFmlYY3FBJiBIf365Dk=
