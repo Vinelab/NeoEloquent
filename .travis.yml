@@ -3,7 +3,7 @@ php:
 - 7.2
 jdk:
     # Needed for local Neo4j 2.0+
-    - oraclejdk8z
+    - openjdk8
 before_script:
 - travis_retry composer self-update
 - travis_retry composer install --prefer-source --no-interaction
