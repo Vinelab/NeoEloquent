@@ -1,5 +1,3 @@
-[![SymfonyInsight](https://insight.symfony.com/projects/6dd864b0-d14a-436b-8b44-af24eabe6375/small.svg)](https://insight.symfony.com/projects/6dd864b0-d14a-436b-8b44-af24eabe6375)
-
 [![Build Status](https://travis-ci.org/Ulobby/NeoEloquent.svg?branch=master)](https://travis-ci.org/Vinelab/NeoEloquent)
 
 # NeoEloquent
