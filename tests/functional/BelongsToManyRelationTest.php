@@ -95,7 +95,7 @@ class BelongsToManyRelationTest extends TestCase {
         {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
             $this->assertTrue($relation->exists());
-            $this->assertGreaterThan(0, $relation->id);
+            $this->assertIsInt($relation->id);
 
             $relation->delete();
         });
@@ -109,7 +109,7 @@ class BelongsToManyRelationTest extends TestCase {
         $relation = $user->roles()->attach($role);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
         $this->assertTrue($relation->exists());
-        $this->assertGreaterThan(0, $relation->id);
+        $this->assertIsInt($relation->id);
 
         $retrieved = $user->roles()->edge($role);
         $this->assertEquals($retrieved->toArray(), $relation->toArray());
@@ -133,7 +133,7 @@ class BelongsToManyRelationTest extends TestCase {
         {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
             $this->assertTrue($relation->exists());
-            $this->assertGreaterThan(0, $relation->id);
+            $this->assertIsInt($relation->id);
 
             $relation->delete();
         });
@@ -163,7 +163,7 @@ class BelongsToManyRelationTest extends TestCase {
         $edgeIn = $role->users()->edge($user);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edgeIn);
         $this->assertTrue($edgeIn->exists());
-        $this->assertGreaterThan(0, $edgeIn->id);
+        $this->assertIsInt($edgeIn->id);
 
         $relation->delete();
     }
@@ -176,7 +176,7 @@ class BelongsToManyRelationTest extends TestCase {
         $relation = $user->roles()->attach($role->id);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $relation);
         $this->assertTrue($relation->exists());
-        $this->assertGreaterThan(0, $relation->id);
+        $this->assertIsInt($relation->id);
 
         $retrieved = $user->roles()->edge($role);
         $this->assertEquals($retrieved->toArray(), $relation->toArray());
@@ -313,7 +313,7 @@ class BelongsToManyRelationTest extends TestCase {
         {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany\Role', $role);
             $this->assertTrue($role->exists);
-            $this->assertGreaterThan(0, $role->id);
+            $this->assertIsInt($role->id);
         }
 
         $user->roles()->edges()->each(function($edge){ $edge->delete(); });
