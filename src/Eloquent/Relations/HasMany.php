@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Illuminate\Database\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 
-class HasMany extends HasOneOrMany {
-
+class HasMany extends HasOneOrMany
+{
     /**
      * Get the results of the relationship.
      *
@@ -19,13 +21,14 @@ class HasMany extends HasOneOrMany {
     /**
      * Get an instance of the Edge relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(EloquentModel $model = null, $attributes = [])
     {
-        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
+        $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
         return new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes);
     }
@@ -33,7 +36,8 @@ class HasMany extends HasOneOrMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
+     * @param array $models
+     *
      * @return void
      */
     public function addEagerConstraints(array $models)
@@ -55,7 +59,7 @@ class HasMany extends HasOneOrMany {
         $this->query->addManyMutation($parentNode, $this->parent, 'many');
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
+        $this->query->getQuery()->from = [$parentNode];
         // Build the MATCH ()-[]->() Cypher clause.
         $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
@@ -65,9 +69,10 @@ class HasMany extends HasOneOrMany {
     /**
      * Match the eagerly loaded results to their parents.
      *
-     * @param  array   $models
-     * @param  \Illuminate\Database\Eloquent\Collection  $results
-     * @param  string  $relation
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
      * @return array
      */
     public function match(array $models, Collection $results, $relation)

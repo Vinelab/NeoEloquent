@@ -1,21 +1,23 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional;
+<?php
 
-use DateTime;
+namespace Vinelab\NeoEloquent\Tests\Functional;
+
 use Carbon\Carbon;
+use DateTime;
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
-class Wiz extends Model {
-
+class Wiz extends Model
+{
     protected $label = ':Wiz';
 
     protected $fillable = ['fiz', 'biz', 'triz'];
 }
 
-class WizDel extends Model {
-
+class WizDel extends Model
+{
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
@@ -25,8 +27,8 @@ class WizDel extends Model {
     protected $fillable = ['fiz', 'biz', 'triz'];
 }
 
-class SimpleCRUDTest extends TestCase {
-
+class SimpleCRUDTest extends TestCase
+{
     public function setUp()
     {
         parent::setUp();
@@ -42,7 +44,9 @@ class SimpleCRUDTest extends TestCase {
 
         // Mama said, always clean up before you go. =D
         $w = Wiz::all();
-        $w->each(function($me){ $me->delete(); });
+        $w->each(function ($me) {
+            $me->delete();
+        });
 
         parent::tearDown();
     }
@@ -56,7 +60,8 @@ class SimpleCRUDTest extends TestCase {
     }
 
     /**
-     * Regression test for issue #27
+     * Regression test for issue #27.
+     *
      * @see https://github.com/Vinelab/NeoEloquent/issues/27
      */
     public function testDoesntCrashOnNonIntIds()
@@ -97,7 +102,7 @@ class SimpleCRUDTest extends TestCase {
     }
 
     /**
-     * depends testFindingRecordById
+     * depends testFindingRecordById.
      */
     public function testDeletingRecord()
     {
@@ -115,9 +120,9 @@ class SimpleCRUDTest extends TestCase {
     public function testMassAssigningAttributes()
     {
         $w = Wiz::create([
-            'fiz' => 'foo',
-            'biz' => 'boo',
-            'nope' => 'nope'
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
+            'nope' => 'nope',
         ]);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
@@ -134,7 +139,7 @@ class SimpleCRUDTest extends TestCase {
     {
         $w = Wiz::create([
             'fiz' => 'foo',
-            'biz' => 'boo'
+            'biz' => 'boo',
         ]);
 
         $found = Wiz::find($w->id);
@@ -157,7 +162,7 @@ class SimpleCRUDTest extends TestCase {
     {
         $w = Wiz::create([
             'fiz' => 'foo',
-            'biz' => 'boo'
+            'biz' => 'boo',
         ]);
 
         $found = Wiz::find($w->id);
@@ -177,13 +182,14 @@ class SimpleCRUDTest extends TestCase {
      * attributes messes up the values and keeps the old ones resulting in a failed update.
      *
      * @see  https://github.com/Vinelab/NeoEloquent/issues/18
+     *
      * @return [type] [description]
      */
     public function testUpdatingRecordwithUpdateOnQuery()
     {
         $w = Wiz::create([
             'fiz' => 'foo',
-            'biz' => 'boo'
+            'biz' => 'boo',
         ]);
 
         Wiz::where('fiz', '=', 'foo')
@@ -203,20 +209,20 @@ class SimpleCRUDTest extends TestCase {
         $batch = [
             [
                 'fiz' => 'foo',
-                'biz' => 'boo'
+                'biz' => 'boo',
             ],
             [
                 'fiz' => 'morefoo',
-                'biz' => 'moreboo'
+                'biz' => 'moreboo',
             ],
             [
                 'fiz' => 'otherfoo',
-                'biz' => 'otherboo'
+                'biz' => 'otherboo',
             ],
             [
                 'fiz' => 'somefoo',
-                'biz' => 'someboo'
-            ]
+                'biz' => 'someboo',
+            ],
         ];
 
         $inserted = Wiz::insert($batch);
@@ -226,8 +232,7 @@ class SimpleCRUDTest extends TestCase {
         // Let's fetch them to see if that's really true.
         $wizzez = Wiz::all();
 
-        foreach ($wizzez as $key => $wizz)
-        {
+        foreach ($wizzez as $key => $wizz) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $wizz);
             $values = $wizz->toArray();
             $this->assertArrayHasKey('id', $values);
@@ -303,17 +308,17 @@ class SimpleCRUDTest extends TestCase {
     public function testFirstOrCreate()
     {
         $w = Wiz::firstOrCreate([
-            'fiz' => 'foo',
-            'biz' => 'boo',
-            'triz' => 'troo'
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
+            'triz' => 'troo',
         ]);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
 
         $found = Wiz::firstOrCreate([
-            'fiz' => 'foo',
-            'biz' => 'boo',
-            'triz' => 'troo'
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
+            'triz' => 'troo',
         ]);
 
         $this->assertEquals($w->toArray(), $found->toArray());
@@ -324,7 +329,7 @@ class SimpleCRUDTest extends TestCase {
         $w = Wiz::create([
             'fiz'  => null,
             'biz'  => false,
-            'triz' => true
+            'triz' => true,
         ]);
 
         $this->assertNotNull($w->getKey());
@@ -341,7 +346,7 @@ class SimpleCRUDTest extends TestCase {
         $w = Wiz::create([
             'fiz'  => 'foo',
             'biz'  => 'boo',
-            'triz' => 'troo'
+            'triz' => 'troo',
         ]);
 
         $this->assertNotNull($w->getKey());
@@ -349,7 +354,7 @@ class SimpleCRUDTest extends TestCase {
         $updated = Wiz::where('fiz', 'foo')->where('biz', 'boo')->where('triz', 'troo')->update([
             'fiz'  => null,
             'biz'  => false,
-            'triz' => true
+            'triz' => true,
         ]);
 
         $this->assertGreaterThan(0, $updated);
@@ -378,5 +383,4 @@ class SimpleCRUDTest extends TestCase {
         $this->assertEquals($tomorrow->format($format), $updated->fiz);
         $this->assertEquals($after->format($format), $updated->biz);
     }
-
 }

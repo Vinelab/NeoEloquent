@@ -1,13 +1,15 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
 
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Builder;
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
+
 use Illuminate\Database\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
-class BelongsToMany extends HasOneOrMany {
-
+class BelongsToMany extends HasOneOrMany
+{
     /**
      * The relationship name.
      *
@@ -57,9 +59,10 @@ class BelongsToMany extends HasOneOrMany {
     /**
      * Match the eagerly loaded results to their parents.
      *
-     * @param  array   $models
-     * @param  \Illuminate\Database\Eloquent\Collection  $results
-     * @param  string  $relation
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
      * @return array
      */
     public function match(array $models, Collection $results, $relation)
@@ -74,8 +77,7 @@ class BelongsToMany extends HasOneOrMany {
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
+        if (static::$constraints) {
             /**
              * For has one relationships we need to actually query on the primary key
              * of the parent model matching on the OUTGOING relationship by name.
@@ -99,14 +101,14 @@ class BelongsToMany extends HasOneOrMany {
              *          return $this->hasOne('Phone', 'PHONE');
              *     }
              * }
-            */
+             */
 
             // Get the parent node's placeholder.
             $parentNode = $this->getParentNode();
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = array($parentNode);
+            $this->query->getQuery()->from = [$parentNode];
             // Build the MATCH ()-[]->() Cypher clause.
             $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
@@ -117,7 +119,8 @@ class BelongsToMany extends HasOneOrMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
+     * @param array $models
+     *
      * @return void
      */
     public function addEagerConstraints(array $models)
@@ -139,7 +142,7 @@ class BelongsToMany extends HasOneOrMany {
         $this->query->addManyMutation($parentNode, $this->parent);
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
+        $this->query->getQuery()->from = [$parentNode];
         // Build the MATCH ()-[]->() Cypher clause.
         $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
@@ -150,7 +153,8 @@ class BelongsToMany extends HasOneOrMany {
      * Get the edge between the parent model and the given model or
      * the related model determined by the relation function name.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
+     * @param \Illuminate\Database\Eloquent\Model $model
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
     public function edge(Model $model = null)
@@ -161,15 +165,15 @@ class BelongsToMany extends HasOneOrMany {
     /**
      * Get an instance of the Edge[In|Out] relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(EloquentModel $model = null, $attributes = [])
     {
-        $model = ( ! is_null($model)) ? $model : $this->related;
+        $model = (!is_null($model)) ? $model : $this->related;
 
         return new EdgeIn($this->query, $this->parent, $model, $this->type, $attributes);
     }
-
 }

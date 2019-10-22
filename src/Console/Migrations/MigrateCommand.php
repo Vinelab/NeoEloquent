@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Console\ConfirmableTrait;
@@ -37,7 +36,8 @@ class MigrateCommand extends BaseCommand
     protected $migrator;
 
     /**
-     * @param  \Illuminate\Database\Migrations\Migrator $migrator
+     * @param \Illuminate\Database\Migrations\Migrator $migrator
+     *
      * @return void
      */
     public function __construct(Migrator $migrator)
@@ -54,7 +54,7 @@ class MigrateCommand extends BaseCommand
      */
     public function handle()
     {
-        if (! $this->confirmToProceed()) {
+        if (!$this->confirmToProceed()) {
             return;
         }
 
@@ -65,7 +65,7 @@ class MigrateCommand extends BaseCommand
         // so that migrations may be run for any path within the applications.
         $this->migrator->run($this->getMigrationPaths(), [
             'pretend' => $this->option('pretend'),
-            'step' => $this->option('step'),
+            'step'    => $this->option('step'),
         ]);
         // Once the migrator has run we will grab the note output and send it out to
         // the console screen, since the migrator itself functions without having

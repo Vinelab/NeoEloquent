@@ -1,10 +1,12 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
 
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
+
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 
-class MorphedByOne extends OneRelation {
-
+class MorphedByOne extends OneRelation
+{
     /**
      * Set the base constraints on the relation query.
      *
@@ -12,8 +14,7 @@ class MorphedByOne extends OneRelation {
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
+        if (static::$constraints) {
             /**
              * For belongs to relationships, which are essentially the inverse of has one
              * or has many relationships, we need to actually query on the primary key
@@ -38,14 +39,14 @@ class MorphedByOne extends OneRelation {
              *          return $this->belongsTo('User', 'PHONE');
              *     }
              * }
-            */
+             */
 
             // Get the parent node's placeholder.
             $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = array($parentNode);
+            $this->query->getQuery()->from = [$parentNode];
             // Build the MATCH ()<-[]-() Cypher clause.
             $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
             // Add WHERE clause over the parent node's matching key = value.
@@ -56,7 +57,8 @@ class MorphedByOne extends OneRelation {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
+     * @param array $models
+     *
      * @return void
      */
     public function addEagerConstraints(array $models)
@@ -78,7 +80,7 @@ class MorphedByOne extends OneRelation {
         $this->query->addMutation($parentNode, $this->parent);
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
+        $this->query->getQuery()->from = [$parentNode];
         // Build the MATCH ()<-[]-() Cypher clause.
         $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
         // Add WHERE clause over the parent node's matching keys [values...].
@@ -88,16 +90,18 @@ class MorphedByOne extends OneRelation {
     /**
      * Get an instance of the EdgeIn relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(EloquentModel $model = null, $attributes = [])
     {
-        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
+        $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
         // Indicate a unique relation since this only involves one other model.
         $unique = true;
+
         return new EdgeOut($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
     }
 }

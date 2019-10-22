@@ -1,17 +1,19 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
-class User extends Model {
-
+class User extends Model
+{
     protected $label = 'Individual';
     protected $fillable = ['name', 'email'];
 }
 
-class Location extends Model {
-
+class Location extends Model
+{
     protected $label = 'Location';
     protected $fillable = ['lat', 'long'];
 
@@ -21,17 +23,21 @@ class Location extends Model {
     }
 }
 
-class BelongsToRelationTest extends TestCase {
-
+class BelongsToRelationTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
 
         $users = User::all();
-        $users->each(function($u) { $u->delete(); });
+        $users->each(function ($u) {
+            $u->delete();
+        });
 
         $locs = Location::all();
-        $locs->each(function($l) { $l->delete(); });
+        $locs->each(function ($l) {
+            $l->delete();
+        });
 
         parent::tearDown();
     }
@@ -166,5 +172,4 @@ class BelongsToRelationTest extends TestCase {
         $this->assertEquals($relation->toArray(), $retrieved->toArray());
         $this->assertTrue($relation->delete());
     }
-
 }

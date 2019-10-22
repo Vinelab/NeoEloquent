@@ -1,14 +1,16 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Vinelab\NeoEloquent\Connection;
+use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\QueryException;
-use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\UnknownDirectionException;
 
-abstract class Delegate {
-
-     /**
+abstract class Delegate
+{
+    /**
      * The Eloquent builder instance.
      *
      * @var \Vinelab\NeoEloquent\Eloquent\Builder
@@ -37,7 +39,7 @@ abstract class Delegate {
      */
     public function __construct(Builder $query)
     {
-        $this->query  = $query;
+        $this->query = $query;
         $model = $query->getModel();
 
         // Setup the database connection and client.
@@ -58,13 +60,14 @@ abstract class Delegate {
     /**
      * Make a new Relationship instance.
      *
-     * @param  string $type
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $startModel
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $endModel
-     * @param  array  $properties
+     * @param string                              $type
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $startModel
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $endModel
+     * @param array                               $properties
+     *
      * @return \Everyman\Neo4j\Relationship
      */
-    protected function makeRelationship($type, $startModel, $endModel, $properties = array())
+    protected function makeRelationship($type, $startModel, $endModel, $properties = [])
     {
         return $this->client
             ->makeRelationship()
@@ -87,56 +90,50 @@ abstract class Delegate {
     /**
      * Commit the started batch operation.
      *
-     * @return boolean
+     * @throws \Vinelab\NeoEloquent\QueryException If no open batch to commit.
      *
-     * @throws  \Vinelab\NeoEloquent\QueryException If no open batch to commit.
+     * @return bool
      */
     public function commitBatch()
     {
         try {
-
             return $this->client->commitBatch();
-
-        } catch (\Exception $e)
-        {
-            throw new QueryException('Error committing batch operation.', array(), $e);
+        } catch (\Exception $e) {
+            throw new QueryException('Error committing batch operation.', [], $e);
         }
     }
 
     /**
      * Get the direction value from the Neo4j
      * client according to the direction set on
-     * the inheriting class,
+     * the inheriting class,.
      *
-     * @param  string $direction
-     * @return string
+     * @param string $direction
      *
      * @throws UnknownDirectionException If the specified $direction is not one of in, out or inout
+     *
+     * @return string
      */
     public function getRealDirection($direction)
     {
-        if ($direction == 'in' || $direction == 'out')
-        {
+        if ($direction == 'in' || $direction == 'out') {
             $direction = ucfirst($direction);
-
-        } elseif ($direction == 'any')
-        {
+        } elseif ($direction == 'any') {
             $direction = 'All';
-
-        } else
-        {
+        } else {
             throw new UnknownDirectionException($direction);
         }
 
-        $direction = "Direction". $direction;
+        $direction = 'Direction'.$direction;
 
-        return constant("Everyman\Neo4j\Relationship::". $direction);
+        return constant("Everyman\Neo4j\Relationship::".$direction);
     }
 
     /**
      * Convert a model to a Node object.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
+     *
      * @return \Everyman\Neo4j\Node
      */
     public function asNode(Model $model)
@@ -145,15 +142,13 @@ abstract class Delegate {
 
         // If the key name of the model is 'id' we will need to set it properly with setId()
         // since setting it as a regular property with setProperty() won't cut it.
-        if ($model->getKeyName() == 'id')
-        {
+        if ($model->getKeyName() == 'id') {
             $node->setId($model->getKey());
         }
 
         // In this case the dev has chosen a different primary key
         // so we use it insetead.
-        else
-        {
+        else {
             $node->setProperty($model->getKeyName(), $model->getKey());
         }
 
@@ -173,7 +168,8 @@ abstract class Delegate {
     /**
      * Set the database connection.
      *
-     * @param  \Vinelab\NeoEloquent\Connection  $name
+     * @param \Vinelab\NeoEloquent\Connection $name
+     *
      * @return void
      */
     public function setConnection(Connection $connection)
@@ -190,5 +186,4 @@ abstract class Delegate {
     {
         return $this->query->getModel()->getConnectionName();
     }
-
 }

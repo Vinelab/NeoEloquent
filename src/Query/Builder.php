@@ -1,27 +1,29 @@
-<?php namespace Vinelab\NeoEloquent\Query;
+<?php
 
+namespace Vinelab\NeoEloquent\Query;
+
+use Carbon\Carbon;
 use Closure;
 use DateTime;
-use Carbon\Carbon;
-use Vinelab\NeoEloquent\Connection;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\Builder as IlluminateQueryBuilder;
+use Illuminate\Database\Query\Expression;
+use Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
+use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
-use Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
-use Illuminate\Database\Query\Builder as IlluminateQueryBuilder;
 
-class Builder extends IlluminateQueryBuilder {
-
+class Builder extends IlluminateQueryBuilder
+{
     /**
-     * The database connection instance
+     * The database connection instance.
      *
      * @var Vinelab\NeoEloquent\Connection
      */
     public $connection;
 
     /**
-     * The database active client handler
+     * The database active client handler.
      *
      * @var Everyman\Neo4j\Client
      */
@@ -32,57 +34,58 @@ class Builder extends IlluminateQueryBuilder {
      *
      * @var array
      */
-    public $matches = array();
+    public $matches = [];
 
     /**
      * The WITH parts of the query.
      *
      * @var array
      */
-    public $with = array();
+    public $with = [];
 
     /**
-     * The WHERE statements to be executed after the WITH statement
-     * 
+     * The WHERE statements to be executed after the WITH statement.
+     *
      * @var array
      */
-    public $withWheres = array();
-    
+    public $withWheres = [];
+
     /**
      * The current query value bindings.
      *
      * @var array
      */
-    public $bindings = array(
+    public $bindings = [
         'matches'=> [],
         'select' => [],
         'join'   => [],
         'where'  => [],
         'having' => [],
-        'order'  => []
-    );
+        'order'  => [],
+    ];
 
     /**
-	 * All of the available clause operators.
-	 *
-	 * @var array
-	 */
-    public $operators = array(
+     * All of the available clause operators.
+     *
+     * @var array
+     */
+    public $operators = [
         '+', '-', '*', '/', '%', '^',          // Mathematical
         '=', '<>', '<', '>', '<=', '>=',       // Comparison
         'is null', 'is not null',
         'and', 'or', 'xor', 'not',             // Boolean
         'in', '[x]', '[x .. y]',               // Collection
         '=~',                                  // Regular Expression
-        'starts with', 'ends with', 'contains' // String matching
-    );
+        'starts with', 'ends with', 'contains', // String matching
+    ];
 
     /**
      * Create a new query builder instance.
      *
-     * @param Vinelab\NeoEloquent\Connection $connection
-     * @param  \Illuminate\Database\Query\Grammars\Grammar  $grammar
-     * @param  \Illuminate\Database\Query\Processors\Processor  $processor
+     * @param Vinelab\NeoEloquent\Connection                  $connection
+     * @param \Illuminate\Database\Query\Grammars\Grammar     $grammar
+     * @param \Illuminate\Database\Query\Processors\Processor $processor
+     *
      * @return void
      */
     public function __construct(Connection $connection, Grammar $grammar, IlluminateProcessor $processor)
@@ -97,11 +100,12 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     /**
-	 * Set the node's label which the query is targeting.
-	 *
-	 * @param  string  $label
-	 * @return \Vinelab\NeoEloquent\Query\Builder|static
-	 */
+     * Set the node's label which the query is targeting.
+     *
+     * @param string $label
+     *
+     * @return \Vinelab\NeoEloquent\Query\Builder|static
+     */
     public function from($label)
     {
         $this->from = $label;
@@ -110,20 +114,20 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     /**
-	 * Insert a new record and get the value of the primary key.
-	 *
-	 * @param  array   $values
-	 * @param  string  $sequence
-	 * @return int
-	 */
+     * Insert a new record and get the value of the primary key.
+     *
+     * @param array  $values
+     * @param string $sequence
+     *
+     * @return int
+     */
     public function insertGetId(array $values, $sequence = null)
     {
         // create a neo4j Node
         $node = $this->client->makeNode();
 
         // set its properties
-        foreach ($values as $key => $value)
-        {
+        foreach ($values as $key => $value) {
             $value = $this->formatValue($value);
 
             $node->setProperty($key, $value);
@@ -136,7 +140,7 @@ class Builder extends IlluminateQueryBuilder {
         $id = $node->getId();
 
         // set the labels
-        $node->addLabels(array_map(array($this, 'makeLabel'), $this->from));
+        $node->addLabels(array_map([$this, 'makeLabel'], $this->from));
 
         return $id;
     }
@@ -144,7 +148,8 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Update a record in the database.
      *
-     * @param  array  $values
+     * @param array $values
+     *
      * @return int
      */
     public function update(array $values)
@@ -163,16 +168,16 @@ class Builder extends IlluminateQueryBuilder {
      *  in the CypherGrammar so that we differentiate them from
      *  query bindings avoiding clashing values.
      *
-     * @param  array $values
+     * @param array $values
+     *
      * @return array
      */
     protected function getBindingsMergedWithValues(array $values)
     {
         $bindings = [];
 
-        foreach ($values as $key => $value)
-        {
-            $bindings[$key .'_update'] = $value;
+        foreach ($values as $key => $value) {
+            $bindings[$key.'_update'] = $value;
         }
 
         return array_merge($this->getBindings(), $bindings);
@@ -190,15 +195,12 @@ class Builder extends IlluminateQueryBuilder {
 
         // We will run through all the bindings and pluck out
         // the component (select, where, etc.)
-        foreach($this->bindings as $component => $binding)
-        {
-            if ( ! empty($binding))
-            {
+        foreach ($this->bindings as $component => $binding) {
+            if (!empty($binding)) {
                 // For every binding there could be multiple
                 // values set so we need to add all of them as
                 // flat $key => $value item in our $bindings.
-                foreach ($binding as $key => $value)
-                {
+                foreach ($binding as $key => $value) {
                     $bindings[$key] = $value;
                 }
             }
@@ -209,34 +211,38 @@ class Builder extends IlluminateQueryBuilder {
 
     /**
      * Removes the order by clause when counting for the paginator.
+     *
      * @author Gaba93
      */
-    private function backupFieldsForCount() {
+    private function backupFieldsForCount()
+    {
         $this->orders_backup = $this->orders;
         $this->orders = null;
     }
 
     /**
      * Readds the order clause.
+     *
      * @author Gaba93
      */
-    private function restoreFieldsForCount() {
+    private function restoreFieldsForCount()
+    {
         $this->orders = $this->orders_backup;
         $this->orders_backup = null;
     }
 
     /**
-    * Get the count of the total records for the paginator.
-    *
-    * @param  array  $columns
-    * @return int
+     * Get the count of the total records for the paginator.
+     *
+     * @param array $columns
+     *
+     * @return int
      */
     public function getCountForPagination($columns = ['*'])
     {
         $this->backupFieldsForCount();
 
         $this->aggregate = ['function' => 'count', 'columns' => $columns];
-
 
         $results = $this->get();
 
@@ -250,113 +256,104 @@ class Builder extends IlluminateQueryBuilder {
 
         $row = null;
         if ($results->offsetExists(0)) {
-                $row = $results->offsetGet(0);
-                $count = $row->offsetGet(0);
-                return $count;
+            $row = $results->offsetGet(0);
+            $count = $row->offsetGet(0);
+
+            return $count;
         } else {
-                return 0;
+            return 0;
         }
     }
 
     /**
-	 * Add a basic where clause to the query.
-	 *
-	 * @param  string  $column
-	 * @param  string  $operator
-	 * @param  mixed   $value
-	 * @param  string  $boolean
-	 * @return \Illuminate\Database\Query\Builder|static
-	 *
-	 * @throws \InvalidArgumentException
-	 */
-	public function where($column, $operator = null, $value = null, $boolean = 'and')
-	{
+     * Add a basic where clause to the query.
+     *
+     * @param string $column
+     * @param string $operator
+     * @param mixed  $value
+     * @param string $boolean
+     *
+     * @throws \InvalidArgumentException
+     *
+     * @return \Illuminate\Database\Query\Builder|static
+     */
+    public function where($column, $operator = null, $value = null, $boolean = 'and')
+    {
         // First we check whether the operator is 'IN' so that we call whereIn() on it
         // as a helping hand and centralization strategy, whereIn knows what to do with the IN operator.
-        if (mb_strtolower($operator) == 'in')
-        {
+        if (mb_strtolower($operator) == 'in') {
             return $this->whereIn($column, $value, $boolean);
         }
 
         // If the column is an array, we will assume it is an array of key-value pairs
-		// and can add them each as a where clause. We will maintain the boolean we
-		// received when the method was called and pass it into the nested where.
-		if (is_array($column))
-		{
-			return $this->whereNested(function(IlluminateQueryBuilder $query) use ($column)
-			{
-				foreach ($column as $key => $value)
-				{
-					$query->where($key, '=', $value);
-				}
-			}, $boolean);
-		}
+        // and can add them each as a where clause. We will maintain the boolean we
+        // received when the method was called and pass it into the nested where.
+        if (is_array($column)) {
+            return $this->whereNested(function (IlluminateQueryBuilder $query) use ($column) {
+                foreach ($column as $key => $value) {
+                    $query->where($key, '=', $value);
+                }
+            }, $boolean);
+        }
 
-		if (func_num_args() == 2)
-		{
-			list($value, $operator) = array($operator, '=');
-		}
-		elseif ($this->invalidOperatorAndValue($operator, $value))
-		{
-			throw new \InvalidArgumentException("Value must be provided.");
-		}
+        if (func_num_args() == 2) {
+            list($value, $operator) = [$operator, '='];
+        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
+            throw new \InvalidArgumentException('Value must be provided.');
+        }
 
-		// If the columns is actually a Closure instance, we will assume the developer
-		// wants to begin a nested where statement which is wrapped in parenthesis.
-		// We'll add that Closure to the query then return back out immediately.
-		if ($column instanceof Closure)
-		{
-			return $this->whereNested($column, $boolean);
-		}
+        // If the columns is actually a Closure instance, we will assume the developer
+        // wants to begin a nested where statement which is wrapped in parenthesis.
+        // We'll add that Closure to the query then return back out immediately.
+        if ($column instanceof Closure) {
+            return $this->whereNested($column, $boolean);
+        }
 
-		// If the given operator is not found in the list of valid operators we will
-		// assume that the developer is just short-cutting the '=' operators and
-		// we will set the operators to '=' and set the values appropriately.
-		if ( ! in_array(mb_strtolower($operator), $this->operators, true))
-		{
-			list($value, $operator) = array($operator, '=');
-		}
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if (!in_array(mb_strtolower($operator), $this->operators, true)) {
+            list($value, $operator) = [$operator, '='];
+        }
 
-		// If the value is a Closure, it means the developer is performing an entire
-		// sub-select within the query and we will need to compile the sub-select
-		// within the where clause to get the appropriate query record results.
-		if ($value instanceof Closure)
-		{
-			return $this->whereSub($column, $operator, $value, $boolean);
-		}
+        // If the value is a Closure, it means the developer is performing an entire
+        // sub-select within the query and we will need to compile the sub-select
+        // within the where clause to get the appropriate query record results.
+        if ($value instanceof Closure) {
+            return $this->whereSub($column, $operator, $value, $boolean);
+        }
 
-		// If the value is "null", we will just assume the developer wants to add a
-		// where null clause to the query. So, we will allow a short-cut here to
-		// that method for convenience so the developer doesn't have to check.
-		if (is_null($value))
-		{
-			return $this->whereNull($column, $boolean, $operator != '=');
-		}
+        // If the value is "null", we will just assume the developer wants to add a
+        // where null clause to the query. So, we will allow a short-cut here to
+        // that method for convenience so the developer doesn't have to check.
+        if (is_null($value)) {
+            return $this->whereNull($column, $boolean, $operator != '=');
+        }
 
-		// Now that we are working with just a simple query we can put the elements
-		// in our array and add the query binding to our array of bindings that
-		// will be bound to each SQL statements when it is finally executed.
-		$type = 'Basic';
+        // Now that we are working with just a simple query we can put the elements
+        // in our array and add the query binding to our array of bindings that
+        // will be bound to each SQL statements when it is finally executed.
+        $type = 'Basic';
 
         $property = $column;
 
         // When the column is an id we need to treat it as a graph db id and transform it
         // into the form of id(n) and the typecast the value into int.
-        if ($column == 'id')
-        {
-            $column = 'id('. $this->modelAsNode() .')';
+        if ($column == 'id') {
+            $column = 'id('.$this->modelAsNode().')';
             $value = intval($value);
         }
         // When it's been already passed in the form of NodeLabel.id we'll have to
         // re-format it into id(NodeLabel)
-        elseif (preg_match('/^.*\.id$/', $column))
-        {
+        elseif (preg_match('/^.*\.id$/', $column)) {
             $parts = explode('.', $column);
             $column = sprintf('%s(%s)', $parts[1], $parts[0]);
             $value = intval($value);
         }
         // Also if the $column is already a form of id(n) we'd have to type-cast the value into int.
-        elseif (preg_match('/^id\(.*\)$/', $column)) $value = intval($value);
+        elseif (preg_match('/^id\(.*\)$/', $column)) {
+            $value = intval($value);
+        }
 
         $binding = $this->prepareBindingColumn($column);
 
@@ -364,48 +361,52 @@ class Builder extends IlluminateQueryBuilder {
 
         $property = $this->wrap($binding);
 
-        if ( ! $value instanceof Expression)
-        {
-			$this->addBinding([$property => $value], 'where');
-		}
+        if (!$value instanceof Expression) {
+            $this->addBinding([$property => $value], 'where');
+        }
 
-		return $this;
-	}
+        return $this;
+    }
 
     /**
      * Increment the value of an existing column on a where clause.
      * Used to allow querying on the same attribute with different values.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return string
      */
     protected function prepareBindingColumn($column)
     {
         $count = $this->columnCountForWhereClause($column);
-        return ($count > 0) ? $column .'_'. ($count + 1) : $column;
+
+        return ($count > 0) ? $column.'_'.($count + 1) : $column;
     }
 
     /**
      * Get the number of occurrences of a column in where clauses.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return int
      */
     protected function columnCountForWhereClause($column)
     {
-        if (is_array($this->wheres))
-            return count(array_filter($this->wheres, function($where) use($column) {
+        if (is_array($this->wheres)) {
+            return count(array_filter($this->wheres, function ($where) use ($column) {
                 return isset($where['column']) && $where['column'] == $column;
             }));
+        }
     }
 
     /**
      * Add a "where in" clause to the query.
      *
-     * @param  string  $column
-     * @param  mixed   $values
-     * @param  string  $boolean
-     * @param  bool    $not
+     * @param string $column
+     * @param mixed  $values
+     * @param string $boolean
+     * @param bool   $not
+     *
      * @return \Illuminate\Database\Query\Builder|static
      */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
@@ -415,14 +416,15 @@ class Builder extends IlluminateQueryBuilder {
         // If the value of the where in clause is actually a Closure, we will assume that
         // the developer is using a full sub-select for this "in" statement, and will
         // execute those Closures, then we can re-construct the entire sub-selects.
-        if ($values instanceof Closure)
-        {
+        if ($values instanceof Closure) {
             return $this->whereInSub($column, $values, $boolean, $not);
         }
 
         $property = $column;
 
-        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+        if ($column == 'id') {
+            $column = 'id('.$this->modelAsNode().')';
+        }
 
         $this->wheres[] = compact('type', 'column', 'values', 'boolean');
 
@@ -436,10 +438,11 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Add a where between statement to the query.
      *
-     * @param  string  $column
-     * @param  array   $values
-     * @param  string  $boolean
-     * @param  bool  $not
+     * @param string $column
+     * @param array  $values
+     * @param string $boolean
+     * @param bool   $not
+     *
      * @return \Illuminate\Database\Query\Builder|static
      */
     public function whereBetween($column, array $values, $boolean = 'and', $not = false)
@@ -448,7 +451,9 @@ class Builder extends IlluminateQueryBuilder {
 
         $property = $column;
 
-        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+        if ($column == 'id') {
+            $column = 'id('.$this->modelAsNode().')';
+        }
 
         $this->wheres[] = compact('column', 'type', 'boolean', 'not');
 
@@ -460,16 +465,19 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Add a "where null" clause to the query.
      *
-     * @param  string  $column
-     * @param  string  $boolean
-     * @param  bool    $not
+     * @param string $column
+     * @param string $boolean
+     * @param bool   $not
+     *
      * @return \Illuminate\Database\Query\Builder|static
      */
     public function whereNull($column, $boolean = 'and', $not = false)
     {
         $type = $not ? 'NotNull' : 'Null';
 
-        if ($column == 'id') $column = 'id('. $this->modelAsNode() .')';
+        if ($column == 'id') {
+            $column = 'id('.$this->modelAsNode().')';
+        }
 
         $binding = $this->prepareBindingColumn($column);
 
@@ -481,10 +489,11 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Add a WHERE statement with carried identifier to the query.
      *
-     * @param  string $column
-     * @param  string $operator
-     * @param  string $value
-     * @param  string $boolean
+     * @param string $column
+     * @param string $operator
+     * @param string $value
+     * @param string $boolean
+     *
      * @return \Illuminate\Database\Query\Builder|static
      */
     public function whereCarried($column, $operator = null, $value = null, $boolean = 'and')
@@ -499,13 +508,13 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Add a WITH clause to the query.
      *
-     * @param  array  $parts
+     * @param array $parts
+     *
      * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function with(array $parts)
     {
-        foreach ($parts as $key => $part)
-        {
+        foreach ($parts as $key => $part) {
             $this->with[$key] = $part;
         }
 
@@ -515,7 +524,8 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Insert a new record into the database.
      *
-     * @param  array  $values
+     * @param array $values
+     *
      * @return bool
      */
     public function insert(array $values)
@@ -523,30 +533,27 @@ class Builder extends IlluminateQueryBuilder {
         // Since every insert gets treated like a batch insert, we will make sure the
         // bindings are structured in a way that is convenient for building these
         // inserts statements by verifying the elements are actually an array.
-        if ( ! is_array(reset($values)))
-        {
-            $values = array($values);
+        if (!is_array(reset($values))) {
+            $values = [$values];
         }
 
         // Since every insert gets treated like a batch insert, we will make sure the
         // bindings are structured in a way that is convenient for building these
         // inserts statements by verifying the elements are actually an array.
-        else
-        {
-            foreach ($values as $key => $value)
-            {
+        else {
+            foreach ($values as $key => $value) {
                 $value = $this->formatValue($value);
-                ksort($value); $values[$key] = $value;
+                ksort($value);
+                $values[$key] = $value;
             }
         }
 
         // We'll treat every insert like a batch insert so we can easily insert each
         // of the records into the database consistently. This will make it much
         // easier on the grammars to just handle one type of record insertion.
-        $bindings = array();
+        $bindings = [];
 
-        foreach ($values as $record)
-        {
+        foreach ($values as $record) {
             $bindings[] = $record;
         }
 
@@ -563,8 +570,9 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Create a new node with related nodes with one database hit.
      *
-     * @param  array  $model
-     * @param  array  $related
+     * @param array $model
+     * @param array $related
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Model
      */
     public function createWith(array $model, array $related)
@@ -576,33 +584,36 @@ class Builder extends IlluminateQueryBuilder {
     }
 
     /**
-	 * Execute the query as a fresh "select" statement.
-	 *
-	 * @param  array  $columns
-	 * @return array|static[]
-	 */
-	public function getFresh($columns = array('*'))
-	{
-		if (is_null($this->columns)) $this->columns = $columns;
+     * Execute the query as a fresh "select" statement.
+     *
+     * @param array $columns
+     *
+     * @return array|static[]
+     */
+    public function getFresh($columns = ['*'])
+    {
+        if (is_null($this->columns)) {
+            $this->columns = $columns;
+        }
 
         return $this->runSelect();
-	}
-
-	/**
-	 * Run the query as a "select" statement against the connection.
-	 *
-	 * @return array
-	 */
-	protected function runSelect()
-	{
-		return $this->connection->select($this->toCypher(), $this->getBindings());
-	}
+    }
 
     /**
-	 * Get the Cypher representation of the traversal.
-	 *
-	 * @return string
-	 */
+     * Run the query as a "select" statement against the connection.
+     *
+     * @return array
+     */
+    protected function runSelect()
+    {
+        return $this->connection->select($this->toCypher(), $this->getBindings());
+    }
+
+    /**
+     * Get the Cypher representation of the traversal.
+     *
+     * @return string
+     */
     public function toCypher()
     {
         return $this->grammar->compileSelect($this);
@@ -611,37 +622,38 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Add a relationship MATCH clause to the query.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model of the relationship
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related      The related model
-     * @param  string $relatedNode  The related node' placeholder
-     * @param  string $relationship The relationship title
-     * @param  string $property     The parent's property we are matching against
-     * @param  string $value
-     * @param  string $direction Possible values are in, out and in-out
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $parent       The parent model of the relationship
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $related      The related model
+     * @param string                              $relatedNode  The related node' placeholder
+     * @param string                              $relationship The relationship title
+     * @param string                              $property     The parent's property we are matching against
+     * @param string                              $value
+     * @param string                              $direction    Possible values are in, out and in-out
+     *
      * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
     public function matchRelation($parent, $related, $relatedNode, $relationship, $property, $value = null, $direction = 'out')
     {
-        $parentLabels  = $parent->getTable();
+        $parentLabels = $parent->getTable();
         $relatedLabels = $related->getTable();
-        $parentNode    = $this->modelAsNode($parentLabels);
+        $parentNode = $this->modelAsNode($parentLabels);
 
-        $this->matches[] = array(
+        $this->matches[] = [
             'type'         => 'Relation',
             'property'     => $property,
             'direction'    => $direction,
             'relationship' => $relationship,
-            'parent' => array(
+            'parent'       => [
                 'node'   => $parentNode,
-                'labels' => $parentLabels
-            ),
-            'related' => array(
+                'labels' => $parentLabels,
+            ],
+            'related' => [
                 'node'   => $relatedNode,
-                'labels' => $relatedLabels
-            )
-        );
+                'labels' => $relatedLabels,
+            ],
+        ];
 
-        $this->addBinding(array($this->wrap($property) => $value), 'matches');
+        $this->addBinding([$this->wrap($property) => $value], 'matches');
 
         return $this;
     }
@@ -651,18 +663,18 @@ class Builder extends IlluminateQueryBuilder {
         $parentLabels = $parent->getTable();
         $parentNode = $this->modelAsNode($parentLabels);
 
-        $this->matches[] = array(
+        $this->matches[] = [
             'type'      => 'MorphTo',
             'property'  => $property,
             'direction' => $direction,
-            'related'   => array('node' => $relatedNode),
-            'parent'    => array(
+            'related'   => ['node' => $relatedNode],
+            'parent'    => [
                 'node'   => $parentNode,
-                'labels' => $parentLabels
-            )
-        );
+                'labels' => $parentLabels,
+            ],
+        ];
 
-        $this->addBinding(array($property => $value), 'matches');
+        $this->addBinding([$property => $value], 'matches');
 
         return $this;
     }
@@ -672,12 +684,13 @@ class Builder extends IlluminateQueryBuilder {
      * with a percentile from 0.0 to 1.0.
      * It uses a rounding method, returning the nearest value to the percentile.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return mixed
      */
     public function percentileDisc($column, $percentile = 0.0)
     {
-        return $this->aggregate(__FUNCTION__, array($column), $percentile);
+        return $this->aggregate(__FUNCTION__, [$column], $percentile);
     }
 
     /**
@@ -686,50 +699,53 @@ class Builder extends IlluminateQueryBuilder {
      * calculating a weighted average between two values,
      * if the desired percentile lies between them.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return mixed
      */
     public function percentileCont($column, $percentile = 0.0)
     {
-        return $this->aggregate(__FUNCTION__, array($column), $percentile);
+        return $this->aggregate(__FUNCTION__, [$column], $percentile);
     }
 
     /**
      * Retrieve the standard deviation for a given column.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return mixed
      */
     public function stdev($column)
     {
-        return $this->aggregate(__FUNCTION__, array($column));
+        return $this->aggregate(__FUNCTION__, [$column]);
     }
 
     /**
      * Retrieve the standard deviation of an entire group for a given column.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return mixed
      */
     public function stdevp($column)
     {
-        return $this->aggregate(__FUNCTION__, array($column));
+        return $this->aggregate(__FUNCTION__, [$column]);
     }
 
     /**
      * Get the collected values of the give column.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function collect($column)
     {
-        $row = $this->aggregate(__FUNCTION__, array($column));
+        $row = $this->aggregate(__FUNCTION__, [$column]);
 
         $collected = [];
 
-        foreach ($row as $value)
-        {
+        foreach ($row as $value) {
             $collected[] = $value;
         }
 
@@ -739,21 +755,23 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Get the count of the disctinct values of a given column.
      *
-     * @param  string $column
+     * @param string $column
+     *
      * @return int
      */
     public function countDistinct($column)
     {
-        return (int) $this->aggregate(__FUNCTION__, array($column));
+        return (int) $this->aggregate(__FUNCTION__, [$column]);
     }
 
     /**
      * Execute the query and get the first result.
      *
-     * @param  array   $columns
+     * @param array $columns
+     *
      * @return mixed|static
      */
-    public function first($columns = array('*'))
+    public function first($columns = ['*'])
     {
         $results = $this->take(1)->get($columns)->current();
 
@@ -763,14 +781,15 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Execute an aggregate function on the database.
      *
-     * @param  string  $function
-     * @param  array   $columns
+     * @param string $function
+     * @param array  $columns
+     *
      * @return mixed
      */
-    public function aggregate($function, $columns = array('*'), $percentile = null)
+    public function aggregate($function, $columns = ['*'], $percentile = null)
     {
         $this->aggregate = array_merge([
-            'label' => $this->from
+            'label' => $this->from,
         ], compact('function', 'columns', 'percentile'));
 
         $previousColumns = $this->columns;
@@ -784,8 +803,7 @@ class Builder extends IlluminateQueryBuilder {
 
         $this->columns = $previousColumns;
 
-        if ($results->valid())
-        {
+        if ($results->valid()) {
             return $results->current()[0];
         }
     }
@@ -793,18 +811,17 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Add a binding to the query.
      *
-     * @param  mixed   $value
-     * @param  string  $type
+     * @param mixed  $value
+     * @param string $type
+     *
      * @return \Illuminate\Database\Query\Builder
      */
     public function addBinding($value, $type = 'where')
     {
-        if (is_array($value) && count($value) > 0)
-        {
+        if (is_array($value) && count($value) > 0) {
             $key = array_keys($value)[0];
 
-            if (strpos($key, '.') !== false)
-            {
+            if (strpos($key, '.') !== false) {
                 $binding = $value[$key];
                 unset($value[$key]);
                 $key = explode('.', $key)[1];
@@ -812,17 +829,13 @@ class Builder extends IlluminateQueryBuilder {
             }
         }
 
-        if ( ! array_key_exists($type, $this->bindings))
-        {
+        if (!array_key_exists($type, $this->bindings)) {
             throw new \InvalidArgumentException("Invalid binding type: {$type}.");
         }
 
-        if (is_array($value))
-        {
+        if (is_array($value)) {
             $this->bindings[$type] = array_merge($this->bindings[$type], $value);
-        }
-        else
-        {
+        } else {
             $this->bindings[$type][] = $value;
         }
 
@@ -832,7 +845,8 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Convert a string into a Neo4j Label.
      *
-     * @param   string  $label
+     * @param string $label
+     *
      * @return Everyman\Neo4j\Label
      */
     public function makeLabel($label)
@@ -842,18 +856,19 @@ class Builder extends IlluminateQueryBuilder {
 
     /**
      * Tranfrom a model's name into a placeholder
-     * for fetched properties. i.e.:
+     * for fetched properties. i.e.:.
      *
      * MATCH (user:`User`)... "user" is what this method returns
      * out of User (and other labels).
      * PS: It consideres the first value in $labels
      *
-     * @param  array $labels
+     * @param array $labels
+     *
      * @return string
      */
     public function modelAsNode(array $labels = null)
     {
-        $labels = ( ! is_null($labels)) ? $labels : $this->from;
+        $labels = (!is_null($labels)) ? $labels : $this->from;
 
         return $this->grammar->modelAsNode($labels);
     }
@@ -861,8 +876,9 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Merge an array of where clauses and bindings.
      *
-     * @param  array  $wheres
-     * @param  array  $bindings
+     * @param array $wheres
+     * @param array $bindings
+     *
      * @return void
      */
     public function mergeWheres($wheres, $bindings)
@@ -877,20 +893,20 @@ class Builder extends IlluminateQueryBuilder {
         return $this->grammar->getIdReplacement($property);
     }
 
-	/**
-	 * Get a new instance of the query builder.
-	 *
-	 * @return \Illuminate\Database\Query\Builder
-	 */
-	public function newQuery()
-	{
-		return new Builder($this->connection, $this->grammar, $this->getProcessor());
-	}
+    /**
+     * Get a new instance of the query builder.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function newQuery()
+    {
+        return new self($this->connection, $this->grammar, $this->getProcessor());
+    }
 
     /**
      * Fromat the value into its string representation.
      *
-     * @param  mixed $value
+     * @param mixed $value
      *
      * @return string
      */
@@ -898,8 +914,7 @@ class Builder extends IlluminateQueryBuilder {
     {
         // If the value is a date we'll format it according to the specified
         // date format.
-        if ($value instanceof DateTime || $value instanceof Carbon)
-        {
+        if ($value instanceof DateTime || $value instanceof Carbon) {
             $value = $value->format($this->grammar->getDateFormat());
         }
 
@@ -914,7 +929,6 @@ class Builder extends IlluminateQueryBuilder {
      */
     public function updateLabels($labels, $operation = 'add')
     {
-
         $cypher = $this->grammar->compileUpdateLabels($this, $labels, $operation);
 
         $updated = $this->connection->update($cypher, $this->getBindings());
@@ -925,7 +939,8 @@ class Builder extends IlluminateQueryBuilder {
     /**
      * Execute the query as a "select" statement.
      *
-     * @param  array  $columns
+     * @param array $columns
+     *
      * @return \Illuminate\Support\Collection
      */
     public function get($columns = ['*'])

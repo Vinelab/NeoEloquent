@@ -1,16 +1,18 @@
-<?php namespace Vinelab\NeoEloquent\Tests;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests;
 
 use Mockery as M;
+use PHPUnit\Framework\TestCase as PHPUnit;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use PHPUnit\Framework\TestCase as PHPUnit;
 
-class Stub extends Model {
-
+class Stub extends Model
+{
 }
 
-class TestCase extends PHPUnit {
-
+class TestCase extends PHPUnit
+{
     public function __construct()
     {
         parent::__construct();
@@ -45,7 +47,8 @@ class TestCase extends PHPUnit {
     /**
      * Get the connection with a given or the default configuration.
      *
-     * @param  string $config As specified in config/database.php
+     * @param string $config As specified in config/database.php
+     *
      * @return \Vinelab\NeoEloquent\Connection
      */
     protected function getConnectionWithConfig($config = null)
@@ -63,7 +66,7 @@ class TestCase extends PHPUnit {
      */
     protected function flushDb()
     {
-        $connection = (new Stub)->getConnection();
+        $connection = (new Stub())->getConnection();
         $client = $connection->getClient();
         // Remove all relationships and related nodes
         $query = new \Everyman\Neo4j\Cypher\Query($client, 'MATCH (n) OPTIONAL MATCH (n) - [r] - (c) DELETE n, r, c');

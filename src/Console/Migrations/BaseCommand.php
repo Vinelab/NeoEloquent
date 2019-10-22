@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Console\Command;
@@ -12,7 +11,7 @@ class BaseCommand extends Command
      *
      * @var string
      */
-    CONST LABELS_DIRECTORY = 'labels';
+    const LABELS_DIRECTORY = 'labels';
 
     /**
      * Get the path to the migration directory.

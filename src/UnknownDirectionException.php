@@ -1,3 +1,7 @@
-<?php namespace Vinelab\NeoEloquent;
+<?php
 
-class UnknownDirectionException extends \Exception {}
+namespace Vinelab\NeoEloquent;
+
+class UnknownDirectionException extends \Exception
+{
+}
