@@ -45,6 +45,9 @@
             "tests/TestCase.php"
         ]
     },
+    "replace": {
+        "vinelab/neoeloquent":"1.4.7"
+    },
     "minimum-stability": "stable",
     "extra": {
         "laravel": {
