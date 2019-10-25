@@ -50,11 +50,11 @@ class BelongsTo extends OneRelation {
             // Get the parent node's placeholder.
             $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
             // Tell the query that we only need the related model returned.
-            $this->query->select($this->relation);
+            $this->query->select($this->relationName);
             // Set the parent node's placeholder as the RETURN key.
             $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()<-[]-() Cypher clause.
-            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
+            $this->query->matchIn($this->parent, $this->related, $this->relationName, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
             // Add WHERE clause over the parent node's matching key = value.
             $this->query->where($this->ownerKey, '=', $this->parent->{$this->ownerKey});
         }
@@ -78,16 +78,16 @@ class BelongsTo extends OneRelation {
         $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
 
         // Tell the builder to select both models of the relationship
-        $this->query->select($this->relation, $parentNode);
+        $this->query->select($this->relationName, $parentNode);
 
         // Setup for their mutation so they don't breed weird stuff like... humans ?!
-        $this->query->addMutation($this->relation, $this->related);
+        $this->query->addMutation($this->relationName, $this->related);
         $this->query->addMutation($parentNode, $this->parent);
 
         // Set the parent node's placeholder as the RETURN key.
         $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()<-[]-() Cypher clause.
-        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
+        $this->query->matchIn($this->parent, $this->related, $this->relationName, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->ownerKey, $this->getEagerModelKeys($models));
     }
@@ -101,7 +101,7 @@ class BelongsTo extends OneRelation {
      */
     public function getEdge(EloquentModel $model = null, $attributes = array())
     {
-        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
+        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relationName};
 
         // Indicate a unique relation since this only involves one other model.
         $unique = true;
