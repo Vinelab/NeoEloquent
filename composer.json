@@ -21,11 +21,11 @@
     ],
     "require": {
         "php": ">=7.2",
-        "illuminate/support": "5.7.*",
-        "illuminate/database": "5.7.*",
-        "illuminate/pagination": "5.7.*",
-        "illuminate/events": "5.7.*",
-        "illuminate/console": "5.7.*",
+        "illuminate/support": "5.8.*",
+        "illuminate/database": "5.8.*",
+        "illuminate/pagination": "5.8.*",
+        "illuminate/events": "5.8.*",
+        "illuminate/console": "5.8.*",
         "heydavid713/neo4jphp": "0.1.*",
         "nesbot/carbon": "~1.0"
     },
