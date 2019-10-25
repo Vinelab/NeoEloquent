@@ -1,10 +1,12 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
 
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
+
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 
-class MorphMany extends BelongsToMany {
-
+class MorphMany extends BelongsToMany
+{
     /**
      * Set the base constraints on the relation query.
      *
@@ -12,8 +14,7 @@ class MorphMany extends BelongsToMany {
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
+        if (static::$constraints) {
             /**
              * For has one relationships we need to actually query on the primary key
              * of the parent model matching on the OUTGOING relationship by name.
@@ -37,14 +38,14 @@ class MorphMany extends BelongsToMany {
              *          return $this->hasOne('Phone', 'PHONE');
              *     }
              * }
-            */
+             */
 
             // Get the parent node's placeholder.
             $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = array($parentNode);
+            $this->query->getQuery()->from = [$parentNode];
             // Build the MATCH ()-[]->() Cypher clause.
             $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
@@ -55,7 +56,8 @@ class MorphMany extends BelongsToMany {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
+     * @param array $models
+     *
      * @return void
      */
     public function addEagerConstraints(array $models)
@@ -77,7 +79,7 @@ class MorphMany extends BelongsToMany {
         $this->query->addManyMutation($parentNode, $this->parent, 'many');
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
+        $this->query->getQuery()->from = [$parentNode];
         // Build the MATCH ()-[]->() Cypher clause.
         $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
@@ -87,13 +89,14 @@ class MorphMany extends BelongsToMany {
     /**
      * Get an instance of the Edge[In|Out] relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(EloquentModel $model = null, $attributes = [])
     {
-        $model = ( ! is_null($model)) ? $model : $this->related;
+        $model = (!is_null($model)) ? $model : $this->related;
 
         return new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes);
     }

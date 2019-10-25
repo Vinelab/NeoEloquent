@@ -1,24 +1,28 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
-class User extends Model {
-
+class User extends Model
+{
     protected $label = 'Individual';
 
     protected $fillable = ['name', 'email', 'alias', 'calls'];
 }
 
-class WheresTheTest extends TestCase {
-
+class WheresTheTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
 
         $all = User::all();
-        $all->each(function($u) { $u->delete(); });
+        $all->each(function ($u) {
+            $u->delete();
+        });
 
         parent::tearDown();
     }
@@ -36,37 +40,36 @@ class WheresTheTest extends TestCase {
             'name'  => 'Ey Bee',
             'alias' => 'ab',
             'email' => 'ab@alpha.bet',
-            'calls' => 10
+            'calls' => 10,
         ]);
 
         $this->cd = User::create([
             'name'  => 'See Dee',
             'alias' => 'cd',
             'email' => 'cd@alpha.bet',
-            'calls' => 20
+            'calls' => 20,
         ]);
 
         $this->ef = User::create([
             'name'  => 'Eee Eff',
             'alias' => 'ef',
             'email' => 'ef@alpha.bet',
-            'calls' => 30
+            'calls' => 30,
         ]);
 
         $this->gh = User::create([
             'name'  => 'Gee Aych',
             'alias' => 'gh',
             'email' => 'gh@alpha.bet',
-            'calls' => 40
+            'calls' => 40,
         ]);
 
         $this->ij = User::create([
-            'name' => 'Eye Jay',
+            'name'  => 'Eye Jay',
             'alias' => 'ij',
             'email' => 'ij@alpha.bet',
-            'calls' => 50
+            'calls' => 50,
         ]);
-
     }
 
     public function testWhereIdWithNoOperator()
@@ -114,17 +117,17 @@ class WheresTheTest extends TestCase {
         $others = User::where('calls', '>', 10)->get();
         $this->assertCount(4, $others);
 
-        $brothers = new \Illuminate\Database\Eloquent\Collection(array(
+        $brothers = new \Illuminate\Database\Eloquent\Collection([
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ]);
         $this->assertEquals($others->sortBy('id')->values()->toArray(), $brothers->sortBy('id')->values()->toArray());
 
         $lastTwo = User::where('calls', '>=', 40)->get();
         $this->assertCount(2, $lastTwo);
 
-        $mothers = new \Illuminate\Database\Eloquent\Collection(array($this->gh, $this->ij));
+        $mothers = new \Illuminate\Database\Eloquent\Collection([$this->gh, $this->ij]);
         $this->assertEquals($lastTwo->sortBy('id')->values()->toArray(), $mothers->sortBy('id')->values()->toArray());
 
         $none = User::where('calls', '>', 9000)->get();
@@ -142,9 +145,9 @@ class WheresTheTest extends TestCase {
         $three = User::where('calls', '<=', 30)->get();
         $this->assertCount(3, $three);
 
-        $cocoa = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
+        $cocoa = new \Illuminate\Database\Eloquent\Collection([$this->ab,
                                                             $this->cd,
-                                                            $this->ef));
+                                                            $this->ef, ]);
         $this->assertEquals($cocoa->sortBy('id')->values()->toArray(), $three->sortBy('id')->values()->toArray());
 
         $below = User::where('calls', '<', -100)->get();
@@ -158,11 +161,11 @@ class WheresTheTest extends TestCase {
     {
         $notab = User::where('alias', '<>', 'ab')->get();
 
-        $dudes = new \Illuminate\Database\Eloquent\Collection(array(
+        $dudes = new \Illuminate\Database\Eloquent\Collection([
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ]);
 
         $this->assertCount(4, $notab);
         $this->assertEquals($notab->sortBy('id')->values()->toArray(), $dudes->sortBy('id')->values()->toArray());
@@ -172,11 +175,11 @@ class WheresTheTest extends TestCase {
     {
         $alpha = User::whereIn('alias', ['ab', 'cd', 'ef', 'gh', 'ij'])->get();
 
-        $crocodile = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
+        $crocodile = new \Illuminate\Database\Eloquent\Collection([$this->ab,
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ]);
 
         $this->assertEquals($alpha->sortBy('id')->values()->toArray(), $crocodile->sortBy('id')->values()->toArray());
     }
@@ -185,11 +188,11 @@ class WheresTheTest extends TestCase {
     {
         $alpha = User::whereNotNull('alias')->get();
 
-        $crocodile = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
+        $crocodile = new \Illuminate\Database\Eloquent\Collection([$this->ab,
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ]);
 
         $this->assertEquals($alpha->sortBy('id')->values()->toArray(), $crocodile->sortBy('id')->values()->toArray());
     }
@@ -202,9 +205,8 @@ class WheresTheTest extends TestCase {
 
     public function testWhereNotIn()
     {
-
         $u = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->get();
-        $still = new \Illuminate\Database\Eloquent\Collection(array($this->gh, $this->ij));
+        $still = new \Illuminate\Database\Eloquent\Collection([$this->gh, $this->ij]);
 
         $this->assertCount(2, $u);
     }
@@ -215,11 +217,11 @@ class WheresTheTest extends TestCase {
 
         $u = User::whereBetween('id', [$this->ab->id, $this->ij->id])->get();
 
-        $mwahaha = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
+        $mwahaha = new \Illuminate\Database\Eloquent\Collection([$this->ab,
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ]);
         $this->assertCount(5, $u);
         $this->assertEquals($buddies, $mwahaha);
     }
@@ -234,11 +236,11 @@ class WheresTheTest extends TestCase {
             ->get();
 
         $this->assertCount(5, $buddies);
-        $bigBrothers = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
+        $bigBrothers = new \Illuminate\Database\Eloquent\Collection([$this->ab,
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ]);
 
         $this->assertEquals($buddies->sortBy('id')->values()->toArray(), $bigBrothers->sortBy('id')->values()->toArray());
     }
@@ -248,11 +250,11 @@ class WheresTheTest extends TestCase {
         $all = User::whereIn('id', [$this->ab->id, $this->cd->id])
             ->orWhereIn('alias', ['ef', 'gh', 'ij'])->get();
 
-        $padrougas = new \Illuminate\Database\Eloquent\Collection(array($this->ab,
+        $padrougas = new \Illuminate\Database\Eloquent\Collection([$this->ab,
                                                             $this->cd,
                                                             $this->ef,
                                                             $this->gh,
-                                                            $this->ij));
+                                                            $this->ij, ]);
         $this->assertEquals($all->sortBy('id')->values()->toArray(), $padrougas->sortBy('id')->values()->toArray());
     }
 
@@ -266,7 +268,7 @@ class WheresTheTest extends TestCase {
     }
 
     /**
-     * Regression test for issue #19
+     * Regression test for issue #19.
      *
      * @see  https://github.com/Vinelab/NeoEloquent/issues/19
      */
@@ -280,7 +282,7 @@ class WheresTheTest extends TestCase {
     }
 
     /**
-     * Regression test for issue #41
+     * Regression test for issue #41.
      *
      * @see https://github.com/Vinelab/NeoEloquent/issues/41
      */
@@ -292,7 +294,7 @@ class WheresTheTest extends TestCase {
 
         $users = User::where('alias', 'IN', ['cd', 'ef'])->orderBy('alias')->get();
 
-        $l = (new User)->getConnection()->getQueryLog();
+        $l = (new User())->getConnection()->getQueryLog();
 
         $this->assertEquals($this->cd->toArray(), $users[0]->toArray());
         $this->assertEquals($this->ef->toArray(), $users[1]->toArray());

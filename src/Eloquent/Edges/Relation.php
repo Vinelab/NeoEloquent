@@ -1,15 +1,17 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
+<?php
 
-use DateTime;
+namespace Vinelab\NeoEloquent\Eloquent\Edges;
+
 use Carbon\Carbon;
+use DateTime;
 use Everyman\Neo4j\Relationship;
 use Illuminate\Database\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\NoEdgeDirectionException;
 
-abstract class Relation extends Delegate {
-
+abstract class Relation extends Delegate
+{
     /**
      * The edges finder instance.
      *
@@ -56,21 +58,21 @@ abstract class Relation extends Delegate {
      *
      * @var array
      */
-    protected $attributes = array();
+    protected $attributes = [];
 
     /**
      * The attributes that should be mutated to dates.
      *
      * @var array
      */
-    protected $dates = array();
+    protected $dates = [];
 
     /**
      * Holds the decision on whether
      * this relation is unique or
      * there can be many of it.
      *
-     * @var boolean
+     * @var bool
      */
     protected $unique = false;
 
@@ -113,6 +115,7 @@ abstract class Relation extends Delegate {
      *
      * WARNING: Every inheriting class must set this value
      *     or it will throw a NoEdgeDirectionException
+     *
      * @var string
      */
     protected $direction;
@@ -123,18 +126,18 @@ abstract class Relation extends Delegate {
      * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
      * @param \Vinelab\NeoEloquent\Eloquent\Model   $parent
      * @param \Vinelab\NeoEloquent\Eloquent\Model   $related
-     * @param string  $type
+     * @param string                                $type
      */
-    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = array(), $unique = false)
+    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = [], $unique = false)
     {
         parent::__construct($query);
 
-        $this->type       = $type;
-        $this->parent     = $parent;
-        $this->related    = $related;
-        $this->unique     = $unique;
+        $this->type = $type;
+        $this->parent = $parent;
+        $this->related = $related;
+        $this->unique = $unique;
         $this->attributes = $attributes;
-        $this->finder     = $this->newFinder();
+        $this->finder = $this->newFinder();
 
         $this->initRelation();
     }
@@ -143,17 +146,17 @@ abstract class Relation extends Delegate {
      * Initialize the relationship setting the start node,
      * end node and relation type.
      *
-     * @throws  \Vinelab\NeoEloquent\NoEdgeDirectionException If $direction is not set on the inheriting relation.
+     * @throws \Vinelab\NeoEloquent\NoEdgeDirectionException If $direction is not set on the inheriting relation.
+     *
      * @return void
      */
     public function initRelation()
     {
-        switch ($this->direction)
-        {
+        switch ($this->direction) {
             case 'in':
                 // Make them nodes
                 $this->start = $this->asNode($this->related);
-                $this->end   = $this->asNode($this->parent);
+                $this->end = $this->asNode($this->parent);
                 // Setup relationship
                 $this->relation = $this->makeRelationship($this->type, $this->relation, $this->parent, $this->attributes);
             break;
@@ -161,13 +164,13 @@ abstract class Relation extends Delegate {
             case 'out':
                 // Make them nodes
                 $this->start = $this->asNode($this->parent);
-                $this->end   = $this->asNode($this->related);
+                $this->end = $this->asNode($this->related);
                 // Setup relationship
                 $this->relation = $this->makeRelationship($this->type, $this->parent, $this->related, $this->attributes);
             break;
 
             default:
-                throw new NoEdgeDirectionException;
+                throw new NoEdgeDirectionException();
             break;
         }
     }
@@ -182,30 +185,28 @@ abstract class Relation extends Delegate {
     {
         $relation = $this->finder->firstRelation($this->parent, $this->related, $this->type, $this->direction);
 
-        return ( ! is_null($relation)) ? $this->newFromRelation($relation) : null;
+        return (!is_null($relation)) ? $this->newFromRelation($relation) : null;
     }
 
     /**
      * Save the relationship to the database.
      *
-     * @return boolean
+     * @return bool
      */
     public function save()
     {
         $this->updateTimestamps();
 
-         /**
-         * If this is a unique relationship we should check for an existing
-         * one of the same type and direction for the $parent node before saving
-         * and delete it, only if we are not updating a relationship.
-         */
-        if ($this->unique && ! $this->exists())
-        {
+        /*
+        * If this is a unique relationship we should check for an existing
+        * one of the same type and direction for the $parent node before saving
+        * and delete it, only if we are not updating a relationship.
+        */
+        if ($this->unique && !$this->exists()) {
             $parent = $this->asNode($this->parent);
             $existing = $parent->getFirstRelationship((array) $this->type, $this->getRealDirection($this->direction));
 
-            if ( ! empty($existing))
-            {
+            if (!empty($existing)) {
                 $existing->delete();
             }
         }
@@ -214,8 +215,7 @@ abstract class Relation extends Delegate {
 
         $saved = $this->relation->save();
 
-        if ($saved)
-        {
+        if ($saved) {
             // Let's refresh the relation we alreay have set so that
             // we make sure that it is totally in sync with the saved one.
             $this->setRelation($this->relation);
@@ -229,12 +229,11 @@ abstract class Relation extends Delegate {
     /**
      * Remove the relationship from the database.
      *
-     * @return  boolean
+     * @return bool
      */
     public function delete()
     {
-        if ( ! is_null($this->relation))
-        {
+        if (!is_null($this->relation)) {
             $deleted = $this->relation->delete();
 
             return $deleted ? true : false;
@@ -247,7 +246,8 @@ abstract class Relation extends Delegate {
      * Create a new Relation of the current instance
      * from an existing database relation.
      *
-     * @param  Everyman\Neo4j\Relationship $relation
+     * @param Everyman\Neo4j\Relationship $relation
+     *
      * @return static
      */
     public function newFromRelation(Relationship $relation)
@@ -305,7 +305,7 @@ abstract class Relation extends Delegate {
 
         // Set the start and end nodes.
         $this->start = $relation->getStartNode();
-        $this->end   = $relation->getEndNode();
+        $this->end = $relation->getEndNode();
 
         // Instantiate and fill out the related model.
         $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;
@@ -316,27 +316,25 @@ abstract class Relation extends Delegate {
         $this->related->setConnection($this->related->getConnectionName());
     }
 
-    public function setRelationProperties(array $properties = array())
+    public function setRelationProperties(array $properties = [])
     {
         // Go through the properties and assign them
         // to the relation.
-        foreach ($properties as $key => $value)
-        {
+        foreach ($properties as $key => $value) {
             $this->relation->setProperty($key, $value);
         }
-
     }
 
     /**
      * Fill the model with an array of attributes.
      *
-     * @param  array  $attributes
+     * @param array $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]|static
      */
     public function fill(array $properties)
     {
-        foreach ($properties as $key => $value)
-        {
+        foreach ($properties as $key => $value) {
             $this->setAttribute($key, $value);
         }
 
@@ -346,16 +344,15 @@ abstract class Relation extends Delegate {
     /**
      * Set a given attribute on the relation.
      *
-     * @param  string  $key
-     * @param  mixed   $value
+     * @param string $key
+     * @param mixed  $value
+     *
      * @return void
      */
     public function setAttribute($key, $value)
     {
-        if (in_array($key, $this->getDates()))
-        {
-            if ($value)
-            {
+        if (in_array($key, $this->getDates())) {
+            if ($value) {
                 $value = $this->fromDateTime($value);
             }
         }
@@ -366,17 +363,16 @@ abstract class Relation extends Delegate {
     /**
      * Get an attribute from the relation.
      *
-     * @param  string  $key
+     * @param string $key
+     *
      * @return mixed
      */
     public function getAttribute($key)
     {
-        if (array_key_exists($key, $this->attributes))
-        {
+        if (array_key_exists($key, $this->attributes)) {
             $value = $this->attributes[$key];
 
-            if (in_array($key, $this->getDates()))
-            {
+            if (in_array($key, $this->getDates())) {
                 return $this->asDateTime($value);
             }
 
@@ -391,7 +387,7 @@ abstract class Relation extends Delegate {
      */
     public function getDates()
     {
-        $defaults = array(static::CREATED_AT, static::UPDATED_AT);
+        $defaults = [static::CREATED_AT, static::UPDATED_AT];
 
         return array_merge($this->dates, $defaults);
     }
@@ -407,7 +403,7 @@ abstract class Relation extends Delegate {
     }
 
     /**
-     * Get all the attributes of this relation
+     * Get all the attributes of this relation.
      *
      * @return mixed
      */
@@ -423,7 +419,7 @@ abstract class Relation extends Delegate {
      */
     public function getModels()
     {
-        return new Collection(array($this->parent, $this->related));
+        return new Collection([$this->parent, $this->related]);
     }
 
     /**
@@ -475,13 +471,13 @@ abstract class Relation extends Delegate {
      */
     public function getNodes()
     {
-        return new Collection(array($this->start, $this->end));
+        return new Collection([$this->start, $this->end]);
     }
 
     /**
      * Determine whether this relationship is unique.
      *
-     * @return boolean
+     * @return bool
      */
     public function isUnique()
     {
@@ -491,12 +487,11 @@ abstract class Relation extends Delegate {
     /**
      * Determine whether this relation exists.
      *
-     * @return boolean
+     * @return bool
      */
     public function exists()
     {
-        if ($this->relation && $this->relation->hasId())
-        {
+        if ($this->relation && $this->relation->hasId()) {
             return true;
         }
 
@@ -516,7 +511,8 @@ abstract class Relation extends Delegate {
     /**
      * Convert a DateTime to a storable string.
      *
-     * @param  \DateTime|int  $value
+     * @param \DateTime|int $value
+     *
      * @return string
      */
     public function fromDateTime($value)
@@ -526,32 +522,28 @@ abstract class Relation extends Delegate {
         // If the value is already a DateTime instance, we will just skip the rest of
         // these checks since they will be a waste of time, and hinder performance
         // when checking the field. We will just return the DateTime right away.
-        if ($value instanceof DateTime)
-        {
+        if ($value instanceof DateTime) {
             //
         }
 
         // If the value is totally numeric, we will assume it is a UNIX timestamp and
         // format the date as such. Once we have the date in DateTime form we will
         // format it according to the proper format for the database connection.
-        elseif (is_numeric($value))
-        {
+        elseif (is_numeric($value)) {
             $value = Carbon::createFromTimestamp($value);
         }
 
         // If the value is in simple year, month, day format, we will format it using
         // that setup. This is for simple "date" fields which do not have hours on
         // the field. This conveniently picks up those dates and format correct.
-        elseif (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value))
-        {
+        elseif (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value)) {
             $value = Carbon::createFromFormat('Y-m-d', $value)->startOfDay();
         }
 
         // If this value is some other type of string, we'll create the DateTime with
         // the format used by the database connection. Once we get the instance we
         // can return back the finally formatted DateTime instances to the devs.
-        elseif ( ! $value instanceof DateTime)
-        {
+        elseif (!$value instanceof DateTime) {
             $value = Carbon::createFromFormat($format, $value);
         }
 
@@ -561,7 +553,8 @@ abstract class Relation extends Delegate {
     /**
      * Return a timestamp as DateTime object.
      *
-     * @param  mixed  $value
+     * @param mixed $value
+     *
      * @return \Carbon\Carbon
      */
     protected function asDateTime($value)
@@ -569,24 +562,21 @@ abstract class Relation extends Delegate {
         // If this value is an integer, we will assume it is a UNIX timestamp's value
         // and format a Carbon object from this timestamp. This allows flexibility
         // when defining your date fields as they might be UNIX timestamps here.
-        if (is_numeric($value))
-        {
+        if (is_numeric($value)) {
             return Carbon::createFromTimestamp($value);
         }
 
         // If the value is in simply year, month, day format, we will instantiate the
         // Carbon instances from that format. Again, this provides for simple date
         // fields on the database, while still supporting Carbonized conversion.
-        elseif (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value))
-        {
+        elseif (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value)) {
             return Carbon::createFromFormat('Y-m-d', $value)->startOfDay();
         }
 
         // Finally, we will just assume this date is in the format used by default on
         // the database connection and use that format to create the Carbon object
         // that is returned back out to the developers after we convert it here.
-        elseif ( ! $value instanceof DateTime)
-        {
+        elseif (!$value instanceof DateTime) {
             $format = $this->getDateFormat();
 
             return Carbon::createFromFormat($format, $value);
@@ -632,14 +622,12 @@ abstract class Relation extends Delegate {
      */
     protected function updateTimestamps()
     {
-        if ($this->parent->timestamps)
-        {
+        if ($this->parent->timestamps) {
             $time = $this->freshTimestamp();
 
             $this->setUpdatedAt($time);
 
-            if ( ! $this->exists())
-            {
+            if (!$this->exists()) {
                 $this->setCreatedAt($time);
             }
         }
@@ -648,7 +636,8 @@ abstract class Relation extends Delegate {
     /**
      * Set the value of the "created at" attribute.
      *
-     * @param  mixed  $value
+     * @param mixed $value
+     *
      * @return void
      */
     public function setCreatedAt($value)
@@ -659,7 +648,8 @@ abstract class Relation extends Delegate {
     /**
      * Set the value of the "updated at" attribute.
      *
-     * @param  mixed  $value
+     * @param mixed $value
+     *
      * @return void
      */
     public function setUpdatedAt($value)
@@ -674,13 +664,13 @@ abstract class Relation extends Delegate {
      */
     public function freshTimestamp()
     {
-        return new Carbon;
+        return new Carbon();
     }
 
     /**
      * Determine whether the direction of the relationship is 'out'.
      *
-     * @return boolean
+     * @return bool
      */
     public function isDirectionOut()
     {
@@ -690,7 +680,7 @@ abstract class Relation extends Delegate {
     /**
      * Determine whether the direction of the relationship is 'in'.
      *
-     * @return boolean [description]
+     * @return bool [description]
      */
     public function isDirectionIn()
     {
@@ -700,7 +690,7 @@ abstract class Relation extends Delegate {
     /**
      * Determine whether the direction of the relationship is 'any'.
      *
-     * @return boolean
+     * @return bool
      */
     public function isDirectionAny()
     {
@@ -710,8 +700,9 @@ abstract class Relation extends Delegate {
     /**
      * Dynamically set attributes on the relation.
      *
-     * @param  string  $key
-     * @param  mixed   $value
+     * @param string $key
+     * @param mixed  $value
+     *
      * @return void
      */
     public function __set($key, $value)
@@ -722,12 +713,12 @@ abstract class Relation extends Delegate {
     /**
      * Dynamically retrieve attributes on the relation.
      *
-     * @param  string  $key
+     * @param string $key
+     *
      * @return mixed
      */
     public function __get($key)
     {
         return $this->getAttribute($key);
     }
-
 }

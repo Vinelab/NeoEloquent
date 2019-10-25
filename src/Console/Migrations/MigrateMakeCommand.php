@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Support\Composer;
@@ -36,8 +35,9 @@ class MigrateMakeCommand extends BaseCommand
     protected $composer;
 
     /**
-     * @param  \Vinelab\NeoEloquent\Migrations\MigrationCreator  $creator
-     * @param  \Illuminate\Support\Composer  $composer
+     * @param \Vinelab\NeoEloquent\Migrations\MigrationCreator $creator
+     * @param \Illuminate\Support\Composer                     $composer
+     *
      * @return void
      */
     public function __construct(MigrationCreator $creator, Composer $composer)
@@ -67,7 +67,7 @@ class MigrateMakeCommand extends BaseCommand
         // If no label was given as an option but a create option is given then we
         // will use the "create" option as the label name. This allows the devs
         // to pass a label name into this option as a short-cut for creating.
-        if (! $label && is_string($create)) {
+        if (!$label && is_string($create)) {
             $label = $create;
             $create = true;
         }
@@ -75,7 +75,7 @@ class MigrateMakeCommand extends BaseCommand
         // Next, we will attempt to guess the label name if this the migration has
         // "create" in the name. This will allow us to provide a convenient way
         // of creating migrations that create new labels for the application.
-        if (! $label) {
+        if (!$label) {
             if (preg_match('/^create_(\w+)_label$/', $name, $matches)) {
                 $label = $matches[1];
                 $create = true;
@@ -93,9 +93,10 @@ class MigrateMakeCommand extends BaseCommand
     /**
      * Write the migration file to disk.
      *
-     * @param  string  $name
-     * @param  string  $label
-     * @param  bool    $create
+     * @param string $name
+     * @param string $label
+     * @param bool   $create
+     *
      * @return string
      */
     protected function writeMigration($name, $label, $create)
@@ -114,9 +115,10 @@ class MigrateMakeCommand extends BaseCommand
      */
     protected function getMigrationPath()
     {
-        if (! is_null($targetPath = $this->input->getOption('path'))) {
+        if (!is_null($targetPath = $this->input->getOption('path'))) {
             return $this->laravel->basePath().'/'.$targetPath;
         }
+
         return parent::getMigrationPath();
     }
 }

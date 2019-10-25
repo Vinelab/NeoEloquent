@@ -1,13 +1,15 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Relations;
+<?php
 
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Builder;
+namespace Vinelab\NeoEloquent\Eloquent\Relations;
+
 use Illuminate\Database\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
-class MorphTo extends OneRelation {
-
+class MorphTo extends OneRelation
+{
     /**
      * The edge direction of this relatioship.
      *
@@ -36,8 +38,7 @@ class MorphTo extends OneRelation {
      */
     public function addConstraints()
     {
-        if (static::$constraints)
-        {
+        if (static::$constraints) {
             // Get the parent node's placeholder.
             $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
             // Tell the query that we need the morph model and the relationship represented by CypherGrammar
@@ -48,7 +49,7 @@ class MorphTo extends OneRelation {
             // name as an indicator of the Node that has our morph attributes in the query.
             $this->query->addMorphMutation($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = array($parentNode);
+            $this->query->getQuery()->from = [$parentNode];
             // Build the MATCH ()<-[]-() Cypher clause.
             $this->query->matchMorphOut($this->parent, $this->relation, $this->foreignKey, $this->parent->{$this->foreignKey});
             // Add WHERE clause over the parent node's matching key = value.
@@ -59,7 +60,8 @@ class MorphTo extends OneRelation {
     /**
      * Set the constraints for an eager load of the relation.
      *
-     * @param  array  $models
+     * @param array $models
+     *
      * @return void
      */
     public function addEagerConstraints(array $models)
@@ -75,19 +77,20 @@ class MorphTo extends OneRelation {
         $this->query->addMutation($parentNode, $this->parent);
         $this->query->addEagerMorphMutation($this->relation);
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
+        $this->query->getQuery()->from = [$parentNode];
         // Build the MATCH ()<-[]-() Cypher clause.
         $this->query->matchMorphOut($this->parent, $this->relation, $this->foreignKey, $this->parent->{$this->foreignKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->foreignKey, $this->getKeys($models));
     }
 
-   /**
+    /**
      * Match the eagerly loaded results to their parents.
      *
-     * @param  array   $models
-     * @param  \Illuminate\Database\Eloquent\Collection  $results
-     * @param  string  $relation
+     * @param array                                    $models
+     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param string                                   $relation
+     *
      * @return array
      */
     public function match(array $models, Collection $results, $relation)
@@ -96,32 +99,30 @@ class MorphTo extends OneRelation {
         // the first model out of the results and return it.
         $matched = parent::match($models, $results, $relation);
 
-        return array_map(function($match) use ($relation)
-        {
-            if (isset($match[$relation]) && isset($match[$relation][0]))
-            {
+        return array_map(function ($match) use ($relation) {
+            if (isset($match[$relation]) && isset($match[$relation][0])) {
                 $match->setRelation($relation, $match[$relation][0]);
             }
 
             return $match;
-
         }, $matched);
     }
 
     /**
      * Get an instance of the EdgeIn relationship.
      *
-     * @param  \Illuminate\Database\Eloquent\Model $model
-     * @param  array         $attributes
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array                               $attributes
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
      */
-    public function getEdge(EloquentModel $model = null, $attributes = array())
+    public function getEdge(EloquentModel $model = null, $attributes = [])
     {
-        $model = ( ! is_null($model)) ? $model : $this->parent->{$this->relation};
+        $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
         // Indicate a unique relationship since this involves one other model.
         $unique = true;
+
         return new EdgeOut($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
     }
-
 }

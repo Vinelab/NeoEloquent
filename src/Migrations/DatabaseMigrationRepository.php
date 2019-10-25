@@ -1,12 +1,14 @@
-<?php namespace Vinelab\NeoEloquent\Migrations;
+<?php
 
-use Illuminate\Database\Migrations\MigrationRepositoryInterface;
+namespace Vinelab\NeoEloquent\Migrations;
+
 use Illuminate\Database\ConnectionResolverInterface;
-use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
+use Illuminate\Database\Migrations\MigrationRepositoryInterface;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
 
-class DatabaseMigrationRepository implements MigrationRepositoryInterface {
-
+class DatabaseMigrationRepository implements MigrationRepositoryInterface
+{
     /**
      * The database connection resolver instance.
      *
@@ -28,11 +30,11 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
      */
     protected $connection;
 
-
     /**
-     * @param  \Illuminate\Database\ConnectionResolverInterface  $resolver
-     * @param  \Vinelab\NeoEloquent\Schema\Builder  $schema
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param \Illuminate\Database\ConnectionResolverInterface $resolver
+     * @param \Vinelab\NeoEloquent\Schema\Builder              $schema
+     * @param \Vinelab\NeoEloquent\Eloquent\Model              $model
+     *
      * @return void
      */
     public function __construct(ConnectionResolverInterface $resolver, SchemaBuilder $schema, Model $model)
@@ -43,7 +45,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getRan()
     {
@@ -51,7 +53,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getLast()
     {
@@ -59,17 +61,17 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function log($file, $batch)
     {
-        $record = array('migration' => $file, 'batch' => $batch);
+        $record = ['migration' => $file, 'batch' => $batch];
 
         $this->model->create($record);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function delete($migration)
     {
@@ -77,7 +79,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getNextBatchNumber()
     {
@@ -85,7 +87,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getLastBatchNumber()
     {
@@ -93,15 +95,14 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function createRepository()
     {
-        return null;
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function repositoryExists()
     {
@@ -115,7 +116,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
      */
     protected function label()
     {
-        return $this->getConnection()->table(array($this->getLabel()));
+        return $this->getConnection()->table([$this->getLabel()]);
     }
 
     /**
@@ -139,7 +140,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function setSource($name)
     {
@@ -169,7 +170,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     /**
      * Set migration model.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      */
     public function setMigrationModel(Model $model)
     {
@@ -189,7 +190,8 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface {
     /**
      * Get list of migrations.
      *
-     * @param  int $steps
+     * @param int $steps
+     *
      * @return array
      */
     public function getMigrations($steps)

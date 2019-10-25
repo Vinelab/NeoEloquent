@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent;
+<?php
 
-use Vinelab\NeoEloquent\Eloquent\Model;
+namespace Vinelab\NeoEloquent;
+
 use Illuminate\Support\ServiceProvider;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 
-class NeoEloquentServiceProvider extends ServiceProvider {
-
+class NeoEloquentServiceProvider extends ServiceProvider
+{
     /**
      * Indicates if loading of the provider is deferred.
      *
@@ -14,19 +16,19 @@ class NeoEloquentServiceProvider extends ServiceProvider {
     protected $defer = false;
 
     /**
-    * Components to register on the provider.
-    *
-    * @var array
-    */
-    protected $components = array(
-        'Migration'
-    );
+     * Components to register on the provider.
+     *
+     * @var array
+     */
+    protected $components = [
+        'Migration',
+    ];
 
     /**
-    * Bootstrap the application events.
-    *
-    * @return void
-    */
+     * Bootstrap the application events.
+     *
+     * @return void
+     */
     public function boot()
     {
         Model::setConnectionResolver($this->app['db']);
@@ -41,14 +43,14 @@ class NeoEloquentServiceProvider extends ServiceProvider {
      */
     public function register()
     {
-        $this->app['db']->extend('neo4j', function($config)
-        {
+        $this->app['db']->extend('neo4j', function ($config) {
             $conn = new Connection($config);
-            $conn->setSchemaGrammar(new CypherGrammar);
+            $conn->setSchemaGrammar(new CypherGrammar());
+
             return $conn;
         });
 
-        $this->app->resolving(function($app){
+        $this->app->resolving(function ($app) {
             if (class_exists('Illuminate\Foundation\AliasLoader')) {
                 $loader = \Illuminate\Foundation\AliasLoader::getInstance();
                 $loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
@@ -56,15 +58,14 @@ class NeoEloquentServiceProvider extends ServiceProvider {
             }
         });
 
-
         $this->registerComponents();
     }
 
     /**
-    * Register components on the provider.
-    *
-    * @var array
-    */
+     * Register components on the provider.
+     *
+     * @var array
+     */
     protected function registerComponents()
     {
         foreach ($this->components as $component) {
@@ -89,7 +90,7 @@ class NeoEloquentServiceProvider extends ServiceProvider {
      */
     public function provides()
     {
-        return array(
-        );
+        return [
+        ];
     }
 }

@@ -1,3 +1,7 @@
-<?php namespace Vinelab\NeoEloquent\Exceptions;
+<?php
 
-class InvalidCypherGrammarComponentException extends NeoEloquentException {}
+namespace Vinelab\NeoEloquent\Exceptions;
+
+class InvalidCypherGrammarComponentException extends NeoEloquentException
+{
+}

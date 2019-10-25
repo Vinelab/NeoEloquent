@@ -1,25 +1,25 @@
 <?php
 
-return array(
+return [
 
     'default' => 'default',
 
-    'connections' => array(
+    'connections' => [
 
-        'neo4j' => array(
-            'driver' => 'neo4j',
-            'host' => 'localhost',
-            'port' => 7474,
-            'user' => 'neo4j',
-            'password' => 'neo4j'
-        ),
+        'neo4j' => [
+            'driver'   => 'neo4j',
+            'host'     => 'localhost',
+            'port'     => 7474,
+            'user'     => 'neo4j',
+            'password' => 'neo4j',
+        ],
 
-        'default' => array(
-            'driver' => 'neo4j',
-            'host' => 'localhost',
-            'port' => 7474,
-            'user' => '',
-            'password' => ''
-        )
-    )
-);
+        'default' => [
+            'driver'   => 'neo4j',
+            'host'     => 'localhost',
+            'port'     => 7474,
+            'user'     => '',
+            'password' => '',
+        ],
+    ],
+];

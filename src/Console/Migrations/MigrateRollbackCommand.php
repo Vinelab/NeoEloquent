@@ -1,14 +1,13 @@
 <?php
 
-
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Database\Migrations\Migrator;
 use Symfony\Component\Console\Input\InputOption;
 
-class MigrateRollbackCommand extends BaseCommand {
-
+class MigrateRollbackCommand extends BaseCommand
+{
     use ConfirmableTrait;
 
     /**
@@ -35,7 +34,8 @@ class MigrateRollbackCommand extends BaseCommand {
     /**
      * Create a new migration rollback command instance.
      *
-     * @param  \Illuminate\Database\Migrations\Migrator  $migrator
+     * @param \Illuminate\Database\Migrations\Migrator $migrator
+     *
      * @return void
      */
     public function __construct(Migrator $migrator)
@@ -46,11 +46,11 @@ class MigrateRollbackCommand extends BaseCommand {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function handle()
     {
-        if (! $this->confirmToProceed()) {
+        if (!$this->confirmToProceed()) {
             return;
         }
 
@@ -59,7 +59,7 @@ class MigrateRollbackCommand extends BaseCommand {
         $this->migrator->rollback(
             $this->getMigrationPaths(), [
                 'pretend' => $this->option('pretend'),
-                'step' => (int) $this->option('step'),
+                'step'    => (int) $this->option('step'),
             ]
         );
 
@@ -87,5 +87,3 @@ class MigrateRollbackCommand extends BaseCommand {
         ];
     }
 }
-
-

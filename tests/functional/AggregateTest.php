@@ -1,4 +1,6 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\Aggregate;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional\Aggregate;
 
 use Illuminate\Database\Query\Processors\Processor;
 use Vinelab\NeoEloquent\Eloquent\Model;
@@ -6,20 +8,18 @@ use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
-
-class AggregateTest extends TestCase {
-
+class AggregateTest extends TestCase
+{
     public function setUp()
     {
         parent::setUp();
 
-        $this->query = new Builder((new User)->getConnection(), new CypherGrammar, new Processor);
+        $this->query = new Builder((new User())->getConnection(), new CypherGrammar(), new Processor());
         $this->query->from = 'User';
     }
 
     public function testCount()
     {
-
         User::create([]);
         $this->assertEquals(1, $this->query->count());
         User::create([]);
@@ -40,17 +40,17 @@ class AggregateTest extends TestCase {
         User::create(['email' => 'bar@mail.net', 'points' => 2]);
         // we need a fresh query every time so that we make sure we're not reusing the same
         // one over and over which ends up with irreliable results.
-        $query = new Builder((new User)->getConnection(), new CypherGrammar, new Processor);
+        $query = new Builder((new User())->getConnection(), new CypherGrammar(), new Processor());
         $query->from = 'User';
         $query->where('email', 'foo@mail.net');
         $this->assertEquals(1, $query->count());
 
-        $query = new Builder((new User)->getConnection(), new CypherGrammar, new Processor);
+        $query = new Builder((new User())->getConnection(), new CypherGrammar(), new Processor());
         $query->from = 'User';
         $query->where('email', 'bar@mail.net');
         $this->assertEquals(1, $query->count());
 
-        $query = new Builder((new User)->getConnection(), new CypherGrammar, new Processor);
+        $query = new Builder((new User())->getConnection(), new CypherGrammar(), new Processor());
         $query->from = 'User';
         $query->where('points', 2);
         $this->assertEquals(2, $query->count());
@@ -102,7 +102,7 @@ class AggregateTest extends TestCase {
         $this->query->where('points', '<', 4);
         $this->assertEquals(11, $this->query->max('logins'));
 
-        $query = new Builder((new User)->getConnection(), new CypherGrammar, new Processor);
+        $query = new Builder((new User())->getConnection(), new CypherGrammar(), new Processor());
         $query->from = 'User';
         $query->where('points', '<', 4);
         $this->assertEquals(2, $query->max('points'));
@@ -311,7 +311,8 @@ class AggregateTest extends TestCase {
     }
 }
 
-class User extends Model {
+class User extends Model
+{
     protected $label = 'User';
 
     protected $fillable = ['logins', 'points', 'email'];
