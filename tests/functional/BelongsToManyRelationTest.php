@@ -162,7 +162,7 @@ class BelongsToManyRelationTest extends TestCase
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $edgeIn);
         $this->assertTrue($edgeIn->exists());
-        $this->assertGreaterThan(0, $edgeIn->id);
+        $this->assertGreaterThanOrEqual(0, $edgeIn->id);
 
         $edgeIn = $role->users()->edge($user);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edgeIn);
