@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Migrations;
 
 use Illuminate\Database\Migrations\MigrationCreator as IlluminateMigrationCreator;
+use Illuminate\Support\Str;
 
 class MigrationCreator extends IlluminateMigrationCreator
 {
@@ -17,7 +18,7 @@ class MigrationCreator extends IlluminateMigrationCreator
      */
     protected function populateStub($name, $stub, $label)
     {
-        $stub = str_replace('DummyClass', studly_case($name), $stub);
+        $stub = str_replace('DummyClass', Str::studly($name), $stub);
 
         // Here we will replace the label place-holders with the label specified by
         // the developer, which is useful for quickly creating a labels creation
