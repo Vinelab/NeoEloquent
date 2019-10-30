@@ -27,7 +27,7 @@
         "illuminate/events": "5.8.*",
         "illuminate/console": "5.8.*",
         "heydavid713/neo4jphp": "0.1.*",
-        "nesbot/carbon": "~1.0"
+        "nesbot/carbon": "^2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~6.0",
