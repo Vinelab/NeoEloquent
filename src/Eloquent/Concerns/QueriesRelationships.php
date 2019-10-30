@@ -3,11 +3,12 @@
 namespace Vinelab\NeoEloquent\Eloquent\Concerns;
 
 use Illuminate\Database\Eloquent\Concerns\QueriesRelationships as QR;
+
 /**
  * Created by PhpStorm.
  * User: tomahock
  * Date: 09/02/2017
- * Time: 17:21
+ * Time: 17:21.
  */
 trait QueriesRelationships
 {
@@ -16,11 +17,12 @@ trait QueriesRelationships
     /**
      * Add a relationship query condition.
      *
-     * @param  string  $relation
-     * @param  string  $operator
-     * @param  int     $count
-     * @param  string  $boolean
-     * @param  \Closure  $callback
+     * @param string   $relation
+     * @param string   $operator
+     * @param int      $count
+     * @param string   $boolean
+     * @param \Closure $callback
+     *
      * @return \Illuminate\Database\Eloquent\Builder|static
      */
     public function has($relation, $operator = '>=', $count = 1, $boolean = 'and', \Closure $callback = null)
@@ -32,7 +34,9 @@ trait QueriesRelationships
         // model as our reference Node.
         $this->getQuery()->from = $query->getModel()->getTable();
 
-        if ($callback) call_user_func($callback, $query);
+        if ($callback) {
+            call_user_func($callback, $query);
+        }
 
         /**
          * In graph we do not need to act on the count of the relationships when dealing
@@ -41,10 +45,9 @@ trait QueriesRelationships
          */
         $prefix = $relation->getRelatedNode();
 
-        if ( ! $callback)
-        {
+        if (!$callback) {
             /**
-             * The Cypher we're trying to build here would look like this:
+             * The Cypher we're trying to build here would look like this:.
              *
              * MATCH (post:`Post`)-[r:COMMENT]-(comments:`Comment`)
              * WITH count(comments) AS comments_count, post
@@ -53,7 +56,7 @@ trait QueriesRelationships
              *
              * Which is the result of Post::has('comments', '>=', 10)->get();
              */
-            $countPart = $prefix .'_count';
+            $countPart = $prefix.'_count';
             $this->carry([$relation->getParentNode(), "count($prefix)" => $countPart]);
             $this->whereCarried($countPart, $operator, $count);
         }

@@ -1,11 +1,13 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasOne;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasOne;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
-class User extends Model {
-
+class User extends Model
+{
     protected $label = 'Individual';
     protected $fillable = ['name', 'email'];
 
@@ -15,24 +17,28 @@ class User extends Model {
     }
 }
 
-class Profile extends Model {
-
+class Profile extends Model
+{
     protected $label = 'Profile';
 
     protected $fillable = ['guid', 'service'];
 }
 
-class HasOneRelationTest extends TestCase {
-
+class HasOneRelationTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
 
         $users = User::all();
-        $users->each(function($u) { $u->delete(); });
+        $users->each(function ($u) {
+            $u->delete();
+        });
 
         $accs = Profile::all();
-        $accs->each(function($a) { $a->delete(); });
+        $accs->each(function ($a) {
+            $a->delete();
+        });
 
         parent::tearDown();
     }
@@ -66,7 +72,6 @@ class HasOneRelationTest extends TestCase {
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
-
 
         $found = User::find($user->id);
 
@@ -107,7 +112,7 @@ class HasOneRelationTest extends TestCase {
         $saved = User::find($user->id);
         $this->assertEquals($profile->toArray(), $saved->profile->toArray());
 
-     // delete the relation and make sure it was deleted
+        // delete the relation and make sure it was deleted
         // so that we can delete the nodes when cleaning up.
         $this->assertTrue($relation->delete());
     }
@@ -167,5 +172,4 @@ class HasOneRelationTest extends TestCase {
         $this->assertEquals($relation->toArray(), $retrieved->toArray());
         $this->assertTrue($relation->delete());
     }
-
 }

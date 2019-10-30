@@ -1,9 +1,11 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent;
 
 use Illuminate\Database\Eloquent\SoftDeletes as IlluminateSoftDeletes;
 
-trait SoftDeletes {
-
+trait SoftDeletes
+{
     use IlluminateSoftDeletes;
 
     /**

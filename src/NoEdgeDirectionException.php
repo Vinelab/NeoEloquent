@@ -1,3 +1,7 @@
-<?php namespace Vinelab\NeoEloquent;
+<?php
 
-class NoEdgeDirectionException extends \Exception {}
+namespace Vinelab\NeoEloquent;
+
+class NoEdgeDirectionException extends \Exception
+{
+}

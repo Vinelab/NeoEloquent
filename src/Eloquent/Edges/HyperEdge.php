@@ -1,11 +1,12 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
+<?php
 
-use Vinelab\NeoEloquent\Eloquent\Model;
+namespace Vinelab\NeoEloquent\Eloquent\Edges;
+
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Vinelab\NeoEloquent\Eloquent\Edges\Relation;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
-class HyperEdge extends Relation {
-
+class HyperEdge extends Relation
+{
     protected $direction = 'any';
 
     /**
@@ -50,12 +51,12 @@ class HyperEdge extends Relation {
      *
      * @param Vinelab\NeoEloquent\Eloquent\Builder $query
      * @param Vinelab\NeoEloquent\Eloquent\Model   $parent
-     * @param string  $type
+     * @param string                               $type
      * @param Vinelab\NeoEloquent\Eloquent\Model   $related
-     * @param string  $morphType
+     * @param string                               $morphType
      * @param Vinelab\NeoEloquent\Eloquent\Model   $morph
      */
-    public function __construct(Builder $query, Model $parent, $type, Model $related, $morphType, Model $morph, $attributes = array())
+    public function __construct(Builder $query, Model $parent, $type, Model $related, $morphType, Model $morph, $attributes = [])
     {
         $this->morph = $morph;
         $this->morphType = $morphType;
@@ -66,25 +67,25 @@ class HyperEdge extends Relation {
         parent::__construct($query, $parent, $related, $type, $attributes, $unique);
     }
 
-     /**
-     * Initialize the relationship by setting up nodes and edges,
+    /**
+     * Initialize the relationship by setting up nodes and edges,.
+     *
+     * @throws \Vinelab\NeoEloquent\NoEdgeDirectionException If $direction is not set on the inheriting relation.
      *
      * @return void
-     *
-     * @throws  \Vinelab\NeoEloquent\NoEdgeDirectionException If $direction is not set on the inheriting relation.
      */
     public function initRelation()
     {
         // Turn models into nodes
         $this->start = $this->asNode($this->parent);
         $this->hyper = $this->asNode($this->related);
-        $this->end   = $this->asNode($this->morph);
+        $this->end = $this->asNode($this->morph);
 
         // Not a unique relationship since it involves multiple models.
         $unique = false;
 
         // Setup left and right edges
-        $this->left  = new EdgeOut($this->query, $this->parent, $this->related, $this->type, $this->attributes, $unique);
+        $this->left = new EdgeOut($this->query, $this->parent, $this->related, $this->type, $this->attributes, $unique);
         $this->right = new EdgeOut($this->query, $this->related, $this->morph, $this->morphType, $this->attributes, $unique);
         // Set the morph type to the relationship so that we know who we're talking to.
         $this->right->morph_type = get_class($this->morph);
@@ -104,7 +105,8 @@ class HyperEdge extends Relation {
      * Set the left side Edge of this relation.
      *
      * @param \Vinelab\NeoEloquent\Eloquent\Edges\Relation $left
-     * @return  void
+     *
+     * @return void
      */
     public function setLeft($left)
     {
@@ -125,6 +127,7 @@ class HyperEdge extends Relation {
      * Set the right side Edge of this relationship.
      *
      * @param \Vinelab\NeoEloquent\Eloquent\Edges\Relation $right
+     *
      * @return void
      */
     public function setRight($right)
@@ -145,11 +148,11 @@ class HyperEdge extends Relation {
     /**
      * Save the relationship to the database.
      *
-     * @return boolean
+     * @return bool
      */
     public function save()
     {
-        $savedLeft  = $this->left->save();
+        $savedLeft = $this->left->save();
         $savedRight = $this->right->save();
 
         return $savedLeft && $savedRight;
@@ -158,12 +161,11 @@ class HyperEdge extends Relation {
     /**
      * Remove the relationship from the database.
      *
-     * @return  boolean
+     * @return bool
      */
     public function delete()
     {
-        if ($this->exists())
-        {
+        if ($this->exists()) {
             $deletedLeft = $this->left->delete();
             $deletedRight = $this->right->delete();
 
@@ -176,11 +178,10 @@ class HyperEdge extends Relation {
     /**
      * Determine whether this relation exists.
      *
-     * @return boolean
+     * @return bool
      */
     public function exists()
     {
         return $this->left->exists() && $this->right->exists();
     }
-
 }

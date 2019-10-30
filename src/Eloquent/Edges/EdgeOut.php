@@ -1,7 +1,8 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
+<?php
 
-class EdgeOut extends Relation {
+namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
+class EdgeOut extends Relation
+{
     protected $direction = 'out';
-
 }

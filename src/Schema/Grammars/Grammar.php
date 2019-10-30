@@ -1,27 +1,30 @@
-<?php namespace Vinelab\NeoEloquent\Schema\Grammars;
+<?php
+
+namespace Vinelab\NeoEloquent\Schema\Grammars;
 
 use Illuminate\Database\Schema\Grammars\Grammar as IlluminateSchemaGrammar;
 
 class Grammar extends IlluminateSchemaGrammar
 {
-
     /**
-     * Make sure the label is wrapped with backticks
+     * Make sure the label is wrapped with backticks.
      *
-     * @param  string $label
+     * @param string $label
+     *
      * @return string
      */
     public function wrapLabel($label)
     {
         // every label must begin with a ':' so we need to check
         // and reformat if need be.
-        return trim(':`'. preg_replace('/^:/', '', $label) .'`');
+        return trim(':`'.preg_replace('/^:/', '', $label).'`');
     }
 
     /**
      * Turn a string into a valid property for a query.
      *
-     * @param  string $property
+     * @param string $property
+     *
      * @return string
      */
     public function propertize($property)
@@ -32,37 +35,35 @@ class Grammar extends IlluminateSchemaGrammar
 
     /**
      * Prepare a label by formatting it as expected,
-     * trim out trailing spaces and add backticks
+     * trim out trailing spaces and add backticks.
      *
-     * @var  string  $label
+     * @var string
+     *
      * @return string
      */
     public function prepareLabels(array $labels)
     {
         // get the labels prepared and back to a string imploded by : they go.
-        return implode('', array_map(array($this, 'wrapLabel'), $labels));
+        return implode('', array_map([$this, 'wrapLabel'], $labels));
     }
 
     /**
-     * Get a model's name as a Node placeholder
+     * Get a model's name as a Node placeholder.
      *
      * i.e. in "MATCH (user:`User`)"... "user" is what this method returns
      *
-     * @param  string|array $labels The labels we're choosing from
+     * @param string|array $labels The labels we're choosing from
+     *
      * @return string
      */
     public function modelAsNode($labels = null)
     {
-        if (is_null($labels))
-        {
+        if (is_null($labels)) {
             return 'n';
-        } elseif (is_array($labels))
-        {
+        } elseif (is_array($labels)) {
             $labels = reset($labels);
         }
 
         return mb_strtolower($labels);
     }
-
 }
-

@@ -1,20 +1,22 @@
-<?php namespace Vinelab\NeoEloquent\Eloquent\Edges;
+<?php
+
+namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
 use Everyman\Neo4j\Path;
 use Everyman\Neo4j\Relationship;
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
-class Finder extends Delegate {
-
+class Finder extends Delegate
+{
     /**
      * Create a new Finder instance.
      *
      * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
      * @param \Vinelab\NeoEloquent\Eloquent\Model   $parent
      * @param \Vinelab\NeoEloquent\Eloquent\Model   $related
-     * @param string  $type
+     * @param string                                $type
      */
     public function __construct(Builder $query)
     {
@@ -24,9 +26,10 @@ class Finder extends Delegate {
     /**
      * Get the direct relation between two models.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $parentModel
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $relatedModel
-     * @param  string $direction
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $parentModel
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $relatedModel
+     * @param string                              $direction
+     *
      * @return \Everyman\Neo4j\Relationship
      */
     public function firstRelation(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
@@ -47,8 +50,7 @@ class Finder extends Delegate {
 
         // Since we are sure that the relation between these two nodes is direct
         // with depth of 1 we will get the path and return the first relationship (if any).
-        if ( ! is_null($path))
-        {
+        if (!is_null($path)) {
             // Tell the path that we need to work with the relationships now
             // so that it sets the nodes aside.
             $path->setContext(Path::ContextRelationship);
@@ -62,9 +64,10 @@ class Finder extends Delegate {
     /**
      * Get the first edge relationship between two models.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $parentModel
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $relatedModel
-     * @param  string $direction
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $parentModel
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $relatedModel
+     * @param string                              $direction
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]|null
      */
     public function first(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
@@ -74,7 +77,9 @@ class Finder extends Delegate {
         $relation = $this->firstRelation($parentModel, $relatedModel, $type, $direction);
 
         // Let's stop here if there is no relationship between them.
-        if (is_null($relation)) return null;
+        if (is_null($relation)) {
+            return;
+        }
 
         // Now we can return the determined edge out of the relation and direction.
         return $this->edgeFromRelationWithDirection($relation, $parentModel, $relatedModel, $direction);
@@ -83,9 +88,10 @@ class Finder extends Delegate {
     /**
      * Get the edges between two models.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $parent
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $related
-     * @param  string|array $type
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $parent
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $related
+     * @param string|array                        $type
+     *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function get(Model $parent, Model $related, $type = [])
@@ -95,8 +101,7 @@ class Finder extends Delegate {
 
         $edges = [];
         // Collect the edges out of the found relationships.
-        foreach ($relationships as $relationship)
-        {
+        foreach ($relationships as $relationship) {
             // We need the direction so that we can generate an Edge[In|Out] instance accordingly.
             $direction = $this->directionFromRelation($relationship, $parent, $related);
             // Now that we have the direction and the relationship all we need to do is generate the edge
@@ -110,21 +115,26 @@ class Finder extends Delegate {
     /**
      * Get the first HyperEdge between three models.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $parent
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $related
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model $morph
-     * @param  string $type
-     * @param  string $morphType
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $parent
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $related
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $morph
+     * @param string                              $type
+     * @param string                              $morphType
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge
      */
     public function hyperFirst($parent, $related, $morph, $type, $morphType)
     {
-        $left  = $this->first($parent, $related, $type, 'out');
+        $left = $this->first($parent, $related, $type, 'out');
         $right = $this->first($related, $morph, $morphType, 'out');
 
         $edge = new HyperEdge($this->query, $parent, $type, $related, $morphType, $morph);
-        if ($left)  $edge->setLeft($left);
-        if ($right) $edge->setRight($right);
+        if ($left) {
+            $edge->setLeft($left);
+        }
+        if ($right) {
+            $edge->setRight($right);
+        }
 
         return $edge;
     }
@@ -132,9 +142,10 @@ class Finder extends Delegate {
     /**
      * Get the direction of a relationship out of a Relation instance.
      *
-     * @param  \Everyman\Neo4j\Relationship $relation
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model        $parent
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model        $related
+     * @param \Everyman\Neo4j\Relationship        $relation
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $parent
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $related
+     *
      * @return string Either 'in' or 'out'
      */
     public function directionFromRelation(Relationship $relation, Model $parent, Model $related)
@@ -147,8 +158,7 @@ class Finder extends Delegate {
         // we match and find otherwise.
         $direction = 'in';
 
-        if ($node->getId() === $parent->getKey())
-        {
+        if ($node->getId() === $parent->getKey()) {
             $direction = 'out';
         }
 
@@ -158,16 +168,16 @@ class Finder extends Delegate {
     /**
      * Get the Edge instance out of a Relationship based on a direction.
      *
-     * @param  \Everyman\Neo4j\Relationship $relation
-     * @param  string $direction
+     * @param \Everyman\Neo4j\Relationship $relation
+     * @param string                       $direction
+     *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
     public function edgeFromRelationWithDirection(Relationship $relation, Model $parent, Model $related, $direction)
     {
         // If the direction is of type 'any' we need to figure out the relationship direction
         // from the determined relation.
-        if ($direction == 'any')
-        {
+        if ($direction == 'any') {
             $direction = $this->directionFromRelation($relation, $parent, $related);
         }
 
@@ -180,7 +190,7 @@ class Finder extends Delegate {
         return $edge;
     }
 
-    public function getModelRelationsForType(Model $parentModel, $type = array(), $direction = 'any')
+    public function getModelRelationsForType(Model $parentModel, $type = [], $direction = 'any')
     {
         // Get the Node representation of the parent model so that we can
         // query its relationships.
@@ -195,12 +205,12 @@ class Finder extends Delegate {
     /**
      * Get the edge class name for a direction.
      *
-     * @param  string $direction
+     * @param string $direction
+     *
      * @return string
      */
     public function getEdgeClass($direction)
     {
-        return __NAMESPACE__.'\Edge'. ucfirst(mb_strtolower($direction));
+        return __NAMESPACE__.'\Edge'.ucfirst(mb_strtolower($direction));
     }
-
 }

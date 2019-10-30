@@ -1,12 +1,14 @@
-<?php namespace Vinelab\NeoEloquent\Tests\Functional\Events;
+<?php
+
+namespace Vinelab\NeoEloquent\Tests\Functional\Events;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
-class ModelEventsTest extends TestCase {
-
+class ModelEventsTest extends TestCase
+{
     public function tearDown()
     {
         M::close();
@@ -67,7 +69,7 @@ class ModelEventsTest extends TestCase {
     {
         $user = User::createWith(['name' => 'user name'], [
             'singleCake' => ['name' => 'single'],
-            'cakes' => [
+            'cakes'      => [
                 ['name' => 'c 1'],
                 ['name' => 'c 2'],
             ],
@@ -89,8 +91,8 @@ class ModelEventsTest extends TestCase {
     }
 }
 
-class User extends Model {
-
+class User extends Model
+{
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
@@ -108,7 +110,7 @@ class User extends Model {
         'deleting_event',
         'deleted_event',
         'restoring_event',
-        'restored_event'
+        'restored_event',
     ];
 
     // Will hold the events and their callbacks
@@ -118,26 +120,28 @@ class User extends Model {
     {
         return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\Events\Cake', 'HAS_CAKE');
     }
+
     public function singleCake()
     {
         return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\Events\Cake', 'HAS_SINGLE_CAKE');
     }
 
-
     public static function boot()
     {
         // Mock a dispatcher
         $dispatcher = M::mock('Illuminate\Events\dispatcher');
-        $dispatcher->shouldReceive('listen')->andReturnUsing(function($event, $callback)
-        {
+        $dispatcher->shouldReceive('listen')->andReturnUsing(function ($event, $callback) {
             static::$listenerStub[$event] = $callback;
         });
-        $dispatcher->shouldReceive('until')->andReturnUsing(function($event, $model){
-            if (isset(static::$listenerStub[$event])) call_user_func(static::$listenerStub[$event], $model);
+        $dispatcher->shouldReceive('until')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
+            }
         });
-        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function($event, $model)
-        {
-            if (isset(static::$listenerStub[$event])) call_user_func(static::$listenerStub[$event], $model);
+        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
+            }
         });
 
         static::$dispatcher = $dispatcher;
@@ -145,49 +149,40 @@ class User extends Model {
         // boot up model
         parent::boot();
 
-        User::creating(function($user)
-        {
+        self::creating(function ($user) {
             $user->creating_event = true;
         });
 
-        User::created(function($user)
-        {
+        self::created(function ($user) {
             $user->created_event = true;
             $user->save();
         });
 
-        User::saving(function($user)
-        {
+        self::saving(function ($user) {
             $user->saving_event = true;
         });
 
-        User::saved(function($user)
-        {
-            if ( ! $user->saved_event)
-            {
+        self::saved(function ($user) {
+            if (!$user->saved_event) {
                 $user->saved_event = true;
                 $user->save();
             }
         });
 
-        User::deleting(function($user)
-        {
+        self::deleting(function ($user) {
             $user->deleting_event = true;
         });
 
-        User::deleted(function($user)
-        {
+        self::deleted(function ($user) {
             $user->deleted_event = true;
             $user->save();
         });
 
-        User::restoring(function($user)
-        {
+        self::restoring(function ($user) {
             $user->restoring_event = true;
         });
 
-        User::restored(function($user)
-        {
+        self::restored(function ($user) {
             $user->restored_event = true;
             $user->save();
         });
@@ -200,6 +195,7 @@ class Cake extends Model
     protected $fillable = ['name'];
     // Will hold the events and their callbacks
     protected static $listenerStub = [];
+
     public static function boot()
     {
         static::$dispatcher = User::$dispatcher;
@@ -232,8 +228,8 @@ class Cake extends Model
     }
 }
 
-class OBOne extends Model {
-
+class OBOne extends Model
+{
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
@@ -253,7 +249,7 @@ class OBOne extends Model {
         'ob_deleting_event',
         'ob_deleted_event',
         'ob_restoring_event',
-        'ob_restored_event'
+        'ob_restored_event',
     ];
 
     // We'll just cancel out the events that were put on
@@ -265,36 +261,37 @@ class OBOne extends Model {
 
         // Mock a dispatcher
         $dispatcher = M::mock('Illuminate\Events\dispatcher');
-        $dispatcher->shouldReceive('listen')->andReturnUsing(function($event, $callback)
-        {
+        $dispatcher->shouldReceive('listen')->andReturnUsing(function ($event, $callback) {
             static::$listenerStub[$event] = $callback;
         });
-        $dispatcher->shouldReceive('until')->andReturnUsing(function($event, $model){
-            if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false)
-            {
+        $dispatcher->shouldReceive('until')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false) {
                 list($listener, $method) = explode('@', static::$listenerStub[$event]);
-                if (isset(static::$listenerStub[$event])) call_user_func([$listener, $method], $model);
+                if (isset(static::$listenerStub[$event])) {
+                    call_user_func([$listener, $method], $model);
+                }
+            } elseif (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
             }
-            elseif (isset(static::$listenerStub[$event])) call_user_func(static::$listenerStub[$event], $model);
         });
-        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function($event, $model)
-        {
-            if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false)
-            {
+        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false) {
                 list($listener, $method) = explode('@', static::$listenerStub[$event]);
-                if (isset(static::$listenerStub[$event])) call_user_func([$listener, $method], $model);
+                if (isset(static::$listenerStub[$event])) {
+                    call_user_func([$listener, $method], $model);
+                }
+            } elseif (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
             }
-            elseif (isset(static::$listenerStub[$event])) call_user_func(static::$listenerStub[$event], $model);
         });
 
         static::$dispatcher = $dispatcher;
-        OBOne::observe(new UserObserver);
+        self::observe(new UserObserver());
     }
-
 }
 
-class UserObserver {
-
+class UserObserver
+{
     public static function creating($ob)
     {
         $ob->ob_creating_event = true;
@@ -313,8 +310,7 @@ class UserObserver {
 
     public static function saved($ob)
     {
-        if ( ! $ob->ob_saved_event)
-        {
+        if (!$ob->ob_saved_event) {
             $ob->ob_saved_event = true;
             $ob->save();
         }
