@@ -247,7 +247,7 @@ class SimpleCRUDTest extends TestCase
         $id = Wiz::insertGetId(['foo' => 'fiz', 'boo' => 'biz']);
 
         $this->assertInternalType('int', $id);
-        $this->assertGreaterThan(0, $id, 'message');
+        $this->assertGreaterThanOrEqual(0, $id, 'message');
     }
 
     public function testSavingBooleanValuesStayBoolean()
