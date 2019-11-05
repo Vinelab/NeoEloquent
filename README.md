@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/Ulobby/NeoEloquent.svg?branch=master)](https://travis-ci.org/Ulobby/NeoEloquent)
+[![Coverage Status](https://coveralls.io/repos/github/ulobby/NeoEloquent/badge.svg?branch=master)](https://coveralls.io/github/ulobby/NeoEloquent?branch=master)
 
 # NeoEloquent
 Neo4j Graph Eloquent Driver for Laravel
