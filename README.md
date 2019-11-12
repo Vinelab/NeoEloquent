@@ -33,7 +33,7 @@ Add the package to your `composer.json` and run `composer update`.
 ```json
 {
     "require": {
-        "ulobby/neoeloquent": "^1.4.6"
+        "ulobby/neoeloquent": "^1.4.7"
     }
 }
 ```
