@@ -1,6 +1,9 @@
 language: php
 php:
 - 7.3
+cache:
+  directories:
+    - "$HOME/.composer/cache"
 before_script:
 - travis_retry composer self-update
 - travis_retry composer install --prefer-source --no-interaction
