@@ -194,7 +194,7 @@ class QueryingRelationsTest extends TestCase
 
         foreach ($role->permissions as $key => $permission) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Permission', $permission);
-            $this->assertGreaterThan(0, $permission->id);
+            $this->assertGreaterThanOrEqual(0, $permission->id);
             $this->assertNotNull($permission->created_at);
             $this->assertNotNull($permission->updated_at);
             $attrs = $permission->toArray();
@@ -248,7 +248,7 @@ class QueryingRelationsTest extends TestCase
 
         foreach ($post->photos as $key => $photo) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', $photo);
-            $this->assertGreaterThan(0, $photo->id);
+            $this->assertGreaterThanOrEqual(0, $photo->id);
             $this->assertNotNull($photo->created_at);
             $this->assertNotNull($photo->updated_at);
             $attrs = $photo->toArray();

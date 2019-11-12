@@ -2,7 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Migrations;
 
-abstract class Migration
+use Illuminate\Database\Migrations\Migration as IlluminateMigration;
+
+abstract class Migration extends IlluminateMigration
 {
     /**
      * The name of the database connection to use.

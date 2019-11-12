@@ -1,7 +1,10 @@
-[![Build Status](https://travis-ci.org/Ulobby/NeoEloquent.svg?branch=master)](https://travis-ci.org/Vinelab/NeoEloquent)
+[![Build Status](https://travis-ci.org/Ulobby/NeoEloquent.svg?branch=master)](https://travis-ci.org/Ulobby/NeoEloquent)
+[![Coverage Status](https://coveralls.io/repos/github/ulobby/NeoEloquent/badge.svg?branch=master)](https://coveralls.io/github/ulobby/NeoEloquent?branch=master)
 
 # NeoEloquent
-Neo4j Graph Eloquent Driver for Laravel
+Neo4j Graph Eloquent Driver for Laravel, this is a fork of [Vinelab/NeoEloquent](https://github.com/Vinelab/NeoEloquent) maintained by [Ulobby](https://www.ulobby.eu) as the original repo is not maintained anymore.
+
+At Ulobby use NeoEloquent in production for a lot of the crud operations in our Laravel based SaaS. We usually end up writing raw cypher for more complex operations, as a consequence of this we currently do not recommend using polymorphic-relationships.
 
 ## Chat & Support
 Join the [Official Neo4j Slack Group](https://neo4j.com/blog/public-neo4j-users-slack-group/) and use the #neo4j-php channel.
@@ -25,12 +28,12 @@ Add the package to your `composer.json` and run `composer update`.
 
 ### Laravel 5
 
-#### 5.6
+#### 5.8
 
 ```json
 {
     "require": {
-        "ulobby/neoeloquent": "^1.4.6"
+        "ulobby/neoeloquent": "^1.4.7"
     }
 }
 ```
@@ -145,23 +148,6 @@ use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
 class User extends NeoEloquent {
 
     use SoftDeletes;
-
-    protected $dates = ['deleted_at'];
-
-}
-```
-
-#### Laravel 4
-
-To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait`
-instead of `Illuminate\Database\Eloquent\SoftDeletingTrait` and just like Eloquent you'll need the `$dates` in your models as follows:
-
-```php
-use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
-
-class User extends NeoEloquent {
-
-    use SoftDeletingTrait;
 
     protected $dates = ['deleted_at'];
 

@@ -8,6 +8,7 @@ use Everyman\Neo4j\Query\Row;
 use Illuminate\Database\Eloquent\Builder as IlluminateBuilder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Arr;
 use Vinelab\NeoEloquent\Helpers;
 use Vinelab\NeoEloquent\QueryException;
 
@@ -826,5 +827,24 @@ class Builder extends IlluminateBuilder
     protected function getMatchMethodName($relation)
     {
         return 'match'.ucfirst(mb_strtolower($relation->getEdgeDirection()));
+    }
+
+    /**
+     * Add the "updated at" column to an array of values.
+     *
+     * @param array $values
+     *
+     * @return array
+     */
+    protected function addUpdatedAtColumn(array $values)
+    {
+        if (!$this->model->usesTimestamps()) {
+            return $values;
+        }
+
+        return Arr::add(
+            $values, $this->model->getUpdatedAtColumn(),
+            $this->model->freshTimestampString()
+        );
     }
 }

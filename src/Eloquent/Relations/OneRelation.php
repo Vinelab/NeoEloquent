@@ -93,7 +93,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
          */
 
         // Set the relation on the model
-        $this->parent->setRelation($this->relation, $model);
+        $this->parent->setRelation($this->relationName, $model);
 
         /*
          * Due to the fact that relationships in Graph are entities themselves
