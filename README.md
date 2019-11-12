@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/Ulobby/NeoEloquent.svg?branch=master)](https://travis-ci.org/Ulobby/NeoEloquent)
 [![Coverage Status](https://coveralls.io/repos/github/ulobby/NeoEloquent/badge.svg?branch=master)](https://coveralls.io/github/ulobby/NeoEloquent?branch=master)
 
-# NeoEloquent and note from the maintainers of this fork
+# NeoEloquent
 Neo4j Graph Eloquent Driver for Laravel, this is a fork of [Vinelab/NeoEloquent](https://github.com/Vinelab/NeoEloquent) maintained by [Ulobby](https://www.ulobby.eu) as the original repo is not maintained anymore.
 
 At Ulobby use NeoEloquent in production for a lot of the crud operations in our Laravel based SaaS. We usually end up writing raw cypher for more complex operations, as a consequence of this we currently do not recommend using polymorphic-relationships.
