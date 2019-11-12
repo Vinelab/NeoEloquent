@@ -7,7 +7,7 @@ cache:
 before_script:
 - travis_retry composer self-update
 - travis_retry composer install --prefer-source --no-interaction
-- mkdir -p build/logs
+- mkdir -p build/coverage/xml
 script:
 - vendor/bin/phpunit --coverage-clover build/coverage/xml
 after_script:
