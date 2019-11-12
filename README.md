@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/Ulobby/NeoEloquent.svg?branch=master)](https://travis-ci.org/Ulobby/NeoEloquent)
-[![Coverage Status](https://coveralls.io/repos/github/ulobby/NeoEloquent/badge.svg?branch=master)](https://coveralls.io/github/ulobby/NeoEloquent?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4b18de9ea45b4b2c96a8f78a25db6480)](https://www.codacy.com/manual/berteltorp/NeoEloquent?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ulobby/NeoEloquent&amp;utm_campaign=Badge_Grade)
 
 # NeoEloquent
 Neo4j Graph Eloquent Driver for Laravel, this is a fork of [Vinelab/NeoEloquent](https://github.com/Vinelab/NeoEloquent) maintained by [Ulobby](https://www.ulobby.eu) as the original repo is not maintained anymore.
