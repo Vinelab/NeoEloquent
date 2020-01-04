@@ -58,6 +58,42 @@ class QueryingRelationsTest extends TestCase
         $this->assertEquals($postWithTenComments->toArray(), $postWithTen->first()->toArray());
     }
 
+    public function testQueryingNestedHas()
+    {
+        // user with a role that has only one permission
+        $user = User::create(['name' => 'espresso']);
+        $role = Role::create(['alias' => 'gyrados']);
+        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $role->permissions()->save($permission);
+        $user->roles()->save($role);
+        // user with a role that has 2 permissions
+        $userWithTwo = User::create(['name' => 'cappuccino']);
+        $roleWithTwo = Role::create(['alias' => 'pikachu']);
+        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
+        $userWithTwo->roles()->save($roleWithTwo);
+        // user with a role that has no permission
+        $user2 = User::Create(['name' => 'u2']);
+        $role2 = Role::create(['alias' => 'nosperm']);
+        $user2->roles()->save($role2);
+        // get the users where their roles have at least one permission.
+        //var_dump(User::has('roles.permissions')->toSql());
+        //die;
+        $found = User::has('roles.permissions')->get();
+        $this->assertEquals(2, count($found));
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
+        //$this->assertEquals($userWithTwo->toArray(), $found->first()->toArray());
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[1]);
+        //$this->assertEquals($user->toArray(), $found[1]->toArray());
+        $moreThanOnePermission = User::has('roles.permissions', '>=', 2)->get();
+        var_dump(User::has('roles.permissions', '>=', 2)->toSql());
+        //return;
+        $this->assertEquals(1, count($moreThanOnePermission));
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $moreThanOnePermission->first());
+        $this->assertEquals($userWithTwo->toArray(), $moreThanOnePermission->first()->toArray());
+    }
+
     public function testQueryingWhereHasOne()
     {
         $mrAdmin = User::create(['name' => 'Rundala']);
@@ -172,6 +208,56 @@ class QueryingRelationsTest extends TestCase
         unset($attrs['created_at']);
         unset($attrs['updated_at']);
         $this->assertEquals($account, $attrs);
+    }public function testQueryingNestedWhereHasUsingId()
+    {
+        // user with a role that has only one permission
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
+        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $role->permissions()->save($permission);
+        $user->roles()->save($role);
+        // user with a role that has 2 permissions
+        $userWithTwo = User::create(['name' => 'cappuccino']);
+        $roleWithTwo = Role::create(['alias' => 'pikachu']);
+        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
+        $userWithTwo->roles()->save($roleWithTwo);
+        $found = User::whereHas('roles', function($q) use($role, $permission) {
+            $q->where($role->getKeyName(), $role->getKey());
+            $q->whereHas('permissions', function($q) use($permission) {
+                $q->where($permission->getKeyName(), $permission->getKey());
+            });
+        })->get();
+        $this->assertEquals(1, count($found));
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
+        $this->assertEquals($user->toArray(), $found->first()->toArray());
+    }
+
+    public function testQueryingNestedWhereHasUsingProperty()
+    {
+        // user with a role that has only one permission
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
+        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $role->permissions()->save($permission);
+        $user->roles()->save($role);
+        // user with a role that has 2 permissions
+        $userWithTwo = User::create(['name' => 'cappuccino']);
+        $roleWithTwo = Role::create(['alias' => 'pikachu']);
+        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
+        $userWithTwo->roles()->save($roleWithTwo);
+        $found = User::whereHas('roles', function($q) use($role, $permission) {
+            $q->where('alias', $role->alias);
+            $q->whereHas('permissions', function($q) use($permission) {
+                $q->where('alias', $permission->alias);
+            });
+        })->get();
+        $this->assertEquals(1, count($found));
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
+        $this->assertEquals($user->toArray(), $found->first()->toArray());
     }
 
     public function testCreatingModelWithRelations()
