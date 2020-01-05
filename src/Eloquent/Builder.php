@@ -797,7 +797,7 @@ class Builder extends IlluminateBuilder
     {
         if (is_array($query->getQuery()->wheres)) {
             $query->getQuery()->wheres = array_map(function ($where) use ($prefix) {
-                if ($where['type'] != 'Carried' && strpos($where['column'], '.') == false) { 
+                if ($where['type'] != 'Carried' && $where['type'] != 'raw' &&strpos($where['column'], '.') == false) { 
                     $column = $where['column'];
                     $where['column'] = ($this->isId($column)) ? $column : $prefix.'.'.$column;
                 }
