@@ -122,7 +122,6 @@ class CypherGrammar extends Grammar
         }
 
         $prepared = [];
-        $this->postfixRelationships($matches);
         foreach ($matches as $match) {
             $method = 'prepareMatch'.ucfirst($match['type']);
             $prepared[] = $this->$method($match);
@@ -146,7 +145,6 @@ class CypherGrammar extends Grammar
         $property = $match['property'];
         $direction = $match['direction'];
         $relationship = $match['relationship'];
-        $postfix = $match['postfix'];
         // Prepare labels for query
         $parentLabels = $this->prepareLabels($parent['labels']);
         $relatedLabels = $this->prepareLabels($related['labels']);

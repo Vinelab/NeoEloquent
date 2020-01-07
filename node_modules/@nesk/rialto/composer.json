@@ -1,0 +1,51 @@
+{
+    "name": "nesk/rialto",
+    "description": "Manage Node resources from PHP",
+    "keywords": [
+        "php",
+        "node",
+        "wrapper",
+        "communication",
+        "bridge",
+        "socket"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Johann Pardanaud",
+            "email": "pardanaud.j@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1",
+        "clue/socket-raw": "^1.2",
+        "psr/log": "^1.0",
+        "symfony/process": "^3.3|^4.0"
+    },
+    "require-dev": {
+        "codedungeon/phpunit-result-printer": ">=0.6 <1.0",
+        "monolog/monolog": "^1.23",
+        "phpunit/phpunit": "^6.5|^7.0"
+    },
+    "suggest": {
+        "ext-weakref": "Required to run all the tests"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nesk\\Rialto\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nesk\\Rialto\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-install-cmd": "npm install",
+        "test": "./vendor/bin/phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
