@@ -247,7 +247,7 @@ class CypherGrammar extends Grammar
         if (!empty($query->matches)) {
             return '';
         }
-
+        $query->returnAsNode = true;
         // first we will check whether we need
         // to reformat the labels from an array
         if (is_array($labels)) {
@@ -257,7 +257,7 @@ class CypherGrammar extends Grammar
         // every label must begin with a ':' so we need to check
         // and reformat if need be.
         $labels = ':'.preg_replace('/^:/', '', $labels);
-
+        $query->columns = [$query->modelAsNode()];
         // now we add the default placeholder for this node
         $labels = $query->modelAsNode().$labels;
 
@@ -426,7 +426,7 @@ class CypherGrammar extends Grammar
         // In the case where the query has relationships
         // we need to return the requested properties as is
         // since they are considered node placeholders.
-        if (!empty($query->matches)) {
+        if (!empty($query->matches) || $query->returnAsNode == true) {
             $properties = implode(', ', array_values($properties));
         } else {
             $properties = $this->columnize($properties);
