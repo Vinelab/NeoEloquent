@@ -150,7 +150,7 @@ class CypherGrammar extends Grammar
         $relatedLabels = $this->prepareLabels($related['labels']);
 
         // Get the relationship ready for query
-        $relationshipLabel = $this->prepareRelation($relationship, $related['node'], $postfix);
+        $relationshipLabel = $this->prepareRelation($relationship, $related['node']);
 
         // We treat node ids differently here in Cypher
         // so we will have to turn it into something like id(node)
