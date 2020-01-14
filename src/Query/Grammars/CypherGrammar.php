@@ -247,7 +247,6 @@ class CypherGrammar extends Grammar
         if (!empty($query->matches)) {
             return '';
         }
-        $query->returnAsNode = true;
         // first we will check whether we need
         // to reformat the labels from an array
         if (is_array($labels)) {
