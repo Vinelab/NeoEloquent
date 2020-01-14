@@ -1,4 +1,7 @@
 /vendor
+/node_modules
+/logs
+
 composer.phar
 composer.lock
 
