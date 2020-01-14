@@ -85,9 +85,9 @@ class Grammar extends IlluminateGrammar
      *
      * @return string
      */
-    public function prepareRelation($relation, $related, $postfix = 0)
+    public function prepareRelation($relation, $related)
     {
-        return '`rel_'.mb_strtolower($relation).'_'.$related.'_'.$postfix."`:`{$relation}`";
+        return '`rel_'.mb_strtolower($relation).'_'.$related."`:`{$relation}`";
     }
 
     /**
