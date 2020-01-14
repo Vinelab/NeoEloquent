@@ -49,7 +49,7 @@ trait QueriesRelationships
             call_user_func($callback, $query);
             $this->query->matches = array_merge($this->query->matches, $query->getQuery()->matches);
             $this->query->with = array_merge($this->query->with, $query->getQuery()->with);
-            $this->carry([$relation->getParentNode()]);
+            $this->carry([$relation->getParentNode(), $relation->getRelatedNode()]);
         } else {
             /**
              * The Cypher we're trying to build here would look like this:.
