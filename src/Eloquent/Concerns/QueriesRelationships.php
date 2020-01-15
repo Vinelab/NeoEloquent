@@ -27,16 +27,16 @@ trait QueriesRelationships
      */
     public function has($relation, $operator = '>=', $count = 1, $boolean = 'and', \Closure $callback = null)
     {
+        if (strpos($relation, '.') !== false) {
+            return $this->hasNested($relation, $operator, $count, $boolean, $callback);
+        }
+
         $relation = $this->getRelationWithoutConstraints($relation);
 
         $query = $relation->getRelated()->newQuery();
         // This will make sure that any query we add here will consider the related
         // model as our reference Node.
         $this->getQuery()->from = $query->getModel()->getTable();
-
-        if ($callback) {
-            call_user_func($callback, $query);
-        }
 
         /**
          * In graph we do not need to act on the count of the relationships when dealing
@@ -45,7 +45,12 @@ trait QueriesRelationships
          */
         $prefix = $relation->getRelatedNode();
 
-        if (!$callback) {
+        if ($callback) {
+            call_user_func($callback, $query);
+            $this->query->matches = array_merge($this->query->matches, $query->getQuery()->matches);
+            $this->query->with = array_merge($this->query->with, $query->getQuery()->with);
+            $this->carry([$relation->getParentNode()]);
+        } else {
             /**
              * The Cypher we're trying to build here would look like this:.
              *
@@ -73,7 +78,8 @@ trait QueriesRelationships
             $relatedNode,
             $relation->getForeignKeyName(),
             $relation->getLocalKey(),
-            $relation->getParentLocalKeyValue());
+            $relation->getParentLocalKeyValue()
+        );
 
         // Prefix all the columns with the relation's node placeholder in the query
         // and merge the queries that needs to be merged.

@@ -122,7 +122,6 @@ class CypherGrammar extends Grammar
         }
 
         $prepared = [];
-
         foreach ($matches as $match) {
             $method = 'prepareMatch'.ucfirst($match['type']);
             $prepared[] = $this->$method($match);
@@ -146,7 +145,6 @@ class CypherGrammar extends Grammar
         $property = $match['property'];
         $direction = $match['direction'];
         $relationship = $match['relationship'];
-
         // Prepare labels for query
         $parentLabels = $this->prepareLabels($parent['labels']);
         $relatedLabels = $this->prepareLabels($related['labels']);
@@ -249,7 +247,6 @@ class CypherGrammar extends Grammar
         if (!empty($query->matches)) {
             return '';
         }
-
         // first we will check whether we need
         // to reformat the labels from an array
         if (is_array($labels)) {
@@ -259,7 +256,10 @@ class CypherGrammar extends Grammar
         // every label must begin with a ':' so we need to check
         // and reformat if need be.
         $labels = ':'.preg_replace('/^:/', '', $labels);
-
+        /*
+        if (count($query->columns) == 1 && $query->columns[0] == "*") {
+            $query->columns = [$query->modelAsNode()];
+        }*/
         // now we add the default placeholder for this node
         $labels = $query->modelAsNode().$labels;
 

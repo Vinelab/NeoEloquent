@@ -380,7 +380,15 @@ class Builder extends IlluminateQueryBuilder
     {
         $count = $this->columnCountForWhereClause($column);
 
-        return ($count > 0) ? $column.'_'.($count + 1) : $column;
+        $binding = ($count > 0) ? $column.'_'.($count + 1) : $column;
+        $prefix = $this->from;
+        if (is_array($prefix)) {
+            $prefix = reset($prefix);
+        }
+        // we prefix when we do have a prefix ($this->from) and when the column isn't an id (id(abc..)).
+        $prefix = (!preg_match('/id([a-zA-Z0-9]?)/', $column) && !empty($this->from)) ? mb_strtolower($prefix) : '';
+
+        return $prefix.$binding;
     }
 
     /**
@@ -515,7 +523,9 @@ class Builder extends IlluminateQueryBuilder
     public function with(array $parts)
     {
         foreach ($parts as $key => $part) {
-            $this->with[$key] = $part;
+            if (!in_array($part, $this->with)) {
+                $this->with[$key] = $part;
+            }
         }
 
         return $this;

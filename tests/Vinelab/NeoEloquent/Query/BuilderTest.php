@@ -238,8 +238,8 @@ class BuilderTest extends TestCase
         $builder->select('*')->from('User')->where('username', '=', 'bakalazma');
 
         $bindings = $builder->getBindings();
-        $this->assertEquals('MATCH (user:User) WHERE user.username = {username} RETURN *', $builder->toCypher());
-        $this->assertEquals(['username' => 'bakalazma'], $bindings);
+        $this->assertEquals('MATCH (user:User) WHERE user.username = {userusername} RETURN *', $builder->toCypher());
+        $this->assertEquals(['userusername' => 'bakalazma'], $bindings);
     }
 
     public function testBasicSelectDistinct()
