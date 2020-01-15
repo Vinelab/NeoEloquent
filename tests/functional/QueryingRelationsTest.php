@@ -204,7 +204,9 @@ class QueryingRelationsTest extends TestCase
         unset($attrs['created_at']);
         unset($attrs['updated_at']);
         $this->assertEquals($account, $attrs);
-    }public function testQueryingNestedWhereHasUsingId()
+    }
+
+    public function testQueryingNestedWhereHasUsingId()
     {
         // user with a role that has only one permission
         $user = User::create(['name' => 'cappuccino']);
@@ -219,9 +221,9 @@ class QueryingRelationsTest extends TestCase
         $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
-        $found = User::whereHas('roles', function($q) use($role, $permission) {
+        $found = User::whereHas('roles', function ($q) use ($role, $permission) {
             $q->where($role->getKeyName(), $role->getKey());
-            $q->whereHas('permissions', function($q) use($permission) {
+            $q->whereHas('permissions', function ($q) use ($permission) {
                 $q->where($permission->getKeyName(), $permission->getKey());
             });
         })->get();
@@ -245,9 +247,9 @@ class QueryingRelationsTest extends TestCase
         $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
-        $found = User::whereHas('roles', function($q) use($role, $permission) {
+        $found = User::whereHas('roles', function ($q) use ($role, $permission) {
             $q->where('alias', $role->alias);
-            $q->whereHas('permissions', function($q) use($permission) {
+            $q->whereHas('permissions', function ($q) use ($permission) {
                 $q->where('alias', $permission->alias);
             });
         })->get();
@@ -541,9 +543,9 @@ class QueryingRelationsTest extends TestCase
     {
         $tag = Tag::create(['title' => 'php']);
         $tags = [
-                $tag,
-                ['title' => 'developer'],
-                new Tag(['title' => 'laravel']),
+            $tag,
+            ['title' => 'developer'],
+            new Tag(['title' => 'laravel']),
         ];
 
         $post = Post::createWith(['title' => 'foo', 'body' => 'bar'], compact('tags'));
@@ -699,7 +701,7 @@ class QueryingRelationsTest extends TestCase
 
         $user = User::createWith(['name' => 'Some Name', 'dob' => $yesterday],
             ['colleagues' => ['name' => 'Protectron', 'dob' => $dt],
-        ]);
+            ]);
 
         $format = $user->getDateFormat();
         $houwe = User::find($user->id);

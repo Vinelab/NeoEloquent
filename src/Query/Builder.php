@@ -387,6 +387,7 @@ class Builder extends IlluminateQueryBuilder
         }
         // we prefix when we do have a prefix ($this->from) and when the column isn't an id (id(abc..)).
         $prefix = (!preg_match('/id([a-zA-Z0-9]?)/', $column) && !empty($this->from)) ? mb_strtolower($prefix) : '';
+
         return $prefix.$binding;
     }
 
@@ -506,7 +507,7 @@ class Builder extends IlluminateQueryBuilder
     public function whereCarried($column, $operator = null, $value = null, $boolean = 'and')
     {
         $type = 'Carried';
-        
+
         $this->withWheres[] = compact('type', 'column', 'operator', 'value', 'boolean');
 
         return $this;
