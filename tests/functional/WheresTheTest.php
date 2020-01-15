@@ -260,8 +260,8 @@ class WheresTheTest extends TestCase
 
     public function testWhereNotFound()
     {
-        $u = User::where('id', '<', 1)->get();
-        $this->assertCount(0, $u);
+        $u1 = User::where('name', '<', 0)->get();
+        $this->assertCount(0, $u1);
 
         $u2 = User::where('glasses', 'always on')->first();
         $this->assertNull($u2);
