@@ -435,14 +435,15 @@ class Connection extends IlluminateConnection
      * In neo4j's terminologies this is a node.
      *
      * @param string $table
+     * @param string|null $as
      *
      * @return \Vinelab\NeoEloquent\Query\Builder
      */
-    public function table($table)
+    public function table($table, $as = NULL)
     {
         $query = new Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
 
-        return $query->from($table);
+        return $query->from($table, $as);
     }
 
     /**

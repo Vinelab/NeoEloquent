@@ -103,12 +103,16 @@ class Builder extends IlluminateQueryBuilder
      * Set the node's label which the query is targeting.
      *
      * @param string $label
+     * @param string|null $as
      *
      * @return \Vinelab\NeoEloquent\Query\Builder|static
      */
-    public function from($label)
+    public function from($label, $as = NULL)
     {
         $this->from = $label;
+
+        // $as is used only for implementation purposes
+        // by the original Builder contract.
 
         return $this;
     }
