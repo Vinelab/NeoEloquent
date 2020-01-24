@@ -32,17 +32,6 @@ class BelongsToTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo', $relation);
     }
 
-    public function testUpdateMethodRetrievesModelAndUpdates()
-    {
-        $relation = $this->getRelation();
-        $mock = M::mock('Vinelab\NeoEloquent\Eloquent\Model');
-        $mock->shouldReceive('fill')->once()->with(['attributes'])->andReturn($mock);
-        $mock->shouldReceive('save')->once()->andReturn(true);
-        $relation->getQuery()->shouldReceive('first')->once()->andReturn($mock);
-
-        $this->assertTrue($relation->update(['attributes']));
-    }
-
     public function testEagerConstraintsAreProperlyAdded()
     {
         $models = [new Stub(['id' => 1]), new Stub(['id' => 2]), new Stub(['id' => 3])];
