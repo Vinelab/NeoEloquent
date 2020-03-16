@@ -11,8 +11,7 @@ class Neo4jConnector
     {
         $connection = new Connection($config);
 
-        switch($type)
-        {
+        switch ($type) {
             case Connection::TYPE_SINGLE:
                 $client = $connection->createSingleConnectionClient($config);
                 break;
@@ -25,7 +24,7 @@ class Neo4jConnector
                 $client = $connection->createHAClient($config);
                 break;
             default:
-                throw new Exception('Unsupported connection type '+$type);
+                throw new Exception('Unsupported connection type ' + $type);
                 break;
         }
 

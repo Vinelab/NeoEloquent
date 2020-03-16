@@ -2,13 +2,12 @@
 
 namespace Vinelab\NeoEloquent\Capsule;
 
-use Vinelab\NeoEloquent\Eloquent\Model as Eloquent;
-
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Connectors\ConnectionFactory;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Traits\CapsuleManagerTrait;
+use Vinelab\NeoEloquent\Eloquent\Model as Eloquent;
 
 class Manager
 {

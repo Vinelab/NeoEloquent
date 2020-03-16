@@ -2,15 +2,16 @@
 
 namespace Vinelab\NeoEloquent\Traits;
 
-use GraphAware\Common\Type\Node;
-use GraphAware\Common\Type\Relationship;
 use GraphAware\Common\Result\AbstractRecordCursor as Result;
 use GraphAware\Common\Result\RecordViewInterface;
+use GraphAware\Common\Type\Node;
+use GraphAware\Common\Type\Relationship;
 
 trait ResultTrait
 {
     /**
      * @param Result $result
+     *
      * @return \GraphAware\Common\Result\RecordViewInterface[]
      */
     public function getResultRecords(Result $result)
@@ -20,6 +21,7 @@ trait ResultTrait
 
     /**
      * @param array $recordViews
+     *
      * @return array
      */
     public function getRecordsByPlaceholders(Result $result)
@@ -28,7 +30,7 @@ trait ResultTrait
 
         $recordsByKeys = [];
         foreach ($recordViews as $recordView) {
-            if($recordView instanceof RecordViewInterface) {
+            if ($recordView instanceof RecordViewInterface) {
                 $keys = $recordView->keys();
                 foreach ($keys as $key) {
                     $recordsByKeys[$key][] = $recordView->value($key);
@@ -41,6 +43,7 @@ trait ResultTrait
 
     /**
      * @param array $recordsByPlaceholders
+     *
      * @return array
      */
     public function getRelationshipRecords(Result $result)
@@ -50,11 +53,11 @@ trait ResultTrait
         $recordViews = $this->getResultRecords($result);
 
         foreach ($recordViews as $recordView) {
-            if($recordView instanceof RecordViewInterface) {
+            if ($recordView instanceof RecordViewInterface) {
                 $keys = $recordView->keys();
                 foreach ($keys as $key) {
                     $record = $recordView->value($key);
-                    if($record instanceof Relationship) {
+                    if ($record instanceof Relationship) {
                         $relationships[] = $record;
                     }
                 }
@@ -66,6 +69,7 @@ trait ResultTrait
 
     /**
      * @param array $recordsByPlaceholders
+     *
      * @return array
      */
     public function getNodeRecords(Result $result)
@@ -75,11 +79,11 @@ trait ResultTrait
         $recordViews = $this->getResultRecords($result);
 
         foreach ($recordViews as $recordView) {
-            if($recordView instanceof RecordViewInterface) {
+            if ($recordView instanceof RecordViewInterface) {
                 $keys = $recordView->keys();
                 foreach ($keys as $key) {
                     $record = $recordView->value($key);
-                    if($record instanceof Node) {
+                    if ($record instanceof Node) {
                         $nodes[] = $record;
                     }
                 }
@@ -91,6 +95,7 @@ trait ResultTrait
 
     /**
      * @param Result $result
+     *
      * @return mixed
      */
     public function getSingleItem(Result $result)
@@ -100,13 +105,14 @@ trait ResultTrait
 
     /**
      * @param \GraphAware\Bolt\Result\Type\Relationship $relation
-     * @param array $nodes
-     * @param string $type
+     * @param array                                     $nodes
+     * @param string                                    $type
+     *
      * @return Node
      */
     public function getNodeByType(Relationship $relation, array $nodes, string $type = 'start')
     {
-        if($type != 'start') {
+        if ($type != 'start') {
             $type = 'end';
         }
 
@@ -115,7 +121,7 @@ trait ResultTrait
         $id = $relation->{$method}();
 
         foreach ($nodes as $node) {
-            if($id === $node->identity()) {
+            if ($id === $node->identity()) {
                 return $node;
             }
         }
@@ -123,6 +129,7 @@ trait ResultTrait
 
     /**
      * @param RecordViewInterface $record
+     *
      * @return array
      */
     public function getRecordNodes(RecordViewInterface $record)
@@ -132,7 +139,7 @@ trait ResultTrait
         $keys = $record->keys();
         foreach ($keys as $key) {
             $item = $record->get($key);
-            if($item instanceof Node) {
+            if ($item instanceof Node) {
                 $nodes[] = $item;
             }
         }
@@ -142,6 +149,7 @@ trait ResultTrait
 
     /**
      * @param RecordViewInterface $record
+     *
      * @return array
      */
     public function getRecordRelationships(RecordViewInterface $record)
@@ -151,7 +159,7 @@ trait ResultTrait
         $keys = $record->keys();
         foreach ($keys as $key) {
             $item = $record->get($key);
-            if($item instanceof Relationship) {
+            if ($item instanceof Relationship) {
                 $relationships[] = $item;
             }
         }

@@ -1,25 +1,25 @@
 <?php
 
-return array(
+return [
 
     'default' => 'bolt+routing',
 
-    'connections' => array(
+    'connections' => [
 
-        'neo4j' => array(
-            'driver' => 'neo4j',
-            'host' => 'localhost',
-            'port' => 7687,
+        'neo4j' => [
+            'driver'   => 'neo4j',
+            'host'     => 'localhost',
+            'port'     => 7687,
             'username' => 'neo4j',
             'password' => 'test',
-        ),
+        ],
 
-        'default' => array(
-            'driver' => 'neo4j',
-            'host' => 'localhost',
-            'port' => 7687,
+        'default' => [
+            'driver'   => 'neo4j',
+            'host'     => 'localhost',
+            'port'     => 7687,
             'username' => 'neo4j',
             'password' => 'test',
-        ),
-    ),
-);
+        ],
+    ],
+];

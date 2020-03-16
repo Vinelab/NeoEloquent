@@ -11,17 +11,17 @@ class MigrateRefreshCommand extends Command
     use ConfirmableTrait;
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $name = 'neo4j:migrate:refresh';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $description = 'Reset and re-run all migrations';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function fire()
     {
@@ -33,16 +33,16 @@ class MigrateRefreshCommand extends Command
 
         $force = $this->input->getOption('force');
 
-        $this->call('migrate:reset', array(
+        $this->call('migrate:reset', [
             '--database' => $database, '--force' => $force,
-        ));
+        ]);
 
         // The refresh command is essentially just a brief aggregate of a few other of
         // the migration commands and just provides a convenient wrapper to execute
         // them in succession. We'll also see if we need to re-seed the database.
-        $this->call('migrate', array(
+        $this->call('migrate', [
             '--database' => $database, '--force' => $force,
-        ));
+        ]);
 
         if ($this->needsSeeding()) {
             $this->runSeeder($database);
@@ -68,22 +68,22 @@ class MigrateRefreshCommand extends Command
     {
         $class = $this->option('seeder') ?: 'DatabaseSeeder';
 
-        $this->call('db:seed', array('--database' => $database, '--class' => $class));
+        $this->call('db:seed', ['--database' => $database, '--class' => $class]);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getOptions()
     {
-        return array(
-            array('database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'),
+        return [
+            ['database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'],
 
-            array('force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'),
+            ['force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'],
 
-            array('seed', null, InputOption::VALUE_NONE, 'Indicates if the seed task should be re-run.'),
+            ['seed', null, InputOption::VALUE_NONE, 'Indicates if the seed task should be re-run.'],
 
-            array('seeder', null, InputOption::VALUE_OPTIONAL, 'The class name of the root seeder.'),
-        );
+            ['seeder', null, InputOption::VALUE_OPTIONAL, 'The class name of the root seeder.'],
+        ];
     }
 }

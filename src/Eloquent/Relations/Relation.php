@@ -3,10 +3,10 @@
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Closure;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Vinelab\NeoEloquent\Query\Expression;
 use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Query\Expression;
 
 abstract class Relation
 {
@@ -180,7 +180,7 @@ abstract class Relation
      * parent model. When there's a match, the identifier at which
      * the match occurred is returned.
      *
-     * @param  array  $models
+     * @param array $models
      *
      * @return string
      */
@@ -205,7 +205,6 @@ abstract class Relation
     {
         return array_unique(array_values(array_map(function ($value) use ($key) {
             return $key ? $value->getAttribute($key) : $value->getKey();
-
         }, $models)));
     }
 

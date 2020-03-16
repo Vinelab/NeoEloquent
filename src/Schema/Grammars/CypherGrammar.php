@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Schema\Grammars;
 
-use Vinelab\NeoEloquent\Schema\Blueprint;
 use Illuminate\Support\Fluent;
+use Vinelab\NeoEloquent\Schema\Blueprint;
 
 class CypherGrammar extends Grammar
 {
@@ -18,7 +18,7 @@ class CypherGrammar extends Grammar
     public function compileDrop(Blueprint $blueprint, Fluent $command)
     {
         $match = $this->compileFrom($blueprint);
-        $label = $this->prepareLabels(array($blueprint));
+        $label = $this->prepareLabels([$blueprint]);
 
         return $match.' REMOVE n'.$label;
     }
@@ -59,7 +59,7 @@ class CypherGrammar extends Grammar
      */
     public function compileRelationExists($relation)
     {
-        $relation = mb_strtoupper($this->prepareLabels(array($relation)));
+        $relation = mb_strtoupper($this->prepareLabels([$relation]));
 
         return "MATCH n-[r$relation]->m RETURN r LIMIT 1";
     }
@@ -75,8 +75,8 @@ class CypherGrammar extends Grammar
     public function compileRenameLabel(Blueprint $blueprint, Fluent $command)
     {
         $match = $this->compileFrom($blueprint);
-        $from = $this->prepareLabels(array($blueprint));
-        $to = $this->prepareLabels(array($command->to));
+        $from = $this->prepareLabels([$blueprint]);
+        $to = $this->prepareLabels([$command->to]);
 
         return $match." REMOVE n$from SET n$to";
     }

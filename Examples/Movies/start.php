@@ -10,7 +10,7 @@ countMovies();
 showAllMovies();
 countActors();
 showAllActors();
-showActorsWithNameEndingWith("s");
+showActorsWithNameEndingWith('s');
 showFirstMovieWithActorsLazyLoaded();
 
 // implementation
@@ -19,21 +19,21 @@ function showFirstMovieWithActorsLazyLoaded()
     $movie = Movie::first();
     $actors = $movie->actors;
 
-   // show movies
+    // show movies
     $output = new ConsoleOutput();
-    $output->writeln("");
-    $output->writeln("<question>Showing the actors for the movie:</question> <info>".$movie->title."</info>");
-    $output->writeln("--------------------------------------------");
+    $output->writeln('');
+    $output->writeln('<question>Showing the actors for the movie:</question> <info>'.$movie->title.'</info>');
+    $output->writeln('--------------------------------------------');
     foreach ($actors as $actor) {
-        $output->writeln("- ".$actor->name);
+        $output->writeln('- '.$actor->name);
     }
-    $output->writeln("");
+    $output->writeln('');
 }
 
 /**
  * Show only the actors whose names end with the given letter.
  *
- * @param  string $letter
+ * @param string $letter
  */
 function showActorsWithNameEndingWith($letter)
 {
@@ -42,11 +42,11 @@ function showActorsWithNameEndingWith($letter)
     // show actors
     $output = new ConsoleOutput();
     $output->writeln("<question>Actors with their names ending with the letter \"$letter\"</question>");
-    $output->writeln("--------------------------------------------------");
+    $output->writeln('--------------------------------------------------');
     foreach ($actors as $actor) {
-        $output->writeln("- ".$actor->name);
+        $output->writeln('- '.$actor->name);
     }
-    $output->writeln("");
+    $output->writeln('');
 }
 
 function countMovies()
@@ -55,7 +55,7 @@ function countMovies()
 
     $output = new ConsoleOutput();
     $output->writeln("<info>There are $count movies.</info>");
-    $output->writeln("");
+    $output->writeln('');
 }
 
 function countActors()
@@ -64,7 +64,7 @@ function countActors()
 
     $output = new ConsoleOutput();
     $output->writeln("<info>There are $count actors.</info>");
-    $output->writeln("");
+    $output->writeln('');
 }
 
 function showAllMovies()
@@ -74,12 +74,12 @@ function showAllMovies()
 
     // show all movies
     $output = new ConsoleOutput();
-    $output->writeln("<question>Movies:</question>");
-    $output->writeln("-------");
+    $output->writeln('<question>Movies:</question>');
+    $output->writeln('-------');
     foreach ($movies as $movie) {
-        $output->writeln("- ".$movie->title);
+        $output->writeln('- '.$movie->title);
     }
-    $output->writeln("");
+    $output->writeln('');
 }
 
 function showAllActors()
@@ -89,10 +89,10 @@ function showAllActors()
 
     // show all actors
     $output = new ConsoleOutput();
-    $output->writeln("<question>Actors:</question>");
-    $output->writeln("-------");
+    $output->writeln('<question>Actors:</question>');
+    $output->writeln('-------');
     foreach ($actors as $actor) {
-        $output->writeln("- ".$actor->name);
+        $output->writeln('- '.$actor->name);
     }
     $output->writeln('');
 }

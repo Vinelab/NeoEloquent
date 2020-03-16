@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class User extends Model
 {
@@ -272,7 +272,7 @@ class BelongsToManyRelationTest extends TestCase
 
         $user->roles()->sync([
             $master->id => ['type' => 'Master'],
-            $admin->id => ['type' => 'Admin'],
+            $admin->id  => ['type' => 'Admin'],
             $editor->id => ['type' => 'Editor'],
         ]);
 
@@ -289,7 +289,7 @@ class BelongsToManyRelationTest extends TestCase
         $this->assertTrue(in_array($editor->id, $edgesIds));
         $this->assertTrue(in_array($master->id, $edgesIds));
 
-        $expectedEdgesTypes = array('Editor', 'Admin', 'Master');
+        $expectedEdgesTypes = ['Editor', 'Admin', 'Master'];
 
         foreach ($edges as $key => $edge) {
             $attributes = $edge->toArray();

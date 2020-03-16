@@ -34,9 +34,9 @@ class Builder
      *
      * @param string $label
      *
-     * @return bool
-     *
      * @throws RuntimeException
+     *
+     * @return bool
      */
     public function hasTable($label)
     {

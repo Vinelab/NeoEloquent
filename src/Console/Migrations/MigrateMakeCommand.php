@@ -3,19 +3,19 @@
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
 use Illuminate\Support\Composer;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Vinelab\NeoEloquent\Migrations\MigrationCreator;
 
 class MigrateMakeCommand extends BaseCommand
 {
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $name = 'neo4j:make:migration';
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected $description = 'Create a new migration file';
 
@@ -50,7 +50,7 @@ class MigrateMakeCommand extends BaseCommand
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function fire()
     {
@@ -94,30 +94,30 @@ class MigrateMakeCommand extends BaseCommand
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getArguments()
     {
-        return array(
-            array('name', InputArgument::REQUIRED, 'The name of the migration'),
-        );
+        return [
+            ['name', InputArgument::REQUIRED, 'The name of the migration'],
+        ];
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     protected function getOptions()
     {
-        return array(
-            array('bench', null, InputOption::VALUE_OPTIONAL, 'The workbench the migration belongs to.', null),
+        return [
+            ['bench', null, InputOption::VALUE_OPTIONAL, 'The workbench the migration belongs to.', null],
 
-            array('create', null, InputOption::VALUE_OPTIONAL, 'The label schema to be created.'),
+            ['create', null, InputOption::VALUE_OPTIONAL, 'The label schema to be created.'],
 
-            array('package', null, InputOption::VALUE_OPTIONAL, 'The package the migration belongs to.', null),
+            ['package', null, InputOption::VALUE_OPTIONAL, 'The package the migration belongs to.', null],
 
-            array('path', null, InputOption::VALUE_OPTIONAL, 'Where to store the migration.', null),
+            ['path', null, InputOption::VALUE_OPTIONAL, 'Where to store the migration.', null],
 
-            array('label', null, InputOption::VALUE_OPTIONAL, 'The label to migrate.'),
-        );
+            ['label', null, InputOption::VALUE_OPTIONAL, 'The label to migrate.'],
+        ];
     }
 }

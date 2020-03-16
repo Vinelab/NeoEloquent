@@ -72,17 +72,17 @@ class ModelTest extends TestCase
     {
         $m = new Model();
 
-        $m->setLabel(array('User', 'Fan'));
+        $m->setLabel(['User', 'Fan']);
         $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(array('User', 'Fan'), $label);
+        $this->assertEquals(['User', 'Fan'], $label);
 
         $m->setLabel(':User:Fan');
         $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(array('User', 'Fan'), $label);
+        $this->assertEquals(['User', 'Fan'], $label);
 
         $m->setLabel('User:Fan:Maker:Baker');
         $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(array('User', 'Fan', 'Maker', 'Baker'), $label);
+        $this->assertEquals(['User', 'Fan', 'Maker', 'Baker'], $label);
     }
 
     public function testGettingEloquentBuilder()
@@ -98,13 +98,13 @@ class ModelTest extends TestCase
     {
         //create a new model object
         $m = new Labeled();
-        $m->setLabel(array('User', 'Fan')); //set some labels
+        $m->setLabel(['User', 'Fan']); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph
         $id = $m->id;
 
         //add the label
-        $m->addLabels(array('Superuniqelabel1'));
+        $m->addLabels(['Superuniqelabel1']);
 
         $labels = $this->getNodeLabels($id);
 
@@ -115,13 +115,13 @@ class ModelTest extends TestCase
     {
         //create a new model object
         $m = new Labeled();
-        $m->setLabel(array('User', 'Fan', 'Superuniqelabel2')); //set some labels
+        $m->setLabel(['User', 'Fan', 'Superuniqelabel2']); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph
         $id = $m->id;
 
         //drop the label
-        $m->dropLabels(array('Superuniqelabel2'));
+        $m->dropLabels(['Superuniqelabel2']);
         $this->assertFalse(in_array('Superuniqelabel2', $this->getNodeLabels($id)));
     }
 }

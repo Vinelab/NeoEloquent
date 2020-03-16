@@ -1,25 +1,25 @@
 <?php
 
-use Vinelab\NeoEloquent\Connection;
 use Illuminate\Database\Capsule\Manager as Capsule;
+use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 
 $connection = [
-    'driver' => 'neo4j',
-    'host'   => 'dev',
-    'port'   => 7474,
+    'driver'   => 'neo4j',
+    'host'     => 'dev',
+    'port'     => 7474,
     'username' => 'neo4j',
-    'password' => 'neo4j'
+    'password' => 'neo4j',
 ];
 
 Vinelab\NeoEloquent\Neo4j::connection($connection);
 
-$capsule = new Capsule;
+$capsule = new Capsule();
 $manager = $capsule->getDatabaseManager();
-$manager->extend('neo4j', function($config)
-{
+$manager->extend('neo4j', function ($config) {
     $conn = new Connection($config);
-    $conn->setSchemaGrammar(new CypherGrammar);
+    $conn->setSchemaGrammar(new CypherGrammar());
+
     return $conn;
 });
 

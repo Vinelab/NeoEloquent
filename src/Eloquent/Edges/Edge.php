@@ -2,14 +2,14 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
-use DateTime;
 use Carbon\Carbon;
-use GraphAware\Neo4j\Client\Formatter\Result;
-use GraphAware\Common\Result\RecordViewInterface;
+use DateTime;
 use GraphAware\Bolt\Result\Type\Relationship;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use GraphAware\Common\Result\RecordViewInterface;
+use GraphAware\Neo4j\Client\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Exceptions\NoEdgeDirectionException;
 use Vinelab\NeoEloquent\Traits\ResultTrait;
 
@@ -63,14 +63,14 @@ abstract class Edge extends Delegate
      *
      * @var array
      */
-    protected $attributes = array();
+    protected $attributes = [];
 
     /**
      * The attributes that should be mutated to dates.
      *
      * @var array
      */
-    protected $dates = array();
+    protected $dates = [];
 
     /**
      * Holds the decision on whether
@@ -133,7 +133,7 @@ abstract class Edge extends Delegate
      * @param \Vinelab\NeoEloquent\Eloquent\Model   $related
      * @param string                                $type
      */
-    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = array(), $unique = false)
+    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = [], $unique = false)
     {
         parent::__construct($query);
 
@@ -202,16 +202,16 @@ abstract class Edge extends Delegate
     {
         $this->updateTimestamps();
 
-         /*
-         * If this is a unique relationship we should check for an existing
-         * one of the same type and direction for the $parent node before saving
-         * and delete it, unless we are updating an existing relationship.
-         */
+        /*
+        * If this is a unique relationship we should check for an existing
+        * one of the same type and direction for the $parent node before saving
+        * and delete it, unless we are updating an existing relationship.
+        */
         if ($this->unique && !$this->exists()) {
             $endModel = $this->related->newInstance();
             $existing = $this->firstRelationWithNodes($this->parent, $endModel, $this->type, $this->direction);
 
-            if(count($existing->getRecords()) > 0) {
+            if (count($existing->getRecords()) > 0) {
                 $instance = $this->newFromRelation($existing->firstRecord());
                 $instance->delete();
             }
@@ -235,9 +235,10 @@ abstract class Edge extends Delegate
 
     /**
      * @param string $type
-     * @param Model $start
-     * @param Model $end
-     * @param array $properties
+     * @param Model  $start
+     * @param Model  $end
+     * @param array  $properties
+     *
      * @return \GraphAware\Neo4j\Client\Formatter\Result
      */
     public function saveRelationship($type, $start, $end, $properties)
@@ -431,7 +432,7 @@ abstract class Edge extends Delegate
      */
     public function getDates()
     {
-        $defaults = array(static::CREATED_AT, static::UPDATED_AT);
+        $defaults = [static::CREATED_AT, static::UPDATED_AT];
 
         return array_merge($this->dates, $defaults);
     }
@@ -463,7 +464,7 @@ abstract class Edge extends Delegate
      */
     public function getModels()
     {
-        return new Collection(array($this->parent, $this->related));
+        return new Collection([$this->parent, $this->related]);
     }
 
     /**
@@ -515,7 +516,7 @@ abstract class Edge extends Delegate
      */
     public function getNodes()
     {
-        return new Collection(array($this->start, $this->end));
+        return new Collection([$this->start, $this->end]);
     }
 
     /**

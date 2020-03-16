@@ -2,10 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Tests;
 
+use Illuminate\Container\Container;
 use Neoxygen\NeoClient\Client;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
-use Illuminate\Container\Container;
 
 class ConnectionFactoryTest extends TestCase
 {
@@ -21,9 +21,9 @@ class ConnectionFactoryTest extends TestCase
     public function testSingleConnection()
     {
         $config = [
-            'type' => 'single',
-            'host' => 'server.host',
-            'port' => 7474,
+            'type'     => 'single',
+            'host'     => 'server.host',
+            'port'     => 7474,
             'username' => 'theuser',
             'password' => 'thepass',
         ];
@@ -55,13 +55,13 @@ class ConnectionFactoryTest extends TestCase
             'connections' => [
 
                 'server1' => [
-                    'host' => 'server1.host',
+                    'host'     => 'server1.host',
                     'username' => 'theuser',
                     'password' => 'thepass',
                 ],
 
                 'server2' => [
-                    'host' => 'server2.host',
+                    'host'     => 'server2.host',
                     'username' => 'anotheruser',
                     'password' => 'anotherpass',
                 ],
@@ -94,24 +94,24 @@ class ConnectionFactoryTest extends TestCase
 
             'connections' => [
 
-               'master' => [
-                    'host' => 'server1.ip.address',
+                'master' => [
+                    'host'     => 'server1.ip.address',
                     'username' => 'theuser',
                     'password' => 'dapass',
-               ],
+                ],
 
-               'slaves' => [
+                'slaves' => [
                     'slave-1' => [
-                        'host' => 'server2.ip.address',
+                        'host'     => 'server2.ip.address',
                         'username' => 'anotheruser',
                         'password' => 'somepass',
                     ],
-                   'slave-2' => [
-                        'host' => 'server3.ip.address',
+                    'slave-2' => [
+                        'host'     => 'server3.ip.address',
                         'username' => 'moreusers',
                         'password' => 'differentpass',
                     ],
-               ],
+                ],
 
             ],
         ];

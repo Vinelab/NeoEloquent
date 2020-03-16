@@ -47,15 +47,15 @@ class ParameterGroupingTest extends TestCase
     {
         $searchedUser = User::create(['name' => 'John Doe']);
         $searchedUser->facebookAccount()->save(FacebookAccount::create([
-            'gender' => 'male',
-            'age' => 20,
+            'gender'   => 'male',
+            'age'      => 20,
             'interest' => 'Dancing',
         ]));
 
         $anotherUser = User::create(['name' => 'John Smith']);
         $anotherUser->facebookAccount()->save(FacebookAccount::create([
-            'gender' => 'male',
-            'age' => 30,
+            'gender'   => 'male',
+            'age'      => 30,
             'interest' => 'Music',
         ]));
 

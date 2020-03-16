@@ -2,9 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class HasOne extends HasOneOrMany
 {
@@ -68,7 +68,7 @@ class HasOne extends HasOneOrMany
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = array($parentNode);
+            $this->query->getQuery()->from = [$parentNode];
             // Build the MATCH ()-[]->() Cypher clause.
             $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
@@ -105,12 +105,11 @@ class HasOne extends HasOneOrMany
         $this->query->addMutation($parentNode, $this->parent);
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
+        $this->query->getQuery()->from = [$parentNode];
         // Build the MATCH ()-[]->() Cypher clause.
         $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models));
-
     }
 
     /**
@@ -121,11 +120,11 @@ class HasOne extends HasOneOrMany
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
      */
-    public function getEdge(Model $model = null, $attributes = array())
+    public function getEdge(Model $model = null, $attributes = [])
     {
         $model = (!is_null($model)) ? $model : $this->related;
 
-       // Indicate a unique relation since this only involves one other model.
+        // Indicate a unique relation since this only involves one other model.
         $unique = true;
 
         return new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes, $unique);

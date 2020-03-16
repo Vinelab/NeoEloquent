@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class Misfit extends Model
 {
@@ -44,12 +44,12 @@ class QueryScopesTest extends TestCase
         Misfit::setConnectionResolver($resolver);
 
         $this->t = Misfit::create([
-            'name' => 'Nikola Tesla',
+            'name'  => 'Nikola Tesla',
             'alias' => 'tesla',
         ]);
 
         $this->e = misfit::create([
-            'name' => 'Thomas Edison',
+            'name'  => 'Thomas Edison',
             'alias' => 'edison',
         ]);
     }

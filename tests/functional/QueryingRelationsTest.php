@@ -2,11 +2,11 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\QueryingRelations;
 
+use Carbon\Carbon;
 use DateTime;
 use Mockery as M;
-use Carbon\Carbon;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class QueryingRelationsTest extends TestCase
 {
@@ -28,11 +28,11 @@ class QueryingRelationsTest extends TestCase
         $postWithComment->comments()->save($comment);
 
         // add two comments to $postWithTwoComments
-        for ($i = 0; $i < 2; ++$i) {
+        for ($i = 0; $i < 2; $i++) {
             $postWithTwoComments->comments()->create(['text' => "Comment $i"]);
         }
         // add ten comments to $postWithTenComments
-        for ($i = 0; $i < 10; ++$i) {
+        for ($i = 0; $i < 10; $i++) {
             $postWithTenComments->comments()->create(['text' => "Comment $i"]);
         }
 
@@ -74,7 +74,6 @@ class QueryingRelationsTest extends TestCase
         $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
-
 
         // user with a role that has no permission
         $user2 = User::Create(['name' => 'u2']);
@@ -205,9 +204,9 @@ class QueryingRelationsTest extends TestCase
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
 
-        $found = User::whereHas('roles', function($q) use($role, $permission) {
+        $found = User::whereHas('roles', function ($q) use ($role, $permission) {
             $q->where($role->getKeyName(), $role->getKey());
-            $q->whereHas('permissions', function($q) use($permission) {
+            $q->whereHas('permissions', function ($q) use ($permission) {
                 $q->where($permission->getKeyName(), $permission->getKey());
             });
         })->get();
@@ -234,9 +233,9 @@ class QueryingRelationsTest extends TestCase
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
 
-        $found = User::whereHas('roles', function($q) use($role, $permission) {
+        $found = User::whereHas('roles', function ($q) use ($role, $permission) {
             $q->where('alias', $role->alias);
-            $q->whereHas('permissions', function($q) use($permission) {
+            $q->whereHas('permissions', function ($q) use ($permission) {
                 $q->where('alias', $permission->alias);
             });
         })->get();
@@ -313,23 +312,23 @@ class QueryingRelationsTest extends TestCase
 
         $photos = [
             [
-                'url' => 'http://somewere.in.bedlam.net',
-                'caption' => 'Gunatanamo',
+                'url'      => 'http://somewere.in.bedlam.net',
+                'caption'  => 'Gunatanamo',
                 'metadata' => '...',
             ],
             [
-                'url' => 'http://another-place.in.bedlam.net',
-                'caption' => 'Gunatanamo',
+                'url'      => 'http://another-place.in.bedlam.net',
+                'caption'  => 'Gunatanamo',
                 'metadata' => '...',
             ],
         ];
 
         $videos = [
             [
-                'title' => 'Fun at the borders',
+                'title'       => 'Fun at the borders',
                 'description' => 'Once upon a time...',
-                'stream_url' => 'http://stream.that.shit.io',
-                'thumbnail' => 'http://sneak.peek.io',
+                'stream_url'  => 'http://stream.that.shit.io',
+                'thumbnail'   => 'http://sneak.peek.io',
             ],
         ];
 
@@ -552,9 +551,9 @@ class QueryingRelationsTest extends TestCase
     {
         $tag = Tag::create(['title' => 'php']);
         $tags = [
-                $tag,
-                ['title' => 'developer'],
-                new Tag(['title' => 'laravel']),
+            $tag,
+            ['title' => 'developer'],
+            new Tag(['title' => 'laravel']),
         ];
 
         $post = Post::createWith(['title' => 'foo', 'body' => 'bar'], compact('tags'));
@@ -580,7 +579,7 @@ class QueryingRelationsTest extends TestCase
     {
         $post = Post::createWith(['title' => 'tayta', 'body' => 'one hot bowy'], [
             'photos' => ['url' => 'my.photo.url'],
-            'cover' => ['url' => 'my.cover.url'],
+            'cover'  => ['url' => 'my.cover.url'],
         ]);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
@@ -702,9 +701,11 @@ class QueryingRelationsTest extends TestCase
         $yesterday = Carbon::now()->subDay();
         $dt = new DateTime();
 
-        $user = User::createWith(['name' => 'Some Name', 'dob' => $yesterday],
+        $user = User::createWith(
+            ['name' => 'Some Name', 'dob' => $yesterday],
             ['colleagues' => ['name' => 'Protectron', 'dob' => $dt],
-        ]);
+            ]
+        );
 
         $houwe = User::first();
         $colleague = $houwe->colleagues()->first();
@@ -738,7 +739,7 @@ class QueryingRelationsTest extends TestCase
             ['title' => 'foo tit', 'body' => 'some body'],
             [
                 'cover' => ['url' => 'http://url'],
-                'tags' => ['title' => 'theTag'],
+                'tags'  => ['title' => 'theTag'],
             ]
         );
 
@@ -763,7 +764,7 @@ class QueryingRelationsTest extends TestCase
             ['title' => 'foo tit', 'body' => 'some body'],
             [
                 'cover' => ['url' => 'http://url'],
-                'tags' => ['title' => 'theTag'],
+                'tags'  => ['title' => 'theTag'],
             ]
         );
 
@@ -771,7 +772,7 @@ class QueryingRelationsTest extends TestCase
             ['title' => 'another tit', 'body' => 'another body'],
             [
                 'cover' => ['url' => 'http://another.url'],
-                'tags' => ['title' => 'anotherTag'],
+                'tags'  => ['title' => 'anotherTag'],
             ]
         );
 
@@ -797,7 +798,7 @@ class QueryingRelationsTest extends TestCase
             ['title' => 'foo tit', 'body' => 'some body'],
             [
                 'cover' => ['url' => 'http://url'],
-                'tags' => [
+                'tags'  => [
                     ['title' => 'theTag'],
                     ['title' => 'anotherTag'],
                 ],

@@ -2,11 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Connectors;
 
-use InvalidArgumentException;
-use Vinelab\NeoEloquent\Connection;
-
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
+use InvalidArgumentException;
+use Vinelab\NeoEloquent\Connection;
 
 class ConnectionFactory
 {
@@ -23,7 +22,6 @@ class ConnectionFactory
      * @var \Illuminate\Contracts\Container\Container
      */
     protected $container;
-
 
     /**
      * Create a new connection factory instance.
@@ -104,7 +102,6 @@ class ConnectionFactory
     protected function createReadWriteConnection(array $config)
     {
         $connection = $this->createSingleConnection($this->getWriteConfig($config));
-
     }
 
     /**
@@ -158,9 +155,9 @@ class ConnectionFactory
      *
      * @param array $config
      *
-     * @return \Illuminate\Database\Connectors\ConnectorInterface
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return \Illuminate\Database\Connectors\ConnectorInterface
      */
     public function createConnector(array $config)
     {
@@ -186,9 +183,9 @@ class ConnectionFactory
      * @param string        $prefix
      * @param array         $config
      *
-     * @return \Illuminate\Database\Connection
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return \Illuminate\Database\Connection
      */
     protected function createConnection($driver, $connector, $type, array $config = [])
     {

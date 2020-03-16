@@ -2,10 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 abstract class OneRelation extends Relation implements RelationInterface
 {
@@ -114,7 +114,7 @@ abstract class OneRelation extends Relation implements RelationInterface
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
      */
-    abstract public function getEdge(Model $model = null, $attributes = array());
+    abstract public function getEdge(Model $model = null, $attributes = []);
 
     /**
      * Get the direction of the edge for this relationship.
@@ -133,7 +133,7 @@ abstract class OneRelation extends Relation implements RelationInterface
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge
      */
-    public function associate($model, $attributes = array())
+    public function associate($model, $attributes = [])
     {
         /*
          * For associated models we will need to create a unique relationship
@@ -244,7 +244,7 @@ abstract class OneRelation extends Relation implements RelationInterface
      */
     protected function getEagerModelKeys(array $models)
     {
-        $keys = array();
+        $keys = [];
 
         /*
          * First we need to gather all of the keys from the parent models so we know what
@@ -270,7 +270,7 @@ abstract class OneRelation extends Relation implements RelationInterface
          * be what this developer is expecting in a case where this happens to them.
          */
         if (count($keys) == 0) {
-            return array();
+            return [];
         }
 
         return array_values(array_unique($keys));

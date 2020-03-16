@@ -201,7 +201,8 @@ class Blueprint
         return new Fluent(
             array_merge(
                 compact('name'),
-                $parameters)
+                $parameters
+            )
         );
     }
 

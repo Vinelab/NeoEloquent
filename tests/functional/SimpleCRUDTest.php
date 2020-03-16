@@ -2,12 +2,12 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use DateTime;
 use Carbon\Carbon;
+use DateTime;
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class Wiz extends Model
 {
@@ -90,9 +90,9 @@ class SimpleCRUDTest extends TestCase
 
         $expected = [
             $w->getKeyName() => $w->getKey(),
-            'fiz' => ['not', '123', 'helping'],
-            'created_at' => $w->created_at,
-            'updated_at' => $w->updated_at,
+            'fiz'            => ['not', '123', 'helping'],
+            'created_at'     => $w->created_at,
+            'updated_at'     => $w->updated_at,
         ];
 
         $fetched = Wiz::first();
@@ -133,8 +133,8 @@ class SimpleCRUDTest extends TestCase
     public function testMassAssigningAttributes()
     {
         $w = Wiz::create([
-            'fiz' => 'foo',
-            'biz' => 'boo',
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
             'nope' => 'nope',
         ]);
 
@@ -321,16 +321,16 @@ class SimpleCRUDTest extends TestCase
     public function testFirstOrCreate()
     {
         $w = Wiz::firstOrCreate([
-            'fiz' => 'foo',
-            'biz' => 'boo',
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
             'triz' => 'troo',
         ]);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
 
         $found = Wiz::firstOrCreate([
-            'fiz' => 'foo',
-            'biz' => 'boo',
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
             'triz' => 'troo',
         ]);
 
@@ -340,8 +340,8 @@ class SimpleCRUDTest extends TestCase
     public function testCreatingNullAndBooleanValues()
     {
         $w = Wiz::create([
-            'fiz' => null,
-            'biz' => false,
+            'fiz'  => null,
+            'biz'  => false,
             'triz' => true,
         ]);
 
@@ -357,16 +357,16 @@ class SimpleCRUDTest extends TestCase
     public function testUpdatingNullAndBooleanValues()
     {
         $w = Wiz::create([
-            'fiz' => 'foo',
-            'biz' => 'boo',
+            'fiz'  => 'foo',
+            'biz'  => 'boo',
             'triz' => 'troo',
         ]);
 
         $this->assertNotNull($w->getKey());
 
         $updated = Wiz::where('fiz', 'foo')->where('biz', 'boo')->where('triz', 'troo')->update([
-            'fiz' => null,
-            'biz' => false,
+            'fiz'  => null,
+            'biz'  => false,
             'triz' => true,
         ]);
 

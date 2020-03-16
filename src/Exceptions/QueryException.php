@@ -7,7 +7,7 @@ use Neoxygen\NeoClient\Exception\Neo4jException;
 
 class QueryException extends Exception
 {
-    public function __construct($query, $bindings = array(), $exception = null)
+    public function __construct($query, $bindings = [], $exception = null)
     {
         // Let's handle Neo4j exceptions into the QueryException so that we extract
         // relevant info from it and send a helpful decent exception.

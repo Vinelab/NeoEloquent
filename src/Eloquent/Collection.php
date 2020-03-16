@@ -23,7 +23,6 @@ class Collection extends BaseCollection
 
         return Arr::first($this->items, function ($itemKey, $model) use ($key) {
             return $model->getKey() == $key;
-
         }, $default);
     }
 
@@ -65,9 +64,11 @@ class Collection extends BaseCollection
 
     /**
      * Determine if a key exists in the collection.
+     *
      * @param mixed $key
      * @param mixed $operator
      * @param mixed $value
+     *
      * @return bool
      */
     public function contains($key, $operator = null, $value = null)
@@ -87,7 +88,6 @@ class Collection extends BaseCollection
         if (func_num_args() == 2) {
             return parent::contains($key, $operator);
         }
-
 
         return parent::contains($key, $operator, $value);
     }
@@ -182,7 +182,7 @@ class Collection extends BaseCollection
      * Return only unique items from the collection array.
      *
      * @param string|callable|null $key
-     * @param  bool  $strict
+     * @param bool                 $strict
      *
      * @return static
      */

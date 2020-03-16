@@ -7,8 +7,9 @@ interface ScopeInterface
     /**
      * Apply the scope to a given Eloquent query builder.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Builder  $builder
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $builder
+     * @param \Vinelab\NeoEloquent\Eloquent\Model   $model
+     *
      * @return void
      */
     public function apply(Builder $builder, Model $model);
@@ -16,8 +17,8 @@ interface ScopeInterface
     /**
      * Remove the scope from the given Eloquent query builder.
      *
-     * @param  \Vinelab\NeoEloquent\Eloquent\Builder  $builder
-     * @param  \Vinelab\NeoEloquent\Eloquent\Model  $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $builder
+     * @param \Vinelab\NeoEloquent\Eloquent\Model   $model
      *
      * @return void
      */

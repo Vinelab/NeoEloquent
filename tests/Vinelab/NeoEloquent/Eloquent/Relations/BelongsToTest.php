@@ -3,10 +3,10 @@
 namespace Vinelab\NeoEloquent\Tests\Eloquent\Relations;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class BelongsToTest extends TestCase
 {
@@ -36,11 +36,11 @@ class BelongsToTest extends TestCase
     {
         $relation = $this->getRelation();
         $mock = M::mock('Vinelab\NeoEloquent\Eloquent\Model');
-        $mock->shouldReceive('fill')->once()->with(array('attributes'))->andReturn($mock);
+        $mock->shouldReceive('fill')->once()->with(['attributes'])->andReturn($mock);
         $mock->shouldReceive('save')->once()->andReturn(true);
         $relation->getQuery()->shouldReceive('first')->once()->andReturn($mock);
 
-        $this->assertTrue($relation->update(array('attributes')));
+        $this->assertTrue($relation->update(['attributes']));
     }
 
     public function testEagerConstraintsAreProperlyAdded()
@@ -56,9 +56,9 @@ class BelongsToTest extends TestCase
         $relation = $this->getRelation();
         $model = M::mock('Vinelab\NeoEloquent\Eloquent\Model');
         $model->shouldReceive('setRelation')->once()->with('foo', null);
-        $models = $relation->initRelation(array($model), 'foo');
+        $models = $relation->initRelation([$model], 'foo');
 
-        $this->assertEquals(array($model), $models);
+        $this->assertEquals([$model], $models);
     }
 
     public function testModelsAreProperlyMatchedToParents()
@@ -74,7 +74,7 @@ class BelongsToTest extends TestCase
         $model1->foreign_key = 1;
         $model2 = new Stub();
         $model2->foreign_key = 2;
-        $models = $relation->match(array($model1, $model2), new Collection(array($result1, $result2)), 'foo');
+        $models = $relation->match([$model1, $model2], new Collection([$result1, $result2]), 'foo');
 
         $this->assertEquals(1, $models[0]->foo->getAttribute('id'));
         $this->assertEquals(2, $models[1]->foo->getAttribute('id'));
@@ -88,7 +88,7 @@ class BelongsToTest extends TestCase
     protected function getEagerRelation($models)
     {
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
-        $query->shouldReceive('modelAsNode')->with(array('Stub'))->andReturn('parent');
+        $query->shouldReceive('modelAsNode')->with(['Stub'])->andReturn('parent');
 
         $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder');
         $builder->shouldReceive('getQuery')->times(4)->andReturn($query);
@@ -124,7 +124,7 @@ class BelongsToTest extends TestCase
     protected function getRelation($parent = null)
     {
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
-        $query->shouldReceive('modelAsNode')->with(array('Stub'))->andReturn('parent');
+        $query->shouldReceive('modelAsNode')->with(['Stub'])->andReturn('parent');
 
         $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder');
         $builder->shouldReceive('getQuery')->twice()->andReturn($query);

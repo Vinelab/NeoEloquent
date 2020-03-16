@@ -4,9 +4,9 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Query\Builder;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Query\Expression;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class GrammarTest extends TestCase
 {

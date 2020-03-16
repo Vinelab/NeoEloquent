@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Query\Grammars;
 
-use DateTime;
 use Carbon\Carbon;
+use DateTime;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\Expression;
 
@@ -114,7 +114,7 @@ abstract class Grammar
     {
         if (is_array($labels)) {
             // get the labels prepared and back to a string imploded by : they go.
-            $labels = implode('', array_map(array($this, 'wrapLabel'), $labels));
+            $labels = implode('', array_map([$this, 'wrapLabel'], $labels));
         }
 
         return $labels;
@@ -268,7 +268,6 @@ abstract class Grammar
             }
 
             return $value;
-
         }, $values);
 
         // stringify them.
@@ -391,7 +390,8 @@ abstract class Grammar
     /**
      * Concatenate an array of segments, removing empties.
      *
-     * @param  array   $segments
+     * @param array $segments
+     *
      * @return string
      */
     protected function concatenate($segments)

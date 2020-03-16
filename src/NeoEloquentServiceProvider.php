@@ -2,12 +2,11 @@
 
 namespace Vinelab\NeoEloquent;
 
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
-use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
-
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
+use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
+use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {
@@ -23,9 +22,9 @@ class NeoEloquentServiceProvider extends ServiceProvider
      *
      * @var array
      */
-    protected $components = array(
+    protected $components = [
         'Migration',
-    );
+    ];
 
     /**
      * Bootstrap the application events.
@@ -50,7 +49,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
             return $conn;
         });
 
-        $this->app->bind('neoeloquent.connection', function() {
+        $this->app->bind('neoeloquent.connection', function () {
             // $config is set by the previous binding,
             // so that we get the correct configuration
             // set by the user.
@@ -96,7 +95,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return array(
-        );
+        return [
+        ];
     }
 }

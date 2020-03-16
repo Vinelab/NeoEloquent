@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class MorphMany extends BelongsToMany
 {
@@ -43,7 +43,7 @@ class MorphMany extends BelongsToMany
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = array($parentNode);
+            $this->query->getQuery()->from = [$parentNode];
             // Build the MATCH ()-[]->() Cypher clause.
             $this->query->matchIn($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
@@ -75,7 +75,7 @@ class MorphMany extends BelongsToMany
         $this->query->addManyMutation($parentNode, $this->parent, 'many');
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
+        $this->query->getQuery()->from = [$parentNode];
         // Build the MATCH ()-[]->() Cypher clause.
         $this->query->matchIn($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
@@ -90,7 +90,7 @@ class MorphMany extends BelongsToMany
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
-    public function getEdge(Model $model = null, $attributes = array())
+    public function getEdge(Model $model = null, $attributes = [])
     {
         $model = (!is_null($model)) ? $model : $this->related;
 

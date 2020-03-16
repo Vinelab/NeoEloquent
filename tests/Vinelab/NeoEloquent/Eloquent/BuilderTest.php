@@ -2,9 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
-use Mockery as M;
-use GraphAware\Neo4j\Client\Formatter\Type\Node;
 use GraphAware\Neo4j\Client\Formatter\Result;
+use GraphAware\Neo4j\Client\Formatter\Type\Node;
+use Mockery as M;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
@@ -32,12 +32,12 @@ class EloquentBuilderTest extends TestCase
 
     public function testFindMethod()
     {
-        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
+        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', [$this->getMockQueryBuilder()]);
         $builder->setModel($this->getMockModel());
         $builder->getQuery()->shouldReceive('where')->once()->with('foo', '=', 'bar');
-        $builder->shouldReceive('first')->with(array('column'))->andReturn('baz');
+        $builder->shouldReceive('first')->with(['column'])->andReturn('baz');
 
-        $result = $builder->find('bar', array('column'));
+        $result = $builder->find('bar', ['column']);
         $this->assertEquals('baz', $result);
     }
 
@@ -46,11 +46,11 @@ class EloquentBuilderTest extends TestCase
      */
     public function testFindOrFailMethodThrowsModelNotFoundException()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', [$this->getMockQueryBuilder()]);
         $builder->setModel($this->getMockModel());
         $builder->getQuery()->shouldReceive('where')->once()->with('foo', '=', 'bar');
-        $builder->shouldReceive('first')->with(array('column'))->andReturn(null);
-        $result = $builder->findOrFail('bar', array('column'));
+        $builder->shouldReceive('first')->with(['column'])->andReturn(null);
+        $result = $builder->findOrFail('bar', ['column']);
     }
 
     /**
@@ -58,11 +58,11 @@ class EloquentBuilderTest extends TestCase
      */
     public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', [$this->getMockQueryBuilder()]);
         $builder->setModel($this->getMockModel());
         $builder->getQuery()->shouldReceive('whereIn')->once()->with('foo', [1, 2]);
-        $builder->shouldReceive('get')->with(array('column'))->andReturn(new Collection([1]));
-        $result = $builder->findOrFail([1, 2], array('column'));
+        $builder->shouldReceive('get')->with(['column'])->andReturn(new Collection([1]));
+        $result = $builder->findOrFail([1, 2], ['column']);
     }
 
     /**
@@ -70,28 +70,28 @@ class EloquentBuilderTest extends TestCase
      */
     public function testFirstOrFailMethodThrowsModelNotFoundException()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', [$this->getMockQueryBuilder()]);
         $builder->setModel($this->getMockModel());
-        $builder->shouldReceive('first')->with(array('column'))->andReturn(null);
-        $result = $builder->firstOrFail(array('column'));
+        $builder->shouldReceive('first')->with(['column'])->andReturn(null);
+        $result = $builder->firstOrFail(['column']);
     }
 
     public function testFindWithMany()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
-        $builder->getQuery()->shouldReceive('whereIn')->once()->with('foo', array(1, 2));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', [$this->getMockQueryBuilder()]);
+        $builder->getQuery()->shouldReceive('whereIn')->once()->with('foo', [1, 2]);
         $builder->setModel($this->getMockModel());
-        $builder->shouldReceive('get')->with(array('column'))->andReturn('baz');
+        $builder->shouldReceive('get')->with(['column'])->andReturn('baz');
 
-        $result = $builder->find(array(1, 2), array('column'));
+        $result = $builder->find([1, 2], ['column']);
         $this->assertEquals('baz', $result);
     }
 
     public function testFirstMethod()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get,take]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get,take]', [$this->getMockQueryBuilder()]);
         $builder->shouldReceive('take')->with(1)->andReturn($builder);
-        $builder->shouldReceive('get')->with(array('*'))->andReturn(new Collection(array('bar')));
+        $builder->shouldReceive('get')->with(['*'])->andReturn(new Collection(['bar']));
 
         $result = $builder->first();
         $this->assertEquals('bar', $result);
@@ -99,53 +99,53 @@ class EloquentBuilderTest extends TestCase
 
     public function testGetMethodLoadsModelsAndHydratesEagerRelations()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[getModels,eagerLoadRelations]', array($this->getMockQueryBuilder()));
-        $builder->shouldReceive('getModels')->with(array('foo'))->andReturn(array('bar'));
-        $builder->shouldReceive('eagerLoadRelations')->with(array('bar'))->andReturn(array('bar', 'baz'));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[getModels,eagerLoadRelations]', [$this->getMockQueryBuilder()]);
+        $builder->shouldReceive('getModels')->with(['foo'])->andReturn(['bar']);
+        $builder->shouldReceive('eagerLoadRelations')->with(['bar'])->andReturn(['bar', 'baz']);
         $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('newCollection')->with(array('bar', 'baz'))->andReturn(new Collection(array('bar', 'baz')));
+        $builder->getModel()->shouldReceive('newCollection')->with(['bar', 'baz'])->andReturn(new Collection(['bar', 'baz']));
 
-        $results = $builder->get(array('foo'));
-        $this->assertEquals(array('bar', 'baz'), $results->all());
+        $results = $builder->get(['foo']);
+        $this->assertEquals(['bar', 'baz'], $results->all());
     }
 
     public function testGetMethodDoesntHydrateEagerRelationsWhenNoResultsAreReturned()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[getModels,eagerLoadRelations]', array($this->getMockQueryBuilder()));
-        $builder->shouldReceive('getModels')->with(array('foo'))->andReturn(array());
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[getModels,eagerLoadRelations]', [$this->getMockQueryBuilder()]);
+        $builder->shouldReceive('getModels')->with(['foo'])->andReturn([]);
         $builder->shouldReceive('eagerLoadRelations')->never();
         $builder->setModel($this->getMockModel());
-        $builder->getModel()->shouldReceive('newCollection')->with(array())->andReturn(new Collection(array()));
+        $builder->getModel()->shouldReceive('newCollection')->with([])->andReturn(new Collection([]));
 
-        $results = $builder->get(array('foo'));
-        $this->assertEquals(array(), $results->all());
+        $results = $builder->get(['foo']);
+        $this->assertEquals([], $results->all());
     }
 
     public function testPluckMethodWithModelFound()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', [$this->getMockQueryBuilder()]);
         $mockModel = new \StdClass();
         $mockModel->name = 'foo';
-        $builder->shouldReceive('first')->with(array('name'))->andReturn($mockModel);
+        $builder->shouldReceive('first')->with(['name'])->andReturn($mockModel);
 
         $this->assertEquals('foo', $builder->pluck('name'));
     }
 
     public function testPluckMethodWithModelNotFound()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
-        $builder->shouldReceive('first')->with(array('name'))->andReturn(null);
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', [$this->getMockQueryBuilder()]);
+        $builder->shouldReceive('first')->with(['name'])->andReturn(null);
 
         $this->assertNull($builder->pluck('name'));
     }
 
     public function testChunkExecuteCallbackOverPaginatedRequest()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[forPage,get]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[forPage,get]', [$this->getMockQueryBuilder()]);
         $builder->shouldReceive('forPage')->once()->with(1, 2)->andReturn($builder);
         $builder->shouldReceive('forPage')->once()->with(2, 2)->andReturn($builder);
         $builder->shouldReceive('forPage')->once()->with(3, 2)->andReturn($builder);
-        $builder->shouldReceive('get')->times(3)->andReturn(array('foo1', 'foo2'), array('foo3'), array());
+        $builder->shouldReceive('get')->times(3)->andReturn(['foo1', 'foo2'], ['foo3'], []);
 
         $callbackExecutionAssertor = m::mock('StdClass');
         $callbackExecutionAssertor->shouldReceive('doSomething')->with('foo1')->once();
@@ -162,11 +162,11 @@ class EloquentBuilderTest extends TestCase
     public function testListsReturnsTheMutatedAttributesOfAModel()
     {
         $builder = $this->getBuilder();
-        $builder->getQuery()->shouldReceive('lists')->with('name', '')->andReturn(array('bar', 'baz'));
+        $builder->getQuery()->shouldReceive('lists')->with('name', '')->andReturn(['bar', 'baz']);
         $builder->setModel($this->getMockModel());
         $builder->getModel()->shouldReceive('hasGetMutator')->with('name')->andReturn(true);
-        $builder->getModel()->shouldReceive('newFromBuilder')->with(array('name' => 'bar'))->andReturn(new EloquentBuilderTestListsStub(array('name' => 'bar')));
-        $builder->getModel()->shouldReceive('newFromBuilder')->with(array('name' => 'baz'))->andReturn(new EloquentBuilderTestListsStub(array('name' => 'baz')));
+        $builder->getModel()->shouldReceive('newFromBuilder')->with(['name' => 'bar'])->andReturn(new EloquentBuilderTestListsStub(['name' => 'bar']));
+        $builder->getModel()->shouldReceive('newFromBuilder')->with(['name' => 'baz'])->andReturn(new EloquentBuilderTestListsStub(['name' => 'baz']));
 
         $this->assertEquals(new Collection(['foo_bar', 'foo_baz']), $builder->lists('name'));
     }
@@ -174,7 +174,7 @@ class EloquentBuilderTest extends TestCase
     public function testListsWithoutModelGetterJustReturnTheAttributesFoundInDatabase()
     {
         $builder = $this->getBuilder();
-        $builder->getQuery()->shouldReceive('lists')->with('name', '')->andReturn(array('bar', 'baz'));
+        $builder->getQuery()->shouldReceive('lists')->with('name', '')->andReturn(['bar', 'baz']);
         $builder->setModel($this->getMockModel());
         $builder->getModel()->shouldReceive('hasGetMutator')->with('name')->andReturn(false);
 
@@ -184,16 +184,16 @@ class EloquentBuilderTest extends TestCase
     public function testGetModelsProperlyHydratesModels()
     {
         $query = $this->getMockQueryBuilder();
-        $query->columns = array('n.name', 'n.age');
+        $query->columns = ['n.name', 'n.age'];
 
-        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($query));
+        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', [$query]);
 
-        $records[] = array('id' => 1902, 'name' => 'taylor', 'age' => 26);
-        $records[] = array('id' => 6252, 'name' => 'dayle', 'age' => 28);
+        $records[] = ['id' => 1902, 'name' => 'taylor', 'age' => 26];
+        $records[] = ['id' => 6252, 'name' => 'dayle', 'age' => 28];
 
-        $resultSet = $this->createNodeResultSet($records, array('n.name', 'n.age'));
+        $resultSet = $this->createNodeResultSet($records, ['n.name', 'n.age']);
 
-        $builder->getQuery()->shouldReceive('get')->once()->with(array('foo'))->andReturn($resultSet);
+        $builder->getQuery()->shouldReceive('get')->once()->with(['foo'])->andReturn($resultSet);
         $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $builder->getQuery()->shouldReceive('getGrammar')->andReturn($grammar);
 
@@ -204,7 +204,7 @@ class EloquentBuilderTest extends TestCase
 
         $model->shouldReceive('getConnectionName')->once()->andReturn('foo_connection');
         $model->shouldReceive('newInstance')->andReturnUsing(function () { return new EloquentBuilderTestModelStub(); });
-        $models = $builder->getModels(array('foo'));
+        $models = $builder->getModels(['foo']);
 
         $this->assertEquals('taylor', $models[0]->name);
         $this->assertEquals($models[0]->getAttributes(), $models[0]->getOriginal());
@@ -216,14 +216,14 @@ class EloquentBuilderTest extends TestCase
 
     public function testEagerLoadRelationsLoadTopLevelRelationships()
     {
-        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[loadRelation]', array($this->getMockQueryBuilder()));
+        $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[loadRelation]', [$this->getMockQueryBuilder()]);
         $nop1 = function () {};
         $nop2 = function () {};
-        $builder->setEagerLoads(array('foo' => $nop1, 'foo.bar' => $nop2));
-        $builder->shouldAllowMockingProtectedMethods()->shouldReceive('loadRelation')->with(array('models'), 'foo', $nop1)->andReturn(array('foo'));
+        $builder->setEagerLoads(['foo' => $nop1, 'foo.bar' => $nop2]);
+        $builder->shouldAllowMockingProtectedMethods()->shouldReceive('loadRelation')->with(['models'], 'foo', $nop1)->andReturn(['foo']);
 
-        $results = $builder->eagerLoadRelations(array('models'));
-        $this->assertEquals(array('foo'), $results);
+        $results = $builder->eagerLoadRelations(['models']);
+        $this->assertEquals(['foo'], $results);
     }
 
     public function testGetRelationProperlySetsNestedRelationships()
@@ -233,8 +233,8 @@ class EloquentBuilderTest extends TestCase
         $builder->getModel()->shouldReceive('orders')->once()->andReturn($relation = m::mock('stdClass'));
         $relationQuery = m::mock('stdClass');
         $relation->shouldReceive('getQuery')->andReturn($relationQuery);
-        $relationQuery->shouldReceive('with')->once()->with(array('lines' => null, 'lines.details' => null));
-        $builder->setEagerLoads(array('orders' => null, 'orders.lines' => null, 'orders.lines.details' => null));
+        $relationQuery->shouldReceive('with')->once()->with(['lines' => null, 'lines.details' => null]);
+        $builder->setEagerLoads(['orders' => null, 'orders.lines' => null, 'orders.lines.details' => null]);
 
         $relation = $builder->getRelation('orders');
     }
@@ -251,9 +251,9 @@ class EloquentBuilderTest extends TestCase
 
         $groupRelationQuery = m::mock('stdClass');
         $groupsRelation->shouldReceive('getQuery')->andReturn($groupRelationQuery);
-        $groupRelationQuery->shouldReceive('with')->once()->with(array('lines' => null, 'lines.details' => null));
+        $groupRelationQuery->shouldReceive('with')->once()->with(['lines' => null, 'lines.details' => null]);
 
-        $builder->setEagerLoads(array('orders' => null, 'ordersGroups' => null, 'ordersGroups.lines' => null, 'ordersGroups.lines.details' => null));
+        $builder->setEagerLoads(['orders' => null, 'ordersGroups' => null, 'ordersGroups.lines' => null, 'ordersGroups.lines.details' => null]);
 
         $relation = $builder->getRelation('orders');
         $relation = $builder->getRelation('ordersGroups');
@@ -262,10 +262,10 @@ class EloquentBuilderTest extends TestCase
     public function testEagerLoadParsingSetsProperRelationships()
     {
         $builder = $this->getBuilder();
-        $builder->with(array('orders', 'orders.lines'));
+        $builder->with(['orders', 'orders.lines']);
         $eagers = $builder->getEagerLoads();
 
-        $this->assertEquals(array('orders', 'orders.lines'), array_keys($eagers));
+        $this->assertEquals(['orders', 'orders.lines'], array_keys($eagers));
         $this->assertInstanceOf('Closure', $eagers['orders']);
         $this->assertInstanceOf('Closure', $eagers['orders.lines']);
 
@@ -273,26 +273,26 @@ class EloquentBuilderTest extends TestCase
         $builder->with('orders', 'orders.lines');
         $eagers = $builder->getEagerLoads();
 
-        $this->assertEquals(array('orders', 'orders.lines'), array_keys($eagers));
+        $this->assertEquals(['orders', 'orders.lines'], array_keys($eagers));
         $this->assertInstanceOf('Closure', $eagers['orders']);
         $this->assertInstanceOf('Closure', $eagers['orders.lines']);
 
         $builder = $this->getBuilder();
-        $builder->with(array('orders.lines'));
+        $builder->with(['orders.lines']);
         $eagers = $builder->getEagerLoads();
 
-        $this->assertEquals(array('orders', 'orders.lines'), array_keys($eagers));
+        $this->assertEquals(['orders', 'orders.lines'], array_keys($eagers));
         $this->assertInstanceOf('Closure', $eagers['orders']);
         $this->assertInstanceOf('Closure', $eagers['orders.lines']);
 
         $builder = $this->getBuilder();
-        $builder->with(array('orders' => function () { return 'foo'; }));
+        $builder->with(['orders' => function () { return 'foo'; }]);
         $eagers = $builder->getEagerLoads();
 
         $this->assertEquals('foo', $eagers['orders']());
 
         $builder = $this->getBuilder();
-        $builder->with(array('orders.lines' => function () { return 'foo'; }));
+        $builder->with(['orders.lines' => function () { return 'foo'; }]);
         $eagers = $builder->getEagerLoads();
 
         $this->assertInstanceOf('Closure', $eagers['orders']);
@@ -308,9 +308,9 @@ class EloquentBuilderTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Builder', $builder->foobar());
 
         $builder = $this->getBuilder();
-        $builder->getQuery()->shouldReceive('insert')->once()->with(array('bar'))->andReturn('foo');
+        $builder->getQuery()->shouldReceive('insert')->once()->with(['bar'])->andReturn('foo');
 
-        $this->assertEquals('foo', $builder->insert(array('bar')));
+        $this->assertEquals('foo', $builder->insert(['bar']));
     }
 
     public function testQueryScopes()
@@ -356,9 +356,9 @@ class EloquentBuilderTest extends TestCase
         $this->markTestIncomplete('Getting the error BadMethodCallException: Method Mockery_2_Vinelab_NeoEloquent_Query_Builder::onDelete() does not exist on this mock object');
         $builder = $this->getBuilder();
         $builder->onDelete(function ($builder) {
-            return array('foo' => $builder);
+            return ['foo' => $builder];
         });
-        $this->assertEquals(array('foo' => $builder), $builder->delete());
+        $this->assertEquals(['foo' => $builder], $builder->delete());
     }
 
     public function testFindingById()
@@ -370,16 +370,16 @@ class EloquentBuilderTest extends TestCase
         $resultSet->shouldReceive('getAllByIdentifier')->withNoArgs()->andReturn([new Node('id', [])]);
 
         $this->query->shouldReceive('where')->once()->with('id(n)', '=', 1);
-        $this->query->shouldReceive('from')->once()->with('Model')->andReturn(array('Model'));
+        $this->query->shouldReceive('from')->once()->with('Model')->andReturn(['Model']);
         $this->query->shouldReceive('take')->once()->with(1)->andReturn($this->query);
-        $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet);
+        $this->query->shouldReceive('get')->once()->with(['*'])->andReturn($resultSet);
 
         $this->model->shouldReceive('getKeyName')->times()->andReturn('id');
         $this->model->shouldReceive('nodeLabel')->once()->andReturn('Model');
         $this->model->shouldReceive('getConnectionName')->once()->andReturn('default');
 
         $result = M::mock('Neoxygen\NeoClient\Formatter\Result');
-        $collection = new \Illuminate\Support\Collection(array($result));
+        $collection = new \Illuminate\Support\Collection([$result]);
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection);
 
         $this->builder->setModel($this->model);
@@ -395,15 +395,15 @@ class EloquentBuilderTest extends TestCase
         $id = 6;
 
         // the expected result set
-        $result = array(
+        $result = [
 
-            'id' => $id,
-            'name' => 'Some Name',
+            'id'    => $id,
+            'name'  => 'Some Name',
             'email' => 'some@mail.net',
-        );
+        ];
 
         // the properties that we need returned of our model
-        $properties = array('id(n)', 'n.name', 'n.email', 'n.somthing');
+        $properties = ['id(n)', 'n.name', 'n.email', 'n.somthing'];
 
         $resultSet = $this->createNodeResultSet($result, $properties);
 
@@ -412,17 +412,17 @@ class EloquentBuilderTest extends TestCase
                     ->shouldReceive('take')->once()->with(1)->andReturn($this->query)
                     ->shouldReceive('get')->once()->with($properties)->andReturn($resultSet)
                     ->shouldReceive('from')->once()->with('Model')
-                        ->andReturn(array('Model'));
+                        ->andReturn(['Model']);
 
         // our User object that we expect to have returned
         $user = M::mock('User');
         $user->shouldReceive('setConnection')->once()->with('default');
 
         // model method calls expectations
-        $attributes = array_merge($result, array('id' => $id));
+        $attributes = array_merge($result, ['id' => $id]);
 
         // the Collection that represents the returned result by Eloquent holding the User as an item
-        $collection = new \Illuminate\Support\Collection(array($user));
+        $collection = new \Illuminate\Support\Collection([$user]);
 
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection)
                     ->shouldReceive('getKeyName')->times(3)->andReturn('id')
@@ -443,28 +443,28 @@ class EloquentBuilderTest extends TestCase
     public function testGettingModels()
     {
         // the expected result set
-        $results = array(
+        $results = [
 
-            array(
+            [
 
-                'id' => 10,
-                'name' => 'Some Name',
+                'id'    => 10,
+                'name'  => 'Some Name',
                 'email' => 'some@mail.net',
-            ),
+            ],
 
-            array(
+            [
 
-                'id' => 11,
-                'name' => 'Another Person',
+                'id'    => 11,
+                'name'  => 'Another Person',
                 'email' => 'person@diff.io',
-            ),
+            ],
 
-        );
+        ];
 
         $resultSet = $this->createNodeResultSet($results);
 
         $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
-        $this->query->shouldReceive('get')->once()->with(array('*'))->andReturn($resultSet)
+        $this->query->shouldReceive('get')->once()->with(['*'])->andReturn($resultSet)
                     ->shouldReceive('from')->once()->andReturn('User')
                     ->shouldReceive('getGrammar')->andReturn($grammar);
 
@@ -492,13 +492,13 @@ class EloquentBuilderTest extends TestCase
     public function testGettingModelsWithProperties()
     {
         // the expected result set
-        $results = array(
-            'id' => 138,
-            'name' => 'Nicolas Jaar',
+        $results = [
+            'id'    => 138,
+            'name'  => 'Nicolas Jaar',
             'email' => 'noise@space.see',
-        );
+        ];
 
-        $properties = array('id', 'name');
+        $properties = ['id', 'name'];
 
         $resultSet = $this->createNodeResultSet($results);
 
@@ -546,7 +546,7 @@ class EloquentBuilderTest extends TestCase
      *
      * @return Everyman\Neo4j\Query\ResultSet
      */
-    public function createNodeResultSet($data = array(), $properties = array())
+    public function createNodeResultSet($data = [], $properties = [])
     {
         $c = $this->getConnectionWithConfig('default');
 
@@ -674,6 +674,7 @@ class EloquentBuilderTestListsStub
     {
         $this->attributes = $attributes;
     }
+
     public function __get($key)
     {
         return 'foo_'.$this->attributes[$key];

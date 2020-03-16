@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class PolymorphicHyperMorphToTest extends TestCase
 {
@@ -357,7 +357,7 @@ class PolymorphicHyperMorphToTest extends TestCase
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $user->comments($post)->sync([
-            $commentOnPost->id => ['feeling' => 'happy'],
+            $commentOnPost->id        => ['feeling' => 'happy'],
             $anotherCommentOnPost->id => ['feeling' => 'sad'],
         ]);
 

@@ -3,9 +3,9 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Events;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class ModelEventsTest extends TestCase
 {

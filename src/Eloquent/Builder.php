@@ -5,18 +5,17 @@ namespace Vinelab\NeoEloquent\Eloquent;
 use Closure;
 use GraphAware\Bolt\Result\Type\Node;
 use GraphAware\Common\Result\AbstractRecordCursor as Result;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Relations\Relation;
 use Vinelab\NeoEloquent\Eloquent\Relationship as EloquentRelationship;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 use Vinelab\NeoEloquent\Helpers;
-use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
-
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Pagination\Paginator;
+use Vinelab\NeoEloquent\QueryException;
 use Vinelab\NeoEloquent\Traits\ResultTrait;
 
 class Builder
@@ -68,7 +67,7 @@ class Builder
      *
      * @var array
      */
-    protected $mutations = array();
+    protected $mutations = [];
 
     /**
      * The methods that should be returned from query builder.
@@ -98,7 +97,7 @@ class Builder
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Model|static|null
      */
-    public function find($id, $properties = array('*'))
+    public function find($id, $properties = ['*'])
     {
         // If the dev did not specify the $id as an int it would break
         // so we cast it anyways.
@@ -146,9 +145,9 @@ class Builder
      * @param mixed $id
      * @param array $columns
      *
-     * @return \Vinelab\NeoEloquent\Eloquent\Model|\Vinelab\NeoEloquent\Eloquent\Collection
-     *
      * @throws \Vinelab\NeoEloquent\Eloquent\ModelNotFoundException
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Model|\Vinelab\NeoEloquent\Eloquent\Collection
      */
     public function findOrFail($id, $columns = ['*'])
     {
@@ -182,9 +181,9 @@ class Builder
      *
      * @param array $columns
      *
-     * @return \Vinelab\NeoEloquent\Eloquent\Model|static
-     *
      * @throws \Vinelab\NeoEloquent\Eloquent\ModelNotFoundException
+     *
+     * @return \Vinelab\NeoEloquent\Eloquent\Model|static
      */
     public function firstOrFail($columns = ['*'])
     {
@@ -266,7 +265,7 @@ class Builder
                 break;
             }
 
-            ++$page;
+            $page++;
 
             $results = $this->forPage($page, $count)->get();
         }
@@ -404,7 +403,7 @@ class Builder
      *
      * @return array|static[]
      */
-    public function getModels($properties = array('*'))
+    public function getModels($properties = ['*'])
     {
         // First, we will simply get the raw results from the query builders which we
         // can use to populate an array with Eloquent models. We will pass columns
@@ -627,15 +626,14 @@ class Builder
     /**
      * Turn Neo4j result set into the corresponding model.
      *
-     * @param string                                            $connection
-     * @param \GraphAware\Neo4j\Client\Formatter\Type\Result    $results
+     * @param string                                         $connection
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Result $results
      *
      * @return array
      */
     protected function resultsToModels($connection, Result $results = null)
     {
         $models = [];
-
 
         if ($results) {
             $resultsByIdentifier = $this->getRecordsByPlaceholders($results);
@@ -656,7 +654,7 @@ class Builder
                         $endNode = (is_array($resultsByIdentifier[$endIdentifier])) ? $resultsByIdentifier[$endIdentifier][$index] : reset($resultsByIdentifier[$endIdentifier]);
                         $models[] = [
                             $startIdentifier => $this->newModelFromNode($startNode, $startModelClass, $connection),
-                            $endIdentifier => $this->newModelFromNode($endNode, $endModelClass, $connection),
+                            $endIdentifier   => $this->newModelFromNode($endNode, $endModelClass, $connection),
                         ];
                     }
                 }
@@ -738,13 +736,12 @@ class Builder
                     } else {
                         $models[] = [
                             $startIdentifier => $this->newModelFromNode($resultRelationship->getStartNode(), $startModelClass, $connection),
-                            $endIdentifier => $this->newModelFromNode($resultRelationship->getEndNode(), $endModelClass, $connection),
+                            $endIdentifier   => $this->newModelFromNode($resultRelationship->getEndNode(), $endModelClass, $connection),
                         ];
                     }
                 }
             } else {
                 foreach ($recordsByPlaceholders as $placeholder => $nodes) {
-
                     if ($this->shouldMutate($placeholder)) {
                         $models[] = $this->mutateToOrigin($results, $recordsByPlaceholders);
                     } else {
@@ -764,7 +761,6 @@ class Builder
                     }
                 }
             }
-
         }
 
         return $models;
@@ -802,9 +798,9 @@ class Builder
     /**
      * Get a Model instance out of the given node.
      *
-     * @param \GraphAware\Bolt\Result\Type\Node  $node
-     * @param string                                        $identifier
-     * @param string                                        $connection
+     * @param \GraphAware\Bolt\Result\Type\Node $node
+     * @param string                            $identifier
+     * @param string                            $connection
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Model
      */
@@ -834,8 +830,8 @@ class Builder
     /**
      * Turn Neo4j result set into the corresponding model with its relations.
      *
-     * @param string                                            $connection
-     * @param \GraphAware\Neo4j\Client\Formatter\Type\Result    $results
+     * @param string                                         $connection
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Result $results
      *
      * @return array
      */
@@ -1028,7 +1024,7 @@ class Builder
     public function getProperties(array $resultColumns, Row $row)
     {
         dd('Get Properties, Everyman dependent');
-        $attributes = array();
+        $attributes = [];
 
         $columns = $this->query->columns;
 
@@ -1185,9 +1181,9 @@ class Builder
      * @param string   $pageName
      * @param int|null $page
      *
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function paginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null)
     {
@@ -1199,7 +1195,7 @@ class Builder
         );
 
         return new LengthAwarePaginator($this->get($columns), $total, $perPage, $page, [
-            'path' => Paginator::resolveCurrentPath(),
+            'path'     => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
     }
@@ -1229,7 +1225,7 @@ class Builder
      *
      * @internal param \Illuminate\Pagination\Factory $paginator
      */
-    public function simplePaginate($perPage = null, $columns = array('*'), $pageName = 'page')
+    public function simplePaginate($perPage = null, $columns = ['*'], $pageName = 'page')
     {
         $paginator = $this->query->getConnection()->getPaginator();
         $page = $paginator->getCurrentPage();
@@ -1237,7 +1233,7 @@ class Builder
         $this->query->skip(($page - 1) * $perPage)->take($perPage + 1);
 
         return new Paginator($this->get($columns), $perPage, $page, [
-            'path' => Paginator::resolveCurrentPath(),
+            'path'     => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
     }
@@ -1252,7 +1248,7 @@ class Builder
     public function addMutation($holder, $model, $type = 'one')
     {
         $this->mutations[$holder] = [
-            'type' => $type,
+            'type'  => $type,
             'model' => $model,
         ];
     }
@@ -1488,7 +1484,8 @@ class Builder
         // Set the relationship match clause.
         $method = $this->getMatchMethodName($relation);
 
-        $this->$method($relation->getParent(),
+        $this->$method(
+            $relation->getParent(),
             $relation->getRelated(),
             $relatedNode,
             $relation->getRelationType(),
@@ -1626,7 +1623,7 @@ class Builder
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Builder
      */
-    protected function addHasWhere(Builder $hasQuery, Relation $relation, $operator, $count, $boolean)
+    protected function addHasWhere(self $hasQuery, Relation $relation, $operator, $count, $boolean)
     {
         $this->mergeWheresToHas($hasQuery, $relation);
 
@@ -1643,7 +1640,7 @@ class Builder
      * @param \Vinelab\NeoEloquent\Eloquent\Builder            $hasQuery
      * @param \Vinelab\NeoEloquent\Eloquent\Relations\Relation $relation
      */
-    protected function mergeWheresToHas(Builder $hasQuery, Relation $relation)
+    protected function mergeWheresToHas(self $hasQuery, Relation $relation)
     {
         // Here we have the "has" query and the original relation. We need to copy over any
         // where clauses the developer may have put in the relationship function over to
@@ -1653,7 +1650,8 @@ class Builder
         $hasQuery = $hasQuery->getModel()->removeGlobalScopes($hasQuery);
 
         $hasQuery->mergeWheres(
-            $relationQuery->wheres, $relationQuery->getBindings()
+            $relationQuery->wheres,
+            $relationQuery->getBindings()
         );
 
         $this->query->mergeBindings($hasQuery->getQuery());
@@ -2004,7 +2002,7 @@ class Builder
      * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
      * @param string                                $prefix
      */
-    protected function prefixAndMerge(Builder $query, $prefix)
+    protected function prefixAndMerge(self $query, $prefix)
     {
         if (is_array($query->getQuery()->wheres)) {
             $query->getQuery()->wheres = $this->prefixWheres($query->getQuery()->wheres, $prefix);
@@ -2026,7 +2024,7 @@ class Builder
         return array_map(function ($where) use ($prefix) {
             if ($where['type'] == 'Nested') {
                 $where['query']->wheres = $this->prefixWheres($where['query']->wheres, $prefix);
-            } else if ($where['type'] != 'Carried' && strpos($where['column'], '.') == false) {
+            } elseif ($where['type'] != 'Carried' && strpos($where['column'], '.') == false) {
                 $column = $where['column'];
                 $where['column'] = ($this->isId($column)) ? $column : $prefix.'.'.$column;
             }

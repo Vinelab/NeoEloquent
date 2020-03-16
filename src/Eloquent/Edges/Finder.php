@@ -2,12 +2,12 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
-use Vinelab\NeoEloquent\Eloquent\Model;
+use GraphAware\Common\Result\RecordViewInterface;
+use GraphAware\Neo4j\Client\Formatter\Result;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
-use GraphAware\Neo4j\Client\Formatter\Result;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Traits\ResultTrait;
-use GraphAware\Common\Result\RecordViewInterface;
 
 class Finder extends Delegate
 {
@@ -61,7 +61,7 @@ class Finder extends Delegate
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function get(Model $parent, Model $related, $type = [], $direction)
+    public function get(Model $parent, Model $related, $type, $direction)
     {
         // Get the relationships for the parent node of the given type.
         $results = $this->firstRelationWithNodes($parent, $related, $type, $direction);
@@ -130,8 +130,8 @@ class Finder extends Delegate
      * Get the direction of a relationship out of a Relation instance.
      *
      * @param \GraphAware\Neo4j\Client\Formatter\Result $results
-     * @param \Vinelab\NeoEloquent\Eloquent\Model $parent
-     * @param \Vinelab\NeoEloquent\Eloquent\Model $related
+     * @param \Vinelab\NeoEloquent\Eloquent\Model       $parent
+     * @param \Vinelab\NeoEloquent\Eloquent\Model       $related
      *
      * @return string Either 'in' or 'out'
      */
@@ -162,7 +162,7 @@ class Finder extends Delegate
      * Get the Edge instance out of a Relationship based on a direction.
      *
      * @param \GraphAware\Common\Result\RecordViewInterface $record
-     * @param string                       $direction can be 'in' or 'out'
+     * @param string                                        $direction can be 'in' or 'out'
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
