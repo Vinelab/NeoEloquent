@@ -1,13 +1,12 @@
-[![Build Status](https://travis-ci.org/Ulobby/NeoEloquent.svg?branch=master)](https://travis-ci.org/Ulobby/NeoEloquent)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4b18de9ea45b4b2c96a8f78a25db6480)](https://www.codacy.com/manual/berteltorp/NeoEloquent?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ulobby/NeoEloquent&amp;utm_campaign=Badge_Grade)
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/46d632f8-6b3c-4446-a2d4-c227ba4cf373/big.png)](https://insight.sensiolabs.com/projects/46d632f8-6b3c-4446-a2d4-c227ba4cf373)
+
+[![Build Status](https://travis-ci.org/Vinelab/NeoEloquent.svg?branch=master)](https://travis-ci.org/Vinelab/NeoEloquent)
 
 # NeoEloquent
-Neo4j Graph Eloquent Driver for Laravel, this is a fork of [Vinelab/NeoEloquent](https://github.com/Vinelab/NeoEloquent) maintained by [Ulobby](https://www.ulobby.eu) as the original repo is not maintained anymore.
 
-At Ulobby use NeoEloquent in production for a lot of the crud operations in our Laravel based SaaS. We usually end up writing raw cypher for more complex operations, as a consequence of this we currently do not recommend using polymorphic-relationships.
+*This is a work in progress and is currently in the debugging phase, hence not usabale as-is.*
 
-## Chat & Support
-Join the [Official Neo4j Slack Group](https://neo4j.com/blog/public-neo4j-users-slack-group/) and use the #neo4j-php channel.
+Neo4j Graph Eloquent Driver for Laravel
 
 ## Quick Reference
 
@@ -28,12 +27,20 @@ Add the package to your `composer.json` and run `composer update`.
 
 ### Laravel 5
 
-#### 5.8
+```json
+{
+    "require": {
+        "vinelab/neoeloquent": "1.2.*"
+    }
+}
+```
+
+### Laravel 4
 
 ```json
 {
     "require": {
-        "ulobby/neoeloquent": "^1.4.7"
+        "vinelab/neoeloquent": "1.1.*"
     }
 }
 ```
@@ -63,10 +70,10 @@ Add the connection defaults:
 'connections' => [
     'neo4j' => [
         'driver' => 'neo4j',
-        'host'   => env('DB_HOST', 'localhost'),
-        'port'   => env('DB_PORT', '7474'),
-        'username' => env('DB_USERNAME', null),
-        'password' => env('DB_PASSWORD', null)
+        'host'   => 'localhost',
+        'port'   => '7474',
+        'username' => null,
+        'password' => null
     ]
 ]
 ```
@@ -137,17 +144,15 @@ Do not worry about the labels formatting, You may specify them as `array('Label1
 
 ### Soft Deleting
 
-#### Laravel 5
-
-To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletes`
-instead of `Illuminate\Database\Eloquent\SoftDeletes` and just like Eloquent you'll need the `$dates` in your models as follows:
+To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait`
+instead of `Illuminate\Database\Eloquent\SoftDeletingTrait` and just like Eloquent you'll need the `$dates` in your models as follows:
 
 ```php
-use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
 
 class User extends NeoEloquent {
 
-    use SoftDeletes;
+    use SoftDeletingTrait;
 
     protected $dates = ['deleted_at'];
 
@@ -595,6 +600,14 @@ Due to the fact that relationships in Graph are much different than other databa
 we will have to handle them accordingly. Relationships have directions that can vary between
 **In** and **Out** respectively towards the parent node.
 
+Edges give you the ability to manipulate relationships properties the same way you do with models.
+
+```php
+$edge = $location->associate($user);
+$edge->last_visited = 'today';
+$edge->save(); // true
+```
+
 #### EdgeIn
 
 Represents an `INCOMING` direction relationship from the related model towards the parent model.
@@ -735,7 +748,7 @@ $edge = $location->user()->edge();
 
 You may also specify the model at the other side of the edge.
 
-> Note: By default NeoEloquent will try to perform the `$location->user` internally to figure
+> Note: By default NeoEloquent will try to pefrorm the `$location->user` internally to figure
 out the related side of the edge based on the relation function name, in this case it's
 `user()`.
 

@@ -52,7 +52,7 @@ class ModelTest extends TestCase
     {
         $m = new Table();
 
-        $label = $m->getTable();
+        $label = $m->nodeLabel();
 
         $this->assertEquals('Table', reset($label));
     }
@@ -72,17 +72,17 @@ class ModelTest extends TestCase
     {
         $m = new Model();
 
-        $m->setLabel(['User', 'Fan']);
+        $m->setLabel(array('User', 'Fan'));
         $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(['User', 'Fan'], $label);
+        $this->assertEquals(array('User', 'Fan'), $label);
 
         $m->setLabel(':User:Fan');
         $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(['User', 'Fan'], $label);
+        $this->assertEquals(array('User', 'Fan'), $label);
 
         $m->setLabel('User:Fan:Maker:Baker');
         $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(['User', 'Fan', 'Maker', 'Baker'], $label);
+        $this->assertEquals(array('User', 'Fan', 'Maker', 'Baker'), $label);
     }
 
     public function testGettingEloquentBuilder()
@@ -98,56 +98,30 @@ class ModelTest extends TestCase
     {
         //create a new model object
         $m = new Labeled();
-        $m->setLabel(['User', 'Fan']); //set some labels
+        $m->setLabel(array('User', 'Fan')); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph
         $id = $m->id;
 
         //add the label
-        $m->addLabels(['Superuniqelabel1']);
+        $m->addLabels(array('Superuniqelabel1'));
 
-        //get the Node for $id using Everyman lib
-        $connection = $this->getConnectionWithConfig('neo4j');
-        $client = $connection->getClient();
-        $node = $client->getNode($id);
+        $labels = $this->getNodeLabels($id);
 
-        $this->assertNotNull($node); //it should exist
-
-        $labels = $node->getLabels(); //get labels as array on the Everyman nodes
-
-        $strLabels = [];
-        foreach ($labels as $lbl) {
-            $strLabels[] = $lbl->getName();
-        }
-
-        $this->assertTrue(in_array('Superuniqelabel1', $strLabels));
+        $this->assertTrue(in_array('Superuniqelabel1', $labels));
     }
 
     public function testDropLabels()
     {
         //create a new model object
         $m = new Labeled();
-        $m->setLabel(['User', 'Fan', 'Superuniqelabel2']); //set some labels
+        $m->setLabel(array('User', 'Fan', 'Superuniqelabel2')); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph
         $id = $m->id;
 
         //drop the label
-        $m->dropLabels(['Superuniqelabel2']);
-
-        //get the Node for $id using Everyman lib
-        $connection = $this->getConnectionWithConfig('neo4j');
-        $client = $connection->getClient();
-        $node = $client->getNode($id);
-
-        $this->assertNotNull($node); //it should exist
-
-        $labels = $node->getLabels(); //get labels as array on the Everyman nodes
-        $strLabels = [];
-        foreach ($labels as $lbl) {
-            $strLabels[] = $lbl->getName();
-        }
-
-        $this->assertFalse(in_array('Superuniqelabel2', $strLabels));
+        $m->dropLabels(array('Superuniqelabel2'));
+        $this->assertFalse(in_array('Superuniqelabel2', $this->getNodeLabels($id)));
     }
 }

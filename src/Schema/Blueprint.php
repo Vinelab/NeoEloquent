@@ -26,8 +26,6 @@ class Blueprint
     /**
      * @param string  $label
      * @param Closure $callback
-     *
-     * @return void
      */
     public function __construct($label, Closure $callback = null)
     {
@@ -43,8 +41,6 @@ class Blueprint
      *
      * @param \Illuminate\Database\ConnectionInterface     $connection
      * @param \Illuminate\Database\Schema\Grammars\Grammar $grammar
-     *
-     * @return void
      */
     public function build(ConnectionInterface $connection, IlluminateSchemaGrammar $grammar)
     {

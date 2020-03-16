@@ -7,20 +7,20 @@ use Vinelab\NeoEloquent\Eloquent\Model as NeoEloquent;
 class MigrationModel extends NeoEloquent
 {
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     protected $label = 'NeoEloquentMigration';
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    protected $fillable = [
+    protected $fillable = array(
         'migration',
         'batch',
-    ];
+    );
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    protected $guarded = [];
+    protected $guarded = array();
 }

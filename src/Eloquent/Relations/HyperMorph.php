@@ -2,10 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge;
-use Vinelab\NeoEloquent\Eloquent\Model;
 
 class HyperMorph extends BelongsToMany
 {
@@ -53,13 +52,11 @@ class HyperMorph extends BelongsToMany
 
     /**
      * Set the base constraints on the relation query.
-     *
-     * @return void
      */
     public function addConstraints()
     {
         if (static::$constraints) {
-            /**
+            /*
              * For has one relationships we need to actually query on the primary key
              * of the parent model matching on the OUTGOING relationship by name.
              *
@@ -82,16 +79,16 @@ class HyperMorph extends BelongsToMany
              *          return $this->hasOne('Phone', 'PHONE');
              *     }
              * }
-             */
+            */
 
             // Get the parent node's placeholder.
             $parentNode = $this->getParentNode();
             // Tell the query that we only need the related model returned.
             $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = [$parentNode];
+            $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()-[]->() Cypher clause.
-            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
             // Add WHERE clause over the parent node's matching key = value.
             $this->query->where($this->localKey, '=', $this->parent->{$this->localKey});
         }
@@ -101,19 +98,17 @@ class HyperMorph extends BelongsToMany
      * Set the constraints for an eager load of the relation.
      *
      * @param array $models
-     *
-     * @return void
      */
     public function addEagerConstraints(array $models)
     {
-        /**
+        /*
          * We'll grab the primary key name of the related models since it could be set to
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
          */
 
         // Grab the parent node placeholder
-        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         // Tell the builder to select both models of the relationship
         $this->query->select($this->relation, $parentNode);
@@ -123,9 +118,9 @@ class HyperMorph extends BelongsToMany
         $this->query->addManyMutation($parentNode, $this->parent);
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = [$parentNode];
+        $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()-[]->() Cypher clause.
-        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->foreignKey, $this->localKey, $this->parent->{$this->localKey});
+        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
         // Add WHERE clause over the parent node's matching keys [values...].
         $this->query->whereIn($this->localKey, $this->getKeys($models));
     }
@@ -135,7 +130,7 @@ class HyperMorph extends BelongsToMany
         return $this->finder->hyperFirst($this->parent, $model, $this->morph, $this->type, $this->morphType);
     }
 
-    public function getEdge(EloquentModel $model = null, $properties = [])
+    public function getEdge(Model $model = null, $properties = array())
     {
         $model = (!is_null($model)) ? $model : $this->related;
 

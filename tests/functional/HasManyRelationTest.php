@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasMany;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class Book extends Model
 {
@@ -55,23 +55,31 @@ class HasManyRelationTest extends TestCase
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $writtenGot);
         $this->assertTrue($writtenGot->exists());
-        $this->assertGreaterThanOrEqual(0, $writtenGot->id);
+        $this->assertGreaterThan(0, $writtenGot->id);
         $this->assertNotNull($writtenGot->created_at);
         $this->assertNotNull($writtenGot->updated_at);
         $this->assertEquals($writtenGot->ratings, 123);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $writtenCok);
         $this->assertTrue($writtenCok->exists());
-        $this->assertGreaterThanOrEqual(0, $writtenCok->id);
+        $this->assertGreaterThan(0, $writtenCok->id);
         $this->assertNotNull($writtenCok->created_at);
         $this->assertNotNull($writtenCok->updated_at);
         $this->assertEquals($writtenCok->chapters, 70);
 
         $books = $author->books;
 
+        $expectedBooks = [
+            $got->title => $got->toArray(),
+            $cok->title => $cok->toArray(),
+        ];
+
         $this->assertCount(2, $books->toArray());
-        $this->assertEquals($cok->toArray(), $author->books[0]->toArray());
-        $this->assertEquals($got->toArray(), $author->books[1]->toArray());
+
+        foreach ($books as $book) {
+            $this->assertEquals($expectedBooks[$book->title], $book->toArray());
+            unset($expectedBooks[$book->title]);
+        }
 
         $writtenGot->delete();
         $writtenCok->delete();
@@ -83,23 +91,23 @@ class HasManyRelationTest extends TestCase
 
         $novel = [
             new Book([
-                'title'        => 'A Game of Thrones',
-                'pages'        => 704,
+                'title' => 'A Game of Thrones',
+                'pages' => 704,
                 'release_date' => 'August 1996',
             ]),
             new Book([
-                'title'        => 'A Clash of Kings',
-                'pages'        => 768,
+                'title' => 'A Clash of Kings',
+                'pages' => 768,
                 'release_date' => 'February 1999',
             ]),
             new Book([
-                'title'        => 'A Storm of Swords',
-                'pages'        => 992,
+                'title' => 'A Storm of Swords',
+                'pages' => 992,
                 'release_date' => 'November 2000',
             ]),
             new Book([
-                'title'        => 'A Feast for Crows',
-                'pages'        => 753,
+                'title' => 'A Feast for Crows',
+                'pages' => 753,
                 'release_date' => 'November 2005',
             ]),
         ];
@@ -113,7 +121,7 @@ class HasManyRelationTest extends TestCase
         foreach ($edges as $key => $edge) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
             $this->assertTrue($edge->exists());
-            $this->assertGreaterThanOrEqual(0, $edge->id);
+            $this->assertGreaterThan(0, $edge->id);
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
             $edge->delete();
@@ -126,23 +134,23 @@ class HasManyRelationTest extends TestCase
 
         $novel = [
             [
-                'title'        => 'A Game of Thrones',
-                'pages'        => 704,
+                'title' => 'A Game of Thrones',
+                'pages' => 704,
                 'release_date' => 'August 1996',
             ],
             [
-                'title'        => 'A Clash of Kings',
-                'pages'        => 768,
+                'title' => 'A Clash of Kings',
+                'pages' => 768,
                 'release_date' => 'February 1999',
             ],
             [
-                'title'        => 'A Storm of Swords',
-                'pages'        => 992,
+                'title' => 'A Storm of Swords',
+                'pages' => 992,
                 'release_date' => 'November 2000',
             ],
             [
-                'title'        => 'A Feast for Crows',
-                'pages'        => 753,
+                'title' => 'A Feast for Crows',
+                'pages' => 753,
                 'release_date' => 'November 2005',
             ],
         ];
@@ -152,7 +160,7 @@ class HasManyRelationTest extends TestCase
 
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
             $this->assertTrue($edge->exists());
-            $this->assertGreaterThanOrEqual(0, $edge->id);
+            $this->assertGreaterThan(0, $edge->id);
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
             $this->assertEquals($edge->on, $book['release_date']);
@@ -166,23 +174,23 @@ class HasManyRelationTest extends TestCase
 
         $novel = [
             [
-                'title'        => 'A Game of Thrones',
-                'pages'        => 704,
+                'title' => 'A Game of Thrones',
+                'pages' => 704,
                 'release_date' => 'August 1996',
             ],
             [
-                'title'        => 'A Clash of Kings',
-                'pages'        => 768,
+                'title' => 'A Clash of Kings',
+                'pages' => 768,
                 'release_date' => 'February 1999',
             ],
             [
-                'title'        => 'A Storm of Swords',
-                'pages'        => 992,
+                'title' => 'A Storm of Swords',
+                'pages' => 992,
                 'release_date' => 'November 2000',
             ],
             [
-                'title'        => 'A Feast for Crows',
-                'pages'        => 753,
+                'title' => 'A Feast for Crows',
+                'pages' => 753,
                 'release_date' => 'November 2005',
             ],
         ];
@@ -192,7 +200,7 @@ class HasManyRelationTest extends TestCase
         foreach ($edges as $edge) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
             $this->assertTrue($edge->exists());
-            $this->assertGreaterThanOrEqual(0, $edge->id);
+            $this->assertGreaterThan(0, $edge->id);
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
 
@@ -206,23 +214,23 @@ class HasManyRelationTest extends TestCase
 
         $novel = [
             new Book([
-                'title'        => 'A Game of Thrones',
-                'pages'        => 704,
+                'title' => 'A Game of Thrones',
+                'pages' => 704,
                 'release_date' => 'August 1996',
             ]),
             new Book([
-                'title'        => 'A Clash of Kings',
-                'pages'        => 768,
+                'title' => 'A Clash of Kings',
+                'pages' => 768,
                 'release_date' => 'February 1999',
             ]),
             new Book([
-                'title'        => 'A Storm of Swords',
-                'pages'        => 992,
+                'title' => 'A Storm of Swords',
+                'pages' => 992,
                 'release_date' => 'November 2000',
             ]),
             new Book([
-                'title'        => 'A Feast for Crows',
-                'pages'        => 753,
+                'title' => 'A Feast for Crows',
+                'pages' => 753,
                 'release_date' => 'November 2005',
             ]),
         ];
@@ -236,17 +244,12 @@ class HasManyRelationTest extends TestCase
         $this->assertArrayHasKey('books', $relations);
         $this->assertCount(count($novel), $relations['books']->toArray());
 
-        $booksById = [];
-        foreach ($novel as $book) {
-            $booksById[$book->getKey()] = $book->toArray();
-        }
+        $booksIds = array_map(function ($book) { return $book->getKey(); }, $novel);
 
         foreach ($relations['books'] as $key => $book) {
-            $this->assertEquals($booksById[$book->getKey()], $book->toArray());
-            // make sure it only occurs once
-            unset($booksById[$book->getKey()]);
+            $this->assertTrue(in_array($book->getKey(), $booksIds));
             $edge = $author->books()->edge($book);
-            $this->assertTrue($edge->delete());
+            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
         }
     }
 
@@ -256,23 +259,23 @@ class HasManyRelationTest extends TestCase
 
         $novel = [
             new Book([
-                'title'        => 'A Game of Thrones',
-                'pages'        => 704,
+                'title' => 'A Game of Thrones',
+                'pages' => 704,
                 'release_date' => 'August 1996',
             ]),
             new Book([
-                'title'        => 'A Clash of Kings',
-                'pages'        => 768,
+                'title' => 'A Clash of Kings',
+                'pages' => 768,
                 'release_date' => 'February 1999',
             ]),
             new Book([
-                'title'        => 'A Storm of Swords',
-                'pages'        => 992,
+                'title' => 'A Storm of Swords',
+                'pages' => 992,
                 'release_date' => 'November 2000',
             ]),
             new Book([
-                'title'        => 'A Feast for Crows',
-                'pages'        => 753,
+                'title' => 'A Feast for Crows',
+                'pages' => 753,
                 'release_date' => 'November 2005',
             ]),
         ];
@@ -299,9 +302,7 @@ class HasManyRelationTest extends TestCase
 
         $edges = $author->books()->edges();
 
-        $edgesIds = array_map(function ($edge) {
-            return $edge->getRelated()->getKey();
-        }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
 
         $this->assertTrue(in_array($got->id, $edgesIds));
         $this->assertTrue(in_array($cok->id, $edgesIds));
@@ -321,9 +322,7 @@ class HasManyRelationTest extends TestCase
 
         $edges = $author->books()->edges();
 
-        $edgesIds = array_map(function ($edge) {
-            return $edge->getRelated()->getKey();
-        }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
 
         $this->assertTrue(in_array($got->id, $edgesIds));
         $this->assertTrue(in_array($cok->id, $edgesIds));
@@ -347,9 +346,7 @@ class HasManyRelationTest extends TestCase
 
         $edges = $author->books()->edges();
 
-        $edgesIds = array_map(function ($edge) {
-            return $edge->getRelated()->getKey();
-        }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
 
         $count = array_count_values((array) $got->id);
 
@@ -358,12 +355,14 @@ class HasManyRelationTest extends TestCase
         $this->assertTrue(in_array($sos->id, $edgesIds));
         $this->assertTrue(in_array($got->id, $edgesIds));
 
-        $expectedEdgesTypes = ['Storm', 'Clash', 'Game'];
+        $expectedEdgesTypes = array('Storm', 'Clash', 'Game');
 
         foreach ($edges as $key => $edge) {
             $attributes = $edge->toArray();
             $this->assertArrayHasKey('series', $attributes);
-            $this->assertEquals($expectedEdgesTypes[$key], $edge->series);
+            $this->assertTrue(in_array($edge->series, $expectedEdgesTypes));
+            $index = array_search($edge->series, $expectedEdgesTypes);
+            unset($expectedEdgesTypes[$index]);
             $edge->delete();
         }
     }

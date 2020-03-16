@@ -3,7 +3,7 @@
 namespace Vinelab\NeoEloquent\Schema;
 
 use Closure;
-use Illuminate\Database\ConnectionInterface;
+use Vinelab\NeoEloquent\ConnectionInterface;
 
 class Builder
 {
@@ -23,8 +23,6 @@ class Builder
 
     /**
      * @param \Illuminate\Database\ConnectionInterface $conn
-     *
-     * @return void
      */
     public function __construct(ConnectionInterface $conn)
     {
@@ -36,9 +34,9 @@ class Builder
      *
      * @param string $label
      *
-     * @throws RuntimeException
-     *
      * @return bool
+     *
+     * @throws RuntimeException
      */
     public function hasTable($label)
     {
@@ -151,8 +149,6 @@ you can do so by passing additional arguments to default migration command like:
      * Execute the blueprint to modify the label.
      *
      * @param Blueprint $blueprint
-     *
-     * @return void
      */
     protected function build(Blueprint $blueprint)
     {
@@ -207,8 +203,6 @@ you can do so by passing additional arguments to default migration command like:
      * Set the Schema Blueprint resolver callback.
      *
      * @param \Closure $resolver
-     *
-     * @return void
      */
     public function blueprintResolver(Closure $resolver)
     {

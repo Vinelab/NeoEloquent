@@ -2,16 +2,21 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
-use Carbon\Carbon;
 use DateTime;
-use Everyman\Neo4j\Relationship;
-use Illuminate\Database\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Builder;
+use Carbon\Carbon;
+use GraphAware\Neo4j\Client\Formatter\Result;
+use GraphAware\Common\Result\RecordViewInterface;
+use GraphAware\Bolt\Result\Type\Relationship;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\NoEdgeDirectionException;
+use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Exceptions\NoEdgeDirectionException;
+use Vinelab\NeoEloquent\Traits\ResultTrait;
 
-abstract class Relation extends Delegate
+abstract class Edge extends Delegate
 {
+    use ResultTrait;
+
     /**
      * The edges finder instance.
      *
@@ -58,14 +63,14 @@ abstract class Relation extends Delegate
      *
      * @var array
      */
-    protected $attributes = [];
+    protected $attributes = array();
 
     /**
      * The attributes that should be mutated to dates.
      *
      * @var array
      */
-    protected $dates = [];
+    protected $dates = array();
 
     /**
      * Holds the decision on whether
@@ -87,7 +92,7 @@ abstract class Relation extends Delegate
     /**
      * The relationship instance.
      *
-     * @var \Everyman\Neo4j\Relationship
+     * @var \GraphAware\Bolt\Result\Type\Relationship
      */
     protected $relation;
 
@@ -128,7 +133,7 @@ abstract class Relation extends Delegate
      * @param \Vinelab\NeoEloquent\Eloquent\Model   $related
      * @param string                                $type
      */
-    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = [], $unique = false)
+    public function __construct(Builder $query, Model $parent, Model $related, $type, $attributes = array(), $unique = false)
     {
         parent::__construct($query);
 
@@ -146,20 +151,20 @@ abstract class Relation extends Delegate
      * Initialize the relationship setting the start node,
      * end node and relation type.
      *
-     * @throws \Vinelab\NeoEloquent\NoEdgeDirectionException If $direction is not set on the inheriting relation.
-     *
-     * @return void
+     * @throws \Vinelab\NeoEloquent\Exceptions\NoEdgeDirectionException If $direction is not set on the inheriting relation.
      */
     public function initRelation()
     {
+        $this->updateTimestamps();
+
         switch ($this->direction) {
             case 'in':
                 // Make them nodes
                 $this->start = $this->asNode($this->related);
                 $this->end = $this->asNode($this->parent);
                 // Setup relationship
-                $this->relation = $this->makeRelationship($this->type, $this->relation, $this->parent, $this->attributes);
-            break;
+                $this->relation = $this->makeRelationship($this->type, $this->related, $this->parent, $this->attributes);
+                break;
 
             case 'out':
                 // Make them nodes
@@ -167,7 +172,7 @@ abstract class Relation extends Delegate
                 $this->end = $this->asNode($this->related);
                 // Setup relationship
                 $this->relation = $this->makeRelationship($this->type, $this->parent, $this->related, $this->attributes);
-            break;
+                break;
 
             default:
                 throw new NoEdgeDirectionException();
@@ -183,9 +188,9 @@ abstract class Relation extends Delegate
      */
     public function current()
     {
-        $relation = $this->finder->firstRelation($this->parent, $this->related, $this->type, $this->direction);
+        $results = $this->finder->firstRelationWithNodes($this->parent, $this->related, $this->type, $this->direction);
 
-        return (!is_null($relation)) ? $this->newFromRelation($relation) : null;
+        return (count($results->getRecords()) > 1) ? $this->newFromRelation($results->firstRecord()) : null;
     }
 
     /**
@@ -197,33 +202,51 @@ abstract class Relation extends Delegate
     {
         $this->updateTimestamps();
 
-        /*
-        * If this is a unique relationship we should check for an existing
-        * one of the same type and direction for the $parent node before saving
-        * and delete it, only if we are not updating a relationship.
-        */
+         /*
+         * If this is a unique relationship we should check for an existing
+         * one of the same type and direction for the $parent node before saving
+         * and delete it, unless we are updating an existing relationship.
+         */
         if ($this->unique && !$this->exists()) {
-            $parent = $this->asNode($this->parent);
-            $existing = $parent->getFirstRelationship((array) $this->type, $this->getRealDirection($this->direction));
+            $endModel = $this->related->newInstance();
+            $existing = $this->firstRelationWithNodes($this->parent, $endModel, $this->type, $this->direction);
 
-            if (!empty($existing)) {
-                $existing->delete();
+            if(count($existing->getRecords()) > 0) {
+                $instance = $this->newFromRelation($existing->firstRecord());
+                $instance->delete();
             }
         }
 
-        $this->setRelationProperties($this->toArray());
-
-        $saved = $this->relation->save();
+        $saved = $this->saveRelationship($this->type, $this->parent, $this->related, $this->attributes);
 
         if ($saved) {
             // Let's refresh the relation we alreay have set so that
             // we make sure that it is totally in sync with the saved one.
-            $this->setRelation($this->relation);
+            // at this point $saved is an instance of GraphAware\Common\Result\RecordViewInterface
+            // that only contains the relationship as a record.
+            // We will pull that out of the Result instance
+            $this->setRelation($saved->firstRecord());
 
             return true;
         }
 
         return  false;
+    }
+
+    /**
+     * @param string $type
+     * @param Model $start
+     * @param Model $end
+     * @param array $properties
+     * @return \GraphAware\Neo4j\Client\Formatter\Result
+     */
+    public function saveRelationship($type, $start, $end, $properties)
+    {
+        $grammar = $this->query->getQuery()->getGrammar();
+        $attributes = $this->getRelationshipAttributes($start, $end, $properties);
+        $query = $grammar->compileCreateRelationship($this->query->getQuery(), $attributes);
+
+        return $this->connection->statement($query, [], true);
     }
 
     /**
@@ -233,28 +256,46 @@ abstract class Relation extends Delegate
      */
     public function delete()
     {
-        if (!is_null($this->relation)) {
-            $deleted = $this->relation->delete();
+        if ($this->relation) {
+            $grammar = $this->query->getQuery()->getGrammar();
 
-            return $deleted ? true : false;
+            // based on the direction, the matching between the parent model and the relation's start node
+            // are the inverse, same goes for the end node and the related model.
+            $startNode = $this->start;
+            $endNode = $this->end;
+            // this case applies only when it's an inbound relationship.
+            if ($this->direction === 'in') {
+                $startNode = $this->end;
+                $endNode = $this->start;
+            }
+
+            $startModel = $this->query->newModelFromNode($startNode, $this->parent);
+            $endModel = $this->query->newModelFromNode($endNode, $this->related);
+
+            // we need to delete any relationship b/w the start and end models
+            // so we only need the label out of the end model and not the ID.
+            $attributes = $this->getRelationshipAttributes($startModel, $endModel);
+            $query = $grammar->compileDeleteRelationship($this->query->getQuery(), $attributes);
+
+            $deleted = $this->connection->affectingStatement($query, []);
         }
 
-        return false;
+        return (bool) (isset($deleted)) ? true : false;
     }
 
     /**
      * Create a new Relation of the current instance
      * from an existing database relation.
      *
-     * @param Everyman\Neo4j\Relationship $relation
+     * @param \GraphAware\Neo4j\Client\Formatter\Result $results
      *
      * @return static
      */
-    public function newFromRelation(Relationship $relation)
+    public function newFromRelation(RecordViewInterface $record)
     {
         $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);
 
-        $instance->setRelation($relation);
+        $instance->setRelation($record);
 
         return $instance;
     }
@@ -292,37 +333,42 @@ abstract class Relation extends Delegate
     /**
      * Set a given relationship on this relation.
      *
-     * @param \Everyman\Neo4j\Relationship $relation
+     * @param \GraphAware\Neo4j\Client\Formatter\Result $results
      */
-    public function setRelation(Relationship $relation, $debug = false)
+    public function setRelation(RecordViewInterface $record)
     {
+        $nodes = $this->getRecordNodes($record);
+        $relationships = $this->getRecordRelationships($record);
+        $relation = reset($relationships);
+
         // Set the relation object.
         $this->relation = $relation;
 
         // Replace the attributes with those brought from the given relation.
-        $this->attributes = $relation->getProperties();
-        $this->setAttribute($this->primaryKey, $relation->getId());
+        $this->attributes = $relation->values();
+        $this->setAttribute($this->primaryKey, $relation->identity());
 
         // Set the start and end nodes.
-        $this->start = $relation->getStartNode();
-        $this->end = $relation->getEndNode();
+        // FIXME: See if we will need $this->start and $this->end for they've been removed.
+        $this->start = $this->getNodeByType($relation, $nodes, 'start');
+        $this->end = $this->getNodeByType($relation, $nodes, 'end');
 
-        // Instantiate and fill out the related model.
         $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;
-        $attributes = array_merge(['id' => $relatedNode->getId()], $relatedNode->getProperties());
+        $attributes = array_merge(['id' => $relatedNode->identity()], $relatedNode->values());
 
-        // This is an existing relationship.
         $this->related = $this->related->newFromBuilder($attributes);
         $this->related->setConnection($this->related->getConnectionName());
-    }
 
-    public function setRelationProperties(array $properties = [])
-    {
-        // Go through the properties and assign them
-        // to the relation.
-        foreach ($properties as $key => $value) {
-            $this->relation->setProperty($key, $value);
-        }
+//        $this->start = $relation->getStartNode();
+//        $this->end = $relation->getEndNode();
+//
+//        // Instantiate and fill out the related model.
+//        $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;
+//        $attributes = array_merge(['id' => $relatedNode->getId()], $relatedNode->getProperties());
+//
+//        // This is an existing relationship.
+//        $this->related = $this->related->newFromBuilder($attributes);
+//        $this->related->setConnection($this->related->getConnectionName());
     }
 
     /**
@@ -346,8 +392,6 @@ abstract class Relation extends Delegate
      *
      * @param string $key
      * @param mixed  $value
-     *
-     * @return void
      */
     public function setAttribute($key, $value)
     {
@@ -387,7 +431,7 @@ abstract class Relation extends Delegate
      */
     public function getDates()
     {
-        $defaults = [static::CREATED_AT, static::UPDATED_AT];
+        $defaults = array(static::CREATED_AT, static::UPDATED_AT);
 
         return array_merge($this->dates, $defaults);
     }
@@ -419,7 +463,7 @@ abstract class Relation extends Delegate
      */
     public function getModels()
     {
-        return new Collection([$this->parent, $this->related]);
+        return new Collection(array($this->parent, $this->related));
     }
 
     /**
@@ -471,7 +515,7 @@ abstract class Relation extends Delegate
      */
     public function getNodes()
     {
-        return new Collection([$this->start, $this->end]);
+        return new Collection(array($this->start, $this->end));
     }
 
     /**
@@ -491,11 +535,13 @@ abstract class Relation extends Delegate
      */
     public function exists()
     {
-        if ($this->relation && $this->relation->hasId()) {
-            return true;
+        $exists = false;
+
+        if ($this->relation && $this->relation->identity()) {
+            $exists = true;
         }
 
-        return false;
+        return $exists;
     }
 
     /**
@@ -617,8 +663,6 @@ abstract class Relation extends Delegate
 
     /**
      * Update the creation and update timestamps.
-     *
-     * @return void
      */
     protected function updateTimestamps()
     {
@@ -637,8 +681,6 @@ abstract class Relation extends Delegate
      * Set the value of the "created at" attribute.
      *
      * @param mixed $value
-     *
-     * @return void
      */
     public function setCreatedAt($value)
     {
@@ -649,8 +691,6 @@ abstract class Relation extends Delegate
      * Set the value of the "updated at" attribute.
      *
      * @param mixed $value
-     *
-     * @return void
      */
     public function setUpdatedAt($value)
     {
@@ -702,8 +742,6 @@ abstract class Relation extends Delegate
      *
      * @param string $key
      * @param mixed  $value
-     *
-     * @return void
      */
     public function __set($key, $value)
     {

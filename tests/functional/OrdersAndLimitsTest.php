@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class OrdersAndLimitsTest extends TestCase
 {

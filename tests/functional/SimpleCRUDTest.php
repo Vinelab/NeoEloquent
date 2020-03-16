@@ -2,16 +2,16 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Carbon\Carbon;
 use DateTime;
+use Carbon\Carbon;
 use Mockery as M;
+use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
-use Vinelab\NeoEloquent\Tests\TestCase;
 
 class Wiz extends Model
 {
-    protected $label = ':Wiz';
+    protected $label = ['Wiz', 'SOmet'];
 
     protected $fillable = ['fiz', 'biz', 'triz'];
 }
@@ -44,15 +44,13 @@ class SimpleCRUDTest extends TestCase
 
         // Mama said, always clean up before you go. =D
         $w = Wiz::all();
-        $w->each(function ($me) {
-            $me->delete();
-        });
+        $w->each(function ($me) { $me->delete(); });
 
         parent::tearDown();
     }
 
     /**
-     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException \Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testFindingAndFailing()
     {
@@ -84,6 +82,21 @@ class SimpleCRUDTest extends TestCase
         $this->assertInternalType('int', $w->id);
         $this->assertTrue($w->id > 0);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
+    }
+
+    public function testCreatingRecordWithArrayProperties()
+    {
+        $w = Wiz::create(['fiz' => ['not', '123', 'helping']]);
+
+        $expected = [
+            $w->getKeyName() => $w->getKey(),
+            'fiz' => ['not', '123', 'helping'],
+            'created_at' => $w->created_at,
+            'updated_at' => $w->updated_at,
+        ];
+
+        $fetched = Wiz::first();
+        $this->assertEquals($expected, $fetched->toArray());
     }
 
     /**
@@ -120,8 +133,8 @@ class SimpleCRUDTest extends TestCase
     public function testMassAssigningAttributes()
     {
         $w = Wiz::create([
-            'fiz'  => 'foo',
-            'biz'  => 'boo',
+            'fiz' => 'foo',
+            'biz' => 'boo',
             'nope' => 'nope',
         ]);
 
@@ -238,7 +251,7 @@ class SimpleCRUDTest extends TestCase
             $this->assertArrayHasKey('id', $values);
             $this->assertGreaterThanOrEqual(0, $values['id']);
             unset($values['id']);
-            $this->assertContains($values, $batch);
+            $this->assertEquals($batch[$key], $values);
         }
     }
 
@@ -247,7 +260,7 @@ class SimpleCRUDTest extends TestCase
         $id = Wiz::insertGetId(['foo' => 'fiz', 'boo' => 'biz']);
 
         $this->assertInternalType('int', $id);
-        $this->assertGreaterThanOrEqual(0, $id, 'message');
+        $this->assertGreaterThan(0, $id, 'message');
     }
 
     public function testSavingBooleanValuesStayBoolean()
@@ -275,7 +288,7 @@ class SimpleCRUDTest extends TestCase
 
         $g = WizDel::all()->first();
         $g->delete();
-        $this->assertTrue($g->exists);
+        $this->assertFalse($g->exists);
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
     }
 
@@ -286,7 +299,7 @@ class SimpleCRUDTest extends TestCase
         $g = WizDel::first();
         $g->delete();
 
-        $this->assertTrue($g->exists);
+        $this->assertFalse($g->exists);
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
 
         $h = WizDel::onlyTrashed()->where('id', $g->getKey())->first();
@@ -308,16 +321,16 @@ class SimpleCRUDTest extends TestCase
     public function testFirstOrCreate()
     {
         $w = Wiz::firstOrCreate([
-            'fiz'  => 'foo',
-            'biz'  => 'boo',
+            'fiz' => 'foo',
+            'biz' => 'boo',
             'triz' => 'troo',
         ]);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
 
         $found = Wiz::firstOrCreate([
-            'fiz'  => 'foo',
-            'biz'  => 'boo',
+            'fiz' => 'foo',
+            'biz' => 'boo',
             'triz' => 'troo',
         ]);
 
@@ -327,8 +340,8 @@ class SimpleCRUDTest extends TestCase
     public function testCreatingNullAndBooleanValues()
     {
         $w = Wiz::create([
-            'fiz'  => null,
-            'biz'  => false,
+            'fiz' => null,
+            'biz' => false,
             'triz' => true,
         ]);
 
@@ -344,16 +357,16 @@ class SimpleCRUDTest extends TestCase
     public function testUpdatingNullAndBooleanValues()
     {
         $w = Wiz::create([
-            'fiz'  => 'foo',
-            'biz'  => 'boo',
+            'fiz' => 'foo',
+            'biz' => 'boo',
             'triz' => 'troo',
         ]);
 
         $this->assertNotNull($w->getKey());
 
         $updated = Wiz::where('fiz', 'foo')->where('biz', 'boo')->where('triz', 'troo')->update([
-            'fiz'  => null,
-            'biz'  => false,
+            'fiz' => null,
+            'biz' => false,
             'triz' => true,
         ]);
 
@@ -366,11 +379,11 @@ class SimpleCRUDTest extends TestCase
         $dt = new DateTime();
         $w = Wiz::create(['fiz' => $now, 'biz' => $dt]);
 
-        $format = $w->getDateFormat();
+        $format = Wiz::getDateFormat();
 
         $fetched = Wiz::first();
-        $this->assertEquals($now->format($format), $fetched->fiz);
-        $this->assertEquals($now->format($format), $fetched->biz);
+        $this->assertEquals($now->format(Wiz::getDateFormat()), $fetched->fiz);
+        $this->assertEquals($now->format(Wiz::getDateFormat()), $fetched->biz);
 
         $tomorrow = Carbon::now()->addDay();
         $after = Carbon::now()->addDays(2);
@@ -380,7 +393,7 @@ class SimpleCRUDTest extends TestCase
         $fetched->save();
 
         $updated = Wiz::first();
-        $this->assertEquals($tomorrow->format($format), $updated->fiz);
-        $this->assertEquals($after->format($format), $updated->biz);
+        $this->assertEquals($tomorrow->format(Wiz::getDateFormat()), $updated->fiz);
+        $this->assertEquals($after->format(Wiz::getDateFormat()), $updated->biz);
     }
 }

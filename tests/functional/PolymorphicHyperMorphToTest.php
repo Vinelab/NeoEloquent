@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class PolymorphicHyperMorphToTest extends TestCase
 {
@@ -226,7 +226,7 @@ class PolymorphicHyperMorphToTest extends TestCase
     }
 
     /**
-     * @expectedException Illuminate\Database\Eloquent\ModelNotFoundException
+     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
      */
     public function testAttachingNonExistingModelIds()
     {
@@ -298,9 +298,7 @@ class PolymorphicHyperMorphToTest extends TestCase
 
         $edges = $user->comments($post)->edges();
 
-        $edgesIds = array_map(function ($edge) {
-            return $edge->getRelated()->getKey();
-        }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
         $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
         $this->assertFalse(in_array($commentOnPost->id, $edgesIds));
 
@@ -331,9 +329,7 @@ class PolymorphicHyperMorphToTest extends TestCase
 
         $edges = $user->comments($post)->edges();
 
-        $edgesIds = array_map(function ($edge) {
-            return $edge->getRelated()->getKey();
-        }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
         $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
         $this->assertTrue(in_array($commentOnPost->id, $edgesIds));
 
@@ -361,24 +357,24 @@ class PolymorphicHyperMorphToTest extends TestCase
         $postComment = $postCommentor->comments($post)->attach($commentOnPost);
 
         $user->comments($post)->sync([
+            $commentOnPost->id => ['feeling' => 'happy'],
             $anotherCommentOnPost->id => ['feeling' => 'sad'],
-            $commentOnPost->id        => ['feeling' => 'happy'],
         ]);
 
         $edges = $user->comments($post)->edges();
 
-        $edgesIds = array_map(function ($edge) {
-            return $edge->getRelated()->getKey();
-        }, $edges->toArray());
+        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
         $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
         $this->assertTrue(in_array($commentOnPost->id, $edgesIds));
 
-        $expectedEdgesTypes = ['happy', 'sad'];
+        $expectedEdgesTypes = ['sad', 'happy'];
 
         foreach ($edges as $key => $edge) {
             $attributes = $edge->toArray();
             $this->assertArrayHasKey('feeling', $attributes);
-            $this->assertEquals($expectedEdgesTypes[$key], $edge->feeling);
+            $this->assertTrue(in_array($edge->feeling, $expectedEdgesTypes));
+            $index = array_search($edge->feeling, $expectedEdgesTypes);
+            unset($expectedEdgesTypes[$index]);
             $edge->delete();
         }
     }
@@ -519,11 +515,6 @@ class PolymorphicHyperMorphToTest extends TestCase
 
     public function testDynamicLoadingMorphedByModel()
     {
-        // Stopping here and mark this test as incomplete.
-        $this->markTestIncomplete(
-            'This test has not been implemented yet. Avoid using morph for now!'
-        );
-
         $user = User::create(['name' => 'Hmm...']);
         $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);
@@ -539,7 +530,7 @@ class PolymorphicHyperMorphToTest extends TestCase
 
         $postMorph = $commentOnPost->post;
         $this->assertTrue($postMorph->exists);
-        $this->assertTrue(is_int($postMorph->id));
+        $this->assertGreaterThanOrEqual(0, $postMorph->id);
         $this->assertEquals($post->toArray(), $postMorph->toArray());
 
         $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
@@ -553,11 +544,6 @@ class PolymorphicHyperMorphToTest extends TestCase
 
     public function testEagerLoadingMorphedByModel()
     {
-        // Stopping here and mark this test as incomplete.
-        $this->markTestIncomplete(
-            'This test has not been implemented yet. Avoid using morph for now!'
-        );
-
         $user = User::create(['name' => 'Hmm...']);
         $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);
@@ -589,11 +575,6 @@ class PolymorphicHyperMorphToTest extends TestCase
 
     public function testDynamicLoadingMorphToModel()
     {
-        // Stopping here and mark this test as incomplete.
-        $this->markTestIncomplete(
-            'This test has not been implemented yet. Avoid using morph for now!'
-        );
-
         $user = User::create(['name' => 'Hmm...']);
         $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);
@@ -624,10 +605,6 @@ class PolymorphicHyperMorphToTest extends TestCase
 
     public function testEagerLoadingMorphToModel()
     {
-        // Stopping here and mark this test as incomplete.
-        $this->markTestIncomplete(
-            'This test has not been implemented yet. Avoid using morph for now!'
-        );
         $user = User::create(['name' => 'Hmm...']);
         $postCommentor = User::create(['name' => 'I Comment On Posts']);
         $videoCommentor = User::create(['name' => 'I Comment On Videos']);

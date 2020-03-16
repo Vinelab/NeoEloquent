@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasOne;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class User extends Model
 {
@@ -29,16 +29,6 @@ class HasOneRelationTest extends TestCase
     public function tearDown()
     {
         M::close();
-
-        $users = User::all();
-        $users->each(function ($u) {
-            $u->delete();
-        });
-
-        $accs = Profile::all();
-        $accs->each(function ($a) {
-            $a->delete();
-        });
 
         parent::tearDown();
     }
@@ -123,7 +113,9 @@ class HasOneRelationTest extends TestCase
         $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
+
         $relation->active = true;
+
         $this->assertTrue($relation->save());
 
         $retrieved = $user->profile()->edge($profile);

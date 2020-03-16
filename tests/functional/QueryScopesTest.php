@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class Misfit extends Model
 {
@@ -21,11 +21,6 @@ class Misfit extends Model
     {
         return $query->where('alias', 'edison');
     }
-
-    public function scopeWhereName($query, $name)
-    {
-        return $query->where('name', $name);
-    }
 }
 
 class QueryScopesTest extends TestCase
@@ -35,9 +30,7 @@ class QueryScopesTest extends TestCase
         M::close();
 
         $all = Misfit::all();
-        $all->each(function ($u) {
-            $u->delete();
-        });
+        $all->each(function ($u) { $u->delete(); });
 
         parent::tearDown();
     }
@@ -51,12 +44,12 @@ class QueryScopesTest extends TestCase
         Misfit::setConnectionResolver($resolver);
 
         $this->t = Misfit::create([
-            'name'  => 'Nikola Tesla',
+            'name' => 'Nikola Tesla',
             'alias' => 'tesla',
         ]);
 
         $this->e = misfit::create([
-            'name'  => 'Thomas Edison',
+            'name' => 'Thomas Edison',
             'alias' => 'edison',
         ]);
     }
@@ -67,9 +60,6 @@ class QueryScopesTest extends TestCase
         $this->assertEquals($this->t->toArray(), $t->toArray());
 
         $e = Misfit::stupidDickhead()->first();
-        $this->assertEquals($this->e->toArray(), $e->toArray());
-
-        $e = Misfit::whereName('Thomas Edison')->stupidDickhead()->first();
         $this->assertEquals($this->e->toArray(), $e->toArray());
     }
 }

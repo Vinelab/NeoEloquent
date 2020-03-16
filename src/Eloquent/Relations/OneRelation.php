@@ -2,18 +2,80 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Eloquent\Builder;
+use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Edges\Finder;
 
-abstract class OneRelation extends BelongsTo implements RelationInterface
+abstract class OneRelation extends Relation implements RelationInterface
 {
+    /**
+     * The foreign key of the parent model.
+     *
+     * @var string
+     */
+    protected $relationType;
+
+    /**
+     * The associated key on the parent model.
+     *
+     * @var string
+     */
+    protected $otherKey;
+
+    /**
+     * The name of the relationship.
+     *
+     * @var string
+     */
+    protected $relation;
+
     /**
      * The edge direction for this relationship.
      *
      * @var string
      */
     protected $edgeDirection = 'out';
+
+    /**
+     * Create a new belongs to relationship instance.
+     *
+     * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
+     * @param \Vinelab\NeoEloquent\Eloquent\Model   $parent
+     * @param string                                $relationType
+     * @param string                                $otherKey
+     * @param string                                $relation
+     */
+    public function __construct(Builder $query, Model $parent, $relationType, $otherKey, $relation)
+    {
+        $this->otherKey = $otherKey;
+        $this->relation = $relation;
+        $this->relationType = $relationType;
+
+        parent::__construct($query, $parent);
+    }
+
+    /**
+     * Set the constraints for an eager load of the relation.
+     *
+     * @param array $models
+     */
+    public function addEagerConstraints(array $models)
+    {
+        $this->query->startModel = $this->parent;
+        $this->query->endModel = $this->related;
+        $this->query->relationshipName = $this->relation;
+    }
+
+    /**
+     * Get the results of the relationship.
+     *
+     * @return mixed
+     */
+    public function getResults()
+    {
+        return $this->query->first();
+    }
 
     /**
      * Initialize the relation on a set of models.
@@ -39,15 +101,20 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
         return $models;
     }
 
+    public function delete($shouldKeepEndNode = false)
+    {
+        return (new Finder($this->query))->delete($shouldKeepEndNode);
+    }
+
     /**
      * Get an instance of the Edge[In, Out, etc.] relationship.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      * @param array                               $attributes
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
      */
-    abstract public function getEdge(Model $model = null, $attributes = []);
+    abstract public function getEdge(Model $model = null, $attributes = array());
 
     /**
      * Get the direction of the edge for this relationship.
@@ -64,9 +131,9 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
      *
      * @param \Illuminate\Database\Eloquent\Model $model
      *
-     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Relation
+     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge
      */
-    public function associate($model, $attributes = [])
+    public function associate($model, $attributes = array())
     {
         /*
          * For associated models we will need to create a unique relationship
@@ -93,7 +160,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
          */
 
         // Set the relation on the model
-        $this->parent->setRelation($this->relationName, $model);
+        $this->parent->setRelation($this->relation, $model);
 
         /*
          * Due to the fact that relationships in Graph are entities themselves
@@ -102,14 +169,64 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
          * it is a relationship with an edge incoming towards the $parent model and we call it
          * an "Edge" relationship.
          */
-        return $this->getEdge($model, $attributes);
+        $relation = $this->getEdge($model, $attributes);
+
+        $relation->save();
+
+        return $relation;
+    }
+
+    /**
+     * Dissociate previously associated model from the given parent.
+     *
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function dissociate()
+    {
+        $this->parent->setAttribute($this->relationType, null);
+
+        return $this->parent->setRelation($this->relation, null);
+    }
+
+    /**
+     * Update the parent model on the relationship.
+     *
+     * @param array $attributes
+     *
+     * @return mixed
+     */
+    public function update(array $attributes)
+    {
+        $instance = $this->getResults();
+
+        return $instance->fill($attributes)->save();
+    }
+
+    /**
+     * Get the fully qualified associated key of the relationship.
+     *
+     * @return string
+     */
+    public function getQualifiedOtherKeyName()
+    {
+        return $this->otherKey;
+    }
+
+    /**
+     * Get the associated key of the relationship.
+     *
+     * @return string
+     */
+    public function getOtherKey()
+    {
+        return $this->otherKey;
     }
 
     /**
      * Get the edge between the parent model and the given model or
      * the related model determined by the relation function name.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
      */
@@ -127,7 +244,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
      */
     protected function getEagerModelKeys(array $models)
     {
-        $keys = [];
+        $keys = array();
 
         /*
          * First we need to gather all of the keys from the parent models so we know what
@@ -142,7 +259,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
                 $model = reset($model);
             }
 
-            if (!is_null($value = $model->{$this->ownerKey})) {
+            if (!is_null($value = $model->{$this->otherKey})) {
                 $keys[] = $value;
             }
         }
@@ -153,7 +270,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
          * be what this developer is expecting in a case where this happens to them.
          */
         if (count($keys) == 0) {
-            return [];
+            return array();
         }
 
         return array_values(array_unique($keys));
@@ -163,7 +280,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
      * Match the eagerly loaded results to their parents.
      *
      * @param array                                    $models
-     * @param \Illuminate\Database\Eloquent\Collection $results
+     * @param \Vinelab\NeoEloquent\Eloquent\Collection $results
      * @param string                                   $relation
      *
      * @return array
@@ -171,7 +288,7 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
     public function match(array $models, Collection $results, $relation)
     {
         // We will need the parent node placeholder so that we use it to extract related results.
-        $parent = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parent = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         /*
          * Looping into all the parents to match back onto their children using
@@ -186,7 +303,8 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
                     // with the first key being the model we need, and the other being
                     // the related model so we'll just take the first model out of the array.
                     if (is_array($model)) {
-                        $model = reset($model);
+                        $identifier = $this->determineValueIdentifier($model);
+                        $model = $model[$identifier];
                     }
 
                     return $model->getKey() == $result[$parent]->getKey();
@@ -200,7 +318,8 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
                 // with the first key being the model we need, and the other being
                 // the related model so we'll just take the first model out of the array.
                 if (is_array($model)) {
-                    $model = reset($model);
+                    $identifier = $this->determineValueIdentifier($model);
+                    $model = $model[$identifier];
                 }
 
                 $model->setRelation($relation, $match[$relation]);
@@ -217,26 +336,26 @@ abstract class OneRelation extends BelongsTo implements RelationInterface
 
     public function getRelationType()
     {
-        return $this->foreignKey;
+        return $this->relationType;
     }
 
     public function getParentNode()
     {
-        return $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        return $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
     }
 
     public function getRelatedNode()
     {
-        return $this->query->getQuery()->modelAsNode($this->related->getTable());
+        return $this->query->getQuery()->modelAsNode($this->related->nodeLabel());
     }
 
     public function getLocalKey()
     {
-        return $this->ownerKey;
+        return $this->otherKey;
     }
 
     public function getParentLocalKeyValue()
     {
-        return $this->parent->{$this->ownerKey};
+        return $this->parent->{$this->otherKey};
     }
 }

@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class User extends Model
 {
@@ -30,14 +30,10 @@ class BelongsToRelationTest extends TestCase
         M::close();
 
         $users = User::all();
-        $users->each(function ($u) {
-            $u->delete();
-        });
+        $users->each(function ($u) { $u->delete(); });
 
         $locs = Location::all();
-        $locs->each(function ($l) {
-            $l->delete();
-        });
+        $locs->each(function ($l) { $l->delete(); });
 
         parent::tearDown();
     }
@@ -59,9 +55,9 @@ class BelongsToRelationTest extends TestCase
         $user = User::create(['name' => 'Daughter', 'alias' => 'daughter']);
         $relation = $location->user()->associate($user);
 
-        $this->assertTrue($relation->save());
-        $this->assertEquals($user, $location->user);
-        $this->assertTrue($relation->delete());
+        $fetched = Location::first();
+        $this->assertEquals($user->toArray(), $fetched->user->toArray());
+        $relation->delete();
     }
 
     public function testDynamicLoadingBelongsToFromFoundRecord()
@@ -69,8 +65,6 @@ class BelongsToRelationTest extends TestCase
         $location = Location::create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
         $user = User::create(['name' => 'Daughter', 'alias' => 'daughter']);
         $relation = $location->user()->associate($user);
-
-        $this->assertTrue($relation->save());
 
         $found = Location::find($location->id);
 
@@ -83,8 +77,6 @@ class BelongsToRelationTest extends TestCase
         $location = Location::create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
         $user = User::create(['name' => 'Daughter', 'alias' => 'daughter']);
         $relation = $location->user()->associate($user);
-
-        $this->assertTrue($relation->save());
 
         $found = Location::with('user')->find($location->id);
         $relations = $found->getRelations();
@@ -100,9 +92,6 @@ class BelongsToRelationTest extends TestCase
         $user = User::create(['name' => 'Daughter', 'alias' => 'daughter']);
         $relation = $location->user()->associate($user);
 
-        $saved = $relation->save();
-
-        $this->assertTrue($saved);
         $this->assertInstanceOf('Carbon\Carbon', $relation->created_at, 'make sure we set the created_at timestamp');
         $this->assertInstanceOf('Carbon\Carbon', $relation->updated_at, 'make sure we set the updated_at timestamp');
         $this->assertArrayHasKey('user', $location->getRelations(), 'make sure the user has been set as relation in the model');
@@ -146,7 +135,6 @@ class BelongsToRelationTest extends TestCase
 
         $jan = User::create(['name' => 'Jan Steen', 'alias' => 'jansteen']);
         $cheating = $location->user()->associate($jan);
-        $this->assertTrue($cheating->save());
 
         $withVan = $location->user()->edge($van);
         $this->assertNull($withVan);

@@ -2,9 +2,12 @@
 
 namespace Vinelab\NeoEloquent;
 
-use Illuminate\Support\ServiceProvider;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
+
+use Illuminate\Events\Dispatcher;
+use Illuminate\Support\ServiceProvider;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {
@@ -20,42 +23,47 @@ class NeoEloquentServiceProvider extends ServiceProvider
      *
      * @var array
      */
-    protected $components = [
+    protected $components = array(
         'Migration',
-    ];
+    );
 
     /**
      * Bootstrap the application events.
-     *
-     * @return void
      */
     public function boot()
     {
         Model::setConnectionResolver($this->app['db']);
 
-        Model::setEventDispatcher($this->app['events']);
+        Model::setEventDispatcher($this->app->make(Dispatcher::class));
     }
 
     /**
      * Register the service provider.
-     *
-     * @return void
      */
     public function register()
     {
         $this->app['db']->extend('neo4j', function ($config) {
-            $conn = new Connection($config);
+            $this->config = $config;
+            $conn = new ConnectionAdapter($config);
             $conn->setSchemaGrammar(new CypherGrammar());
 
             return $conn;
         });
 
-        $this->app->resolving(function ($app) {
-            if (class_exists('Illuminate\Foundation\AliasLoader')) {
-                $loader = \Illuminate\Foundation\AliasLoader::getInstance();
-                $loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
-                $loader->alias('Neo4jSchema', 'Vinelab\NeoEloquent\Facade\Neo4jSchema');
-            }
+        $this->app->bind('neoeloquent.connection', function() {
+            // $config is set by the previous binding,
+            // so that we get the correct configuration
+            // set by the user.
+            $conn = new NeoEloquentConnection($this->config);
+            $conn->setSchemaGrammar(new CypherGrammar());
+
+            return $conn;
+        });
+
+        $this->app->booting(function () {
+            $loader = \Illuminate\Foundation\AliasLoader::getInstance();
+            $loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
+            $loader->alias('Neo4jSchema', 'Vinelab\NeoEloquent\Facade\Neo4jSchema');
         });
 
         $this->registerComponents();
@@ -75,12 +83,10 @@ class NeoEloquentServiceProvider extends ServiceProvider
 
     /**
      * Register the migration service provider.
-     *
-     * @return void
      */
     protected function registerMigration()
     {
-        $this->app->register('Vinelab\NeoEloquent\MigrationServiceProvider');
+        $this->app->register(MigrationServiceProvider::class);
     }
 
     /**
@@ -90,7 +96,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return [
-        ];
+        return array(
+        );
     }
 }

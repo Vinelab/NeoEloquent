@@ -1,12 +1,13 @@
 <?php
 
-namespace Vinelab\NeoEloquent;
+namespace Vinelab\NeoEloquent\Exceptions;
 
-use Everyman\Neo4j\Exception as Neo4jException;
+use Exception;
+use Neoxygen\NeoClient\Exception\Neo4jException;
 
-class QueryException extends Neo4jException
+class QueryException extends Exception
 {
-    public function __construct($query, $bindings = [], $exception = null)
+    public function __construct($query, $bindings = array(), $exception = null)
     {
         // Let's handle Neo4j exceptions into the QueryException so that we extract
         // relevant info from it and send a helpful decent exception.
@@ -29,15 +30,18 @@ class QueryException extends Neo4jException
     /**
      * Format the message that should be printed out for devs.
      *
-     * @param \Everyman\Neo4j\Exception $exception
+     * @param \Neoxygen\NeoClient\Exception\Neo4jException $exception
      *
      * @return string
      */
     protected function formatMessage(Neo4jException $exception)
     {
-        $data = $exception->getData();
-        $exceptionName = isset($data['exception']) ? $data['exception'].': ' : '';
-        $message = isset($data['message']) ? $data['message'] : $exception->getMessage();
+        $e = substr($exception->getMessage(), strpos($exception->getMessage(), 'Neo4j Exception with code ') + 26, strpos($exception->getMessage(), ' and message') - 26);
+
+        $message = substr($exception->getMessage(), strpos($exception->getMessage(), 'message ') + 8);
+
+        $exceptionName = $e ? $e.': ' : Neo4jException::class;
+        $message = $message ? $message : $exception->getMessage();
 
         return $exceptionName.$message;
     }

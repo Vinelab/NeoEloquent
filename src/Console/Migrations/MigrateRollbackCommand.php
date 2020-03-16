@@ -2,25 +2,22 @@
 
 namespace Vinelab\NeoEloquent\Console\Migrations;
 
+use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Database\Migrations\Migrator;
 use Symfony\Component\Console\Input\InputOption;
 
-class MigrateRollbackCommand extends BaseCommand
+class MigrateRollbackCommand extends Command
 {
     use ConfirmableTrait;
 
     /**
-     * The console command name.
-     *
-     * @var string
+     * {@inheritDoc}
      */
     protected $name = 'neo4j:migrate:rollback';
 
     /**
-     * The console command description.
-     *
-     * @var string
+     * {@inheritDoc}
      */
     protected $description = 'Rollback the last database migration';
 
@@ -35,8 +32,6 @@ class MigrateRollbackCommand extends BaseCommand
      * Create a new migration rollback command instance.
      *
      * @param \Illuminate\Database\Migrations\Migrator $migrator
-     *
-     * @return void
      */
     public function __construct(Migrator $migrator)
     {
@@ -46,22 +41,19 @@ class MigrateRollbackCommand extends BaseCommand
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function handle()
+    public function fire()
     {
         if (!$this->confirmToProceed()) {
             return;
         }
 
-        $this->migrator->setConnection($this->option('database'));
+        $this->migrator->setConnection($this->input->getOption('database'));
 
-        $this->migrator->rollback(
-            $this->getMigrationPaths(), [
-                'pretend' => $this->option('pretend'),
-                'step'    => (int) $this->option('step'),
-            ]
-        );
+        $pretend = $this->input->getOption('pretend');
+
+        $this->migrator->rollback(['pretend' => $pretend]);
 
         // Once the migrator has run we will grab the note output and send it out to
         // the console screen, since the migrator itself functions without having
@@ -72,18 +64,16 @@ class MigrateRollbackCommand extends BaseCommand
     }
 
     /**
-     * Get the console command options.
-     *
-     * @return array
+     * {@inheritDoc}
      */
     protected function getOptions()
     {
-        return [
-            ['database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'],
-            ['force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'],
-            ['path', null, InputOption::VALUE_OPTIONAL, 'The path of migrations files to be executed.'],
-            ['pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'],
-            ['step', null, InputOption::VALUE_OPTIONAL, 'The number of migrations to be reverted.'],
-        ];
+        return array(
+            array('database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'),
+
+            array('force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'),
+
+            array('pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'),
+        );
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
-use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class BelongsTo extends OneRelation
 {
@@ -16,13 +16,11 @@ class BelongsTo extends OneRelation
 
     /**
      * Set the base constraints on the relation query.
-     *
-     * @return void
      */
     public function addConstraints()
     {
         if (static::$constraints) {
-            /**
+            /*
              * For belongs to relationships, which are essentially the inverse of has one
              * or has many relationships, we need to actually query on the primary key
              * of the parent model matching on the INCOMING relationship by name.
@@ -46,18 +44,18 @@ class BelongsTo extends OneRelation
              *          return $this->belongsTo('User', 'PHONE');
              *     }
              * }
-             */
+            */
 
             // Get the parent node's placeholder.
-            $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+            $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
             // Tell the query that we only need the related model returned.
-            $this->query->select($this->relationName);
+            $this->query->select($this->relation);
             // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = [$parentNode];
+            $this->query->getQuery()->from = array($parentNode);
             // Build the MATCH ()<-[]-() Cypher clause.
-            $this->query->matchIn($this->parent, $this->related, $this->relationName, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
+            $this->query->matchIn($this->parent, $this->related, $this->relation, $this->relationType, $this->otherKey, $this->parent->{$this->otherKey});
             // Add WHERE clause over the parent node's matching key = value.
-            $this->query->where($this->ownerKey, '=', $this->parent->{$this->ownerKey});
+            $this->query->where($this->otherKey, '=', $this->parent->{$this->otherKey});
         }
     }
 
@@ -65,82 +63,54 @@ class BelongsTo extends OneRelation
      * Set the constraints for an eager load of the relation.
      *
      * @param array $models
-     *
-     * @return void
      */
     public function addEagerConstraints(array $models)
     {
-        /**
+        /*
          * We'll grab the primary key name of the related models since it could be set to
          * a non-standard name and not "id". We will then construct the constraint for
          * our eagerly loading query so it returns the proper models from execution.
          */
 
+        parent::addEagerConstraints($models);
+
         // Grab the parent node placeholder
-        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->getTable());
+        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
 
         // Tell the builder to select both models of the relationship
-        $this->query->select($this->relationName, $parentNode);
+        $this->query->select($this->relation, $parentNode);
 
         // Setup for their mutation so they don't breed weird stuff like... humans ?!
-        $this->query->addMutation($this->relationName, $this->related);
+        $this->query->addMutation($this->relation, $this->related);
         $this->query->addMutation($parentNode, $this->parent);
 
         // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = [$parentNode];
+        $this->query->getQuery()->from = array($parentNode);
         // Build the MATCH ()<-[]-() Cypher clause.
-        $this->query->matchIn($this->parent, $this->related, $this->relationName, $this->foreignKey, $this->ownerKey, $this->parent->{$this->ownerKey});
+        $this->query->matchIn($this->parent, $this->related, $this->relation, $this->relationType, $this->otherKey, $this->parent->{$this->otherKey});
         // Add WHERE clause over the parent node's matching keys [values...].
-        $this->query->whereIn($this->ownerKey, $this->getEagerModelKeys($models));
+        $this->query->whereIn($this->otherKey, $this->getEagerModelKeys($models));
+
+        $this->query->startModel = $this->parent;
+        $this->query->endModel = $this->related;
+        $this->query->relationshipName = $this->relation;
     }
 
     /**
      * Get an instance of the EdgeIn relationship.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
      * @param array                               $attributes
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
      */
-    public function getEdge(EloquentModel $model = null, $attributes = [])
+    public function getEdge(Model $model = null, $attributes = array())
     {
-        $model = (!is_null($model)) ? $model : $this->parent->{$this->relationName};
+        $model = (!is_null($model)) ? $model : $this->parent->{$this->relation};
 
         // Indicate a unique relation since this only involves one other model.
         $unique = true;
 
-        return new EdgeIn($this->query, $this->parent, $model, $this->foreignKey, $attributes, $unique);
-    }
-
-    /**
-     * Get the results of the relationship.
-     *
-     * @return mixed
-     */
-    public function getResults()
-    {
-        return $this->query->first() ?: $this->getDefaultFor($this->parent);
-    }
-
-    /**
-     * Get the plain foreign key.
-     *
-     * @return string
-     */
-    public function getForeignKeyName()
-    {
-        $segments = explode('.', $this->getQualifiedForeignKeyName());
-
-        return end($segments);
-    }
-
-    /**
-     * Get the foreign key for the relationship.
-     *
-     * @return string
-     */
-    public function getQualifiedForeignKeyName()
-    {
-        return $this->foreignKey;
+        return new EdgeIn($this->query, $this->parent, $model, $this->relationType, $attributes, $unique);
     }
 }

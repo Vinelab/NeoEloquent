@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests;
 
 use Mockery as M;
-use PHPUnit\Framework\TestCase as PHPUnit;
 use Vinelab\NeoEloquent\Connection;
+use PHPUnit\Framework\TestCase as PHPUnit;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
 class Stub extends Model
@@ -29,6 +29,7 @@ class TestCase extends PHPUnit
         $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
 
         Stub::setConnectionResolver($resolver);
+        $this->flushDb();
     }
 
     public function tearDown()
@@ -61,15 +62,49 @@ class TestCase extends PHPUnit
 
     /**
      * Flush all database records.
-     *
-     * @return void
      */
     protected function flushDb()
     {
+        $client = $this->getClient()->writeSession();
+
+        $flushQuery = 'MATCH (n) DETACH DELETE n';
+
+        $client->run($flushQuery);
+    }
+
+    protected function getClient()
+    {
         $connection = (new Stub())->getConnection();
+
+        return $connection->getClient();
+    }
+
+    /**
+     * get the node by the given id.
+     *
+     * @param int $id
+     *
+     * @return \Neoxygen\NeoClient\Formatter\Node
+     */
+    protected function getNodeById($id)
+    {
+        //get the labels using NeoClient
+        $connection = $this->getConnectionWithConfig('neo4j');
         $client = $connection->getClient();
-        // Remove all relationships and related nodes
-        $query = new \Everyman\Neo4j\Cypher\Query($client, 'MATCH (n) OPTIONAL MATCH (n) - [r] - (c) DELETE n, r, c');
-        $query->getResultSet();
+        $result = $client->session()->run("MATCH (n) WHERE id(n)=$id RETURN n");
+
+        return $result->firstRecord()->valueByIndex(0);
+    }
+
+    /**
+     * Get node labels of a node by the given id.
+     *
+     * @param int $id
+     *
+     * @return array
+     */
+    protected function getNodeLabels($id)
+    {
+        return $this->getNodeById($id)->labels();
     }
 }

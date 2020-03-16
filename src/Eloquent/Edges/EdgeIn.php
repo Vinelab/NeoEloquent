@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
-class EdgeIn extends Relation
+class EdgeIn extends Edge
 {
     protected $direction = 'in';
 }

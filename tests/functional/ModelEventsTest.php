@@ -3,15 +3,16 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Events;
 
 use Mockery as M;
+use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
-use Vinelab\NeoEloquent\Tests\TestCase;
 
 class ModelEventsTest extends TestCase
 {
     public function tearDown()
     {
         M::close();
+
         parent::tearDown();
     }
 
@@ -65,29 +66,35 @@ class ModelEventsTest extends TestCase
         $this->assertTrue($user->restored_event);
     }
 
-    public function testCreateWithDispatchesEventsOnModelAndRelations()
+    public function testCreateWithDispatchedEventsChainSetOnBoot()
     {
-        $user = User::createWith(['name' => 'user name'], [
-            'singleCake' => ['name' => 'single'],
-            'cakes'      => [
-                ['name' => 'c 1'],
-                ['name' => 'c 2'],
-            ],
-        ]);
-        $this->assertTrue($user->creating_event);
-        $this->assertTrue($user->created_event);
-        $this->assertTrue($user->saving_event);
-        $this->assertTrue($user->saved_event);
-        $this->assertTrue($user->singleCake->creating_event);
-        $this->assertTrue($user->singleCake->created_event);
-        $this->assertTrue($user->singleCake->saving_event);
-        $this->assertTrue($user->singleCake->saved_event);
-        foreach ($user->cakes as $cake) {
-            $this->assertTrue($cake->creating_event);
-            $this->assertTrue($cake->created_event);
-            $this->assertTrue($cake->saving_event);
-            $this->assertTrue($cake->saved_event);
-        }
+        User::createWith(['name' => 'a'], ['friends' => ['name' => 'b']]);
+
+        $friend = Friend::first();
+
+        $this->assertTrue($friend->creating_event);
+        $this->assertTrue($friend->created_event);
+        $this->assertTrue($friend->saving_event);
+        $this->assertTrue($friend->saved_event);
+    }
+
+    public function testCreateWithDispatchedEventsChainSetOnBootWithExistingRelationModel()
+    {
+        $friend = Friend::create(['name' => 'b']);
+
+        $friend->creating_event = false;
+        $friend->created_event = false;
+        $friend->saving_event = false;
+        $friend->saved_event = false;
+
+        $friend->save();
+
+        User::createWith(['name' => 'a'], ['friends' => $friend]);
+
+        $this->assertNotTrue($friend->creating_event);
+        $this->assertNotTrue($friend->created_event);
+        $this->assertTrue($friend->saving_event);
+        $this->assertTrue($friend->saved_event);
     }
 }
 
@@ -116,20 +123,10 @@ class User extends Model
     // Will hold the events and their callbacks
     protected static $listenerStub = [];
 
-    public function cakes()
-    {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\Events\Cake', 'HAS_CAKE');
-    }
-
-    public function singleCake()
-    {
-        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\Events\Cake', 'HAS_SINGLE_CAKE');
-    }
-
     public static function boot()
     {
         // Mock a dispatcher
-        $dispatcher = M::mock('Illuminate\Events\dispatcher');
+        $dispatcher = M::mock('EventDispatcher');
         $dispatcher->shouldReceive('listen')->andReturnUsing(function ($event, $callback) {
             static::$listenerStub[$event] = $callback;
         });
@@ -138,7 +135,7 @@ class User extends Model
                 call_user_func(static::$listenerStub[$event], $model);
             }
         });
-        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function ($event, $model) {
+        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
             if (isset(static::$listenerStub[$event])) {
                 call_user_func(static::$listenerStub[$event], $model);
             }
@@ -175,6 +172,7 @@ class User extends Model
 
         self::deleted(function ($user) {
             $user->deleted_event = true;
+            unset($user->id);
             $user->save();
         });
 
@@ -187,44 +185,77 @@ class User extends Model
             $user->save();
         });
     }
+
+    public function friends()
+    {
+        return $this->hasMany(Friend::class, 'friend');
+    }
 }
 
-class Cake extends Model
+class Friend extends Model
 {
-    protected $label = 'Cake';
-    protected $fillable = ['name'];
+    protected $label = 'Friend';
+
+    protected $fillable = [
+        'name',
+        'creating_event',
+        'created_event',
+        'updating_event',
+        'updated_event',
+        'saving_event',
+        'saved_event',
+    ];
+
     // Will hold the events and their callbacks
     protected static $listenerStub = [];
 
     public static function boot()
     {
-        static::$dispatcher = User::$dispatcher;
-        // boot up model
-        parent::boot();
-        self::creating(function ($user) {
-            $user->creating_event = true;
+        // Mock a dispatcher
+        $dispatcher = M::mock('EventDispatcher');
+        $dispatcher->shouldReceive('listen')->andReturnUsing(function ($event, $callback) {
+            static::$listenerStub[$event] = $callback;
         });
-        self::created(function ($user) {
-            $user->created_event = true;
-            $user->save();
-        });
-        self::saving(function ($user) {
-            $user->saving_event = true;
-        });
-        self::saved(function ($user) {
-            if (!$user->saved_event) {
-                $user->saved_event = true;
-                $user->save();
+        $dispatcher->shouldReceive('until')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
             }
         });
-        self::deleting(function ($user) {
-            $user->deleting_event = true;
+        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
+            if (isset(static::$listenerStub[$event])) {
+                call_user_func(static::$listenerStub[$event], $model);
+            }
         });
-        self::deleted(function ($user) {
-            $user->deleted_event = true;
-            unset($user->id);
-            $user->save();
+
+        static::$dispatcher = $dispatcher;
+
+        // boot up model
+        parent::boot();
+
+        self::creating(function ($friend) {
+            $friend->creating_event = true;
         });
+
+        self::created(function ($friend) {
+            $friend->created_event = true;
+            $friend->save();
+        });
+
+        self::saving(function ($friend) {
+            $friend->saving_event = true;
+        });
+
+        self::saved(function ($friend) {
+            if (!$friend->saved_event) {
+                $friend->saved_event = true;
+                $friend->save();
+            }
+        });
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'friend');
     }
 }
 
@@ -260,7 +291,7 @@ class OBOne extends Model
         parent::boot();
 
         // Mock a dispatcher
-        $dispatcher = M::mock('Illuminate\Events\dispatcher');
+        $dispatcher = M::mock('OBEventDispatcher');
         $dispatcher->shouldReceive('listen')->andReturnUsing(function ($event, $callback) {
             static::$listenerStub[$event] = $callback;
         });
@@ -274,7 +305,7 @@ class OBOne extends Model
                 call_user_func(static::$listenerStub[$event], $model);
             }
         });
-        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function ($event, $model) {
+        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
             if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false) {
                 list($listener, $method) = explode('@', static::$listenerStub[$event]);
                 if (isset(static::$listenerStub[$event])) {
@@ -286,7 +317,6 @@ class OBOne extends Model
         });
 
         static::$dispatcher = $dispatcher;
-        self::observe(new UserObserver());
     }
 }
 
@@ -324,6 +354,7 @@ class UserObserver
     public static function deleted($ob)
     {
         $ob->ob_deleted_event = true;
+        unset($ob->id);
         $ob->save();
     }
 
@@ -338,3 +369,5 @@ class UserObserver
         $ob->save();
     }
 }
+
+OBOne::observe(new UserObserver());

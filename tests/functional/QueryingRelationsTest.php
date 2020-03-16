@@ -2,11 +2,11 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\QueryingRelations;
 
-use Carbon\Carbon;
 use DateTime;
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Carbon\Carbon;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class QueryingRelationsTest extends TestCase
 {
@@ -28,11 +28,11 @@ class QueryingRelationsTest extends TestCase
         $postWithComment->comments()->save($comment);
 
         // add two comments to $postWithTwoComments
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $postWithTwoComments->comments()->create(['text' => "Comment $i"]);
         }
         // add ten comments to $postWithTenComments
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 10; ++$i) {
             $postWithTenComments->comments()->create(['text' => "Comment $i"]);
         }
 
@@ -61,33 +61,40 @@ class QueryingRelationsTest extends TestCase
     public function testQueryingNestedHas()
     {
         // user with a role that has only one permission
-        $user = User::create(['name' => 'espresso']);
-        $role = Role::create(['alias' => 'gyrados']);
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
         $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
         $role->permissions()->save($permission);
         $user->roles()->save($role);
+
         // user with a role that has 2 permissions
-        $userWithTwo = User::create(['name' => 'cappuccino']);
+        $userWithTwo = User::create(['name' => 'frappe']);
         $roleWithTwo = Role::create(['alias' => 'pikachu']);
         $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
         $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
+
+
         // user with a role that has no permission
         $user2 = User::Create(['name' => 'u2']);
         $role2 = Role::create(['alias' => 'nosperm']);
+
         $user2->roles()->save($role2);
+
         // get the users where their roles have at least one permission.
         $found = User::has('roles.permissions')->get();
+
         $this->assertEquals(2, count($found));
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[1]);
-        //$this->assertEquals($user->toArray(), $found[1]->toArray());
-        //TODO re-implement this. It might have to do with us using whereCarried on Has relations
-        /*$moreThanOnePermission = User::has('roles.permissions', '>=', 2)->get();
+        $this->assertEquals($userWithTwo->toArray(), $found->where('name', 'frappe')->first()->toArray());
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[0]);
+        $this->assertEquals($user->toArray(), $found->where('name', 'cappuccino')->first()->toArray());
+
+        $moreThanOnePermission = User::has('roles.permissions', '>=', 2)->get();
         $this->assertEquals(1, count($moreThanOnePermission));
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $moreThanOnePermission->first());
-        $this->assertEquals($userWithTwo->toArray(), $moreThanOnePermission->first()->toArray());*/
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $moreThanOnePermission[0]);
+        $this->assertEquals($userWithTwo->toArray(), $moreThanOnePermission[0]->toArray());
     }
 
     public function testQueryingWhereHasOne()
@@ -109,28 +116,28 @@ class QueryingRelationsTest extends TestCase
         $anotherManager->roles()->save($manager);
 
         // check admins
-        $admins = User::whereHas('roles', function ($q) {
-            $q->where('alias', 'admin');
-        })->get();
+        $admins = User::whereHas('roles', function ($q) { $q->where('alias', 'admin'); })->get();
         $this->assertEquals(2, count($admins));
-        $expectedAdmins = [$anotherAdmin, $mrAdmin];
+        $expectedAdmins = [$mrAdmin, $anotherAdmin];
+        $expectedAdmins = array_map(function ($admin) {
+            return $admin->toArray();
+        }, $expectedAdmins);
         foreach ($admins as $key => $admin) {
-            $this->assertEquals($admin->toArray(), $expectedAdmins[$key]->toArray());
+            $this->assertContains($admin->toArray(), $expectedAdmins);
         }
         // check editors
-        $editors = User::whereHas('roles', function ($q) {
-            $q->where('alias', 'editor');
-        })->get();
+        $editors = User::whereHas('roles', function ($q) { $q->where('alias', 'editor'); })->get();
         $this->assertEquals(1, count($editors));
         $this->assertEquals($mrsEditor->toArray(), $editors->first()->toArray());
         // check managers
-        $expectedManagers = [$anotherManager, $mrsManager];
-        $managers = User::whereHas('roles', function ($q) {
-            $q->where('alias', 'manager');
-        })->get();
+        $expectedManagers = [$mrsManager, $anotherManager];
+        $managers = User::whereHas('roles', function ($q) { $q->where('alias', 'manager'); })->get();
         $this->assertEquals(2, count($managers));
+        $expectedManagers = array_map(function ($manager) {
+            return $manager->toArray();
+        }, $expectedManagers);
         foreach ($managers as $key => $manager) {
-            $this->assertEquals($manager->toArray(), $expectedManagers[$key]->toArray());
+            $this->assertContains($manager->toArray(), $expectedManagers);
         }
     }
 
@@ -173,16 +180,70 @@ class QueryingRelationsTest extends TestCase
         $user->roles()->save($role);
         $user->account()->save($account);
 
-        $found = User::whereHas('roles', function ($q) use ($role) {
-            $q->where('id', $role->id);
-        })
-            ->whereHas('account', function ($q) use ($account) {
-                $q->where('id', $account->id);
-            })
+        $found = User::whereHas('roles', function ($q) use ($role) { $q->where('id', $role->id); })
+            ->whereHas('account', function ($q) use ($account) { $q->where('id', $account->id); })
             ->where('id', $user->id)->first();
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found);
         $this->assertEquals($user->toArray(), $found->toArray());
+    }
+
+    public function testQueryingNestedWhereHasUsingId()
+    {
+        // user with a role that has only one permission
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
+        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $role->permissions()->save($permission);
+        $user->roles()->save($role);
+
+        // user with a role that has 2 permissions
+        $userWithTwo = User::create(['name' => 'cappuccino']);
+        $roleWithTwo = Role::create(['alias' => 'pikachu']);
+        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
+        $userWithTwo->roles()->save($roleWithTwo);
+
+        $found = User::whereHas('roles', function($q) use($role, $permission) {
+            $q->where($role->getKeyName(), $role->getKey());
+            $q->whereHas('permissions', function($q) use($permission) {
+                $q->where($permission->getKeyName(), $permission->getKey());
+            });
+        })->get();
+
+        $this->assertEquals(1, count($found));
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
+        $this->assertEquals($user->toArray(), $found->first()->toArray());
+    }
+
+    public function testQueryingNestedWhereHasUsingProperty()
+    {
+        // user with a role that has only one permission
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['alias' => 'pikachu']);
+        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $role->permissions()->save($permission);
+        $user->roles()->save($role);
+
+        // user with a role that has 2 permissions
+        $userWithTwo = User::create(['name' => 'cappuccino']);
+        $roleWithTwo = Role::create(['alias' => 'pikachu']);
+        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
+        $userWithTwo->roles()->save($roleWithTwo);
+
+        $found = User::whereHas('roles', function($q) use($role, $permission) {
+            $q->where('alias', $role->alias);
+            $q->whereHas('permissions', function($q) use($permission) {
+                $q->where('alias', $permission->alias);
+            });
+        })->get();
+
+        $this->assertEquals(1, count($found));
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
+        $this->assertEquals($user->toArray(), $found->first()->toArray());
     }
 
     public function testCreatingModelWithSingleRelation()
@@ -206,58 +267,6 @@ class QueryingRelationsTest extends TestCase
         $this->assertEquals($account, $attrs);
     }
 
-    public function testQueryingNestedWhereHasUsingId()
-    {
-        // user with a role that has only one permission
-        $user = User::create(['name' => 'cappuccino']);
-        $role = Role::create(['alias' => 'pikachu']);
-        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
-        $role->permissions()->save($permission);
-        $user->roles()->save($role);
-        // user with a role that has 2 permissions
-        $userWithTwo = User::create(['name' => 'cappuccino']);
-        $roleWithTwo = Role::create(['alias' => 'pikachu']);
-        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
-        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
-        $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
-        $userWithTwo->roles()->save($roleWithTwo);
-        $found = User::whereHas('roles', function ($q) use ($role, $permission) {
-            $q->where($role->getKeyName(), $role->getKey());
-            $q->whereHas('permissions', function ($q) use ($permission) {
-                $q->where($permission->getKeyName(), $permission->getKey());
-            });
-        })->get();
-        $this->assertEquals(1, count($found));
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
-        $this->assertEquals($user->toArray(), $found->first()->toArray());
-    }
-
-    public function testQueryingNestedWhereHasUsingProperty()
-    {
-        // user with a role that has only one permission
-        $user = User::create(['name' => 'cappuccino']);
-        $role = Role::create(['alias' => 'pikachu']);
-        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
-        $role->permissions()->save($permission);
-        $user->roles()->save($role);
-        // user with a role that has 2 permissions
-        $userWithTwo = User::create(['name' => 'cappuccino']);
-        $roleWithTwo = Role::create(['alias' => 'pikachu']);
-        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
-        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
-        $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
-        $userWithTwo->roles()->save($roleWithTwo);
-        $found = User::whereHas('roles', function ($q) use ($role, $permission) {
-            $q->where('alias', $role->alias);
-            $q->whereHas('permissions', function ($q) use ($permission) {
-                $q->where('alias', $permission->alias);
-            });
-        })->get();
-        $this->assertEquals(1, count($found));
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found->first());
-        $this->assertEquals($user->toArray(), $found->first()->toArray());
-    }
-
     public function testCreatingModelWithRelations()
     {
         // Creating a role with its permissions.
@@ -265,7 +274,7 @@ class QueryingRelationsTest extends TestCase
 
         $permissions = [
             new Permission(['title' => 'Create Records', 'alias' => 'create', 'dodid' => 'done']),
-            new Permission(['title' => 'Read Records', 'alias'   => 'read', 'dont be so' => 'down']),
+            new Permission(['title' => 'Read Records', 'alias' => 'read', 'dont be so' => 'down']),
             ['title' => 'Update Records', 'alias' => 'update'],
             ['title' => 'Delete Records', 'alias' => 'delete'],
         ];
@@ -278,7 +287,7 @@ class QueryingRelationsTest extends TestCase
 
         foreach ($role->permissions as $key => $permission) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Permission', $permission);
-            $this->assertGreaterThanOrEqual(0, $permission->id);
+            $this->assertGreaterThan(0, $permission->id);
             $this->assertNotNull($permission->created_at);
             $this->assertNotNull($permission->updated_at);
             $attrs = $permission->toArray();
@@ -304,23 +313,23 @@ class QueryingRelationsTest extends TestCase
 
         $photos = [
             [
-                'url'      => 'http://somewere.in.bedlam.net',
-                'caption'  => 'Gunatanamo',
+                'url' => 'http://somewere.in.bedlam.net',
+                'caption' => 'Gunatanamo',
                 'metadata' => '...',
             ],
             [
-                'url'      => 'http://another-place.in.bedlam.net',
-                'caption'  => 'Gunatanamo',
+                'url' => 'http://another-place.in.bedlam.net',
+                'caption' => 'Gunatanamo',
                 'metadata' => '...',
             ],
         ];
 
         $videos = [
             [
-                'title'       => 'Fun at the borders',
+                'title' => 'Fun at the borders',
                 'description' => 'Once upon a time...',
-                'stream_url'  => 'http://stream.that.shit.io',
-                'thumbnail'   => 'http://sneak.peek.io',
+                'stream_url' => 'http://stream.that.shit.io',
+                'thumbnail' => 'http://sneak.peek.io',
             ],
         ];
 
@@ -332,7 +341,7 @@ class QueryingRelationsTest extends TestCase
 
         foreach ($post->photos as $key => $photo) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', $photo);
-            $this->assertGreaterThanOrEqual(0, $photo->id);
+            $this->assertGreaterThan(0, $photo->id);
             $this->assertNotNull($photo->created_at);
             $this->assertNotNull($photo->updated_at);
             $attrs = $photo->toArray();
@@ -375,7 +384,7 @@ class QueryingRelationsTest extends TestCase
     public function testCreatingModelWithMultiInverseRelations()
     {
         $users = new User(['name' => 'safastak']);
-        $role = Role::createWith(['alias'=>'admin'], compact('users'));
+        $role = Role::createWith(['alias' => 'admin'], compact('users'));
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $role);
         $this->assertTrue($role->exists);
@@ -406,7 +415,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -433,7 +442,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertNotNull($post->updated_at);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -458,7 +467,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertNotNull($post->updated_at);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -484,7 +493,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertNotNull($post->updated_at);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -504,7 +513,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(2, count($related));
 
         foreach ($related as $key => $tag) {
@@ -521,7 +530,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(1, count($related));
         $this->assertEquals($tag->toArray(), $related->first()->toArray());
     }
@@ -534,7 +543,7 @@ class QueryingRelationsTest extends TestCase
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
 
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(1, count($related));
         $this->assertEquals($tag->toArray(), $related->first()->toArray());
     }
@@ -543,16 +552,16 @@ class QueryingRelationsTest extends TestCase
     {
         $tag = Tag::create(['title' => 'php']);
         $tags = [
-            $tag,
-            ['title' => 'developer'],
-            new Tag(['title' => 'laravel']),
+                $tag,
+                ['title' => 'developer'],
+                new Tag(['title' => 'laravel']),
         ];
 
         $post = Post::createWith(['title' => 'foo', 'body' => 'bar'], compact('tags'));
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
         $related = $post->tags;
-        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $related);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $related);
         $this->assertEquals(3, count($related));
 
         $tags = Tag::all();
@@ -571,7 +580,7 @@ class QueryingRelationsTest extends TestCase
     {
         $post = Post::createWith(['title' => 'tayta', 'body' => 'one hot bowy'], [
             'photos' => ['url' => 'my.photo.url'],
-            'cover'  => ['url' => 'my.cover.url'],
+            'cover' => ['url' => 'my.cover.url'],
         ]);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', $post);
@@ -600,16 +609,14 @@ class QueryingRelationsTest extends TestCase
     public function testEagerLoadingNestedRelationship()
     {
         $user = User::create(['name' => 'cappuccino']);
-        $role = Role::create(['alias' => 'pikachu']);
+        $role = Role::createWith(['alias' => 'pikachu'], ['permissions' => ['title' => 'Perr', 'alias' => 'perr']]);
 
         $user->roles()->save($role);
         // Eager load so that when we assert we make sure they're there
         $user->roles->first()->permissions;
 
         $found = User::with('roles.permissions')
-            ->whereHas('roles', function ($q) use ($role) {
-                $q->where('id', $role->id);
-            })
+            ->whereHas('roles', function ($q) use ($role) { $q->where('id', $role->id); })
             ->first();
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found);
@@ -628,9 +635,7 @@ class QueryingRelationsTest extends TestCase
         $acc = $role->users->first()->account;
 
         $roleFound = Role::with('users.account')
-            ->whereHas('users', function ($q) use ($user) {
-                $q->where('id', $user->getKey());
-            })
+            ->whereHas('users', function ($q) use ($user) { $q->where('id', $user->getKey()); })
             ->first();
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $roleFound);
@@ -651,9 +656,7 @@ class QueryingRelationsTest extends TestCase
         $org = $role->users->first()->organization;
 
         $roleFound = Role::with('users.organization')
-            ->whereHas('users', function ($q) use ($user) {
-                $q->where('id', $user->getKey());
-            })
+            ->whereHas('users', function ($q) use ($user) { $q->where('id', $user->getKey()); })
             ->first();
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', $roleFound);
@@ -701,23 +704,19 @@ class QueryingRelationsTest extends TestCase
 
         $user = User::createWith(['name' => 'Some Name', 'dob' => $yesterday],
             ['colleagues' => ['name' => 'Protectron', 'dob' => $dt],
-            ]);
+        ]);
 
-        $format = $user->getDateFormat();
-        $houwe = User::find($user->id);
+        $houwe = User::first();
         $colleague = $houwe->colleagues()->first();
 
-        $this->assertEquals($yesterday->format($format), $houwe->dob);
-        $this->assertEquals($dt->format($format), $colleague->dob);
+        $this->assertEquals($yesterday->format(User::getDateFormat()), $houwe->dob);
+        $this->assertEquals($dt->format(User::getDateFormat()), $colleague->dob);
     }
 
     public function testSavingRelationWithDateTimeAndCarbonInstances()
     {
         $user = User::create(['name' => 'Andrew Hale']);
-
-        $format = $user->getDateFormat();
-
-        $yesterday = Carbon::now()->subDay();
+        $yesterday = Carbon::now();
         $brother = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
 
         $dt = new DateTime();
@@ -726,11 +725,11 @@ class QueryingRelationsTest extends TestCase
         $user->colleagues()->save($someone);
         $user->colleagues()->save($brother);
 
-        $andrew = User::where('name', 'Andrew Hale')->first();
+        $andrew = User::first();
 
-        $colleagues = $andrew->colleagues()->orderBy('dob', 'DESC')->get();
-        $this->assertEquals($dt->format($format), $colleagues[0]->dob);
-        $this->assertEquals($yesterday->format($format), $colleagues[1]->dob);
+        $colleagues = $andrew->colleagues()->get();
+        $this->assertEquals($dt->format(User::getDateFormat()), $colleagues[0]->dob);
+        $this->assertEquals($yesterday->format(User::getDateFormat()), $colleagues[1]->dob);
     }
 
     public function testCreateWithReturnsRelatedModelsAsRelations()
@@ -739,7 +738,7 @@ class QueryingRelationsTest extends TestCase
             ['title' => 'foo tit', 'body' => 'some body'],
             [
                 'cover' => ['url' => 'http://url'],
-                'tags'  => ['title' => 'theTag'],
+                'tags' => ['title' => 'theTag'],
             ]
         );
 
@@ -756,6 +755,68 @@ class QueryingRelationsTest extends TestCase
 
         $this->assertNotEmpty($tags[0]['id']);
         $this->assertEquals('theTag', $tags[0]['title']);
+    }
+
+    public function testEagerloadingRelationships()
+    {
+        $fooPost = Post::createWith(
+            ['title' => 'foo tit', 'body' => 'some body'],
+            [
+                'cover' => ['url' => 'http://url'],
+                'tags' => ['title' => 'theTag'],
+            ]
+        );
+
+        $anotherPost = Post::createWith(
+            ['title' => 'another tit', 'body' => 'another body'],
+            [
+                'cover' => ['url' => 'http://another.url'],
+                'tags' => ['title' => 'anotherTag'],
+            ]
+        );
+
+        $posts = Post::with(['cover', 'tags'])->get();
+
+        $this->assertEquals(2, count($posts));
+
+        foreach ($posts as $post) {
+            $this->assertNotNull($post->cover);
+            $this->assertEquals(1, count($post->tags));
+        }
+
+        $this->assertEquals('http://url', $posts[0]->cover->url);
+        $this->assertEquals('theTag', $posts[0]->tags->first()->title);
+
+        $this->assertEquals('http://another.url', $posts[1]->cover->url);
+        $this->assertEquals('anotherTag', $posts[1]->tags->first()->title);
+    }
+
+    public function testBulkDeletingOutgoingRelation()
+    {
+        $fooPost = Post::createWith(
+            ['title' => 'foo tit', 'body' => 'some body'],
+            [
+                'cover' => ['url' => 'http://url'],
+                'tags' => [
+                    ['title' => 'theTag'],
+                    ['title' => 'anotherTag'],
+                ],
+            ]
+        );
+
+        $fooPost->tags()->delete();
+
+        $this->assertEquals(0, count(Post::first()->tags));
+    }
+
+    public function testBulkDeletingIncomingRelation()
+    {
+        $users = [new User(['name' => 'safastak']), new User(['name' => 'boukharest'])];
+        $role = Role::createWith(['alias' => 'admin'], compact('users'));
+
+        $role->users()->delete();
+
+        $this->assertEquals(0, count(Role::first()->users));
     }
 }
 

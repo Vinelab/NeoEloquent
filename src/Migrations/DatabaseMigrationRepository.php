@@ -2,10 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Migrations;
 
-use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Migrations\MigrationRepositoryInterface;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\ConnectionResolverInterface;
 use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
+use Vinelab\NeoEloquent\Eloquent\Model;
 
 class DatabaseMigrationRepository implements MigrationRepositoryInterface
 {
@@ -34,8 +34,6 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
      * @param \Illuminate\Database\ConnectionResolverInterface $resolver
      * @param \Vinelab\NeoEloquent\Schema\Builder              $schema
      * @param \Vinelab\NeoEloquent\Eloquent\Model              $model
-     *
-     * @return void
      */
     public function __construct(ConnectionResolverInterface $resolver, SchemaBuilder $schema, Model $model)
     {
@@ -45,15 +43,28 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function getRan()
     {
-        return $this->model->all()->pluck('migration')->toArray();
+        return $this->model->all()->lists('migration');
     }
 
     /**
-     * {@inheritdoc}
+     * Get list of migrations.
+     *
+     * @param  int  $steps
+     * @return array
+     */
+    public function getMigrations($steps)
+    {
+        $query = $this->label()->where('batch', '>=', '1');
+
+        return $query->orderBy('migration', 'desc')->take($steps)->get()->all();
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function getLast()
     {
@@ -61,17 +72,17 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function log($file, $batch)
     {
-        $record = ['migration' => $file, 'batch' => $batch];
+        $record = array('migration' => $file, 'batch' => $batch);
 
         $this->model->create($record);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function delete($migration)
     {
@@ -79,7 +90,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function getNextBatchNumber()
     {
@@ -87,7 +98,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function getLastBatchNumber()
     {
@@ -95,14 +106,15 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function createRepository()
     {
+        return;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function repositoryExists()
     {
@@ -116,7 +128,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
      */
     protected function label()
     {
-        return $this->getConnection()->table([$this->getLabel()]);
+        return $this->getConnection()->table(array($this->getLabel()));
     }
 
     /**
@@ -140,7 +152,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function setSource($name)
     {
@@ -185,52 +197,5 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     public function getMigrationModel()
     {
         return $this->model;
-    }
-
-    /**
-     * Get list of migrations.
-     *
-     * @param int $steps
-     *
-     * @return array
-     */
-    public function getMigrations($steps)
-    {
-        $query = $this->label()->where('batch', '>=', 1);
-        $results = [];
-
-        $rows = $query->orderBy('batch', 'desc')
-            ->orderBy('migration', 'desc')
-            ->take($steps)->get();
-
-        $columns = $rows->getColumns();
-
-        foreach ($rows as $row) {
-            $attributes = [];
-
-            foreach ($columns as $column) {
-                foreach ($row[$column]->getProperties() as $key => $value) {
-                    $attributes[$key] = $value;
-                }
-            }
-
-            $results[] = $attributes;
-        }
-
-        return $results;
-    }
-
-    /**
-     * Get the completed migrations with their batch numbers.
-     *
-     * @return array
-     */
-    public function getMigrationBatches()
-    {
-        return $this->model
-            ->orderBy('batch', 'asc')
-            ->orderBy('migration', 'asc')
-            ->get()
-            ->pluck('batch', 'migration')->all();
     }
 }
