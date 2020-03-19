@@ -56,8 +56,11 @@ class Finder extends Delegate
             $path->setContext(Path::ContextRelationship);
 
             $relationships = $path->getRelationships();
-
-            return  reset($relationships);
+            if count($relationships) {
+                return null;
+            }
+            // Return the first found relationship or null if no relationships are found 
+            return reset($relationships) ? reset($relationships) : null;
         }
     }
 
