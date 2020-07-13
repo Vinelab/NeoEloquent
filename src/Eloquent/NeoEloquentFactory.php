@@ -20,6 +20,6 @@ class NeoEloquentFactory extends EloquentFactory
      */
     public function of($class, $name = 'default')
     {
-        return new FactoryBuilder($class, $name, $this->definitions, $this->states, $this->faker);
+        return new NeoFactoryBuilder($class, $name, $this->definitions, $this->states, $this->faker);
     }
 }
