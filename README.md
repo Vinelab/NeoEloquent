@@ -1212,3 +1212,25 @@ Check out the [createWith()](#createwith) method on how you can achieve this in 
 
 > Tests marked as incomplete means they are either known issues or non-supported features,
 check included messages for more info.
+
+## Factories
+ 
+  > You can `make/create` NeoEloquent models in same style as default Laravel `factory()` helper works,
+  > using `neo_factory()` that can be enabled after you include NeoEloquent `helpers.php` to your composer.json.
+
+ - add `helpers.php` to `composer.json`:
+ ```json
+    "autoload": {
+        "classmap": [
+            "database"
+        ],
+        "psr-4": {
+            "Trellis\\Graph\\": "app/",
+            "Trellis\\Graph\\Tests\\": "tests/"
+        },
+        "files": [
+            "vendor/vinelab/neoeloquent/src/helpers.php"
+        ]
+```
+ - define needed factories inside `database/factories/`
+ - use `neo_factory()` in the same style with default Laravel `factory()`.
