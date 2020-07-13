@@ -1109,16 +1109,7 @@ check included messages for more info.
 
 ## Factories
  
-  > You can `make/create` NeoEloquent models in same style as default Laravel `factory()` helper works,
-  > using `neo_factory()` that can be enabled after you include NeoEloquent `helpers.php` to your composer.json.
+  > You can use default Laravel `factory()` helper for NeoEloquent models too.
 
- - add `helpers.php` to `composer.json`;
- ```json
-    "autoload": {
-        "files": [
-            "vendor/vinelab/neoeloquent/src/helpers.php"
-        ]
-```
- - run `composer dump-autoload`;
  - define needed factories inside `database/factories/`;
- - use `neo_factory()` in the same style with default Laravel `factory()`.
+ - use `factory()` in the same style as default Laravel `factory()`.

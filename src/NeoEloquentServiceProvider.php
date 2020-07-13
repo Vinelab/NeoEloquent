@@ -68,6 +68,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
             $loader = \Illuminate\Foundation\AliasLoader::getInstance();
             $loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
             $loader->alias('Neo4jSchema', 'Vinelab\NeoEloquent\Facade\Neo4jSchema');
+            $loader->alias('Illuminate\Database\Eloquent\Factory', 'Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory');
         });
     
         $this->app->singleton(NeoEloquentFactory::class, function ($app) {
