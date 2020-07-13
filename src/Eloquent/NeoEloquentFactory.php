@@ -1,7 +1,7 @@
 <?php namespace Vinelab\NeoEloquent\Eloquent;
 
 use Symfony\Component\Finder\Finder;
-use Vinelab\NeoEloquent\Eloquent\FactoryBuilder;
+use Vinelab\NeoEloquent\Eloquent\NeoFactoryBuilder;
 use Illuminate\Database\Eloquent\Factory as EloquentFactory;
 
 /**
@@ -16,7 +16,7 @@ class NeoEloquentFactory extends EloquentFactory
      *
      * @param $class
      * @param  string  $name
-     * @return \Vinelab\NeoEloquent\Eloquent\FactoryBuilder
+     * @return \Vinelab\NeoEloquent\Eloquent\NeoFactoryBuilder
      */
     public function of($class, $name = 'default')
     {
