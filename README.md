@@ -1106,3 +1106,10 @@ Check out the [createWith()](#createwith) method on how you can achieve this in 
 
 > Tests marked as incomplete means they are either known issues or non-supported features,
 check included messages for more info.
+
+## Factories
+ 
+  > You can use default Laravel `factory()` helper for NeoEloquent models too.
+
+ - define needed factories inside `database/factories/`(read more)[https://laravel.com/docs/5.6/database-testing#writing-factories];
+ - use `factory()` in the same style as default Laravel `factory()`.

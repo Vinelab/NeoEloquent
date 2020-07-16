@@ -2,12 +2,16 @@
 
 namespace Vinelab\NeoEloquent;
 
+
 use Vinelab\NeoEloquent\Eloquent\Model;
+use Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
 
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
+
+use Faker\Generator as FakerGenerator;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {
@@ -64,6 +68,13 @@ class NeoEloquentServiceProvider extends ServiceProvider
             $loader = \Illuminate\Foundation\AliasLoader::getInstance();
             $loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
             $loader->alias('Neo4jSchema', 'Vinelab\NeoEloquent\Facade\Neo4jSchema');
+            $loader->alias('Illuminate\Database\Eloquent\Factory', 'Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory');
+        });
+    
+        $this->app->singleton(NeoEloquentFactory::class, function ($app) {
+            return NeoEloquentFactory::construct(
+                $app->make(FakerGenerator::class), $this->app->databasePath('factories')
+            );
         });
 
         $this->registerComponents();
