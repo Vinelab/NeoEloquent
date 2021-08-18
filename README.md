@@ -2,9 +2,7 @@
 
 # NeoEloquent
 
-*This is a work in progress and is currently in the debugging phase, hence not usabale as-is.*
-
-Neo4j Graph Eloquent Driver for Laravel
+Neo4j Graph Eloquent Driver for Laravel 5.
 
 ## Quick Reference
 
@@ -21,24 +19,14 @@ Neo4j Graph Eloquent Driver for Laravel
 
 ## Installation
 
-Add the package to your `composer.json` and run `composer update`.
+Run `composer require vinelab/neoeloquent`
 
-### Laravel 5
-
-```json
-{
-    "require": {
-        "vinelab/neoeloquent": "1.2.*"
-    }
-}
-```
-
-### Laravel 4
+Or add the package to your `composer.json` and run `composer update`.
 
 ```json
 {
     "require": {
-        "vinelab/neoeloquent": "1.1.*"
+        "vinelab/neoeloquent": "1.5.*"
     }
 }
 ```
