@@ -9,6 +9,8 @@ services:
             - ${DOCKER_HOST_APP_PORT:-8000}:80
         volumes:
             - ./:/code:cached
+        environment:
+            - XDEBUG_CONFIG=remote_host=host.docker.internal
 
     # Docker Image: https://hub.docker.com/_/neo4j
     neo4j:

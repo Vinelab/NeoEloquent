@@ -7,6 +7,7 @@ use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use GraphAware\Neo4j\Client\Formatter\Result;
 use Vinelab\NeoEloquent\Traits\ResultTrait;
+use GraphAware\Bolt\Result\Result as GraphawareResult;
 use GraphAware\Common\Result\RecordViewInterface;
 
 class Finder extends Delegate
@@ -92,7 +93,7 @@ class Finder extends Delegate
 
         $result = $this->connection->delete($cypher, $builder->getBindings());
 
-        if ($result instanceof Result) {
+        if ($result instanceof GraphawareResult) {
             $result = true;
         }
 

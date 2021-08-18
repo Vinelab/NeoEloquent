@@ -190,7 +190,7 @@ abstract class Edge extends Delegate
     {
         $results = $this->finder->firstRelationWithNodes($this->parent, $this->related, $this->type, $this->direction);
 
-        return (count($results->getRecords()) > 1) ? $this->newFromRelation($results->firstRecord()) : null;
+        return (count($results->getRecords()) > 0) ? $this->newFromRelation($results->firstRecord()) : null;
     }
 
     /**
