@@ -606,7 +606,7 @@ class Connection implements ConnectionInterface
 
             /** @var SummarizedResult $summarizedResult */
             $summarizedResult = $this->getClient()->writeTransaction(static function (TransactionInterface $tsx) use ($query) {
-                $tsx->run($query['statement'], $query['parameters']);
+                return $tsx->run($query['statement'], $query['parameters']);
             });
 
             $counters = $summarizedResult->getSummary()->getCounters();

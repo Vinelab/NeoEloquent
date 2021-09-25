@@ -62,7 +62,7 @@ class Finder extends Delegate
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function get(Model $parent, Model $related, $type = [], $direction)
+    public function get(Model $parent, Model $related, $type, $direction)
     {
         // Get the relationships for the parent node of the given type.
         $results = $this->firstRelationWithNodes($parent, $related, $type, $direction);

@@ -7,6 +7,7 @@ use DateTime;
 use Carbon\Carbon;
 use BadMethodCallException;
 use InvalidArgumentException;
+use Laudis\Neo4j\Types\Node;
 use Vinelab\NeoEloquent\ConnectionInterface;
 use GraphAware\Common\Result\AbstractRecordCursor as Result;
 use Vinelab\NeoEloquent\Eloquent\Collection;
@@ -345,16 +346,14 @@ class Builder
 
         $bindings = $this->getBindingsMergedWithValues($values);
 
+        /** @var CypherList $results */
         $results = $this->connection->insert($cypher, $bindings);
 
         $id = null;
 
-        if ($results instanceof Result && count($results->getRecords())> 0) {
-            $node = $results->firstRecord()->valueByIndex(0);
-            $id = (!$sequence || $sequence == 'id') ? $node->identity() : $node->get($sequence);
-        }
-
-        return $id;
+        /** @var Node $node */
+        $node = $results->first()->first()->getValue();
+        return $node->getId();
     }
 
     /**
@@ -2400,7 +2399,7 @@ class Builder
 
         $result = $this->connection->update($cypher, $this->getBindings());
 
-        return (bool) $this->getNodesCount($result);
+        return (bool) $result;
     }
 
     public function getNodesCount($result)

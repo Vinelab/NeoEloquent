@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Tests;
 
 use Laudis\Neo4j\Contracts\ClientInterface;
+use Laudis\Neo4j\Databags\SummarizedResult;
 use Mockery as M;
 use Vinelab\NeoEloquent\Connection;
 use PHPUnit\Framework\TestCase as PHPUnit;
@@ -93,9 +94,10 @@ class TestCase extends PHPUnit
         //get the labels using NeoClient
         $connection = $this->getConnectionWithConfig('neo4j');
         $client = $connection->getClient();
-        $result = $client->session()->run("MATCH (n) WHERE id(n)=$id RETURN n");
+        /** @var SummarizedResult $result */
+        $result = $client->run("MATCH (n) WHERE id(n)=$id RETURN n");
 
-        return $result->firstRecord()->valueByIndex(0);
+        return $result->getResult()->first()->first()->getValue();
     }
 
     /**

@@ -473,7 +473,7 @@ abstract class Grammar
      */
     public function hasMatchRelations(Builder $query)
     {
-        return (bool) count($query);
+        return (bool) count($this->getMatchRelations($query));
     }
 
     /**

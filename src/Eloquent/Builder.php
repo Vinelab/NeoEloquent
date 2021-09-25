@@ -712,11 +712,11 @@ class Builder
         }
 
         // get the attributes ready
-        $attributes = $node->getProperties();
+        $attributes = $node->getProperties()->toArray();
 
         // we will check to see whether we should use Neo4j's built-in ID.
         if ($model->getKeyName() === 'id') {
-            $attributes['id'] = $node->id();
+            $attributes['id'] = $node->getId();
         }
 
         // This is a regular record that we should deal with the normal way, creating an instance
@@ -731,15 +731,15 @@ class Builder
      * Turn Neo4j result set into the corresponding model with its relations.
      *
      * @param string                                            $connection
-     * @param Result    $results
+     * @param CypherList    $results
      *
      * @return array
      */
-    protected function resultsToModelsWithRelations($connection, Result $results)
+    protected function resultsToModelsWithRelations($connection, CypherList $results)
     {
         $models = [];
 
-        if ($results) {
+        if (!$results->isEmpty()) {
             $grammar = $this->getQuery()->getGrammar();
 
 //            $nodesByIdentifier = $results->getAllByIdentifier();

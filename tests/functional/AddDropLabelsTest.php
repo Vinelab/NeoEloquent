@@ -31,7 +31,7 @@ class Foo extends Model
 
 class AddDropLabelsTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -40,7 +40,7 @@ class AddDropLabelsTest extends TestCase
         Labelwiz::setConnectionResolver($resolver);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 
@@ -61,14 +61,14 @@ class AddDropLabelsTest extends TestCase
         $w->addLabels(array('Superuniqelabel1'));
 
         $nLabels = $this->getNodeLabels($w->id);
-        $this->assertTrue(in_array('Superuniqelabel1', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel1', $nLabels->toArray()));
 
         //now drop the label
         $w->dropLabels(array('Superuniqelabel1'));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w->id);
-        $this->assertFalse(in_array('Superuniqelabel1', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel1', $nLabels->toArray()));
     }
 
     public function testAddingDroppingLabelsOnNewModel()
@@ -87,26 +87,26 @@ class AddDropLabelsTest extends TestCase
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w->id);
 
-        $this->assertTrue(in_array('Superuniqelabel3', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel4', $nLabels));
-        $this->assertTrue(in_array('a1', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel3', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel4', $nLabels->toArray()));
+        $this->assertTrue(in_array('a1', $nLabels->toArray()));
 
         //now drop one of the labels
         $w->dropLabels(array('a1'));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w->id);
-        $this->assertFalse(in_array('a1', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel3', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel4', $nLabels));
+        $this->assertFalse(in_array('a1', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel3', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel4', $nLabels->toArray()));
 
         //now drop remaining labels
         $w->dropLabels(array('Superuniqelabel3', 'Superuniqelabel4'));
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w->id);
-        $this->assertFalse(in_array('a1', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel3', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel4', $nLabels));
+        $this->assertFalse(in_array('a1', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel3', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel4', $nLabels->toArray()));
     }
 
     public function testAddDroppLabelsRepeatedlyOnNewModel()
@@ -127,9 +127,9 @@ class AddDropLabelsTest extends TestCase
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w->id);
 
-        $this->assertTrue(in_array('Superuniqelabel5', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel6', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel7', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel5', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel6', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel7', $nLabels->toArray()));
 
         //now drop repeatedly
         $w->dropLabels(array('Superuniqelabel5'));
@@ -139,9 +139,9 @@ class AddDropLabelsTest extends TestCase
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w->id);
 
-        $this->assertFalse(in_array('Superuniqelabel5', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel6', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel7', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel5', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel6', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel7', $nLabels->toArray()));
     }
 
     public function testAddDropLabelsRepeatedlyOnNewModels()
@@ -183,21 +183,21 @@ class AddDropLabelsTest extends TestCase
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w1->id);
 
-        $this->assertTrue(in_array('Superuniqelabel8', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel9', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel10', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel8', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel9', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel10', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w2->id);
-        $this->assertTrue(in_array('Superuniqelabel8', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel9', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel10', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel8', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel9', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel10', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w3->id);
-        $this->assertTrue(in_array('Superuniqelabel8', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel9', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel10', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel8', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel9', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel10', $nLabels->toArray()));
 
         //drop the label in sequence
         $w1->dropLabels(array('Superuniqelabel8'));
@@ -211,21 +211,21 @@ class AddDropLabelsTest extends TestCase
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w1->id);
-        $this->assertFalse(in_array('Superuniqelabel8', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel9', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel10', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel8', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel9', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel10', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w2->id);
-        $this->assertFalse(in_array('Superuniqelabel8', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel9', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel10', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel8', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel9', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel10', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($w3->id);
-        $this->assertFalse(in_array('Superuniqelabel8', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel9', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel10', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel8', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel9', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel10', $nLabels->toArray()));
     }
 
     public function testAddDropLabelsRepeatedlyOnModelsFoundById()
@@ -271,21 +271,21 @@ class AddDropLabelsTest extends TestCase
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f1->id);
 
-        $this->assertTrue(in_array('Superuniqelabel11', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel12', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel13', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel11', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel12', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel13', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f2->id);
-        $this->assertTrue(in_array('Superuniqelabel11', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel12', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel13', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel11', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel12', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel13', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f3->id);
-        $this->assertTrue(in_array('Superuniqelabel11', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel12', $nLabels));
-        $this->assertTrue(in_array('Superuniqelabel13', $nLabels));
+        $this->assertTrue(in_array('Superuniqelabel11', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel12', $nLabels->toArray()));
+        $this->assertTrue(in_array('Superuniqelabel13', $nLabels->toArray()));
 
         //drop the label in sequence
         $f1->dropLabels(array('Superuniqelabel11'));
@@ -299,21 +299,21 @@ class AddDropLabelsTest extends TestCase
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f1->id);
-        $this->assertFalse(in_array('Superuniqelabel11', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel12', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel13', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel11', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel12', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel13', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f2->id);
-        $this->assertFalse(in_array('Superuniqelabel11', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel12', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel13', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel11', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel12', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel13', $nLabels->toArray()));
 
         // get all the node's labels
         $nLabels = $this->getNodeLabels($f3->id);
-        $this->assertFalse(in_array('Superuniqelabel11', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel12', $nLabels));
-        $this->assertFalse(in_array('Superuniqelabel13', $nLabels));
+        $this->assertFalse(in_array('Superuniqelabel11', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel12', $nLabels->toArray()));
+        $this->assertFalse(in_array('Superuniqelabel13', $nLabels->toArray()));
     }
 
     public function testAddDropLabelsOnRelated()
@@ -328,40 +328,40 @@ class AddDropLabelsTest extends TestCase
 
         //get the Node using Everyman lib
         $nLabels = $this->getNodeLabels($foo->bar->id);
-        $this->assertTrue(in_array('SpecialLabel1', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel2', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel3', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel4', $nLabels));
+        $this->assertTrue(in_array('SpecialLabel1', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel2', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel3', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel4', $nLabels->toArray()));
 
         //now drop one label on related node
         $foo->bar->dropLabels(['SpecialLabel1']);
 
         //get the Node using Everyman lib
         $nLabels = $this->getNodeLabels($foo->bar->id);
-        $this->assertFalse(in_array('SpecialLabel1', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel2', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel3', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel4', $nLabels));
+        $this->assertFalse(in_array('SpecialLabel1', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel2', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel3', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel4', $nLabels->toArray()));
 
         //now drop anotherlabel on related node
         $foo->bar->dropLabels(['SpecialLabel2']);
 
         //get the Node using Everyman lib
         $nLabels = $this->getNodeLabels($foo->bar->id);
-        $this->assertFalse(in_array('SpecialLabel1', $nLabels));
-        $this->assertFalse(in_array('SpecialLabel2', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel3', $nLabels));
-        $this->assertTrue(in_array('SpecialLabel4', $nLabels));
+        $this->assertFalse(in_array('SpecialLabel1', $nLabels->toArray()));
+        $this->assertFalse(in_array('SpecialLabel2', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel3', $nLabels->toArray()));
+        $this->assertTrue(in_array('SpecialLabel4', $nLabels->toArray()));
 
         //now drop remaining labels on related node
         $foo->bar->dropLabels(['SpecialLabel3', 'SpecialLabel4']);
 
         //get the Node using Everyman lib
         $nLabels = $this->getNodeLabels($foo->bar->id);
-        $this->assertFalse(in_array('SpecialLabel1', $nLabels));
-        $this->assertFalse(in_array('SpecialLabel2', $nLabels));
-        $this->assertFalse(in_array('SpecialLabel3', $nLabels));
-        $this->assertFalse(in_array('SpecialLabel4', $nLabels));
+        $this->assertFalse(in_array('SpecialLabel1', $nLabels->toArray()));
+        $this->assertFalse(in_array('SpecialLabel2', $nLabels->toArray()));
+        $this->assertFalse(in_array('SpecialLabel3', $nLabels->toArray()));
+        $this->assertFalse(in_array('SpecialLabel4', $nLabels->toArray()));
     }
 
     public function testDroppingLabels()
@@ -379,7 +379,7 @@ class AddDropLabelsTest extends TestCase
         $w1->dropLabels(['Labelwiz']);
 
         $nLabels = $this->getNodeLabels($id);
-        $this->assertFalse(in_array('Labelwiz', $nLabels));
+        $this->assertFalse(in_array('Labelwiz', $nLabels->toArray()));
 
         //now find by id should NOT work on this id using Labelwiz model
         $this->assertNull(Labelwiz::find($id));
