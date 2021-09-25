@@ -109,6 +109,6 @@ class TestCase extends PHPUnit
      */
     protected function getNodeLabels($id)
     {
-        return $this->getNodeById($id)->labels();
+        return $this->getNodeById($id)->labels()->toArray();
     }
 }
