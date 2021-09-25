@@ -47,7 +47,7 @@ class HasOneRelationTest extends TestCase
     public function testDynamicLoadingHasOne()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid('', true), 'service' => 'twitter']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
 
@@ -59,7 +59,7 @@ class HasOneRelationTest extends TestCase
     public function testDynamicLoadingHasOneFromFoundRecord()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid('', true), 'service' => 'twitter']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
 
@@ -73,7 +73,7 @@ class HasOneRelationTest extends TestCase
     public function testEagerLoadingHasOne()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid('', true), 'service' => 'twitter']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
 
@@ -89,7 +89,7 @@ class HasOneRelationTest extends TestCase
     public function testSavingRelatedHasOneModel()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid('', true), 'service' => 'twitter']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
@@ -110,7 +110,7 @@ class HasOneRelationTest extends TestCase
     public function testRetrievingRelationWithAttributesSpecifyingEdgeModel()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid('', true), 'service' => 'twitter']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
 
@@ -128,13 +128,13 @@ class HasOneRelationTest extends TestCase
     public function testSavingMultipleRelationsKeepsOnlyTheLastOne()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid('', true), 'service' => 'twitter']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
         $relation->use = 'casual';
         $this->assertTrue($relation->save());
 
-        $cv = Profile::create(['guid' => uniqid('', true), 'service' => 'linkedin']);
+        $cv = Profile::create(['guid' => uniqid(), 'service' => 'linkedin']);
         $linkedin = $user->profile()->save($cv);
         $linkedin->use = 'official';
         $this->assertTrue($linkedin->save());
@@ -151,7 +151,7 @@ class HasOneRelationTest extends TestCase
     public function testFindingEdgeWithNoSpecifiedEdgeModel()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid('', true), 'service' => 'twitter']);
+        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
 
         $relation = $user->profile()->save($profile);
         $relation->active = true;

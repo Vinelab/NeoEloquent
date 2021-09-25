@@ -39,7 +39,7 @@ interface ConnectionInterface
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return bool
+     * @return CypherList
      */
     public function insert($query, $bindings = []);
 

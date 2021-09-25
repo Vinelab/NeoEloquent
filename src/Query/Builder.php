@@ -7,6 +7,7 @@ use DateTime;
 use Carbon\Carbon;
 use BadMethodCallException;
 use InvalidArgumentException;
+use Laudis\Neo4j\Types\CypherList;
 use Laudis\Neo4j\Types\Node;
 use Vinelab\NeoEloquent\ConnectionInterface;
 use GraphAware\Common\Result\AbstractRecordCursor as Result;
