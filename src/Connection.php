@@ -831,7 +831,7 @@ class Connection implements ConnectionInterface
 
         if ($this->transactions == 1) {
             $client = $this->getClient();
-            $this->transaction = $client->createTransaction();
+            $this->transaction = $client->beginTransaction();
         }
 
         $this->fireConnectionEvent('beganTransaction');
