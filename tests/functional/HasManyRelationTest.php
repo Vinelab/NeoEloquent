@@ -121,7 +121,7 @@ class HasManyRelationTest extends TestCase
         foreach ($edges as $key => $edge) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
             $this->assertTrue($edge->exists());
-            $this->assertGreaterThan(0, $edge->id);
+            $this->assertGreaterThanOrEqual(0, $edge->id);
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
             $edge->delete();

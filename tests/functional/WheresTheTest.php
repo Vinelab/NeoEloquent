@@ -6,6 +6,7 @@ use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Collection;
+use function usort;
 
 class User extends Model
 {
@@ -268,7 +269,11 @@ class WheresTheTest extends TestCase
                                                             $this->ef,
                                                             $this->gh,
                                                             $this->ij, ));
-        $this->assertEquals($all->toArray(), $padrougas->toArray());
+        $array = $all->toArray();
+        usort($array, static fn (array $x, array $y) => $x['id'] <=> $y['id']);
+        $padrougasArray = $padrougas->toArray();
+        usort($padrougasArray, static fn (array $x, array $y) => $x['id'] <=> $y['id']);
+        $this->assertEquals($array, $padrougasArray);
     }
 
     public function testWhereNotFound()
