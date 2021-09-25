@@ -123,7 +123,7 @@ class QueryingRelationsTest extends TestCase
             return $admin->toArray();
         }, $expectedAdmins);
         foreach ($admins as $key => $admin) {
-            $this->assertContains($admin->toArray(), $expectedAdmins);
+            $this->assertContains($admin->toArray()['id'], array_map(static fn(array $admin) => $admin['id'], $expectedAdmins));
         }
         // check editors
         $editors = User::whereHas('roles', function ($q) { $q->where('alias', 'editor'); })->get();
@@ -137,7 +137,7 @@ class QueryingRelationsTest extends TestCase
             return $manager->toArray();
         }, $expectedManagers);
         foreach ($managers as $key => $manager) {
-            $this->assertContains($manager->toArray(), $expectedManagers);
+            $this->assertContains($manager->toArray()['id'], array_map(static fn(array $manager) => $manager['id'], $expectedManagers));
         }
     }
 
