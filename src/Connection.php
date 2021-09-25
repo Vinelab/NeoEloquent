@@ -564,7 +564,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return int
+     * @return SummarizedResult
      */
     public function update($query, $bindings = [])
     {
@@ -590,7 +590,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return int
+     * @return SummarizedResult
      */
     public function affectingStatement($query, $bindings = array())
     {
@@ -605,14 +605,9 @@ class Connection implements ConnectionInterface
             $query = $me->getCypherQuery($query, $bindings);
 
             /** @var SummarizedResult $summarizedResult */
-            $summarizedResult = $this->getClient()->writeTransaction(static function (TransactionInterface $tsx) use ($query) {
+            return $this->getClient()->writeTransaction(static function (TransactionInterface $tsx) use ($query) {
                 return $tsx->run($query['statement'], $query['parameters']);
             });
-
-            $counters = $summarizedResult->getSummary()->getCounters();
-
-            // Cypher does not have a concept of rows, therefore we can only deduce whether something was updated
-            return $counters->containsUpdates() ? 1 : 0;
         });
     }
 

@@ -367,7 +367,7 @@ class Builder
 
         $bindings = $this->getBindingsMergedWithValues($values, true);
 
-        $updated = $this->connection->update($cypher, $bindings);
+        $updated = $this->connection->update($cypher, $bindings)->getResult();
 
         return ($updated) ? count(current($this->getRecordsByPlaceholders($updated))) : 0;
     }
