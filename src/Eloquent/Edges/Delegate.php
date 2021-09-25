@@ -2,13 +2,14 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
-use GraphAware\Bolt\Result\Type\Node;
-use GraphAware\Bolt\Result\Type\Relationship;
+use Laudis\Neo4j\Types\CypherList;
+use Laudis\Neo4j\Types\CypherMap;
+use Laudis\Neo4j\Types\Node;
+use Laudis\Neo4j\Types\Relationship;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\QueryException;
+use Vinelab\NeoEloquent\Exceptions\QueryException;
 use Vinelab\NeoEloquent\Eloquent\Builder;
-use Vinelab\NeoEloquent\Exceptions\UnknownDirectionException;
 
 abstract class Delegate
 {
@@ -120,7 +121,7 @@ abstract class Delegate
      * @param \Vinelab\NeoEloquent\Eloquent\Model $endModel
      * @param array                               $properties
      *
-     * @return \Everyman\Neo4j\Relationship
+     * @return Relationship
      */
     protected function makeRelationship($type, $startModel, $endModel, $properties = array())
     {
@@ -136,7 +137,7 @@ abstract class Delegate
             unset($properties['id']);
         }
 
-        return new Relationship($id, $type, $this->asNode($startModel), $this->asNode($endModel), $properties);
+        return new Relationship($id, $this->asNode($startModel)->getId(), $this->asNode($endModel)->getId(), $type, new CypherMap($properties));
     }
 
     /**
@@ -162,13 +163,13 @@ abstract class Delegate
      * @param Model $relatedModel
      * @param $type
      * @param string $direction
-     * @return \GraphAware\Neo4j\Client\Formatter\Result
+     * @return CypherList
      */
-    public function firstRelationWithNodes(Model $parentModel, Model $relatedModel, $type, $direction = 'any')
+    public function firstRelationWithNodes(Model $parentModel, Model $relatedModel, $type, $direction = 'any'): CypherList
     {
         $this->type = $type;
         $this->start = $this->asNode($parentModel);
-        $this->end = $this->asNode($relatedModel);
+//        $this->end = $this->asNode($relatedModel);
         $this->direction = $direction;
         // To get a relationship between two models we will have
         // to find the Path between them so first let's transform
@@ -240,11 +241,11 @@ abstract class Delegate
     /**
      * Convert a model to a Node object.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
+     * @param Model $model
      *
-     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Node
+     * @return Node
      */
-    public function asNode(Model $model)
+    public function asNode(Model $model): ?Node
     {
         $id = $model->getKey();
         $properties = $model->toArray();
@@ -255,7 +256,7 @@ abstract class Delegate
             unset($properties['id']);
         }
 
-        return new Node($id, $label, $properties);
+        return new Node($id, new CypherList([$label]), new CypherMap($properties));
     }
 
     /**

@@ -678,17 +678,17 @@ class Builder
 
     protected function getNodeIdentifier($resultsByIdentifier, $relationships, $type = 'start')
     {
-        $method = 'startNodeIdentity';
+        $method = 'getStartNodeId';
 
         if ($type === 'end') {
-            $method = 'endNodeIdentity';
+            $method = 'getEndNodeId';
         }
 
         $relationship = reset($relationships);
 
         foreach ($resultsByIdentifier as $identifier => $nodes) {
             foreach ($nodes as $node) {
-                if ($node->identity() === $relationship->$method()) {
+                if ($node->getId() === $relationship->$method()) {
                     return $identifier;
                 }
             }
@@ -712,7 +712,7 @@ class Builder
         }
 
         // get the attributes ready
-        $attributes = $node->getProperties()->toArray();
+        $attributes = array_merge($node->getProperties()->toArray(), $model->getAttributes());
 
         // we will check to see whether we should use Neo4j's built-in ID.
         if ($model->getKeyName() === 'id') {

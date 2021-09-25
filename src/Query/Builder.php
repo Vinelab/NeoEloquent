@@ -349,8 +349,6 @@ class Builder
         /** @var CypherList $results */
         $results = $this->connection->insert($cypher, $bindings);
 
-        $id = null;
-
         /** @var Node $node */
         $node = $results->first()->first()->getValue();
         return $node->getId();

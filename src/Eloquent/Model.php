@@ -1762,7 +1762,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     {
         $id = $query->insertGetId($attributes, $keyName = $this->getKeyName());
 
-        $this->setAttribute($keyName, $id);
+        $this->setAttribute($keyName, $attributes[$this->getKeyName()] ?? $id);
     }
 
     /**

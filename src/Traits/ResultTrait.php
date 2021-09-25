@@ -61,7 +61,7 @@ trait ResultTrait
 
     public function getNodeByType(Relationship $relation, array $nodes, string $type = 'start'): Node
     {
-        if($type !== 'start') {
+        if($type === 'start') {
             $id = $relation->getStartNodeId();
         } else {
             $id = $relation->getEndNodeId();

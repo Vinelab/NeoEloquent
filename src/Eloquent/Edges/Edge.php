@@ -7,6 +7,8 @@ use Carbon\Carbon;
 use GraphAware\Neo4j\Client\Formatter\Result;
 use GraphAware\Common\Result\RecordViewInterface;
 use GraphAware\Bolt\Result\Type\Relationship;
+use Laudis\Neo4j\Types\CypherMap;
+use Laudis\Neo4j\Types\Node;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
@@ -27,13 +29,13 @@ abstract class Edge extends Delegate
     /**
      * The start node of the relationship.
      *
-     * @var \Everyman\Neo4j\Node
+     * @var Node
      */
     protected $start;
     /**
      * The end node of the relationship.
      *
-     * @var \Everyman\Neo4j\Node
+     * @var Node
      */
     protected $end;
 
@@ -92,7 +94,7 @@ abstract class Edge extends Delegate
     /**
      * The relationship instance.
      *
-     * @var \GraphAware\Bolt\Result\Type\Relationship
+     * @var \Laudis\Neo4j\Types\Relationship
      */
     protected $relation;
 
@@ -161,17 +163,21 @@ abstract class Edge extends Delegate
             case 'in':
                 // Make them nodes
                 $this->start = $this->asNode($this->related);
-                $this->end = $this->asNode($this->parent);
+                if ($this->parent->getKey()) {
+                    $this->end = $this->asNode($this->parent);
+                }
                 // Setup relationship
-                $this->relation = $this->makeRelationship($this->type, $this->related, $this->parent, $this->attributes);
+//                $this->relation = $this->makeRelationship($this->type, $this->related, $this->parent, $this->attributes);
                 break;
 
             case 'out':
                 // Make them nodes
                 $this->start = $this->asNode($this->parent);
-                $this->end = $this->asNode($this->related);
+                if ($this->related->getKey()) {
+                    $this->end = $this->asNode($this->related);
+                }
                 // Setup relationship
-                $this->relation = $this->makeRelationship($this->type, $this->parent, $this->related, $this->attributes);
+//                $this->relation = $this->makeRelationship($this->type, $this->parent, $this->related, $this->attributes);
                 break;
 
             default:
@@ -225,7 +231,7 @@ abstract class Edge extends Delegate
             // at this point $saved is an instance of GraphAware\Common\Result\RecordViewInterface
             // that only contains the relationship as a record.
             // We will pull that out of the Result instance
-            $this->setRelation($saved->firstRecord());
+            $this->setRelation($saved);
 
             return true;
         }
@@ -238,15 +244,14 @@ abstract class Edge extends Delegate
      * @param Model $start
      * @param Model $end
      * @param array $properties
-     * @return \GraphAware\Neo4j\Client\Formatter\Result
      */
-    public function saveRelationship($type, $start, $end, $properties)
+    public function saveRelationship($type, $start, $end, $properties): CypherMap
     {
         $grammar = $this->query->getQuery()->getGrammar();
         $attributes = $this->getRelationshipAttributes($start, $end, $properties);
         $query = $grammar->compileCreateRelationship($this->query->getQuery(), $attributes);
 
-        return $this->connection->statement($query, [], true);
+        return $this->connection->statement($query, [], true)->first();
     }
 
     /**
@@ -332,10 +337,8 @@ abstract class Edge extends Delegate
 
     /**
      * Set a given relationship on this relation.
-     *
-     * @param \GraphAware\Neo4j\Client\Formatter\Result $results
      */
-    public function setRelation(RecordViewInterface $record)
+    public function setRelation(CypherMap $record)
     {
         $nodes = $this->getRecordNodes($record);
         $relationships = $this->getRecordRelationships($record);
@@ -345,8 +348,8 @@ abstract class Edge extends Delegate
         $this->relation = $relation;
 
         // Replace the attributes with those brought from the given relation.
-        $this->attributes = $relation->values();
-        $this->setAttribute($this->primaryKey, $relation->identity());
+        $this->attributes = $relation->getProperties()->toArray();
+        $this->setAttribute($this->primaryKey, $relation->getId());
 
         // Set the start and end nodes.
         // FIXME: See if we will need $this->start and $this->end for they've been removed.
@@ -354,7 +357,7 @@ abstract class Edge extends Delegate
         $this->end = $this->getNodeByType($relation, $nodes, 'end');
 
         $relatedNode = ($this->isDirectionOut()) ? $this->end : $this->start;
-        $attributes = array_merge(['id' => $relatedNode->identity()], $relatedNode->values());
+        $attributes = array_merge(['id' => $relatedNode->getId()], $relatedNode->getProperties()->toArray());
 
         $this->related = $this->related->newFromBuilder($attributes);
         $this->related->setConnection($this->related->getConnectionName());
@@ -537,7 +540,7 @@ abstract class Edge extends Delegate
     {
         $exists = false;
 
-        if ($this->relation && $this->relation->identity()) {
+        if ($this->relation) {
             $exists = true;
         }
 

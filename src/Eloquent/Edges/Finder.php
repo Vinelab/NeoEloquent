@@ -2,6 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Edges;
 
+use Laudis\Neo4j\Types\CypherMap;
+use Laudis\Neo4j\Types\Relationship;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
@@ -43,11 +45,11 @@ class Finder extends Delegate
         $results = $this->firstRelationWithNodes($parentModel, $relatedModel, $type, $direction);
 
         // Let's stop here if there is no relationship between them.
-        if (!$results || !count($results->getRecords()) > 0) {
-            return;
+        if ($results->isEmpty()) {
+            return null;
         }
 
-        $record = $results->firstRecord();
+        $record = $results->first();
 
         // Now we can return the determined edge out of the relation and direction.
         return $this->edgeFromRelationWithDirection($record, $parentModel, $relatedModel, $direction);
@@ -65,15 +67,14 @@ class Finder extends Delegate
     public function get(Model $parent, Model $related, $type, $direction)
     {
         // Get the relationships for the parent node of the given type.
-        $results = $this->firstRelationWithNodes($parent, $related, $type, $direction);
-        $records = $this->getResultRecords($results);
+        $records = $this->firstRelationWithNodes($parent, $related, $type, $direction);
 
         $edges = [];
         // Collect the edges out of the found relationships.
-        foreach ($records as $index => $record) {
+        foreach ($records as $record) {
             // Now that we have the direction and the relationship all we need to do is generate the edge
             // and add it to our collection of edges.
-            $edges[] = $this->edgeFromRelationWithDirection($record, $parent, $related, $direction, $index);
+            $edges[] = $this->edgeFromRelationWithDirection($record, $parent, $related, $direction);
         }
 
         return new Collection($edges);
@@ -162,23 +163,24 @@ class Finder extends Delegate
     /**
      * Get the Edge instance out of a Relationship based on a direction.
      *
-     * @param \GraphAware\Common\Result\RecordViewInterface $record
-     * @param string                       $direction can be 'in' or 'out'
-     *
+     * @param CypherMap $record
+     * @param Model $parent
+     * @param Model $related
+     * @param string $direction can be 'in' or 'out'
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In|Out]
      */
-    public function edgeFromRelationWithDirection(RecordViewInterface $record, Model $parent, Model $related, $direction, $index = 0)
+    public function edgeFromRelationWithDirection(CypherMap $record, Model $parent, Model $related, $direction)
     {
-        // assume there is no relation received until we determine that there is one
-        $relation = null;
         $relationships = $this->getRecordRelationships($record);
+        /** @var Relationship $relation */
         $relation = reset($relationships);
 
         if ($relation) {
             // Based on the direction we are now able to construct the edge class name and call for
             // an instance of it then pass it the actual relationship that was previously found.
             $class = $this->getEdgeClass($direction);
-            $edge = new $class($this->query, $parent, $related, $relation->type());
+            /** @var Edge $edge */
+            $edge = new $class($this->query, $parent, $related, $relation->getType());
             $edge->setRelation($record);
 
             return $edge;
