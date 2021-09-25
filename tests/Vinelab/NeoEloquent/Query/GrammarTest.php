@@ -10,14 +10,14 @@ use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
 class GrammarTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
         $this->grammar = new CypherGrammar();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 
@@ -27,13 +27,13 @@ class GrammarTest extends TestCase
     public function testGettingQueryParameterFromRegularValue()
     {
         $p = $this->grammar->parameter('value');
-        $this->assertEquals('{value}', $p);
+        $this->assertEquals('$value', $p);
     }
 
     public function testGettingIdQueryParameter()
     {
         $p = $this->grammar->parameter('id');
-        $this->assertEquals('{idn}', $p);
+        $this->assertEquals('$idn', $p);
     }
 
     public function testGettingIdParameterWithQueryBuilder()
@@ -41,26 +41,26 @@ class GrammarTest extends TestCase
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->from = 'user';
         $this->grammar->setQuery($query);
-        $this->assertEquals('{iduser}', $this->grammar->parameter('id'));
+        $this->assertEquals('$iduser', $this->grammar->parameter('id'));
 
         $query->from = 'post';
-        $this->assertEquals('{idpost}', $this->grammar->parameter('id'));
+        $this->assertEquals('$idpost', $this->grammar->parameter('id'));
 
         $anotherQuery = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $anotherQuery->from = 'crawler';
         $this->grammar->setQuery($anotherQuery);
-        $this->assertEquals('{idcrawler}', $this->grammar->parameter('id'));
+        $this->assertEquals('$idcrawler', $this->grammar->parameter('id'));
     }
 
     public function testGettingWheresParameter()
     {
-        $this->assertEquals('{confusing}', $this->grammar->parameter(['column' => 'confusing']));
+        $this->assertEquals('$confusing', $this->grammar->parameter(['column' => 'confusing']));
     }
 
     public function testGettingExpressionParameter()
     {
         $ex = new Expression('id');
-        $this->assertEquals('{idn}', $this->grammar->parameter($ex));
+        $this->assertEquals('$idn', $this->grammar->parameter($ex));
     }
 
     public function testPreparingLabel()
