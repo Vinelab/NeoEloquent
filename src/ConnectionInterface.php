@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent;
 
 use Closure;
+use Laudis\Neo4j\Types\CypherList;
 
 interface ConnectionInterface
 {
@@ -28,7 +29,7 @@ interface ConnectionInterface
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return array
+     * @return CypherList
      */
     public function select($query, $bindings = []);
 

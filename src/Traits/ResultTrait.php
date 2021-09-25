@@ -2,138 +2,91 @@
 
 namespace Vinelab\NeoEloquent\Traits;
 
-use GraphAware\Common\Type\Node;
-use GraphAware\Common\Type\Relationship;
-use GraphAware\Common\Result\AbstractRecordCursor as Result;
-use GraphAware\Common\Result\RecordViewInterface;
+use Laudis\Neo4j\Types\CypherList;
+use Laudis\Neo4j\Types\CypherMap;
+use Laudis\Neo4j\Types\Node;
+use Laudis\Neo4j\Types\Relationship;
+use RuntimeException;
 
 trait ResultTrait
 {
-    /**
-     * @param Result $result
-     * @return \GraphAware\Common\Result\RecordViewInterface[]
-     */
-    public function getResultRecords(Result $result)
+    public function getRecordsByPlaceholders(CypherList $result): array
     {
-        return $result->getRecords();
-    }
-
-    /**
-     * @param array $recordViews
-     * @return array
-     */
-    public function getRecordsByPlaceholders(Result $result)
-    {
-        $recordViews = $this->getResultRecords($result);
-
         $recordsByKeys = [];
-        foreach ($recordViews as $recordView) {
-            if($recordView instanceof RecordViewInterface) {
-                $keys = $recordView->keys();
-                foreach ($keys as $key) {
-                    $recordsByKeys[$key][] = $recordView->value($key);
-                }
+        /**
+         * @var CypherMap $recordView
+         */
+        foreach ($result as $recordView) {
+            foreach ($recordView as $key => $value) {
+                $recordsByKeys[$key] = $recordsByKeys[$key] ?? [];
+                $recordsByKeys[$key][] = $value;
             }
         }
 
         return $recordsByKeys;
     }
 
-    /**
-     * @param array $recordsByPlaceholders
-     * @return array
-     */
-    public function getRelationshipRecords(Result $result)
+    public function getRelationshipRecords(CypherList $results): array
     {
         $relationships = [];
 
-        $recordViews = $this->getResultRecords($result);
-
-        foreach ($recordViews as $recordView) {
-            if($recordView instanceof RecordViewInterface) {
-                $keys = $recordView->keys();
-                foreach ($keys as $key) {
-                    $record = $recordView->value($key);
-                    if($record instanceof Relationship) {
-                        $relationships[] = $record;
-                    }
-                }
-            }
+        foreach ($results as $record) {
+            $relationships = array_merge($relationships, $this->getRecordRelationships($record));
         }
 
         return $relationships;
     }
 
-    /**
-     * @param array $recordsByPlaceholders
-     * @return array
-     */
-    public function getNodeRecords(Result $result)
+    public function getNodeRecords(CypherList $result): array
     {
         $nodes = [];
 
-        $recordViews = $this->getResultRecords($result);
-
-        foreach ($recordViews as $recordView) {
-            if($recordView instanceof RecordViewInterface) {
-                $keys = $recordView->keys();
-                foreach ($keys as $key) {
-                    $record = $recordView->value($key);
-                    if($record instanceof Node) {
-                        $nodes[] = $record;
-                    }
-                }
-            }
+        foreach ($result as $record) {
+            $nodes = array_merge($nodes, $this->getRecordNodes($record));
         }
 
         return $nodes;
     }
 
     /**
-     * @param Result $result
+     * @param CypherList $result
      * @return mixed
      */
-    public function getSingleItem(Result $result)
+    public function getSingleItem(CypherList $result)
     {
-        return $this->getRecords($result)->firstRecord()->valueByIndex(0);
+        /** @var CypherMap $map */
+        $map = $result->first();
+        return $map->first()->getValue();
     }
 
-    /**
-     * @param \GraphAware\Bolt\Result\Type\Relationship $relation
-     * @param array $nodes
-     * @param string $type
-     * @return Node
-     */
-    public function getNodeByType(Relationship $relation, array $nodes, string $type = 'start')
+    public function getNodeByType(Relationship $relation, array $nodes, string $type = 'start'): Node
     {
-        if($type != 'start') {
-            $type = 'end';
+        if($type !== 'start') {
+            $id = $relation->getStartNodeId();
+        } else {
+            $id = $relation->getEndNodeId();
         }
 
-        $method = $type.'NodeIdentity';
-
-        $id = $relation->{$method}();
-
+        /** @var Node $node */
         foreach ($nodes as $node) {
-            if($id === $node->identity()) {
+            if($id === $node->getId()) {
                 return $node;
             }
         }
+
+        throw new RuntimeException('Cannot find node with id: ' . $node->getId());
     }
 
     /**
-     * @param RecordViewInterface $record
-     * @return array
+     * @return list<Node>
      */
-    public function getRecordNodes(RecordViewInterface $record)
+    public function getRecordNodes(CypherMap $record): array
     {
         $nodes = [];
 
-        $keys = $record->keys();
-        foreach ($keys as $key) {
-            $item = $record->get($key);
-            if($item instanceof Node) {
-                $nodes[] = $item;
+        foreach ($record as $value) {
+            if($value instanceof Node) {
+                $nodes[] = $value;
             }
         }
 
@@ -141,16 +94,13 @@ trait ResultTrait
     }
 
     /**
-     * @param RecordViewInterface $record
-     * @return array
+     * @return list<Node>
      */
-    public function getRecordRelationships(RecordViewInterface $record)
+    public function getRecordRelationships(CypherMap $record): array
     {
         $relationships = [];
 
-        $keys = $record->keys();
-        foreach ($keys as $key) {
-            $item = $record->get($key);
+        foreach ($record as $item) {
             if($item instanceof Relationship) {
                 $relationships[] = $item;
             }

@@ -99,7 +99,7 @@ abstract class Grammar
             $property = explode('.', $property)[1];
         }
 
-        return '{'.$property.'}';
+        return '$'.$property;
     }
 
     /**

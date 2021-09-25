@@ -10,7 +10,7 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 
 class QueryingRelationsTest extends TestCase
 {
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 

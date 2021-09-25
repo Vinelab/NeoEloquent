@@ -4,7 +4,8 @@ version: '3.7'
 services:
     # Docker Image: https://hub.docker.com/r/vinelab/nginx-php
     app:
-        image: vinelab/nginx-php:composer
+        build:
+            context: .
         ports:
             - ${DOCKER_HOST_APP_PORT:-8000}:80
         volumes:
@@ -16,7 +17,7 @@ services:
     neo4j:
         environment:
             - NEO4J_AUTH=none
-        image: neo4j:3.2.14
+        image: neo4j:4.0
         ports:
             - ${DOCKER_HOST_NEO4J_HTTP_PORT:-7474}:7474
             - ${DOCKER_HOST_NEO4J_BOLT_PORT:-7687}:7687
