@@ -196,7 +196,7 @@ abstract class Edge extends Delegate
     {
         $results = $this->finder->firstRelationWithNodes($this->parent, $this->related, $this->type, $this->direction);
 
-        return (count($results->getRecords()) > 0) ? $this->newFromRelation($results->firstRecord()) : null;
+        return !$results->isEmpty() ? $this->newFromRelation($results->first()) : null;
     }
 
     /**
@@ -217,8 +217,8 @@ abstract class Edge extends Delegate
             $endModel = $this->related->newInstance();
             $existing = $this->firstRelationWithNodes($this->parent, $endModel, $this->type, $this->direction);
 
-            if(count($existing->getRecords()) > 0) {
-                $instance = $this->newFromRelation($existing->firstRecord());
+            if(!$existing->isEmpty()) {
+                $instance = $this->newFromRelation($existing->first());
                 $instance->delete();
             }
         }
@@ -296,7 +296,7 @@ abstract class Edge extends Delegate
      *
      * @return static
      */
-    public function newFromRelation(RecordViewInterface $record)
+    public function newFromRelation(CypherMap $record)
     {
         $instance = new static($this->query, $this->parent, $this->related, $this->type, $this->attributes, $this->unique);
 
