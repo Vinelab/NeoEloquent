@@ -4,7 +4,9 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use DateTime;
 use Carbon\Carbon;
+use Laudis\Neo4j\Types\CypherList;
 use Mockery as M;
+use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
@@ -29,7 +31,7 @@ class WizDel extends Model
 
 class SimpleCRUDTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -38,7 +40,7 @@ class SimpleCRUDTest extends TestCase
         Wiz::setConnectionResolver($resolver);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 
@@ -49,12 +51,10 @@ class SimpleCRUDTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * @expectedException \Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
-     */
     public function testFindingAndFailing()
     {
-        User::findOrFail(0);
+        $this->expectException(ModelNotFoundException::class);
+        Wiz::findOrFail(0);
     }
 
     /**
@@ -64,12 +64,12 @@ class SimpleCRUDTest extends TestCase
      */
     public function testDoesntCrashOnNonIntIds()
     {
-        $u = User::create([]);
+        $u = Wiz::create([]);
         $id = (string) $u->id;
-        $found = User::where('id', "$id")->first();
+        $found = Wiz::where('id', "$id")->first();
         $this->assertEquals($found->toArray(), $u->toArray());
 
-        $foundAgain = User::where('id(individual)', "$id")->first();
+        $foundAgain = Wiz::find("$id");
         $this->assertEquals($foundAgain->toArray(), $u->toArray());
     }
 
@@ -79,7 +79,7 @@ class SimpleCRUDTest extends TestCase
 
         $this->assertTrue($w->save());
         $this->assertTrue($w->exists);
-        $this->assertInternalType('int', $w->id);
+        $this->assertIsInt($w->id);
         $this->assertTrue($w->id > 0);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
     }
@@ -90,9 +90,9 @@ class SimpleCRUDTest extends TestCase
 
         $expected = [
             $w->getKeyName() => $w->getKey(),
-            'fiz' => ['not', '123', 'helping'],
-            'created_at' => $w->created_at,
-            'updated_at' => $w->updated_at,
+            'fiz' => new CypherList(['not', '123', 'helping']),
+            'created_at' => $w->created_at->toDateTimeString(),
+            'updated_at' => $w->updated_at->toDateTimeString(),
         ];
 
         $fetched = Wiz::first();
@@ -140,7 +140,7 @@ class SimpleCRUDTest extends TestCase
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
         $this->assertTrue($w->exists);
-        $this->assertInternalType('int', $w->id);
+        $this->assertIsInt($w->id);
         $this->assertNull($w->nope);
     }
 
@@ -259,7 +259,7 @@ class SimpleCRUDTest extends TestCase
     {
         $id = Wiz::insertGetId(['foo' => 'fiz', 'boo' => 'biz']);
 
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
         $this->assertGreaterThan(0, $id, 'message');
     }
 
@@ -277,9 +277,9 @@ class SimpleCRUDTest extends TestCase
         $w = Wiz::create(['fiz' => 1, 'biz' => 8.276123, 'triz' => 0]);
 
         $g = Wiz::find($w->id);
-        $this->assertInternalType('int', $g->fiz);
-        $this->assertInternalType('int', $g->triz);
-        $this->assertInternalType('float', $g->biz);
+        $this->assertIsInt($g->fiz);
+        $this->assertIsInt($g->triz);
+        $this->assertIsFloat($g->biz);
     }
 
     public function testSoftDeletingModel()
