@@ -7,6 +7,7 @@ use DateTime;
 use Exception;
 use Laudis\Neo4j\Authentication\Authenticate;
 use Laudis\Neo4j\ClientBuilder;
+use Laudis\Neo4j\Contracts\AuthenticateInterface;
 use Laudis\Neo4j\Contracts\ClientInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Databags\ResultSummary;
@@ -370,10 +371,8 @@ class Connection implements ConnectionInterface
      */
     public function createSingleConnectionClient()
     {
-        $auth = $this->getAuth();
-
         return $this->initBuilder()
-            ->withDriver('default', $this->buildUriFromConfig($this->getConfig()), $auth)
+            ->withDriver('default', $this->buildUriFromConfig($this->getConfig()), $this->getAuth())
             ->build();
     }
 
@@ -395,9 +394,7 @@ class Connection implements ConnectionInterface
                 $builder = $builder->withDefaultDriver($connection);
             }
 
-            $auth = $this->getAuth();
-
-            $builder = $builder->withDriver($connection, $this->buildUriFromConfig($config), $auth);
+            $builder = $builder->withDriver($connection, $this->buildUriFromConfig($config), $this->getAuth());
         }
 
         return $builder->build();
@@ -1222,17 +1219,16 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * @return \Laudis\Neo4j\Authentication\BasicAuth|\Laudis\Neo4j\Authentication\NoAuth
+     * @return AuthenticateInterface
      */
-    private function getAuth()
+    private function getAuth(): AuthenticateInterface
     {
         $username = $this->getUsername($this->getConfig());
         $password = $this->getPassword($this->getConfig());
         if ($username && $password) {
-            $auth = Authenticate::basic($username, $password);
-        } else {
-            $auth = Authenticate::disabled();
+            return Authenticate::basic($username, $password);
         }
-        return $auth;
+
+        return Authenticate::disabled();
     }
 }
