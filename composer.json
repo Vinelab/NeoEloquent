@@ -44,11 +44,9 @@
         }
     ],
     "autoload": {
-        "classmap": [
-            "tests/TestCase.php"
-        ],
         "psr-4": {
-            "Vinelab\\NeoEloquent\\": "src/"
+            "Vinelab\\NeoEloquent\\": "src/",
+            "Vinelab\\NeoEloquent\\Tests\\": "tests/"
         }
     },
     "minimum-stability": "stable",
