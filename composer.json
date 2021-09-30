@@ -37,15 +37,13 @@
         "fzaninotto/faker": "~1.4",
         "composer/composer": "^2.1"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/Vinelab/neo4j-bolt-php.git"
-        }
-    ],
     "autoload": {
         "psr-4": {
-            "Vinelab\\NeoEloquent\\": "src/",
+            "Vinelab\\NeoEloquent\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
             "Vinelab\\NeoEloquent\\Tests\\": "tests/"
         }
     },
