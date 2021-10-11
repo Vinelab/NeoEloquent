@@ -22,7 +22,7 @@ class Neo4jConnector
                 break;
 
             case Connection::TYPE_HA:
-                $client = $connection->createHAClient($config);
+                throw new \Exception('High Availability mode is not supported anymore. Please use the neo4j scheme instead');
                 break;
             default:
                 throw new Exception('Unsupported connection type '+$type);

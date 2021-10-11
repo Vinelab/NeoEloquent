@@ -2,19 +2,20 @@
 
 namespace Vinelab\NeoEloquent\Tests;
 
-use Neoxygen\NeoClient\Client;
+use Exception;
+use Laudis\Neo4j\Contracts\ClientInterface;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
 use Illuminate\Container\Container;
 
 class ConnectionFactoryTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         $this->factory = new ConnectionFactory(new Container());
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
     }
 
@@ -32,18 +33,9 @@ class ConnectionFactoryTest extends TestCase
         $client = $connection->getClient();
 
         $this->assertInstanceOf(Connection::class, $connection);
-        $this->assertInstanceOf(Client::class, $client);
+        $this->assertInstanceOf(ClientInterface::class, $client);
 
         $this->assertEquals($config, $connection->getConfig());
-
-        $clientConnection = $client->getConnection();
-        // $params = $config['connections']['default'];
-
-        $this->assertEquals('default', $clientConnection->getAlias());
-        $this->assertEquals($config['host'], $clientConnection->getHost());
-        $this->assertEquals($config['port'], $clientConnection->getPort());
-        $this->assertEquals($config['username'], $clientConnection->getAuthUser());
-        $this->assertEquals($config['password'], $clientConnection->getAuthPassword());
     }
 
     public function testMultipleConnections()
@@ -73,18 +65,7 @@ class ConnectionFactoryTest extends TestCase
         $connection = $this->factory->make($config);
 
         $this->assertInstanceOf(Connection::class, $connection);
-        $this->assertInstanceOf(Client::class, $connection->getClient());
-
-        $client = $connection->getClient();
-
-        $defaultConnection = $client->getConnection();
-        $this->assertEquals($config['connections']['server1']['host'], $defaultConnection->getHost());
-        $this->assertEquals(7474, $defaultConnection->getPort());
-        $this->assertEquals($config['connections']['server1']['username'], $defaultConnection->getAuthUser());
-        $this->assertEquals($config['connections']['server1']['password'], $defaultConnection->getAuthPassword());
-
-        $this->assertEquals($config['default'], $connection->getConfig()['default']);
-        $this->assertEquals($config['connections'], $connection->getConfig()['connections']);
+        $this->assertInstanceOf(ClientInterface::class, $connection->getClient());
     }
 
     public function testHAConnection()
@@ -116,6 +97,8 @@ class ConnectionFactoryTest extends TestCase
             ],
         ];
 
-        $connection = $this->factory->make($config);
+        $this->expectException(Exception::class);
+        $this->expectErrorMessage('High Availability mode is not supported anymore. Please use the neo4j scheme instead');
+        $this->factory->make($config);
     }
 }

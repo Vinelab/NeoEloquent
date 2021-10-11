@@ -27,14 +27,14 @@ class Author extends Model
 
 class HasManyRelationTest extends TestCase
 {
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 
         parent::tearDown();
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -55,7 +55,7 @@ class HasManyRelationTest extends TestCase
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $writtenGot);
         $this->assertTrue($writtenGot->exists());
-        $this->assertGreaterThan(0, $writtenGot->id);
+        $this->assertGreaterThanOrEqual(0, $writtenGot->id);
         $this->assertNotNull($writtenGot->created_at);
         $this->assertNotNull($writtenGot->updated_at);
         $this->assertEquals($writtenGot->ratings, 123);
@@ -121,7 +121,7 @@ class HasManyRelationTest extends TestCase
         foreach ($edges as $key => $edge) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
             $this->assertTrue($edge->exists());
-            $this->assertGreaterThan(0, $edge->id);
+            $this->assertGreaterThanOrEqual(0, $edge->id);
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
             $edge->delete();
@@ -200,7 +200,7 @@ class HasManyRelationTest extends TestCase
         foreach ($edges as $edge) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
             $this->assertTrue($edge->exists());
-            $this->assertGreaterThan(0, $edge->id);
+            $this->assertGreaterThanOrEqual(0, $edge->id);
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
 

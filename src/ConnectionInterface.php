@@ -3,6 +3,8 @@
 namespace Vinelab\NeoEloquent;
 
 use Closure;
+use Laudis\Neo4j\Databags\SummarizedResult;
+use Laudis\Neo4j\Types\CypherList;
 
 interface ConnectionInterface
 {
@@ -28,7 +30,7 @@ interface ConnectionInterface
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return array
+     * @return CypherList
      */
     public function select($query, $bindings = []);
 
@@ -37,7 +39,7 @@ interface ConnectionInterface
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return bool
+     * @return CypherList
      */
     public function insert($query, $bindings = []);
 
@@ -46,7 +48,7 @@ interface ConnectionInterface
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return int
+     * @return SummarizedResult
      */
     public function update($query, $bindings = []);
 

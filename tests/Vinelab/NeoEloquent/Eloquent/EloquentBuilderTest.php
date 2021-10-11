@@ -2,17 +2,24 @@
 
 namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
+use Laudis\Neo4j\Types\CypherList;
+use Laudis\Neo4j\Types\CypherMap;
+use Laudis\Neo4j\Types\Relationship;
 use Mockery as M;
 use GraphAware\Neo4j\Client\Formatter\Type\Node;
 use GraphAware\Neo4j\Client\Formatter\Result;
+use Neoxygen\NeoClient\Formatter;
+use PHPUnit\Framework\MockObject\MockBuilder;
+use stdClass;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class EloquentBuilderTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -23,7 +30,7 @@ class EloquentBuilderTest extends TestCase
         $this->builder = new Builder($this->query);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 
@@ -41,38 +48,34 @@ class EloquentBuilderTest extends TestCase
         $this->assertEquals('baz', $result);
     }
 
-    /**
-     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
-     */
     public function testFindOrFailMethodThrowsModelNotFoundException()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
         $builder->getQuery()->shouldReceive('where')->once()->with('foo', '=', 'bar');
         $builder->shouldReceive('first')->with(array('column'))->andReturn(null);
+
+        $this->expectException(ModelNotFoundException::class);
         $result = $builder->findOrFail('bar', array('column'));
     }
 
-    /**
-     * @expectedException \Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
-     */
     public function testFindOrFailMethodWithManyThrowsModelNotFoundException()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[get]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
         $builder->getQuery()->shouldReceive('whereIn')->once()->with('foo', [1, 2]);
         $builder->shouldReceive('get')->with(array('column'))->andReturn(new Collection([1]));
+        $this->expectException(ModelNotFoundException::class);
         $result = $builder->findOrFail([1, 2], array('column'));
     }
 
-    /**
-     * @expectedException Vinelab\NeoEloquent\Exceptions\ModelNotFoundException
-     */
+
     public function testFirstOrFailMethodThrowsModelNotFoundException()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
         $builder->setModel($this->getMockModel());
         $builder->shouldReceive('first')->with(array('column'))->andReturn(null);
+        $this->expectException(ModelNotFoundException::class);
         $result = $builder->firstOrFail(array('column'));
     }
 
@@ -124,7 +127,7 @@ class EloquentBuilderTest extends TestCase
     public function testPluckMethodWithModelFound()
     {
         $builder = m::mock('Vinelab\NeoEloquent\Eloquent\Builder[first]', array($this->getMockQueryBuilder()));
-        $mockModel = new \StdClass();
+        $mockModel = new StdClass();
         $mockModel->name = 'foo';
         $builder->shouldReceive('first')->with(array('name'))->andReturn($mockModel);
 
@@ -157,6 +160,8 @@ class EloquentBuilderTest extends TestCase
                 $callbackExecutionAssertor->doSomething($result);
             }
         });
+
+        self::assertTrue(true);
     }
 
     public function testListsReturnsTheMutatedAttributesOfAModel()
@@ -237,6 +242,8 @@ class EloquentBuilderTest extends TestCase
         $builder->setEagerLoads(array('orders' => null, 'orders.lines' => null, 'orders.lines.details' => null));
 
         $relation = $builder->getRelation('orders');
+
+        self::assertInstanceOf(stdClass::class, $relation);
     }
 
     public function testGetRelationProperlySetsNestedRelationshipsWithSimilarNames()
@@ -257,6 +264,8 @@ class EloquentBuilderTest extends TestCase
 
         $relation = $builder->getRelation('orders');
         $relation = $builder->getRelation('ordersGroups');
+
+        self::assertInstanceOf(stdClass::class, $relation);
     }
 
     public function testEagerLoadParsingSetsProperRelationships()
@@ -303,11 +312,19 @@ class EloquentBuilderTest extends TestCase
     public function testQueryPassThru()
     {
         $builder = $this->getBuilder();
+        $model = \Vinelab\NeoEloquent\Eloquent\Model::class;
+        $model = M::mock($model);
+        $model->shouldReceive('nodeLabel')->once()->andReturn('Model');
+        $builder->setModel($model);
         $builder->getQuery()->shouldReceive('foobar')->once()->andReturn('foo');
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Builder', $builder->foobar());
 
         $builder = $this->getBuilder();
+        $model = \Vinelab\NeoEloquent\Eloquent\Model::class;
+        $model = M::mock($model);
+        $model->shouldReceive('nodeLabel')->once()->andReturn('Model');
+        $builder->setModel($model);
         $builder->getQuery()->shouldReceive('insert')->once()->with(array('bar'))->andReturn('foo');
 
         $this->assertEquals('foo', $builder->insert(array('bar')));
@@ -365,9 +382,7 @@ class EloquentBuilderTest extends TestCase
     {
         $this->query->shouldReceive('getGrammar')->andReturn(new CypherGrammar());
 
-        $resultSet = M::mock('Neoxygen\NeoClient\Formatter\Result');
-        $resultSet->shouldReceive('getRelationships')->once()->withNoArgs()->andReturn([]);
-        $resultSet->shouldReceive('getAllByIdentifier')->withNoArgs()->andReturn([new Node('id', [])]);
+        $resultSet = new CypherList([ new CypherMap(['node' => new \Laudis\Neo4j\Types\Node(1, new CypherList(), new CypherMap())])]);
 
         $this->query->shouldReceive('where')->once()->with('id(n)', '=', 1);
         $this->query->shouldReceive('from')->once()->with('Model')->andReturn(array('Model'));
@@ -381,6 +396,9 @@ class EloquentBuilderTest extends TestCase
         $result = M::mock('Neoxygen\NeoClient\Formatter\Result');
         $collection = new \Illuminate\Support\Collection(array($result));
         $this->model->shouldReceive('newCollection')->once()->andReturn($collection);
+        $this->model->shouldReceive('getAttributes')->once()->andReturn([]);
+        $this->model->shouldReceive('setConnection')->once();
+        $this->model->shouldReceive('newFromBuilder')->once()->andReturn($this->model);
 
         $this->builder->setModel($this->model);
 
@@ -435,6 +453,7 @@ class EloquentBuilderTest extends TestCase
         $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->query->shouldReceive('getGrammar')->andReturn($grammar);
         // put things to the test
+        $this->model->shouldReceive('getAttributes')->once()->andReturn([]);
         $found = $this->builder->find($id, $properties);
 
         $this->assertInstanceOf('User', $found);
@@ -478,13 +497,14 @@ class EloquentBuilderTest extends TestCase
                     ->shouldReceive('newFromBuilder')->once()
                         ->with($results[0])->andReturn($user)
                     ->shouldReceive('newFromBuilder')->once()
-                        ->with($results[1])->andReturn($user);
+                        ->with($results[1])->andReturn($user)
+                    ->shouldReceive('getAttributes')->andReturn([]);
 
         $this->builder->setModel($this->model);
 
         $models = $this->builder->getModels();
 
-        $this->assertInternalType('array', $models);
+        $this->assertIsArray($models);
         $this->assertInstanceOf('User', $models[0]);
         $this->assertInstanceOf('User', $models[1]);
     }
@@ -515,13 +535,14 @@ class EloquentBuilderTest extends TestCase
                     ->shouldReceive('getKeyName')->once()->andReturn('id')
                     ->shouldReceive('getConnectionName')->once()->andReturn('default')
                     ->shouldReceive('newFromBuilder')->once()
-                        ->with($results)->andReturn($user);
+                        ->with($results)->andReturn($user)
+                    ->shouldReceive('getAttributes')->once()->andReturn([]);
 
         $this->builder->setModel($this->model);
 
         $models = $this->builder->getModels($properties);
 
-        $this->assertInternalType('array', $models);
+        $this->assertIsArray($models);
         $this->assertInstanceOf('User', $models[0]);
     }
 
@@ -544,57 +565,36 @@ class EloquentBuilderTest extends TestCase
      *                          or specify the attributes straight in the array
      * @param array $properties The expected properties (columns)
      *
-     * @return Everyman\Neo4j\Query\ResultSet
+     * @return CypherList
      */
     public function createNodeResultSet($data = array(), $properties = array())
     {
-        $c = $this->getConnectionWithConfig('default');
-
-        $result = new Result();
+        $result = [];
 
         if (is_array(reset($data))) {
             foreach ($data as $index => $attributes) {
-                $node = $this->createNode($attributes);
-                $result->addNode($node);
-                $result->addIdentifierValue($index, [$node]);
+                $result[] = new CypherMap(['node' => $this->createNode($attributes)]);
             }
         } else {
             $node = $this->createNode($data);
-            $result->addNode($node);
-            $result->addIdentifierValue(0, [$node]);
+            $result[] = new CypherMap(['node' => $node]);
         }
 
         // the ResultSet $result part
 
-        return $result;
+        return new CypherList($result);
     }
 
     /**
      * Get a row with a Node inside of it having $data as properties.
      *
-     * @param int   $index The index of the node in the row
      * @param array $data
      *
-     * @return \Neoxygen\NeoClient\Formatter
+     * @return \Laudis\Neo4j\Types\Node
      */
     public function createNode(array $data)
     {
-        // create the result Node containing the properties and their values
-        $node = M::mock('Neoxygen\NeoClient\Formatter\Node');
-
-        // the Node id is never returned with the properties so in case
-        // that is one of the data properties we need to remove it
-        // and add it to when requested through getId()
-        if (isset($data['id'])) {
-            $node->shouldReceive('getId')->andReturn($data['id']);
-
-            unset($data['id']);
-        }
-
-        $node->shouldReceive('getProperties')->andReturn($data);
-
-        // create the result row that should contain the Node
-        return $node;
+        return new \Laudis\Neo4j\Types\Node($data['id'], new CypherList(), new CypherMap($data));
     }
 
     public function createRowWithPropertiesAtIndex($index, array $properties)
@@ -636,18 +636,12 @@ class EloquentBuilderTest extends TestCase
         return $query;
     }
 
-    public function getMockBuilder($classname = null)
+    protected function getBuilder()
     {
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('from')->andReturn('foo_table');
         $query->shouldReceive('modelAsNode')->andReturn('n');
-
-        return $query;
-    }
-
-    protected function getBuilder()
-    {
-        return new Builder($this->getMockBuilder());
+        return new Builder($query);
     }
 }
 

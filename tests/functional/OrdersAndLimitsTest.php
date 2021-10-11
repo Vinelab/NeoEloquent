@@ -8,7 +8,7 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 
 class OrdersAndLimitsTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -17,7 +17,7 @@ class OrdersAndLimitsTest extends TestCase
         Click::setConnectionResolver($resolver);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 

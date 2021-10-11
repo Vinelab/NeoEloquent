@@ -2,6 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Tests;
 
+use Laudis\Neo4j\Contracts\ClientInterface;
+use Laudis\Neo4j\Databags\SummarizedResult;
 use Mockery as M;
 use Vinelab\NeoEloquent\Connection;
 use PHPUnit\Framework\TestCase as PHPUnit;
@@ -21,7 +23,7 @@ class TestCase extends PHPUnit
         $this->dbConfig = require 'config/database.php';
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -32,7 +34,7 @@ class TestCase extends PHPUnit
         $this->flushDb();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         // everything should be clean before every test
         $this->flushDb();
@@ -40,7 +42,7 @@ class TestCase extends PHPUnit
         parent::tearDown();
     }
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         date_default_timezone_set('Asia/Beirut');
     }
@@ -65,7 +67,8 @@ class TestCase extends PHPUnit
      */
     protected function flushDb()
     {
-        $client = $this->getClient()->writeSession();
+        /** @var ClientInterface $client */
+        $client = $this->getClient();
 
         $flushQuery = 'MATCH (n) DETACH DELETE n';
 
@@ -91,9 +94,10 @@ class TestCase extends PHPUnit
         //get the labels using NeoClient
         $connection = $this->getConnectionWithConfig('neo4j');
         $client = $connection->getClient();
-        $result = $client->session()->run("MATCH (n) WHERE id(n)=$id RETURN n");
+        /** @var SummarizedResult $result */
+        $result = $client->run("MATCH (n) WHERE id(n)=$id RETURN n");
 
-        return $result->firstRecord()->valueByIndex(0);
+        return $result->getResult()->first()->first()->getValue();
     }
 
     /**
@@ -105,6 +109,6 @@ class TestCase extends PHPUnit
      */
     protected function getNodeLabels($id)
     {
-        return $this->getNodeById($id)->labels();
+        return $this->getNodeById($id)->labels()->toArray();
     }
 }

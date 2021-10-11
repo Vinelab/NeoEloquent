@@ -2,28 +2,41 @@
 
 namespace Vinelab\NeoEloquent\Tests\Query;
 
+use InvalidArgumentException;
+use Laudis\Neo4j\Common\Uri;
+use Laudis\Neo4j\Databags\DatabaseInfo;
+use Laudis\Neo4j\Databags\ResultSummary;
+use Laudis\Neo4j\Databags\ServerInfo;
+use Laudis\Neo4j\Databags\Statement;
+use Laudis\Neo4j\Databags\SummarizedResult;
+use Laudis\Neo4j\Databags\SummaryCounters;
+use Laudis\Neo4j\Enum\ConnectionProtocol;
+use Laudis\Neo4j\Enum\QueryTypeEnum;
+use Laudis\Neo4j\Types\CypherList;
+use Laudis\Neo4j\Types\CypherMap;
 use Mockery as M;
-use GraphAware\Neo4j\Client\Formatter\Type\Node;
+use Laudis\Neo4j\Types\Node;
+use Laudis\Neo4j\Contracts\ClientInterface;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
 class BuilderTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
         $this->grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar')->makePartial();
         $this->connection = M::mock('Vinelab\NeoEloquent\Connection')->makePartial();
 
-        $this->neoClient = M::mock('Neoxygen\NeoClient\Client');
+        $this->neoClient = M::mock(ClientInterface::class);
         $this->connection->shouldReceive('getClient')->andReturn($this->neoClient);
 
         $this->builder = new Builder($this->connection, $this->grammar);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 
@@ -51,7 +64,7 @@ class BuilderTest extends TestCase
         );
 
         $query = [
-            'statement' => 'CREATE (hero:`Hero`) SET hero.length = {length_create}, hero.height = {height_create}, hero.power = {power_create} RETURN hero',
+            'statement' => 'CREATE (hero:`Hero`) SET hero.length = $length_create, hero.height = $height_create, hero.power = $power_create RETURN hero',
             'parameters' => [
                 'length_create' => $values['length'],
                 'height_create' => $values['height'],
@@ -60,15 +73,24 @@ class BuilderTest extends TestCase
         ];
 
         $id = 69;
-        $node = new Node($id, $values);
-        $result = M::mock('GraphAware\Neo4j\Client\Formatter\Result');
-        $result->shouldReceive('getSingleNode')->once()->andReturn($node);
+        $node = new Node($id, new CypherList(['Hero']), new CypherMap($values));
+        $result = new CypherList([new CypherMap(['hero' => $node])]);
 
-        $this->neoClient->shouldReceive('getResult')->once()->andReturn($result);
-        $this->neoClient->shouldReceive('sendCypherQuery')
+        $this->neoClient->shouldReceive('run')
             ->once()
             ->with($query['statement'], $query['parameters'])
-            ->andReturn($this->neoClient);
+            ->andReturn(new SummarizedResult($result, new ResultSummary(
+                new SummaryCounters(),
+                new DatabaseInfo(''),
+                new CypherList(),
+                null,
+                null,
+                new Statement($query['statement'], $query['parameters']),
+                QueryTypeEnum::READ_WRITE(),
+                0,
+                0,
+                new ServerInfo(Uri::create(), ConnectionProtocol::BOLT_V40(), 'agent')
+            )));
 
         $this->assertEquals($id, $this->builder->insertGetId($values));
     }
@@ -118,12 +140,11 @@ class BuilderTest extends TestCase
         $this->assertEquals($this->builder->columns, array('poop', 'head'), 'make sure the columns were set');
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Value must be provided.
-     */
+
     public function testFailingWhereWithNullValue()
     {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectErrorMessage('Value must be provided.');
         $this->builder->where('id', '>', null);
     }
 
@@ -241,7 +262,7 @@ class BuilderTest extends TestCase
         $builder->select('*')->from('User')->where('username', '=', 'bakalazma');
 
         $bindings = $builder->getBindings();
-        $this->assertEquals('MATCH (user:User) WHERE user.username = {userusername} RETURN *', $builder->toCypher());
+        $this->assertEquals('MATCH (user:User) WHERE user.username = $userusername RETURN *', $builder->toCypher());
         $this->assertEquals(array('userusername' => 'bakalazma'), $bindings);
     }
 

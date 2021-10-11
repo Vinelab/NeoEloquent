@@ -5,24 +5,32 @@ namespace Vinelab\NeoEloquent;
 use Closure;
 use DateTime;
 use Exception;
-use GraphAware\Bolt\Configuration;
-use GraphAware\Bolt\Driver;
-use GraphAware\Bolt\GraphDatabase;
+use Laudis\Neo4j\Authentication\Authenticate;
+use Laudis\Neo4j\ClientBuilder;
+use Laudis\Neo4j\Contracts\AuthenticateInterface;
+use Laudis\Neo4j\Contracts\ClientInterface;
+use Laudis\Neo4j\Contracts\TransactionInterface;
+use Laudis\Neo4j\Databags\ResultSummary;
+use Laudis\Neo4j\Databags\SummarizedResult;
+use Laudis\Neo4j\Formatter\OGMFormatter;
+use Laudis\Neo4j\Formatter\SummarizedResultFormatter;
+use Laudis\Neo4j\Types\CypherList;
 use LogicException;
-//use Neoxygen\NeoClient\Client;
-//use Neoxygen\NeoClient\ClientBuilder;
-use GraphAware\Neo4j\Client\Client;
-use GraphAware\Neo4j\Client\ClientBuilder;
+use Neoxygen\NeoClient\Client;
 use Throwable;
+use Vinelab\NeoEloquent\Exceptions\InvalidCypherException;
 use Vinelab\NeoEloquent\Exceptions\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
 use Vinelab\NeoEloquent\Query\Expression;
+use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Schema\Builder;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\Query\Processors\Processor;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
+use function sprintf;
 
 class Connection implements ConnectionInterface
 {
@@ -61,7 +69,7 @@ class Connection implements ConnectionInterface
     /**
      * The event dispatcher instance.
      *
-     * @var \Illuminate\Contracts\Events\Dispatcher
+     * @var Dispatcher
      */
     protected $events;
 
@@ -110,14 +118,14 @@ class Connection implements ConnectionInterface
     /**
      * The Neo4j active client connection.
      *
-     * @var \Neoxygen\NeoClient\Client
+     * @var ClientInterface
      */
     protected $neo;
 
     /**
      * The Neo4j database transaction.
      *
-     * @var \Neoxygen\NeoClient\Transaction\Transaction
+     * @var TransactionInterface
      */
     protected $transaction;
 
@@ -127,9 +135,9 @@ class Connection implements ConnectionInterface
      * @var array
      */
     protected $defaults = array(
-        'scheme' => 'http',
+        'scheme' => 'bolt',
         'host' => 'localhost',
-        'port' => 7474,
+        'port' => 7687,
         'username' => null,
         'password' => null,
     );
@@ -208,7 +216,7 @@ class Connection implements ConnectionInterface
     /**
      * Get the event dispatcher used by the connection.
      *
-     * @return \Illuminate\Contracts\Events\Dispatcher
+     * @return Dispatcher
      */
     public function getEventDispatcher()
     {
@@ -304,7 +312,7 @@ class Connection implements ConnectionInterface
     /**
      * Set the event dispatcher instance on the connection.
      *
-     * @param \Illuminate\Contracts\Events\Dispatcher $events
+     * @param Dispatcher $events
      */
     public function setEventDispatcher(Dispatcher $events)
     {
@@ -359,104 +367,43 @@ class Connection implements ConnectionInterface
     /**
      * Create a new Neo4j client.
      *
-     * @return Neoxygen\NeoClient\Client
+     * @return ClientInterface
      */
     public function createSingleConnectionClient()
     {
-        $config = $this->getConfig();
-
-//        return ClientBuilder::create()
-//            ->addConnection(
-//                'default',
-//                $this->getScheme($config),
-//                $this->getHost($config),
-//                $this->getPort($config),
-//                $this->isSecured($config),
-//                $this->getUsername($config),
-//                $this->getPassword($config)
-//            )
-//            ->setAutoFormatResponse(true)
-//            ->build();
-
-//        return ClientBuilder::create()
-//            ->addConnection('bolt', 'bolt://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
-//            ->addConnection('bolt+routing', 'bolt+routing://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
-//            ->addConnection('default', 'http://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
-//            ->build();
-        $boltConfig = Configuration::create()->withCredentials($this->getUsername($config), $this->getPassword($config));
-
-        return GraphDatabase::driver('bolt://'.$this->getHost($config).':'.$this->getPort($config), $boltConfig);
+        return $this->initBuilder()
+            ->withDriver('default', $this->buildUriFromConfig($this->getConfig()), $this->getAuth())
+            ->build();
     }
+
+    private function initBuilder(): ClientBuilder
+    {
+        $formatter = new SummarizedResultFormatter(OGMFormatter::create());
+        return ClientBuilder::create()->withFormatter($formatter);
+    }
+
 
     public function createMultipleConnectionsClient()
     {
-        $clientBuilder = ClientBuilder::create();
+        $builder = $this->initBuilder();
 
         $default = $this->getConfigOption('default');
 
         foreach ($this->getConfigOption('connections') as $connection => $config) {
             if ($default === $connection) {
-                $connection = 'default';
+                $builder = $builder->withDefaultDriver($connection);
             }
 
-            $clientBuilder->addConnection(
-                $connection,
-                $this->getScheme($config),
-                $this->getHost($config),
-                $this->getPort($config),
-                $this->isSecured($config),
-                $this->getUsername($config),
-                $this->getPassword($config)
-            );
+            $builder = $builder->withDriver($connection, $this->buildUriFromConfig($config), $this->getAuth());
         }
 
-//        $client = ClientBuilder::create()
-//            ->addConnection('default', 'http://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
-//            ->addConnection('bolt', 'bolt://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
-//            ->addConnection('cluster', 'bolt+routing://'.$this->getUsername($config).':'.$this->getPassword($config).'@'.$this->getHost($config).':'.$this->getPort($config))
-//            ->build();
-
-        return $clientBuilder->setAutoFormatResponse(true)->build();
-    }
-
-    public function createHAClient()
-    {
-        $connections = $this->getConfigOption('connections');
-
-        $clientBuilder = ClientBuilder::create();
-
-        $master = $connections['master'];
-        $clientBuilder->addConnection(
-            'master',
-            $this->getScheme($master),
-            $this->getHost($master),
-            $this->getPort($master),
-            $this->isSecured($master),
-            $this->getUsername($master),
-            $this->getPassword($master)
-        )->setMasterConnection('master');
-
-        if (isset($connections['slaves'])) {
-            foreach ($connections['slaves'] as $connection => $config) {
-                $clientBuilder->addConnection(
-                    $connection,
-                    $this->getScheme($config),
-                    $this->getHost($config),
-                    $this->getPort($config),
-                    $this->isSecured($config),
-                    $this->getUsername($config),
-                    $this->getPassword($config)
-                )->setSlaveConnection($connection);
-            }
-        }
-
-        return $clientBuilder->enableHAMode()->setAutoFormatResponse(true)->build();
+        return $builder->build();
     }
 
     /**
      * Get the currenty active database client.
      *
-     * @return \Neoxygen\NeoClient\Client
+     * @return ClientInterface
      */
     public function getClient()
     {
@@ -471,9 +418,9 @@ class Connection implements ConnectionInterface
      * Set the client responsible for the
      * database communication.
      *
-     * @param \Graphaware\Bolt\Driver $client
+     * @param ClientInterface $client
      */
-    public function setClient(Driver $client)
+    public function setClient(ClientInterface $client)
     {
         $this->neo = $client;
     }
@@ -577,7 +524,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return array
+     * @return CypherList
      */
     public function select($query, $bindings = array())
     {
@@ -591,12 +538,12 @@ class Connection implements ConnectionInterface
             // node from the database, and will either be an array or objects.
             $query = $me->getCypherQuery($query, $bindings);
 
-            return $this->getClient()->session()
-                ->run($query['statement'], $query['parameters']);
+            /** @var SummarizedResult $results */
+            $summary = $this->getClient()->run($query['statement'], $query['parameters']);
+            /** @var CypherList $results */
+            $results = $summary->getResult();
 
-//            return $this->getClient()
-//                ->sendCypherQuery($query['statement'], $query['parameters'])
-//                ->getResult();
+            return $results;
         });
     }
 
@@ -619,7 +566,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return int
+     * @return SummarizedResult
      */
     public function update($query, $bindings = [])
     {
@@ -645,7 +592,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return int
+     * @return SummarizedResult
      */
     public function affectingStatement($query, $bindings = array())
     {
@@ -659,12 +606,10 @@ class Connection implements ConnectionInterface
             // to execute the statement and then we'll use CypherQuery to fetch the affected.
             $query = $me->getCypherQuery($query, $bindings);
 
-            return $this->getClient()->writeSession()
-                ->run($query['statement'], $query['parameters']);
-
-//            return $this->getClient()
-//                ->sendCypherQuery($query['statement'], $query['parameters'])
-//                ->getResult();
+            /** @var SummarizedResult $summarizedResult */
+            return $this->getClient()->writeTransaction(static function (TransactionInterface $tsx) use ($query) {
+                return $tsx->run($query['statement'], $query['parameters']);
+            });
         });
     }
 
@@ -674,7 +619,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return mixed.
+     * @return CypherList|bool
      */
     public function statement($query, $bindings = array(), $rawResults = false)
     {
@@ -685,14 +630,11 @@ class Connection implements ConnectionInterface
 
             $query = $me->getCypherQuery($query, $bindings);
 
-//            $results = $this->getClient()
-//                ->sendCypherQuery($query['statement'], $query['parameters'])
-//                ->getResult();
+            /** @var SummarizedResult $run */
+            $run = $this->getClient()->run($query['statement'], $query['parameters']);
+            $results = $run->getResult();
 
-            $results = $this->getClient()->writeSession()
-                ->run($query['statement'], $query['parameters']);
-
-            return ($rawResults === true) ? $results : !!$results;
+            return ($rawResults === true) ? $results : true;
         });
     }
 
@@ -710,7 +652,9 @@ class Connection implements ConnectionInterface
                 return true;
             }
 
-            return (bool) $me->getPdo()->exec($query);
+            $this->getClient()->run($query);
+
+            return true;
         });
     }
 
@@ -799,7 +743,7 @@ class Connection implements ConnectionInterface
     /**
      * Get the query grammar used by the connection.
      *
-     * @return \Vinelab\NeoEloquent\Query\Grammars\CypherGrammar
+     * @return CypherGrammar
      */
     public function getQueryGrammar()
     {
@@ -813,7 +757,7 @@ class Connection implements ConnectionInterface
     /**
      * Get the default query grammar instance.
      *
-     * @return \Vinelab\NeoEloquent\Query\Grammars\CypherGrammar
+     * @return CypherGrammar
      */
     protected function getDefaultQueryGrammar()
     {
@@ -845,11 +789,11 @@ class Connection implements ConnectionInterface
     /**
      * Execute a Closure within a transaction.
      *
-     * @param \Closure $callback
+     * @param Closure $callback
      *
      * @return mixed
      *
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function transaction(Closure $callback, $attempts = 1)
     {
@@ -889,7 +833,7 @@ class Connection implements ConnectionInterface
 
         if ($this->transactions == 1) {
             $client = $this->getClient();
-            $this->transaction = $client->createTransaction();
+            $this->transaction = $client->beginTransaction();
         }
 
         $this->fireConnectionEvent('beganTransaction');
@@ -938,7 +882,7 @@ class Connection implements ConnectionInterface
     /**
      * Execute the given callback in "dry run" mode.
      *
-     * @param \Closure $callback
+     * @param Closure $callback
      *
      * @return array
      */
@@ -969,7 +913,7 @@ class Connection implements ConnectionInterface
      *
      * @param string $label
      *
-     * @return \Vinelab\NeoEloquent\Query\Builder
+     * @return QueryBuilder
      */
     public function node($label)
     {
@@ -1034,11 +978,11 @@ class Connection implements ConnectionInterface
      *
      * @param string   $query
      * @param array    $bindings
-     * @param \Closure $callback
+     * @param Closure $callback
      *
      * @return mixed
      *
-     * @throws \Vinelab\NeoEloquent\Exceptions\InvalidCypherException
+     * @throws InvalidCypherException
      */
     protected function runQueryCallback($query, $bindings, Closure $callback)
     {
@@ -1064,14 +1008,14 @@ class Connection implements ConnectionInterface
     /**
      * Handle a query exception that occurred during query execution.
      *
-     * @param \Vinelab\NeoEloquent\Exceptions\Exception $e
+     * @param Exceptions\Exception $e
      * @param string                                    $query
      * @param array                                     $bindings
-     * @param \Closure                                  $callback
+     * @param Closure $callback
      *
      * @return mixed
      *
-     * @throws \Vinelab\NeoEloquent\Exceptions\Exception
+     * @throws Exceptions\Exception
      */
     protected function tryAgainIfCausedByLostConnection(QueryException $e, $query, $bindings, Closure $callback)
     {
@@ -1108,7 +1052,7 @@ class Connection implements ConnectionInterface
      * Reconnect to the database.
      *
      *
-     * @throws \LogicException
+     * @throws LogicException
      */
     public function reconnect()
     {
@@ -1150,7 +1094,7 @@ class Connection implements ConnectionInterface
     /**
      * Register a database query listener with the connection.
      *
-     * @param \Closure $callback
+     * @param Closure $callback
      */
     public function listen(Closure $callback)
     {
@@ -1229,7 +1173,7 @@ class Connection implements ConnectionInterface
     /**
      * Get a schema builder instance for the connection.
      *
-     * @return \Vinelab\NeoEloquent\Schema\Builder
+     * @return Builder
      */
     public function getSchemaBuilder()
     {
@@ -1248,5 +1192,43 @@ class Connection implements ConnectionInterface
     protected function handleExceptions($query, $bindings, $e)
     {
         throw new QueryException($query, $bindings, $e);
+    }
+
+    /**
+     * @return string
+     */
+    private function buildUriFromConfig(array $config): string
+    {
+        $uri = '';
+        $scheme = $this->getScheme($config);
+        if ($scheme) {
+            $uri .= $scheme . '://';
+        }
+
+        $host = $this->getHost($config);
+        if ($host) {
+            $uri .= '@' . $host;
+        }
+
+        $port = $this->getPort($config);
+        if ($port) {
+            $uri .= ':' . $port;
+        }
+
+        return $uri;
+    }
+
+    /**
+     * @return AuthenticateInterface
+     */
+    private function getAuth(): AuthenticateInterface
+    {
+        $username = $this->getUsername($this->getConfig());
+        $password = $this->getPassword($this->getConfig());
+        if ($username && $password) {
+            return Authenticate::basic($username, $password);
+        }
+
+        return Authenticate::disabled();
     }
 }

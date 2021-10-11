@@ -2,11 +2,14 @@
 
 namespace Vinelab\NeoEloquent\Tests;
 
+use Laudis\Neo4j\Contracts\ClientInterface;
+use Laudis\Neo4j\Databags\SummarizedResult;
+use Laudis\Neo4j\Types\CypherList;
 use Mockery as M;
 
 class ConnectionTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -19,7 +22,7 @@ class ConnectionTest extends TestCase
         $this->client = $this->getClient();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         M::close();
 
@@ -39,7 +42,7 @@ class ConnectionTest extends TestCase
 
         $client = $c->getClient();
 
-        $this->assertInstanceOf('Neoxygen\NeoClient\Client', $client);
+        $this->assertInstanceOf(ClientInterface::class, $client);
     }
 
     public function testGettingConfigParam()
@@ -62,7 +65,7 @@ class ConnectionTest extends TestCase
     {
         $c = $this->getConnectionWithConfig('neo4j');
 
-        $this->assertInstanceOf('Neoxygen\NeoClient\Client', $c->getClient());
+        $this->assertInstanceOf(ClientInterface::class, $c->getClient());
     }
 
     public function testGettingDefaultHost()
@@ -70,7 +73,7 @@ class ConnectionTest extends TestCase
         $c = $this->getConnectionWithConfig('default');
 
         $this->assertEquals('localhost', $c->getHost([]));
-        $this->assertEquals(7474, $c->getPort([]));
+        $this->assertEquals(7687, $c->getPort([]));
     }
 
     public function testGettingDefaultPort()
@@ -79,8 +82,8 @@ class ConnectionTest extends TestCase
 
         $port = $c->getPort([]);
 
-        $this->assertEquals(7474, $port);
-        $this->assertInternalType('int', $port);
+        $this->assertEquals(7687, $port);
+        $this->assertIsInt($port);
     }
 
     public function testGettingQueryCypherGrammar()
@@ -115,6 +118,8 @@ class ConnectionTest extends TestCase
         $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
         $events->shouldReceive('fire')->once()->with('illuminate.query', array('foo', array(), null, null));
         $connection->logQuery('foo', array(), null);
+
+        self::assertTrue(true);
     }
 
     public function testPretendOnlyLogsQueries()
@@ -206,7 +211,7 @@ class ConnectionTest extends TestCase
         $cypher = 'MATCH (u:`User`) RETURN * LIMIT 10';
         $query = $c->getCypherQuery($cypher, array());
 
-        $this->assertInternalType('array', $query);
+        $this->assertIsArray($query);
         $this->assertArrayHasKey('statement', $query);
         $this->assertArrayHasKey('parameters', $query);
         $this->assertEquals($cypher, $query['statement']);
@@ -233,14 +238,14 @@ class ConnectionTest extends TestCase
 
         $connection = $c->createConnection();
 
-        $this->assertInstanceOf('Neoxygen\NeoClient\Client', $connection);
+        $this->assertInstanceOf(ClientInterface::class, $connection);
     }
 
     public function testSelectWithBindings()
     {
         $created = $this->createUser();
 
-        $query = 'MATCH (n:`User`) WHERE n.username = {username} RETURN * LIMIT 1';
+        $query = 'MATCH (n:`User`) WHERE n.username = $username RETURN * LIMIT 1';
 
         $bindings = ['username' => $this->user['username']];
 
@@ -254,12 +259,12 @@ class ConnectionTest extends TestCase
 
         $this->assertEquals($log['query'], $query);
         $this->assertEquals($log['bindings'], $bindings);
-        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
+        $this->assertInstanceOf(CypherList::class, $results);
 
         // This is how we get the first row of the result (first [0])
         // and then we get the Node instance (the 2nd [0])
         // and then ask it to return its properties
-        $selected = $results->getSingleNode()->getProperties();
+        $selected = $results->first()->first()->getValue()->getProperties()->toArray();
 
         $this->assertEquals($this->user, $selected, 'The fetched User must be the same as the one we just created');
     }
@@ -275,12 +280,12 @@ class ConnectionTest extends TestCase
         $c = $this->getConnectionWithConfig('default');
         $c->enableQueryLog();
 
-        $query = 'MATCH (n:`User`) WHERE n.username = {username} RETURN * LIMIT 1';
+        $query = 'MATCH (n:`User`) WHERE n.username = $username RETURN * LIMIT 1';
 
         // Get the ID of the created record
         $results = $c->select($query, array('username' => $this->user['username']));
 
-        $node = $results->getSingleNode();
+        $node = $results->first()->first()->getValue();
         $id = $node->getId();
 
         $bindings = array(
@@ -288,7 +293,7 @@ class ConnectionTest extends TestCase
         );
 
         // Select the Node containing the User record by its id
-        $query = 'MATCH (n:`User`) WHERE id(n) = {idn} RETURN * LIMIT 1';
+        $query = 'MATCH (n:`User`) WHERE id(n) = $idn RETURN * LIMIT 1';
 
         $results = $c->select($query, $bindings);
 
@@ -296,9 +301,9 @@ class ConnectionTest extends TestCase
 
         $this->assertEquals($log[1]['query'], $query);
         $this->assertEquals($log[1]['bindings'], $bindings);
-        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
+        $this->assertInstanceOf(CypherList::class, $results);
 
-        $selected = $results->getSingleNode()->getProperties();
+        $selected = $results->first()->first()->getValue()->getProperties()->toArray();
 
         $this->assertEquals($this->user, $selected);
     }
@@ -312,8 +317,8 @@ class ConnectionTest extends TestCase
         $type = 'dev';
 
         // Now we update the type and set it to $type
-        $query = 'MATCH (n:`User`) WHERE n.username = {username} '.
-                 'SET n.type = {type}, n.updated_at = {updated_at} '.
+        $query = 'MATCH (n:`User`) WHERE n.username = $username '.
+                 'SET n.type = $type, n.updated_at = $updated_at '.
                  'RETURN count(n)';
 
         $bindings = array(
@@ -324,7 +329,7 @@ class ConnectionTest extends TestCase
 
         $results = $c->affectingStatement($query, $bindings);
 
-        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
+        $this->assertInstanceOf(SummarizedResult::class, $results);
 
         foreach ($results as $result) {
             $count = $result[0];
@@ -332,17 +337,14 @@ class ConnectionTest extends TestCase
         }
 
         // Try to find the updated one and make sure it was updated successfully
-        $query = 'MATCH (n:User) WHERE n.username = {username} RETURN n';
+        $query = 'MATCH (n:User) WHERE n.username = $username RETURN n';
         $cypher = $c->getCypherQuery($query, array('username' => $this->user['username']));
 
-        $results = $this->client->sendCypherQuery($cypher['statement'], $cypher['parameters'])->getResult();
+        $results = $this->client->run($cypher['statement'], $cypher['parameters'])->getResult();
 
-        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
+        $this->assertInstanceOf(CypherList::class, $results);
 
-        $user = null;
-
-        $node = $results->getSingleNode();
-        $user = $node->getProperties();
+        $user = $results->first()->first()->getValue()->getProperties()->toArray();
 
         $this->assertEquals($type, $user['type']);
     }
@@ -354,8 +356,8 @@ class ConnectionTest extends TestCase
         $type = 'dev';
 
         // Now we update the type and set it to $type
-        $query = 'MATCH (n:`User`) WHERE n.username = {username} '.
-                 'SET n.type = {type}, n.updated_at = {updated_at} '.
+        $query = 'MATCH (n:`User`) WHERE n.username = $username '.
+                 'SET n.type = $type, n.updated_at = $updated_at '.
                  'RETURN count(n)';
 
         $bindings = array(
@@ -366,7 +368,7 @@ class ConnectionTest extends TestCase
 
         $results = $c->affectingStatement($query, $bindings);
 
-        $this->assertInstanceOf('Neoxygen\NeoClient\Formatter\Result', $results);
+        $this->assertInstanceOf(SummarizedResult::class, $results);
 
         foreach ($results as $result) {
             $count = $result[0];
@@ -454,15 +456,8 @@ class ConnectionTest extends TestCase
 
     public function testTransactionMethodRunsSuccessfully()
     {
-        $client = M::mock('Neoxygen\NeoClient\Client');
-        $client->shouldReceive('createTransaction')->once()
-            ->andReturn($transaction = M::mock('Neoxygen\NeoClient\Transaction\Transaction'));
-
-        $transaction->shouldReceive('commit')
-            ->shouldReceive('rollback')->andReturn('foo');
-
         $connection = $this->getMockConnection();
-        $connection->setClient($client);
+        $connection->setClient($this->getClient());
 
         $result = $connection->transaction(function ($db) { return $db; });
         $this->assertEquals($connection, $result);
@@ -470,14 +465,8 @@ class ConnectionTest extends TestCase
 
     public function testTransactionMethodRollsbackAndThrows()
     {
-        $neo = M::mock('Neoxygen\NeoClient\Client');
-        $neo->shouldReceive('createTransaction')->once()
-            ->andReturn($transaction = M::mock('Neoxygen\NeoClient\Transaction\Transaction'));
-
-        $transaction->shouldReceive('rollback');
-
         $connection = $this->getMockConnection();
-        $connection->setClient($neo);
+        $connection->setClient($this->getClient());
 
         try {
             $connection->transaction(function () { throw new \Exception('foo'); });
@@ -504,7 +493,7 @@ class ConnectionTest extends TestCase
         $c = $this->getConnectionWithConfig('default');
 
         // First we create the record that we need to update
-        $create = 'CREATE (u:User {name: {name}, email: {email}, username: {username}})';
+        $create = 'CREATE (u:User {name: $name, email: $email, username: $username})';
         // The bindings structure is a little weird, I know
         // but this is how they are collected internally
         // so bare with it =)
@@ -514,7 +503,7 @@ class ConnectionTest extends TestCase
             'username' => $this->user['username'],
         ));
 
-        return $this->client->sendCypherQuery($createCypher['statement'], $createCypher['parameters']);
+        return $this->client->run($createCypher['statement'], $createCypher['parameters']);
     }
 
     protected function getMockConnection($methods = array())
