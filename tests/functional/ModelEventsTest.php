@@ -135,7 +135,7 @@ class User extends Model
                 call_user_func(static::$listenerStub[$event], $model);
             }
         });
-        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
+        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function ($event, $model) {
             if (isset(static::$listenerStub[$event])) {
                 call_user_func(static::$listenerStub[$event], $model);
             }
@@ -221,7 +221,7 @@ class Friend extends Model
                 call_user_func(static::$listenerStub[$event], $model);
             }
         });
-        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
+        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function ($event, $model) {
             if (isset(static::$listenerStub[$event])) {
                 call_user_func(static::$listenerStub[$event], $model);
             }
@@ -305,7 +305,7 @@ class OBOne extends Model
                 call_user_func(static::$listenerStub[$event], $model);
             }
         });
-        $dispatcher->shouldReceive('fire')->andReturnUsing(function ($event, $model) {
+        $dispatcher->shouldReceive('dispatch')->andReturnUsing(function ($event, $model) {
             if (isset(static::$listenerStub[$event]) and strpos(static::$listenerStub[$event], '@') !== false) {
                 list($listener, $method) = explode('@', static::$listenerStub[$event]);
                 if (isset(static::$listenerStub[$event])) {
