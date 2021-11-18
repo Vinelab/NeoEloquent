@@ -8,6 +8,7 @@ use ArrayAccess;
 use Carbon\Carbon;
 use LogicException;
 use JsonSerializable;
+use BadMethodCallException;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
@@ -3735,11 +3736,11 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
 
     public function getQueueableRelations()
     {
-        // TODO: Implement getQueueableRelations() method.
+        throw new BadMethodCallException();
     }
 
     public function resolveChildRouteBinding($childType, $value, $field)
     {
-        // TODO: Implement resolveChildRouteBinding() method.
+        throw new BadMethodCallException();
     }
 }
