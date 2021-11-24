@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
+use BadMethodCallException;
 use DateTime;
 use Exception;
 use ArrayAccess;
@@ -3735,11 +3736,11 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
 
     public function getQueueableRelations()
     {
-        // TODO: Implement getQueueableRelations() method.
+        throw new BadMethodCallException('NeoEloquent does not support queueable relations yet');
     }
 
     public function resolveChildRouteBinding($childType, $value, $field)
     {
-        // TODO: Implement resolveChildRouteBinding() method.
+        throw new BadMethodCallException('NeoEloquent does not support queueable relations yet');
     }
 }
