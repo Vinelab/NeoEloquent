@@ -26,7 +26,7 @@ Or add the package to your `composer.json` and run `composer update`.
 ```json
 {
     "require": {
-        "vinelab/neoeloquent": "1.5.*"
+        "vinelab/neoeloquent": "1.8.*"
     }
 }
 ```
