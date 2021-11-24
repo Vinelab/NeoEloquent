@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
+use BadMethodCallException;
 use DateTime;
 use Exception;
 use ArrayAccess;
@@ -1205,7 +1206,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
         if (is_null($name)) {
             list(, $caller) = debug_backtrace(false);
 
-            $name = snake_case($caller['function']);
+            $name = Str::snake($caller['function']);
         }
 
         list($type, $id) = $this->getMorphs($name, $type, $id);
@@ -1814,7 +1815,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
         // event set individually instead of catching event for all the models.
         $event = "eloquent.{$event}: ".get_class($this);
 
-        $method = $halt ? 'until' : 'fire';
+        $method = $halt ? 'until' : 'dispatch';
 
         return static::$dispatcher->$method($event, $this);
     }
@@ -3728,9 +3729,18 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
      * @param  mixed  $value
      * @return \Illuminate\Database\Eloquent\Model|null
      */
-    public function resolveRouteBinding($value)
+    public function resolveRouteBinding($value, $field=null)
     {
         return $this->where($this->getRouteKeyName(), $value)->first();
     }
 
+    public function getQueueableRelations()
+    {
+        throw new BadMethodCallException('NeoEloquent does not support queueable relations yet');
+    }
+
+    public function resolveChildRouteBinding($childType, $value, $field)
+    {
+        throw new BadMethodCallException('NeoEloquent does not support queueable relations yet');
+    }
 }

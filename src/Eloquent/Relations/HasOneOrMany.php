@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
+use Illuminate\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Eloquent\Edges\Edge;
@@ -783,7 +784,7 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
      */
     protected function guessInverseRelation()
     {
-        return camel_case(str_plural(class_basename($this->getParent())));
+        return Str::camel(Str::plural(class_basename($this->getParent())));
     }
 
     /**
