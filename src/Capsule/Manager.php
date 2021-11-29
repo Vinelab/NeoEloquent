@@ -2,13 +2,16 @@
 
 namespace Vinelab\NeoEloquent\Capsule;
 
+use Illuminate\Contracts\Container\Container;
+use UnexpectedValueException;
+use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Eloquent\Model as Eloquent;
 
-use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Support\Traits\CapsuleManagerTrait;
+use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
 
 class Manager
 {
@@ -16,19 +19,15 @@ class Manager
 
     /**
      * The database manager instance.
-     *
-     * @var \Illuminate\Database\DatabaseManager
      */
-    protected $manager;
+    protected DatabaseManager $manager;
 
     /**
      * Create a new database capsule manager.
-     *
-     * @param \Illuminate\Container\Container|null $container
      */
-    public function __construct(Container $container = null)
+    public function __construct(?Container $container = null)
     {
-        $this->setupContainer($container ?: new Container());
+        $this->setupContainer($container ?? new \Illuminate\Container\Container());
 
         // Once we have the container setup, we will setup the default configuration
         // options in the container "config" binding. This will make the database
@@ -41,7 +40,7 @@ class Manager
     /**
      * Setup the default database configuration options.
      */
-    protected function setupDefaultConfiguration()
+    protected function setupDefaultConfiguration(): void
     {
         $this->container['config']['database.default'] = 'neo4j';
     }
@@ -49,70 +48,58 @@ class Manager
     /**
      * Build the database manager instance.
      */
-    protected function setupManager()
+    protected function setupManager(): void
     {
         $factory = new ConnectionFactory($this->container);
 
+        /** @noinspection PhpParamsInspection */
         $this->manager = new DatabaseManager($this->container, $factory);
     }
 
     /**
      * Get a connection instance from the global manager.
-     *
-     * @param string $connection
-     *
-     * @return \Illuminate\Database\Connection
      */
-    public static function connection($connection = null)
+    public static function connection(?string $connection = null): Connection
     {
         return static::$instance->getConnection($connection);
     }
 
     /**
      * Get a fluent query builder instance.
-     *
-     * @param string $table
-     * @param string $connection
-     *
-     * @return \Illuminate\Database\Query\Builder
      */
-    public static function table($table, $connection = null)
+    public static function table(string $table, ?string $connection = null)
     {
         return static::$instance->connection($connection)->table($table);
     }
 
     /**
      * Get a schema builder instance.
-     *
-     * @param string $connection
-     *
-     * @return \Illuminate\Database\Schema\Builder
      */
-    public static function schema($connection = null)
+    public static function schema(string $connection = null): SchemaBuilder
     {
         return static::$instance->connection($connection)->getSchemaBuilder();
     }
 
     /**
      * Get a registered connection instance.
-     *
-     * @param string $name
-     *
-     * @return \Illuminate\Database\Connection
      */
-    public function getConnection($name = null)
+    public function getConnection(?string $name = null): Connection
     {
-        return $this->manager->connection($name);
+        $connection = $this->manager->connection($name);
+        if (!$connection instanceof Connection) {
+            throw new UnexpectedValueException('Expected connection to be instance of ' . Connection::class);
+        }
+
+        return $connection;
     }
 
     /**
      * Register a connection with the manager.
-     *
-     * @param array  $config
-     * @param string $name
      */
-    public function addConnection(array $config, $name = 'default')
+    public function addConnection(array $config, ?string $name = null): void
     {
+        $name ??= 'default';
+
         $connections = $this->container['config']['database.connections'];
 
         $connections[$name] = $config;
@@ -123,7 +110,7 @@ class Manager
     /**
      * Bootstrap Eloquent so it is ready for usage.
      */
-    public function bootEloquent()
+    public function bootEloquent(): void
     {
         Eloquent::setConnectionResolver($this->manager);
 
@@ -140,9 +127,9 @@ class Manager
      *
      * @param int $fetchMode
      *
-     * @return $this
+     * @return static
      */
-    public function setFetchMode($fetchMode)
+    public function setFetchMode(int $fetchMode): self
     {
         $this->container['config']['database.fetch'] = $fetchMode;
 
@@ -151,32 +138,28 @@ class Manager
 
     /**
      * Get the database manager instance.
-     *
-     * @return \Illuminate\Database\DatabaseManager
      */
-    public function getDatabaseManager()
+    public function getDatabaseManager(): DatabaseManager
     {
         return $this->manager;
     }
 
     /**
      * Get the current event dispatcher instance.
-     *
-     * @return \Illuminate\Contracts\Events\Dispatcher|null
      */
-    public function getEventDispatcher()
+    public function getEventDispatcher(): ?Dispatcher
     {
         if ($this->container->bound('events')) {
             return $this->container['events'];
         }
+
+        return null;
     }
 
     /**
      * Set the event dispatcher instance to be used by connections.
-     *
-     * @param \Illuminate\Contracts\Events\Dispatcher $dispatcher
      */
-    public function setEventDispatcher(Dispatcher $dispatcher)
+    public function setEventDispatcher(Dispatcher $dispatcher): void
     {
         $this->container->instance('events', $dispatcher);
     }
@@ -184,12 +167,9 @@ class Manager
     /**
      * Dynamically pass methods to the default connection.
      *
-     * @param string $method
-     * @param array  $parameters
-     *
      * @return mixed
      */
-    public static function __callStatic($method, $parameters)
+    public static function __callStatic(string $method, array $parameters)
     {
         return call_user_func_array([static::connection(), $method], $parameters);
     }
