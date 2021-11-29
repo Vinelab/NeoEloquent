@@ -2,31 +2,26 @@
 
 namespace Vinelab\NeoEloquent\Connectors;
 
+use RuntimeException;
 use Vinelab\NeoEloquent\Connection;
-use Vinelab\NeoEloquent\Exceptions\Exception;
 
 class Neo4jConnector
 {
-    public function connect($type, $config)
+    public function connect($type, $config): Connection
     {
         $connection = new Connection($config);
 
         switch($type)
         {
             case Connection::TYPE_SINGLE:
-                $client = $connection->createSingleConnectionClient($config);
+                $client = $connection->createSingleConnectionClient();
                 break;
 
             case Connection::TYPE_MULTI:
-                $client = $connection->createMultipleConnectionsClient($config);
-                break;
-
-            case Connection::TYPE_HA:
-                throw new \Exception('High Availability mode is not supported anymore. Please use the neo4j scheme instead');
+                $client = $connection->createMultipleConnectionsClient();
                 break;
             default:
-                throw new Exception('Unsupported connection type '+$type);
-                break;
+                throw new RuntimeException('Unsupported connection type '.$type);
         }
 
         $connection->setClient($client);

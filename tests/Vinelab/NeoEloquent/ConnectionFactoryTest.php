@@ -67,38 +67,4 @@ class ConnectionFactoryTest extends TestCase
         $this->assertInstanceOf(Connection::class, $connection);
         $this->assertInstanceOf(ClientInterface::class, $connection->getClient());
     }
-
-    public function testHAConnection()
-    {
-        $config = [
-            'replication' => true,
-
-            'connections' => [
-
-               'master' => [
-                    'host' => 'server1.ip.address',
-                    'username' => 'theuser',
-                    'password' => 'dapass',
-               ],
-
-               'slaves' => [
-                    'slave-1' => [
-                        'host' => 'server2.ip.address',
-                        'username' => 'anotheruser',
-                        'password' => 'somepass',
-                    ],
-                   'slave-2' => [
-                        'host' => 'server3.ip.address',
-                        'username' => 'moreusers',
-                        'password' => 'differentpass',
-                    ],
-               ],
-
-            ],
-        ];
-
-        $this->expectException(Exception::class);
-        $this->expectErrorMessage('High Availability mode is not supported anymore. Please use the neo4j scheme instead');
-        $this->factory->make($config);
-    }
 }

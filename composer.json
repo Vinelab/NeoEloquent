@@ -27,6 +27,7 @@
         "illuminate/events": "^8.0",
         "illuminate/support": "^8.0",
         "illuminate/pagination": "^8.0",
+        "illuminate/collections": "^8.0",
         "nesbot/carbon": "^2.0",
         "laudis/neo4j-php-client": "^2.2"
     },

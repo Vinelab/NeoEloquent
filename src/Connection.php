@@ -34,7 +34,6 @@ use function sprintf;
 
 class Connection implements ConnectionInterface
 {
-    const TYPE_HA = 'ha';
     const TYPE_MULTI = 'multi';
     const TYPE_SINGLE = 'single';
 
