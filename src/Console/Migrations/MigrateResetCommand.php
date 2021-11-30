@@ -23,14 +23,9 @@ class MigrateResetCommand extends Command
 
     /**
      * The migrator instance.
-     *
-     * @var \Vinelab\NeoEloquent\Migrations\Migrator
      */
-    protected $migrator;
+    protected Migrator $migrator;
 
-    /**
-     * @param \Vinelab\NeoEloquent\Migrations\Migrator $migrator
-     */
     public function __construct(Migrator $migrator)
     {
         parent::__construct();
@@ -38,10 +33,7 @@ class MigrateResetCommand extends Command
         $this->migrator = $migrator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function fire()
+    public function handle(): void
     {
         if (!$this->confirmToProceed()) {
             return;
@@ -52,7 +44,7 @@ class MigrateResetCommand extends Command
         $pretend = $this->input->getOption('pretend');
 
         while (true) {
-            $count = $this->migrator->rollback(['pretend' => $pretend]);
+            $count = count($this->migrator->rollback(['pretend' => $pretend]));
 
             // Once the migrator has run we will grab the note output and send it out to
             // the console screen, since the migrator itself functions without having
@@ -61,23 +53,20 @@ class MigrateResetCommand extends Command
                 $this->output->writeln($note);
             }
 
-            if ($count == 0) {
+            if ($count === 0) {
                 break;
             }
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function getOptions()
+    protected function getOptions(): array
     {
-        return array(
-            array('database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'),
+        return [
+            ['database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'],
 
-            array('force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'),
+            ['force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'],
 
-            array('pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'),
-        );
+            ['pretend', null, InputOption::VALUE_NONE, 'Dump the SQL queries that would be run.'],
+        ];
     }
 }

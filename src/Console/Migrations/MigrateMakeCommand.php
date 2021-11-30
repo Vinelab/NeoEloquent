@@ -20,27 +20,18 @@ class MigrateMakeCommand extends BaseCommand
     protected $description = 'Create a new migration file';
 
     /**
-     * @var \Vinelab\NeoEloquent\Migrations\MigrationCreator
+     * @var MigrationCreator
      */
-    protected $creator;
+    protected MigrationCreator $creator;
 
     /**
      * The path to the packages directory (vendor).
-     *
-     * @var string
      */
-    protected $packagePath;
+    protected string $packagePath;
 
-    /**
-     * @var \Illuminate\Foundation\Composer
-     */
-    protected $composer;
+    protected Composer $composer;
 
-    /**
-     * @param \Vinelab\NeoEloquent\Migrations\MigrationCreator $creator
-     * @param string                                           $packagePath
-     */
-    public function __construct(MigrationCreator $creator, Composer $composer, $packagePath)
+    public function __construct(MigrationCreator $creator, Composer $composer, string $packagePath)
     {
         parent::__construct();
 
@@ -49,10 +40,7 @@ class MigrateMakeCommand extends BaseCommand
         $this->composer = $composer;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function fire()
+    public function handle(): void
     {
         // It's possible for the developer to specify the tables to modify in this
         // schema operation. The developer may also specify if this label needs
@@ -77,14 +65,8 @@ class MigrateMakeCommand extends BaseCommand
 
     /**
      * Write the migration file to disk.
-     *
-     * @param string $name
-     * @param string $label
-     * @param bool   $create
-     *
-     * @return string
      */
-    protected function writeMigration($name, $label)
+    protected function writeMigration(string $name, string $label): void
     {
         $path = $this->getMigrationPath();
 
@@ -93,31 +75,25 @@ class MigrateMakeCommand extends BaseCommand
         $this->line("<info>Created Migration:</info> $file");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function getArguments()
+    protected function getArguments(): array
     {
-        return array(
-            array('name', InputArgument::REQUIRED, 'The name of the migration'),
-        );
+        return [
+            ['name', InputArgument::REQUIRED, 'The name of the migration'],
+        ];
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function getOptions()
+    protected function getOptions(): array
     {
-        return array(
-            array('bench', null, InputOption::VALUE_OPTIONAL, 'The workbench the migration belongs to.', null),
+        return [
+            ['bench', null, InputOption::VALUE_OPTIONAL, 'The workbench the migration belongs to.', null],
 
-            array('create', null, InputOption::VALUE_OPTIONAL, 'The label schema to be created.'),
+            ['create', null, InputOption::VALUE_OPTIONAL, 'The label schema to be created.'],
 
-            array('package', null, InputOption::VALUE_OPTIONAL, 'The package the migration belongs to.', null),
+            ['package', null, InputOption::VALUE_OPTIONAL, 'The package the migration belongs to.', null],
 
-            array('path', null, InputOption::VALUE_OPTIONAL, 'Where to store the migration.', null),
+            ['path', null, InputOption::VALUE_OPTIONAL, 'Where to store the migration.', null],
 
-            array('label', null, InputOption::VALUE_OPTIONAL, 'The label to migrate.'),
-        );
+            ['label', null, InputOption::VALUE_OPTIONAL, 'The label to migrate.'],
+        ];
     }
 }

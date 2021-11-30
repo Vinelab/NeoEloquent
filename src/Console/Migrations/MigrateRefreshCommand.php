@@ -10,20 +10,12 @@ class MigrateRefreshCommand extends Command
 {
     use ConfirmableTrait;
 
-    /**
-     * {@inheritDoc}
-     */
+
     protected $name = 'neo4j:migrate:refresh';
 
-    /**
-     * {@inheritDoc}
-     */
     protected $description = 'Reset and re-run all migrations';
 
-    /**
-     * {@inheritDoc}
-     */
-    public function fire()
+    public function handle(): void
     {
         if (!$this->confirmToProceed()) {
             return;
@@ -51,20 +43,16 @@ class MigrateRefreshCommand extends Command
 
     /**
      * Determine if the developer has requested database seeding.
-     *
-     * @return bool
      */
-    protected function needsSeeding()
+    protected function needsSeeding(): bool
     {
         return $this->option('seed') || $this->option('seeder');
     }
 
     /**
      * Run the database seeder command.
-     *
-     * @param string $database
      */
-    protected function runSeeder($database)
+    protected function runSeeder(string $database): void
     {
         $class = $this->option('seeder') ?: 'DatabaseSeeder';
 
@@ -74,16 +62,16 @@ class MigrateRefreshCommand extends Command
     /**
      * {@inheritDoc}
      */
-    protected function getOptions()
+    protected function getOptions(): array
     {
-        return array(
-            array('database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'),
+        return [
+            ['database', null, InputOption::VALUE_OPTIONAL, 'The database connection to use.'],
 
-            array('force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'),
+            ['force', null, InputOption::VALUE_NONE, 'Force the operation to run when in production.'],
 
-            array('seed', null, InputOption::VALUE_NONE, 'Indicates if the seed task should be re-run.'),
+            ['seed', null, InputOption::VALUE_NONE, 'Indicates if the seed task should be re-run.'],
 
-            array('seeder', null, InputOption::VALUE_OPTIONAL, 'The class name of the root seeder.'),
-        );
+            ['seeder', null, InputOption::VALUE_OPTIONAL, 'The class name of the root seeder.'],
+        ];
     }
 }
