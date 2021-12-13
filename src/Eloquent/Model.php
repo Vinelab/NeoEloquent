@@ -2,7 +2,6 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
-use BadMethodCallException;
 use DateTime;
 use Exception;
 use ArrayAccess;

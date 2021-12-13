@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent;
 
 use Closure;
 use Exception;
+use Throwable;
 use Vinelab\NeoEloquent\Exceptions\QueryException;
 use Vinelab\NeoEloquent\ConnectionInterface;
 
@@ -108,7 +109,7 @@ class ConnectionAdapter extends BaseConnection implements ConnectionInterface
 	 * @param  array   $bindings
 	 * @return mixed
 	 */
-	public function selectOne($query, $bindings = array())
+	public function selectOne($query, $bindings = array(), $useReadPdo = true)
 	{
         return $this->neoeloquent->selectOne($query, $bindings);
 	}
@@ -258,7 +259,7 @@ class ConnectionAdapter extends BaseConnection implements ConnectionInterface
 	 *
 	 * @return void
 	 */
-	public function rollBack()
+	public function rollBack($toLevel = null)
 	{
 		$this->neoeloquent->rollBack();
 	}
@@ -336,7 +337,7 @@ class ConnectionAdapter extends BaseConnection implements ConnectionInterface
 	 * @param  \Illuminate\Database\QueryException
 	 * @return bool
 	 */
-	protected function causedByLostConnection(Exception $e)
+	protected function causedByLostConnection(Throwable $e)
 	{
         return $this->neoeloquent->causedByLostConnection(new QueryException($e));
 	}
