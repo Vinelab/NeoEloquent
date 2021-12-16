@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent\Tests;
 use Laudis\Neo4j\Contracts\ClientInterface;
 use Laudis\Neo4j\Databags\SummarizedResult;
 use Laudis\Neo4j\Types\CypherList;
+use Laudis\Neo4j\Types\CypherMap;
 use Mockery as M;
 
 class ConnectionTest extends TestCase
@@ -116,7 +117,7 @@ class ConnectionTest extends TestCase
         $connection = $this->getMockConnection();
         $connection->logQuery('foo', array(), time());
         $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
-        $events->shouldReceive('fire')->once()->with('illuminate.query', array('foo', array(), null, null));
+        $events->shouldReceive('dispatch')->once()->with('illuminate.query', array('foo', array(), null, null));
         $connection->logQuery('foo', array(), null);
 
         self::assertTrue(true);
@@ -331,8 +332,9 @@ class ConnectionTest extends TestCase
 
         $this->assertInstanceOf(SummarizedResult::class, $results);
 
+        /** @var CypherMap $result */
         foreach ($results as $result) {
-            $count = $result[0];
+            $count = $result->first()->getValue();
             $this->assertEquals(1, $count);
         }
 
@@ -370,8 +372,9 @@ class ConnectionTest extends TestCase
 
         $this->assertInstanceOf(SummarizedResult::class, $results);
 
+        /** @var CypherMap $result */
         foreach ($results as $result) {
-            $count = $result[0];
+            $count = $result->first()->getValue();
             $this->assertEquals(0, $count);
         }
     }
@@ -432,7 +435,7 @@ class ConnectionTest extends TestCase
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
         $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
-        $events->shouldReceive('fire')->once()->with('connection.name.beganTransaction', $connection);
+        $events->shouldReceive('dispatch')->once()->with('connection.name.beganTransaction', $connection);
         $connection->beginTransaction();
     }
 
@@ -441,7 +444,7 @@ class ConnectionTest extends TestCase
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
         $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
-        $events->shouldReceive('fire')->once()->with('connection.name.committed', $connection);
+        $events->shouldReceive('dispatch')->once()->with('connection.name.committed', $connection);
         $connection->commit();
     }
 
@@ -450,7 +453,7 @@ class ConnectionTest extends TestCase
         $connection = $this->getMockConnection(array('getName'));
         $connection->expects($this->once())->method('getName')->will($this->returnValue('name'));
         $connection->setEventDispatcher($events = M::mock('Illuminate\Contracts\Events\Dispatcher'));
-        $events->shouldReceive('fire')->once()->with('connection.name.rollingBack', $connection);
+        $events->shouldReceive('dispatch')->once()->with('connection.name.rollingBack', $connection);
         $connection->rollback();
     }
 
