@@ -340,7 +340,7 @@ class ConnectionTest extends TestCase
         $query = 'MATCH (n:User) WHERE n.username = $username RETURN n';
         $cypher = $c->getCypherQuery($query, array('username' => $this->user['username']));
 
-        $results = $this->client->run($cypher['statement'], $cypher['parameters'])->getResult();
+        $results = $this->client->run($cypher['statement'], $cypher['parameters']);
 
         $this->assertInstanceOf(CypherList::class, $results);
 
