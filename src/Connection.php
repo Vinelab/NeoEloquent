@@ -524,7 +524,7 @@ class Connection implements ConnectionInterface
      * @param string $query
      * @param array  $bindings
      *
-     * @return CypherList
+     * @return SummarizedResult
      */
     public function select($query, $bindings = array())
     {
@@ -539,11 +539,7 @@ class Connection implements ConnectionInterface
             $query = $me->getCypherQuery($query, $bindings);
 
             /** @var SummarizedResult $results */
-            $summary = $this->getClient()->run($query['statement'], $query['parameters']);
-            /** @var CypherList $results */
-            $results = $summary->getResult();
-
-            return $results;
+            return $this->getClient()->run($query['statement'], $query['parameters']);
         });
     }
 
@@ -631,8 +627,7 @@ class Connection implements ConnectionInterface
             $query = $me->getCypherQuery($query, $bindings);
 
             /** @var SummarizedResult $run */
-            $run = $this->getClient()->run($query['statement'], $query['parameters']);
-            $results = $run->getResult();
+            $results = $this->getClient()->run($query['statement'], $query['parameters']);
 
             return ($rawResults === true) ? $results : true;
         });
@@ -1083,7 +1078,7 @@ class Connection implements ConnectionInterface
     public function logQuery($query, $bindings, $time = null)
     {
         if (isset($this->events)) {
-            $this->events->fire('illuminate.query', [$query, $bindings, $time, $this->getName()]);
+            $this->events->dispatch('illuminate.query', [$query, $bindings, $time, $this->getName()]);
         }
 
         if ($this->loggingQueries) {
@@ -1111,7 +1106,7 @@ class Connection implements ConnectionInterface
     protected function fireConnectionEvent($event)
     {
         if (isset($this->events)) {
-            $this->events->fire('connection.'.$this->getName().'.'.$event, $this);
+            $this->events->dispatch('connection.'.$this->getName().'.'.$event, $this);
         }
     }
 

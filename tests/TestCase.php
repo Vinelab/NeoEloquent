@@ -97,7 +97,7 @@ class TestCase extends PHPUnit
         /** @var SummarizedResult $result */
         $result = $client->run("MATCH (n) WHERE id(n)=$id RETURN n");
 
-        return $result->getResult()->first()->first()->getValue();
+        return $result->first()->first()->getValue();
     }
 
     /**
