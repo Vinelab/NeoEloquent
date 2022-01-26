@@ -79,18 +79,7 @@ class BuilderTest extends TestCase
         $this->neoClient->shouldReceive('run')
             ->once()
             ->with($query['statement'], $query['parameters'])
-            ->andReturn(new SummarizedResult($result, new ResultSummary(
-                new SummaryCounters(),
-                new DatabaseInfo(''),
-                new CypherList(),
-                null,
-                null,
-                new Statement($query['statement'], $query['parameters']),
-                QueryTypeEnum::READ_WRITE(),
-                0,
-                0,
-                new ServerInfo(Uri::create(), ConnectionProtocol::BOLT_V40(), 'agent')
-            )));
+            ->andReturn(new CypherList($result));
 
         $this->assertEquals($id, $this->builder->insertGetId($values));
     }
