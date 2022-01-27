@@ -10,27 +10,19 @@ use Laudis\Neo4j\ClientBuilder;
 use Laudis\Neo4j\Contracts\AuthenticateInterface;
 use Laudis\Neo4j\Contracts\ClientInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
-use Laudis\Neo4j\Databags\ResultSummary;
 use Laudis\Neo4j\Databags\SummarizedResult;
 use Laudis\Neo4j\Formatter\OGMFormatter;
 use Laudis\Neo4j\Formatter\SummarizedResultFormatter;
 use Laudis\Neo4j\Types\CypherList;
 use LogicException;
-use Neoxygen\NeoClient\Client;
 use Throwable;
-use Vinelab\NeoEloquent\Exceptions\InvalidCypherException;
 use Vinelab\NeoEloquent\Exceptions\QueryException;
 use Vinelab\NeoEloquent\Query\Builder as QueryBuilder;
-use Vinelab\NeoEloquent\Query\Expression;
-use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Builder;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
-use Vinelab\NeoEloquent\Query\Grammars\Grammar;
-use Vinelab\NeoEloquent\Query\Processors\Processor;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
-use function sprintf;
 
 class Connection implements ConnectionInterface
 {
@@ -550,7 +542,7 @@ class Connection implements ConnectionInterface
      *
      * @return mixed
      */
-    public function insert($query, $bindings = array())
+    public function insert($query, $bindings = array()): SummarizedResult
     {
         return $this->statement($query, $bindings, true);
     }

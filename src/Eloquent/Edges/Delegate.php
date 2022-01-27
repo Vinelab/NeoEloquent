@@ -15,30 +15,18 @@ abstract class Delegate
 {
     /**
      * The Eloquent builder instance.
-     *
-     * @var \Vinelab\NeoEloquent\Eloquent\Builder
      */
-    protected $query;
+    protected Builder $query;
 
     /**
      * The database connection.
-     *
-     * @var \Vinelab\NeoEloquent\Connection
      */
-    protected $connection;
-
-    /**
-     * The database client.
-     *
-     * @var \Neoxygen\NeoClient\Client
-     */
-    protected $client;
+    protected Connection $connection;
 
     /**
      * Create a new delegate instance.
      *
      * @param \Vinelab\NeoEloquent\Eloquent\Builder $query
-     * @param \Vinelab\NeoEloquent\Eloquent\Model   $parent
      */
     public function __construct(Builder $query)
     {
@@ -47,7 +35,6 @@ abstract class Delegate
 
         // Setup the database connection and client.
         $this->connection = $model->getConnection();
-        $this->client = $this->connection->getClient();
     }
 
     /**
@@ -55,7 +42,7 @@ abstract class Delegate
      *
      * @return \Vinelab\NeoEloquent\Eloquent\Edges\Finder
      */
-    public function newFinder()
+    public function newFinder(): Finder
     {
         return new Finder($this->query);
     }

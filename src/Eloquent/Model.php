@@ -7,8 +7,10 @@ use DateTime;
 use Exception;
 use ArrayAccess;
 use Carbon\Carbon;
+use Illuminate\Database\ConnectionResolver;
 use LogicException;
 use JsonSerializable;
+use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Eloquent\Builder as EloquentBuilder;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
@@ -199,7 +201,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
      *
      * @var \Illuminate\Database\ConnectionResolverInterface
      */
-    protected static $resolver;
+    protected static ConnectionResolver $resolver;
 
     /**
      * The event dispatcher instance.
@@ -3351,10 +3353,8 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
 
     /**
      * Get the database connection for the model.
-     *
-     * @return \Illuminate\Database\Connection
      */
-    public function getConnection()
+    public function getConnection(): Connection
     {
         return static::resolveConnection($this->connection);
     }
@@ -3386,11 +3386,9 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
     /**
      * Resolve a connection instance.
      *
-     * @param string $connection
-     *
-     * @return \Illuminate\Database\Connection
+     * @param string|null $connection
      */
-    public static function resolveConnection($connection = null)
+    public static function resolveConnection(?string $connection = null): Connection
     {
         return static::$resolver->connection($connection);
     }
