@@ -16,25 +16,9 @@ use Faker\Generator as FakerGenerator;
 class NeoEloquentServiceProvider extends ServiceProvider
 {
     /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = false;
-
-    /**
-     * Components to register on the provider.
-     *
-     * @var array
-     */
-    protected $components = array(
-        'Migration',
-    );
-
-    /**
      * Bootstrap the application events.
      */
-    public function boot()
+    public function boot(): void
     {
         Model::setConnectionResolver($this->app['db']);
 
@@ -44,7 +28,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
     /**
      * Register the service provider.
      */
-    public function register()
+    public function register(): void
     {
         $this->app['db']->extend('neo4j', function ($config) {
             $this->config = $config;
@@ -63,13 +47,6 @@ class NeoEloquentServiceProvider extends ServiceProvider
 
             return $conn;
         });
-
-        $this->app->booting(function () {
-            $loader = \Illuminate\Foundation\AliasLoader::getInstance();
-            $loader->alias('NeoEloquent', 'Vinelab\NeoEloquent\Eloquent\Model');
-            $loader->alias('Neo4jSchema', 'Vinelab\NeoEloquent\Facade\Neo4jSchema');
-            $loader->alias('Illuminate\Database\Eloquent\Factory', 'Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory');
-        });
     
         $this->app->singleton(NeoEloquentFactory::class, function ($app) {
             return NeoEloquentFactory::construct(
@@ -77,37 +54,8 @@ class NeoEloquentServiceProvider extends ServiceProvider
             );
         });
 
-        $this->registerComponents();
-    }
-
-    /**
-     * Register components on the provider.
-     *
-     * @var array
-     */
-    protected function registerComponents()
-    {
-        foreach ($this->components as $component) {
-            $this->{'register'.$component}();
+        if ($this->app->runningInConsole()) {
+            $this->app->register(MigrationServiceProvider::class);
         }
-    }
-
-    /**
-     * Register the migration service provider.
-     */
-    protected function registerMigration()
-    {
-        $this->app->register(MigrationServiceProvider::class);
-    }
-
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
-    {
-        return array(
-        );
     }
 }

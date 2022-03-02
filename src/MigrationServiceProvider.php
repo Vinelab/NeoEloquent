@@ -13,30 +13,16 @@ use Vinelab\NeoEloquent\Migrations\DatabaseMigrationRepository;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateRefreshCommand;
 use Vinelab\NeoEloquent\Console\Migrations\MigrateRollbackCommand;
 
-class  MigrationServiceProvider extends ServiceProvider {
-
-    /**
-     * {@inheritDoc}
-     */
-    protected $defer = true;
-
-    /**
-     * {@inheritDoc}
-     */
-    public function boot()
+class MigrationServiceProvider extends ServiceProvider
+{
+    public function boot(): void
     {
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function register()
+    public function register(): void
     {
         $this->registerRepository();
 
-        // Once we have registered the migrator instance we will go ahead and register
-        // all of the migration related commands that are used by the "Artisan" CLI
-        // so that they may be easily accessed for registering with the consoles.
         $this->registerMigrator();
 
         $this->registerCommands();
@@ -47,7 +33,7 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerRepository()
+    protected function registerRepository(): void
     {
         $this->app->singleton('neoeloquent.migration.repository', function($app)
         {
@@ -72,7 +58,7 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerMigrator()
+    protected function registerMigrator(): void
     {
         // The migrator is responsible for actually running and rollback the migration
         // files in the application. We'll pass in our database connection resolver
@@ -90,15 +76,15 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerCommands()
+    protected function registerCommands(): void
     {
-        $commands = array(
+        $commands = [
             'Migrate',
             'MigrateRollback',
             'MigrateReset',
             'MigrateRefresh',
             'MigrateMake'
-        );
+        ];
 
         // We'll simply spin through the list of commands that are migration related
         // and register each one of them with an application container. They will
@@ -125,7 +111,7 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerMigrateCommand()
+    protected function registerMigrateCommand(): void
     {
         $this->app->singleton('command.neoeloquent.migrate', function($app) {
             $packagePath = $app['path.base'].'/vendor';
@@ -139,7 +125,7 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerMigrateRollbackCommand()
+    protected function registerMigrateRollbackCommand(): void
     {
         $this->app->singleton('command.neoeloquent.migrate.rollback', function($app)
         {
@@ -152,7 +138,7 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerMigrateResetCommand()
+    protected function registerMigrateResetCommand(): void
     {
         $this->app->singleton('command.neoeloquent.migrate.reset', function($app)
         {
@@ -165,7 +151,7 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerMigrateRefreshCommand()
+    protected function registerMigrateRefreshCommand(): void
     {
         $this->app->singleton('command.neoeloquent.migrate.refresh', function($app)
         {
@@ -178,7 +164,7 @@ class  MigrationServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    protected function registerMigrateMakeCommand()
+    protected function registerMigrateMakeCommand(): void
     {
         $this->app->singleton('migration.neoeloquent.creator', function($app) {
             return new MigrationCreator($app['files'], $app->basePath('stubs'));
@@ -197,22 +183,4 @@ class  MigrationServiceProvider extends ServiceProvider {
             return new MigrateMakeCommand($creator, $composer, $packagePath);
         });
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function provides()
-    {
-        return array(
-            'neoeloquent.migrator',
-            'neoeloquent.migration.repository',
-            'command.neoeloquent.migrate',
-            'command.neoeloquent.migrate.rollback',
-            'command.neoeloquent.migrate.reset',
-            'command.neoeloquent.migrate.refresh',
-            'migration.neoeloquent.creator',
-            'command.neoeloquent.migrate.make',
-        );
-    }
-
 }
