@@ -3,15 +3,12 @@
 namespace Vinelab\NeoEloquent;
 
 
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Database\ConnectionResolver;
+use Closure;
 use Throwable;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory;
 use Illuminate\Support\ServiceProvider;
-
 use Faker\Generator as FakerGenerator;
-use function array_filter;
+use function array_key_exists;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {
@@ -20,22 +17,11 @@ class NeoEloquentServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $resolver = new ConnectionResolver();
-        $factory = ConnectionFactory::default();
-        /** @var Repository $config */
-        $config = $this->app->get('config');
-        $connections = $config->get('database.connections', []);
-        $connections = array_filter($connections, static fn (array $x) => ($x['driver'] ?? '') === 'neo4j');
+        $resolver = function ($connection, string $database, string $prefix, array $config) {
+            return $this->app->get(ConnectionFactory::class)->make($database, $prefix, $config);
+        };
 
-        foreach ($connections as $name => $connection) {
-            $resolver->addConnection($name, $factory->make($connection));
-        }
-
-        if ($config->has('database.default')) {
-            $resolver->setDefaultConnection($config->get('database.default'));
-        }
-
-        Model::setConnectionResolver($resolver);
+        \Illuminate\Database\Connection::resolverFor('neo4j', Closure::fromCallable($resolver));
     }
 
     /**

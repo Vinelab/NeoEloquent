@@ -3,12 +3,13 @@
 namespace Vinelab\NeoEloquent\Tests;
 
 use Exception;
-use Illuminate\Database\ConnectionResolver;
+use Illuminate\Database\DatabaseManager;
 use Laudis\Neo4j\Contracts\ClientInterface;
 use Laudis\Neo4j\Databags\SummarizedResult;
 use Laudis\Neo4j\Types\CypherList;
 use Laudis\Neo4j\Types\CypherMap;
 use Mockery as M;
+use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
 class ConnectionTest extends TestCase
@@ -17,74 +18,13 @@ class ConnectionTest extends TestCase
     {
         $resolver = Model::getConnectionResolver();
 
-        self::assertInstanceOf(ConnectionResolver::class, $resolver);
+        self::assertInstanceOf(DatabaseManager::class, $resolver);
         self::assertEquals('neo4j', $resolver->getDefaultConnection());
-    }
+        self::assertInstanceOf(Connection::class, $resolver->connection('neo4j'));
+        self::assertInstanceOf(Connection::class, $resolver->connection('default'));
 
-    public function testGettingConfigParam(): void
-    {
-        $c = $this->getConnectionWithConfig('neo4j');
-
-        $config = require(__DIR__ . '/../../config/database.php');
-        $this->assertEquals($c->getConfigOption('port'), $config['connections']['neo4j']['port']);
-        $this->assertEquals($c->getConfigOption('host'), $config['connections']['neo4j']['host']);
-    }
-
-    public function testDriverName(): void
-    {
-        $c = $this->getConnectionWithConfig('neo4j');
-
-        $this->assertEquals('neo4j', $c->getDriverName());
-    }
-
-    public function testGettingClient(): void
-    {
-        $c = $this->getConnectionWithConfig('neo4j');
-
-        $this->assertInstanceOf(ClientInterface::class, $c->getClient());
-    }
-
-    public function testGettingDefaultHost(): void
-    {
-        $c = $this->getConnectionWithConfig('default');
-
-        $this->assertEquals('localhost', $c->getHost([]));
-        $this->assertEquals(7687, $c->getPort([]));
-    }
-
-    public function testGettingDefaultPort(): void
-    {
-        $c = $this->getConnectionWithConfig('default');
-
-        $port = $c->getPort([]);
-
-        $this->assertEquals(7687, $port);
-        $this->assertIsInt($port);
-    }
-
-    public function testGettingQueryCypherGrammar(): void
-    {
-        $c = $this->getConnectionWithConfig('default');
-
-        $grammar = $c->getQueryGrammar();
-
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar', $grammar);
-    }
-
-    public function testPrepareBindings(): void
-    {
-        $date = M::mock('DateTime');
-        $date->shouldReceive('format')->once()->with('foo')->andReturn('bar');
-
-        $bindings = array('test' => $date);
-
-        $conn = $this->getMockConnection();
-        $grammar = M::mock('Vinelab\NeoEloquent\Query\Grammars\CypherGrammar');
-        $grammar->shouldReceive('getDateFormat')->once()->andReturn('foo');
-        $conn->setQueryGrammar($grammar);
-        $result = $conn->prepareBindings($bindings);
-
-        $this->assertEquals(array('test' => 'bar'), $result);
+        self::assertEquals('neo4j', $resolver->connection('neo4j')->getDatabaseName());
+        self::assertEquals('neo4j', $resolver->connection('default')->getDatabaseName());
     }
 
     public function testLogQueryFiresEventsIfSet(): void
@@ -492,6 +432,11 @@ class ConnectionTest extends TestCase
             ->setMethods(array_merge($defaults, $methods))
             ->setConstructorArgs( array($this->dbConfig['connections']['neo4j']))
             ->getMock();
+
+    }
+
+    private function getConnectionWithConfig(string $string)
+    {
 
     }
 }

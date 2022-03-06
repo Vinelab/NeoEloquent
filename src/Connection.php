@@ -2,209 +2,145 @@
 
 namespace Vinelab\NeoEloquent;
 
+use BadMethodCallException;
+use Bolt\error\ConnectException;
 use Closure;
 use Generator;
-use Illuminate\Database\ConnectionInterface;
-use Illuminate\Database\Query\Expression;
-use Laudis\Neo4j\Basic\Driver;
+use Illuminate\Database\QueryException;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
-use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Databags\SummaryCounters;
-use Laudis\Neo4j\Enum\AccessMode;
-use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
 use LogicException;
 use Vinelab\NeoEloquent\Query\Builder;
+use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
+use function get_debug_type;
 
-final class Connection implements ConnectionInterface
+final class Connection extends \Illuminate\Database\Connection
 {
-    private Driver $driver;
-    private Grammar $grammar;
     private ?UnmanagedTransactionInterface $tsx = null;
-    private bool $pretending = false;
-    private SessionConfiguration $config;
+    private array $commitedCallbacks = [];
 
-    public function __construct(Driver $driver, Grammar $grammar, SessionConfiguration $config)
+    public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
     {
-        $this->driver = $driver;
-        $this->grammar = $grammar;
-        $this->config = $config;
+        parent::__construct($pdo, $database, $tablePrefix, $config);
+        if ($pdo instanceof Neo4JReconnector) {
+            /** @noinspection PhpParamsInspection */
+            $this->setReadPdo($pdo->withReadConnection());
+        }
     }
 
-    public function getDriver(): Driver
+    public function getSession(bool $readSession = false): TransactionInterface
     {
-        return $this->driver;
-    }
-
-    public function table($table, $as = null)
-    {
-        return (new Builder($this, $this->grammar))->from($table, $as);
-    }
-
-    private function getSession(bool $useReadPdo = false, int $limit = null): TransactionInterface
-    {
-        $config = SessionConfiguration::default();
-        if ($useReadPdo) {
-            $config = $config->withAccessMode(AccessMode::READ());
+        if ($this->tsx) {
+            return $this->tsx;
         }
 
-        if ($limit !== null) {
-            $config = $config->withFetchSize($limit);
+        if ($readSession) {
+            $session = $this->getReadPdo();
+        } else {
+            $session = $this->getPdo();
         }
 
-        return $this->driver->createSession($config);
+        if (!$session instanceof SessionInterface) {
+            $msg = 'Reconnectors or PDO\'s must return Neo4J sessions, Got "%s"';
+            throw new LogicException(sprintf($msg, get_debug_type($session)));
+        }
+
+        return $session;
     }
 
     public function cursor($query, $bindings = [], $useReadPdo = true): Generator
     {
-        if ($this->pretending) {
-            return;
-        }
+        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+            if ($this->pretending()) {
+                return;
+            }
 
-        yield from $this->getSession($useReadPdo)
-            ->run($query, $bindings)
-            ->map(static fn (CypherMap $map) => $map->toArray());
-    }
+            yield from $this->getSession($useReadPdo)
+                ->run($query, $bindings)
+                ->map(static fn (CypherMap $map) => $map->toArray());
+        });
 
-    public function getDatabaseName(): string
-    {
-        // Null means the server-configured default will be used.
-        // The type hint makes it impossible to return null, so we return an empty string.
-        return $this->config->getDatabase() ?? '';
-    }
-
-    public function raw($value): Expression
-    {
-        return new Expression($value);
     }
 
     public function selectOne($query, $bindings = [], $useReadPdo = true): array
     {
-        if ($this->pretending) {
-            return [];
-        }
-
-        return $this->getSession($useReadPdo, 1)
-            ->run($query, $bindings)
-            ->getAsCypherMap(0)
-            ->toArray();
+        return $this->select($query, $bindings, $useReadPdo)[0]->toArray();
     }
 
     public function select($query, $bindings = [], $useReadPdo = true): array
     {
-        if ($this->pretending) {
-            return [];
-        }
+        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+            if ($this->pretending()) {
+                return [];
+            }
 
-        return $this->getSession($useReadPdo)
-            ->run($query, $bindings)
-            ->map(static fn (CypherMap $map) => $map->toArray())
-            ->toArray();
+            return $this->getSession($useReadPdo)
+                ->run($query, $bindings)
+                ->toArray();
+        });
     }
 
-    public function insert($query, $bindings = []): bool
-    {
-        if ($this->pretending) {
-            return true;
-        }
-
-        $this->getSession()->run($query, $bindings);
-
-        return true;
-    }
-
-    public function update($query, $bindings = []): int
-    {
-        if ($this->pretending) {
-            return 0;
-        }
-
-        $counters = $this->getSession()->run($query, $bindings)->getSummary()->getCounters();
-
-        return $this->summarizeCounters($counters);
-    }
-
-    public function delete($query, $bindings = []): int
-    {
-        if ($this->pretending) {
-            return 0;
-        }
-
-        $counters = $this->getSession()->run($query, $bindings)->getSummary()->getCounters();
-
-        return $this->summarizeCounters($counters);
-    }
-
+    /**
+     * Execute an SQL statement and return the boolean result.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @return bool
+     */
     public function statement($query, $bindings = []): bool
     {
-        if ($this->pretending) {
-            return true;
-        }
-
-        $this->getSession()->run($query, $bindings);
+        $this->affectingStatement($query, $bindings);
 
         return true;
     }
 
     public function affectingStatement($query, $bindings = []): int
     {
-        if ($this->pretending) {
-            return 0;
-        }
+        return $this->run($query, $bindings, function ($query, $bindings) {
+            if ($this->pretending()) {
+                return true;
+            }
 
-        $counters = $this->getSession()->run($query, $bindings)->getSummary()->getCounters();
+            $result = $this->getSession()->run($query, $bindings);
+            if ($result->getSummary()->getCounters()->containsUpdates()) {
+                $this->recordsHaveBeenModified();
+            }
 
-        return $this->summarizeCounters($counters);
+            return $this->summarizeCounters($result->getSummary()->getCounters());
+        });
     }
 
     public function unprepared($query): bool
     {
-        if ($this->pretending) {
-            return 0;
-        }
+        return $this->run($query, [], function ($query) {
+            if ($this->pretending()) {
+                return 0;
+            }
 
-        $this->getSession()->run($query);
+            $this->getSession()->run($query);
 
-        return true;
+            return true;
+        });
     }
 
     public function prepareBindings(array $bindings): array
     {
+        // The preparation is already done by the driver
         return $bindings;
-    }
-
-    public function transaction(Closure $callback, $attempts = 1)
-    {
-        for ($currentAttempt = 0; $currentAttempt < $attempts; $currentAttempt++) {
-            try {
-                $this->beginTransaction();
-                $callbackResult = $callback($this);
-                $this->commit();
-            } catch (Neo4jException $e) {
-                if ($e->getCategory() === 'Transaction') {
-                    continue;
-                }
-
-                throw $e;
-            }
-
-            return $callbackResult;
-        }
-
-        throw new LogicException('Transaction attempt limit reached');
     }
 
     public function beginTransaction(): void
     {
         $session = $this->getSession();
-        if (!$session instanceof SessionInterface) {
-            throw new LogicException('There is already a transaction bound to the connection');
-        }
+        if ($session instanceof SessionInterface) {
+            $this->tsx = $session->beginTransaction();
 
-        $this->tsx = $session->beginTransaction();
+            $this->fireConnectionEvent('beganTransaction');
+        }
     }
 
     public function commit(): void
@@ -212,14 +148,22 @@ final class Connection implements ConnectionInterface
         if ($this->tsx !== null) {
             $this->tsx->commit();
             $this->tsx = null;
+
+            foreach ($this->commitedCallbacks as $callback) {
+                $callback($this);
+            }
+
+            $this->fireConnectionEvent('committed');
         }
     }
 
-    public function rollBack(): void
+    public function rollBack($toLevel = null): void
     {
         if ($this->tsx !== null) {
             $this->tsx->rollback();
             $this->tsx = null;
+
+            $this->fireConnectionEvent('rollingBack');
         }
     }
 
@@ -228,11 +172,15 @@ final class Connection implements ConnectionInterface
         return $this->tsx === null ? 0 : 1;
     }
 
-    public function pretend(Closure $callback)
+
+    /**
+     * Execute the callback after a transaction commits.
+     *
+     * @param  callable $callback
+     */
+    public function afterCommit($callback): void
     {
-        $this->pretending = true;
-        $callback($this);
-        $this->pretending = false;
+        $this->commitedCallbacks[] = $callback;
     }
 
     /**
@@ -248,5 +196,96 @@ final class Connection implements ConnectionInterface
             $counters->nodesDeleted() +
             $counters->relationshipsCreated() +
             $counters->relationshipsDeleted();
+    }
+
+    /**
+     * Get a new query builder instance.
+     */
+    public function query(): Builder
+    {
+        return new Builder($this);
+    }
+
+    /**
+     * Get the default query grammar instance.
+     */
+    protected function getDefaultQueryGrammar(): Grammar
+    {
+        return new Grammar();
+    }
+
+    /**
+     * Get the default schema grammar instance.
+     */
+    protected function getDefaultSchemaGrammar(): CypherGrammar
+    {
+        return new CypherGrammar();
+    }
+
+    /**
+     * Bind values to their parameters in the given statement.
+     *
+     * @param  mixed $statement
+     * @param  mixed  $bindings
+     */
+    public function bindValues($statement, $bindings): void
+    {
+        // Does not need to be implemented for neo4j as it is already done by the driver
+        // It does need to stay here to maintain duck-typing with other connections.
+    }
+
+    protected function handleQueryException(QueryException $e, $query, $bindings, Closure $callback)
+    {
+        if ($e->getPrevious() instanceof ConnectException) {
+            throw $e;
+        }
+
+        return $this->runQueryCallback($query, $bindings, $callback);
+    }
+
+    /**
+     * Is Doctrine available?
+     *
+     * @return bool
+     */
+    public function isDoctrineAvailable(): bool
+    {
+        // Doctrine is not available for neo4j
+        return false;
+    }
+
+    /**
+     * Get a Doctrine Schema Column instance.
+     *
+     * @param  string  $table
+     * @param  string  $column
+     */
+    public function getDoctrineColumn($table, $column): void
+    {
+        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
+    }
+
+    /**
+     * Get the Doctrine DBAL schema manager for the connection.
+     */
+    public function getDoctrineSchemaManager(): void
+    {
+        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
+    }
+
+    /**
+     * Get the Doctrine DBAL database connection instance.
+     */
+    public function getDoctrineConnection(): void
+    {
+        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
+    }
+
+    /**
+     * Register a custom Doctrine mapping type.
+     */
+    public function registerDoctrineType(string $class, string $name, string $type): void
+    {
+        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
     }
 }

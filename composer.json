@@ -25,7 +25,8 @@
         "laudis/neo4j-php-client": "^2.4.2",
         "wikibase-solutions/php-cypher-dsl": "dev-main",
         "psr/container": "^1.0",
-        "illuminate/contracts": "^8.0"
+        "illuminate/contracts": "^8.0",
+        "stefanak-michal/bolt": "^3.0"
     },
     "require-dev": {
         "mockery/mockery": "~1.3.0",

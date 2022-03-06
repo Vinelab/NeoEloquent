@@ -33,6 +33,7 @@ class TestCase extends BaseTestCase
             'default' => [
                 'driver' => 'neo4j',
                 'host' => 'neo4j',
+                'database' => 'neo4j',
                 'port' => 7687,
                 'username' => 'neo4j',
                 'password' => 'test',
@@ -40,6 +41,7 @@ class TestCase extends BaseTestCase
             'neo4j' => [
                 'driver' => 'neo4j',
                 'host' => 'neo4j',
+                'database' => 'neo4j',
                 'port' => 7687,
                 'username' => 'neo4j',
                 'password' => 'test'

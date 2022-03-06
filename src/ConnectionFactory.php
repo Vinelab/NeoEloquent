@@ -13,25 +13,16 @@ use function array_key_exists;
 final class ConnectionFactory
 {
     private Uri $defaultUri;
-    private Grammar $grammar;
-    private SessionConfiguration $config;
 
-    public function __construct(Uri $defaultUri, Grammar $grammar, SessionConfiguration $config)
+    public function __construct(Uri $defaultUri = null)
     {
-        $this->defaultUri = $defaultUri;
-        $this->grammar = $grammar;
-        $this->config = $config;
-    }
-
-    public static function default(): self
-    {
-        return new self(Uri::create(), new Grammar(), SessionConfiguration::default());
+        $this->defaultUri = $defaultUri ?? Uri::create();
     }
 
     /**
      * @param array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string} $config
      */
-    public function make(array $config): Connection
+    public function make(string $database, string $prefix, array $config): Connection
     {
         $uri = $this->defaultUri->withScheme($config['scheme'] ?? '')
             ->withHost($config['host'] ?? '')
@@ -43,15 +34,11 @@ final class ConnectionFactory
             $auth = Authenticate::disabled();
         }
 
-        $sessionConfig = $this->config;
-        if (array_key_exists('database', $config)) {
-            $sessionConfig = $sessionConfig->withDatabase($config['database']);
-        }
-
         return new Connection(
-            Driver::create($uri, DriverConfiguration::default(), $auth),
-            $this->grammar,
-            $sessionConfig
+            new Neo4JReconnector(Driver::create($uri, DriverConfiguration::default(), $auth), $database),
+            $database,
+            $prefix,
+            $config
         );
     }
 }
