@@ -16,20 +16,39 @@ use LogicException;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
+use function array_key_exists;
 use function get_debug_type;
 
 final class Connection extends \Illuminate\Database\Connection
 {
     private ?UnmanagedTransactionInterface $tsx = null;
-    private array $commitedCallbacks = [];
+    private array $committedCallbacks = [];
+    private bool $usesLegacyIds = false;
 
     public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
     {
-        parent::__construct($pdo, $database, $tablePrefix, $config);
         if ($pdo instanceof Neo4JReconnector) {
-            /** @noinspection PhpParamsInspection */
-            $this->setReadPdo($pdo->withReadConnection());
+            $readPdo = Closure::fromCallable($pdo->withReadConnection());
+            $pdo = Closure::fromCallable($pdo);
+        } else {
+            $readPdo = $pdo;
         }
+        parent::__construct($pdo, $database, $tablePrefix, $config);
+
+        $this->setPdo($pdo);
+        $this->setReadPdo($readPdo);
+    }
+
+    /**
+     * Begin a fluent query against a database table.
+     *
+     * @param Closure|\Illuminate\Database\Query\Builder|string $label
+     * @param  string|null  $as
+     */
+    public function node($label, ?string $as = null): Builder
+    {
+        /** @noinspection PhpIncompatibleReturnTypeInspection */
+        return $this->table($label, $as);
     }
 
     public function getSession(bool $readSession = false): TransactionInterface
@@ -45,8 +64,8 @@ final class Connection extends \Illuminate\Database\Connection
         }
 
         if (!$session instanceof SessionInterface) {
-            $msg = 'Reconnectors or PDO\'s must return Neo4J sessions, Got "%s"';
-            throw new LogicException(sprintf($msg, get_debug_type($session)));
+            $msg = 'Reconnectors or PDO\'s must return "%s", Got "%s"';
+            throw new LogicException(sprintf($msg, SessionInterface::class, get_debug_type($session)));
         }
 
         return $session;
@@ -60,15 +79,11 @@ final class Connection extends \Illuminate\Database\Connection
             }
 
             yield from $this->getSession($useReadPdo)
-                ->run($query, $bindings)
-                ->map(static fn (CypherMap $map) => $map->toArray());
+                ->run($query, $this->prepareBindings($bindings))
+                ->map(static fn (CypherMap $map) => $map->toArray())
+                ->toArray();
         });
 
-    }
-
-    public function selectOne($query, $bindings = [], $useReadPdo = true): array
-    {
-        return $this->select($query, $bindings, $useReadPdo)[0]->toArray();
     }
 
     public function select($query, $bindings = [], $useReadPdo = true): array
@@ -79,7 +94,8 @@ final class Connection extends \Illuminate\Database\Connection
             }
 
             return $this->getSession($useReadPdo)
-                ->run($query, $bindings)
+                ->run($query, $this->prepareBindings($bindings))
+                ->map(static fn (CypherMap $map) => $map->toArray())
                 ->toArray();
         });
     }
@@ -105,7 +121,7 @@ final class Connection extends \Illuminate\Database\Connection
                 return true;
             }
 
-            $result = $this->getSession()->run($query, $bindings);
+            $result = $this->getSession()->run($query, $this->prepareBindings($bindings));
             if ($result->getSummary()->getCounters()->containsUpdates()) {
                 $this->recordsHaveBeenModified();
             }
@@ -127,8 +143,25 @@ final class Connection extends \Illuminate\Database\Connection
         });
     }
 
+    public function useLegacyIds(bool $usesLegacyIds = true): void
+    {
+        $this->usesLegacyIds = $usesLegacyIds;
+    }
+
+    public function isUsingLegacyIds(): bool
+    {
+        return $this->usesLegacyIds;
+    }
+
+
     public function prepareBindings(array $bindings): array
     {
+        if ($this->usesLegacyIds && array_key_exists('id', $bindings)) {
+            $id = $bindings['id'];
+            unset($bindings['id']);
+            $bindings['idn'] = $id;
+        }
+
         // The preparation is already done by the driver
         return $bindings;
     }
@@ -138,9 +171,9 @@ final class Connection extends \Illuminate\Database\Connection
         $session = $this->getSession();
         if ($session instanceof SessionInterface) {
             $this->tsx = $session->beginTransaction();
-
-            $this->fireConnectionEvent('beganTransaction');
         }
+
+        $this->fireConnectionEvent('beganTransaction');
     }
 
     public function commit(): void
@@ -149,12 +182,12 @@ final class Connection extends \Illuminate\Database\Connection
             $this->tsx->commit();
             $this->tsx = null;
 
-            foreach ($this->commitedCallbacks as $callback) {
+            foreach ($this->committedCallbacks as $callback) {
                 $callback($this);
             }
-
-            $this->fireConnectionEvent('committed');
         }
+
+        $this->fireConnectionEvent('committed');
     }
 
     public function rollBack($toLevel = null): void
@@ -162,9 +195,9 @@ final class Connection extends \Illuminate\Database\Connection
         if ($this->tsx !== null) {
             $this->tsx->rollback();
             $this->tsx = null;
-
-            $this->fireConnectionEvent('rollingBack');
         }
+
+        $this->fireConnectionEvent('rollingBack');
     }
 
     public function transactionLevel(): int
@@ -180,7 +213,7 @@ final class Connection extends \Illuminate\Database\Connection
      */
     public function afterCommit($callback): void
     {
-        $this->commitedCallbacks[] = $callback;
+        $this->committedCallbacks[] = $callback;
     }
 
     /**
@@ -230,8 +263,7 @@ final class Connection extends \Illuminate\Database\Connection
      */
     public function bindValues($statement, $bindings): void
     {
-        // Does not need to be implemented for neo4j as it is already done by the driver
-        // It does need to stay here to maintain duck-typing with other connections.
+        return;
     }
 
     protected function handleQueryException(QueryException $e, $query, $bindings, Closure $callback)

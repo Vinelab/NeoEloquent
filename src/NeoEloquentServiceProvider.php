@@ -8,7 +8,6 @@ use Throwable;
 use Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory;
 use Illuminate\Support\ServiceProvider;
 use Faker\Generator as FakerGenerator;
-use function array_key_exists;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {

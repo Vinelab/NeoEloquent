@@ -2,8 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Migrations;
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\Migrations\MigrationRepositoryInterface;
 use Illuminate\Database\ConnectionResolverInterface;
+use Illuminate\Database\Query\Builder;
 use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
@@ -12,14 +14,14 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     /**
      * The database connection resolver instance.
      *
-     * @var \Illuminate\Database\ConnectionResolverInterface
+     * @var ConnectionResolverInterface
      */
     protected $resolver;
 
     /**
      * The migration model.
      *
-     * @var \Vinelab\NeoEloquent\Eloquent\Model
+     * @var Model
      */
     protected $model;
 
@@ -31,9 +33,9 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     protected $connection;
 
     /**
-     * @param \Illuminate\Database\ConnectionResolverInterface $resolver
-     * @param \Vinelab\NeoEloquent\Schema\Builder              $schema
-     * @param \Vinelab\NeoEloquent\Eloquent\Model              $model
+     * @param ConnectionResolverInterface $resolver
+     * @param SchemaBuilder $schema
+     * @param Model $model
      */
     public function __construct(ConnectionResolverInterface $resolver, SchemaBuilder $schema, Model $model)
     {
@@ -124,7 +126,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     /**
      * Get a query builder for the migration node (table).
      *
-     * @return \Vinelab\NeoEloquent\Query\Builder
+     * @return Builder
      */
     protected function label()
     {
@@ -134,7 +136,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     /**
      * Get the connection resolver instance.
      *
-     * @return \Illuminate\Database\ConnectionResolverInterface
+     * @return ConnectionResolverInterface
      */
     public function getConnectionResolver()
     {
@@ -144,7 +146,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     /**
      * Resolve the database connection instance.
      *
-     * @return \Illuminate\Database\Connection
+     * @return Connection
      */
     public function getConnection()
     {
@@ -182,7 +184,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     /**
      * Set migration model.
      *
-     * @param \Vinelab\NeoEloquent\Eloquent\Model $model
+     * @param Model $model
      */
     public function setMigrationModel(Model $model)
     {
@@ -192,7 +194,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
     /**
      * Get migration model.
      *
-     * @return \Vinelab\NeoEloquent\Eloquent\Model
+     * @return Model
      */
     public function getMigrationModel()
     {

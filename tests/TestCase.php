@@ -7,6 +7,7 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Vinelab\NeoEloquent\NeoEloquentServiceProvider;
+use function env;
 
 class TestCase extends BaseTestCase
 {
@@ -32,19 +33,19 @@ class TestCase extends BaseTestCase
         $connections = array_merge($connections, [
             'default' => [
                 'driver' => 'neo4j',
-                'host' => 'neo4j',
-                'database' => 'neo4j',
-                'port' => 7687,
-                'username' => 'neo4j',
-                'password' => 'test',
+                'host' => env('NEO4J_HOST', 'localhost'),
+                'database' => env('NEO4J_DATABASE', 'neo4j'),
+                'port' => env('NEO4J_PORT', 7687),
+                'username' => env('NEO4J_USER', 'neo4j'),
+                'password' => env('NEO4J_PASSWORD', 'test'),
             ],
             'neo4j' => [
                 'driver' => 'neo4j',
-                'host' => 'neo4j',
-                'database' => 'neo4j',
-                'port' => 7687,
-                'username' => 'neo4j',
-                'password' => 'test'
+                'host' => env('NEO4J_HOST', 'localhost'),
+                'database' => env('NEO4J_DATABASE', 'neo4j'),
+                'port' => env('NEO4J_PORT', 7687),
+                'username' => env('NEO4J_USER', 'neo4j'),
+                'password' => env('NEO4J_PASSWORD', 'test'),
             ]
         ]);
         $config->set('database.connections', $connections);
