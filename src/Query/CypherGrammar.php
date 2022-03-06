@@ -10,11 +10,11 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use RuntimeException;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
+use WikibaseSolutions\CypherDSL\Label;
 use WikibaseSolutions\CypherDSL\Patterns\Node;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
@@ -26,17 +26,12 @@ use function array_values;
 use function collect;
 use function count;
 use function end;
-use function explode;
 use function head;
 use function implode;
-use function is_array;
 use function is_string;
 use function last;
-use function preg_replace;
-use function preg_split;
 use function reset;
 use function str_replace;
-use function stripos;
 use function substr;
 
 class CypherGrammar extends Grammar
@@ -65,17 +60,21 @@ class CypherGrammar extends Grammar
     private ?Node $node = null;
     private bool $usesLegacyIds = false;
 
+    public function compileLabel(Builder $query, string $label): string
+    {
+        return $this->translateMatch($query)
+            ->set(new Label($this->getMatchedNode()->getName(), [$label]))
+            ->toQuery();
+    }
+
     public function translateSelect(Builder $query, Query $dsl): void
     {
-        $original = $query->columns;
+        $this->translateMatch($query, $dsl);
 
-        if ($query->columns === null) {
-            $query->columns = ['*'];
-        }
-
-        $this->translateComponents($query, $dsl);
-
-        $query->columns = $original;
+        $this->translateColumns($query, $query->columns ?? ['*'], $dsl);
+        $this->translateOrders($query, $query->orders ?? [], $dsl);
+        $this->translateLimit($query, $query->limit, $dsl);
+        $this->translateOffset($query, $query->offset, $dsl);
     }
 
     /**
@@ -95,12 +94,6 @@ class CypherGrammar extends Grammar
      */
     protected function translateComponents(Builder $query, Query $dsl): void
     {
-        $this->translateMatch($query, $dsl);
-
-        $this->translateColumns($query, $query->columns, $dsl);
-        $this->translateOrders($query, $query->orders, $dsl);
-        $this->translateLimit($query, $query->limit, $dsl);
-        $this->translateOffset($query, $query->offset, $dsl);
     }
 
     protected function translateAggregate(Builder $query, array $aggregate, Query $dsl = null): void
@@ -125,15 +118,20 @@ class CypherGrammar extends Grammar
      * @param Builder $query
      * @param array $columns
      */
-    protected function translateColumns(Builder $query, array $columns, Query $dsl = null): void
+    protected function translateColumns(Builder $query, array $columns, Query $dsl): void
     {
-//        if ($query->distinct) {
-//            $select = 'select distinct ';
-//        } else {
-//            $select = 'select ';
-//        }
-//
-//        $select.$this->columnize($columns);
+        $return = new ReturnClause();
+        $return->setDistinct($query->distinct);
+        $dsl->addClause($return);
+
+        if ($columns === ['*']) {
+            /** @noinspection NullPointerExceptionInspection */
+            $return->addColumn($this->getMatchedNode()->getName());
+        } else {
+            foreach ($columns as $column) {
+                $return->addColumn($this->getMatchedNode()->property($column));
+            }
+        }
     }
 
     protected function translateFrom(Builder $query, string $table, Query $dsl): void
@@ -840,14 +838,13 @@ class CypherGrammar extends Grammar
         $node = Query::node()->labeled($query->from);
         $assignments = [];
         foreach ($values as $key => $value) {
-            $assignments[] = $node->property($key)->assign(Query::rawExpression('value.' . $key));
+            $assignments[] = $node->property($key)->assign(Query::parameter($key));
         }
 
         return Query::new()
-            ->raw('UNWIND', 'UNWIND $values AS value')
             ->create($node)
             ->set($assignments)
-            ->returning($node->property('id'))
+            ->returning(['id' => $node->property('id')])
             ->toQuery();
     }
 
@@ -1093,13 +1090,13 @@ class CypherGrammar extends Grammar
         }
 
         $this->translateFrom($query, $query->from, $dsl);
-        $this->translateJoins($query, $query->joins, $dsl);
+        $this->translateJoins($query, $query->joins ?? [], $dsl);
 
-        $this->translateWheres($query, $query->wheres, $dsl);
-        $this->translateHavings($query, $query->havings, $dsl);
+        $this->translateWheres($query, $query->wheres ?? [], $dsl);
+        $this->translateHavings($query, $query->havings ?? [], $dsl);
 
-        $this->translateGroups($query, $query->groups, $dsl);
-        $this->translateAggregate($query, $query->aggregate, $dsl);
+        $this->translateGroups($query, $query->groups ?? [], $dsl);
+        $this->translateAggregate($query, $query->aggregate ?? [], $dsl);
 
         return $dsl;
     }

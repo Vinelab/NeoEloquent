@@ -14,7 +14,7 @@ use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Types\CypherMap;
 use LogicException;
 use Vinelab\NeoEloquent\Query\Builder;
-use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 use function array_key_exists;
 use function get_debug_type;
@@ -80,8 +80,7 @@ final class Connection extends \Illuminate\Database\Connection
 
             yield from $this->getSession($useReadPdo)
                 ->run($query, $this->prepareBindings($bindings))
-                ->map(static fn (CypherMap $map) => $map->toArray())
-                ->toArray();
+                ->map(static fn (CypherMap $map) => $map->toArray());
         });
 
     }
@@ -98,6 +97,11 @@ final class Connection extends \Illuminate\Database\Connection
                 ->map(static fn (CypherMap $map) => $map->toArray())
                 ->toArray();
         });
+    }
+
+    protected function getDefaultPostProcessor(): Processor
+    {
+        return new Processor();
     }
 
     /**
@@ -242,17 +246,17 @@ final class Connection extends \Illuminate\Database\Connection
     /**
      * Get the default query grammar instance.
      */
-    protected function getDefaultQueryGrammar(): Grammar
+    protected function getDefaultQueryGrammar(): CypherGrammar
     {
-        return new Grammar();
+        return new CypherGrammar();
     }
 
     /**
      * Get the default schema grammar instance.
      */
-    protected function getDefaultSchemaGrammar(): CypherGrammar
+    protected function getDefaultSchemaGrammar(): Grammar
     {
-        return new CypherGrammar();
+        return new Grammar();
     }
 
     /**
