@@ -4,9 +4,8 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Mockery as M;
 use Vinelab\NeoEloquent\Query\Builder;
+use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Query\Expression;
-use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
 class GrammarTest extends TestCase
 {
@@ -24,13 +23,13 @@ class GrammarTest extends TestCase
         parent::tearDown();
     }
 
-    public function testGettingQueryParameterFromRegularValue()
+    public function testGettingQueryParameterFromRegularValue(): void
     {
         $p = $this->grammar->parameter('value');
         $this->assertEquals('$value', $p);
     }
 
-    public function testGettingIdQueryParameter()
+    public function testGettingIdQueryParameter(): void
     {
         $p = $this->grammar->parameter('id');
         $this->assertEquals('$idn', $p);
