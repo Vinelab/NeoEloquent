@@ -17,7 +17,9 @@ use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
 use WikibaseSolutions\CypherDSL\Patterns\Node;
 use WikibaseSolutions\CypherDSL\Query;
+use WikibaseSolutions\CypherDSL\QueryConvertable;
 use WikibaseSolutions\CypherDSL\RawExpression;
+use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use function array_map;
 use function array_merge;
 use function array_values;
@@ -27,9 +29,11 @@ use function end;
 use function explode;
 use function head;
 use function implode;
+use function is_array;
 use function is_string;
 use function last;
 use function preg_replace;
+use function preg_split;
 use function reset;
 use function str_replace;
 use function stripos;
@@ -59,17 +63,10 @@ class CypherGrammar extends Grammar
     ];
 
     private ?Node $node = null;
+    private bool $usesLegacyIds = false;
 
     public function translateSelect(Builder $query, Query $dsl): void
     {
-        if (($query->unions || $query->havings) && $query->aggregate) {
-            $this->translateUnionAggregate($query, $dsl);
-        }
-
-        if ($query->unions) {
-            $this->translateUnions($query, $query->unions, $dsl);
-        }
-
         $original = $query->columns;
 
         if ($query->columns === null) {
@@ -98,14 +95,7 @@ class CypherGrammar extends Grammar
      */
     protected function translateComponents(Builder $query, Query $dsl): void
     {
-        $this->translateFrom($query, $query->from, $dsl);
-        $this->translateJoins($query, $query->joins, $dsl);
-
-        $this->translateWheres($query, $query->wheres, $dsl);
-        $this->translateHavings($query, $query->havings, $dsl);
-
-        $this->translateGroups($query, $query->groups, $dsl);
-        $this->translateAggregate($query, $query->aggregate, $dsl);
+        $this->translateMatch($query, $dsl);
 
         $this->translateColumns($query, $query->columns, $dsl);
         $this->translateOrders($query, $query->orders, $dsl);
@@ -133,7 +123,7 @@ class CypherGrammar extends Grammar
      * Compile the "select *" portion of the query.
      *
      * @param Builder $query
-     * @param  array  $columns
+     * @param array $columns
      */
     protected function translateColumns(Builder $query, array $columns, Query $dsl = null): void
     {
@@ -146,9 +136,11 @@ class CypherGrammar extends Grammar
 //        $select.$this->columnize($columns);
     }
 
-    protected function translateFrom(Builder $query, string $table, Query $dsl = null): void
+    protected function translateFrom(Builder $query, string $table, Query $dsl): void
     {
-        $this->node = Query::node()->labeled($table);
+        $this->node = Query::node()->labeled($query->from ?? $table);
+
+        $dsl->match($this->node);
 //        return 'from '.$this->wrapTable($table);
     }
 
@@ -165,71 +157,39 @@ class CypherGrammar extends Grammar
 //        })->implode(' ');
     }
 
-    public function translateWheres(Builder $query, array $wheres, Query $dsl = null): void
+    public function translateWheres(Builder $query, array $wheres, Query $dsl): void
     {
-//        // Each type of where clauses has its own compiler function which is responsible
-//        // for actually creating the where clauses SQL. This helps keep the code nice
-//        // and maintainable since each clause has a very small method that it uses.
-//        if (is_null($query->wheres)) {
-//            return '';
-//        }
-//
-//        // If we actually have some where clauses, we will strip off the first boolean
-//        // operator, which is added by the query builders for convenience so we can
-//        // avoid checking for the first clauses in each of the compilers methods.
-//        if (count($sql = $this->compileWheresToArray($query)) > 0) {
-//            return $this->concatenateWhereClauses($query, $sql);
-//        }
-//
-//        return '';
+        /** @var BooleanType $expression */
+        $expression = null;
+        foreach ($wheres as $where) {
+            $dslWhere = $this->{"where{$where['type']}"}($query, $where);
+            if ($expression === null) {
+                $expression = $dslWhere;
+            } elseif (strtolower($where['boolean']) === 'and') {
+                $expression = $expression->and($dslWhere);
+            } else {
+                $expression = $expression->or($dslWhere);
+            }
+        }
 
-
+        if ($wheres) {
+            $dsl->where($expression);
+        }
     }
 
     /**
-     * Get an array of all the where clauses for the query.
-     *
-     * @param Builder $query
-     * @return array
+     * @param array $where
      */
-    protected function compileWheresToArray($query, $wheres = []): array
+    protected function whereRaw(Builder $query, $where): RawExpression
     {
-        return collect($query->wheres)->map(function ($where) use ($query) {
-            return $where['boolean'].' '.$this->{"where{$where['type']}"}($query, $where);
-        })->all();
-    }
-
-    /**
-     * Format the where clause statements into one string.
-     *
-     * @param Builder $query
-     * @param  array  $sql
-     * @return string
-     */
-    protected function concatenateWhereClauses($query, $sql): string
-    {
-        $conjunction = $query instanceof JoinClause ? 'on' : 'where';
-
-        return $conjunction.' '.$this->removeLeadingBoolean(implode(' ', $sql));
-    }
-
-    /**
-     * Compile a raw where clause.
-     *
-     * @param Builder $query
-     * @param  array  $where
-     * @return string
-     */
-    protected function whereRaw(Builder $query, $where): string
-    {
-        return $where['sql'];
+        return new RawExpression($where['sql']);
     }
 
     /**
      * Compile a basic where clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereBasic(Builder $query, $where): string
@@ -238,14 +198,14 @@ class CypherGrammar extends Grammar
 
         $operator = str_replace('?', '??', $where['operator']);
 
-        return $this->wrap($where['column']).' '.$operator.' '.$value;
+        return $this->wrap($where['column']) . ' ' . $operator . ' ' . $value;
     }
 
     /**
      * Compile a bitwise operator where clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereBitwise(Builder $query, $where): string
@@ -257,13 +217,13 @@ class CypherGrammar extends Grammar
      * Compile a "where in" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereIn(Builder $query, $where): string
     {
-        if (! empty($where['values'])) {
-            return $this->wrap($where['column']).' in ('.$this->parameterize($where['values']).')';
+        if (!empty($where['values'])) {
+            return $this->wrap($where['column']) . ' in (' . $this->parameterize($where['values']) . ')';
         }
 
         return '0 = 1';
@@ -273,13 +233,13 @@ class CypherGrammar extends Grammar
      * Compile a "where not in" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereNotIn(Builder $query, $where): string
     {
-        if (! empty($where['values'])) {
-            return $this->wrap($where['column']).' not in ('.$this->parameterize($where['values']).')';
+        if (!empty($where['values'])) {
+            return $this->wrap($where['column']) . ' not in (' . $this->parameterize($where['values']) . ')';
         }
 
         return '1 = 1';
@@ -291,13 +251,13 @@ class CypherGrammar extends Grammar
      * For safety, whereIntegerInRaw ensures this method is only used with integer values.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereNotInRaw(Builder $query, $where): string
     {
-        if (! empty($where['values'])) {
-            return $this->wrap($where['column']).' not in ('.implode(', ', $where['values']).')';
+        if (!empty($where['values'])) {
+            return $this->wrap($where['column']) . ' not in (' . implode(', ', $where['values']) . ')';
         }
 
         return '1 = 1';
@@ -309,13 +269,13 @@ class CypherGrammar extends Grammar
      * For safety, whereIntegerInRaw ensures this method is only used with integer values.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereInRaw(Builder $query, $where): string
     {
-        if (! empty($where['values'])) {
-            return $this->wrap($where['column']).' in ('.implode(', ', $where['values']).')';
+        if (!empty($where['values'])) {
+            return $this->wrap($where['column']) . ' in (' . implode(', ', $where['values']) . ')';
         }
 
         return '0 = 1';
@@ -325,31 +285,31 @@ class CypherGrammar extends Grammar
      * Compile a "where null" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereNull(Builder $query, $where): string
     {
-        return $this->wrap($where['column']).' is null';
+        return $this->wrap($where['column']) . ' is null';
     }
 
     /**
      * Compile a "where not null" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereNotNull(Builder $query, $where): string
     {
-        return $this->wrap($where['column']).' is not null';
+        return $this->wrap($where['column']) . ' is not null';
     }
 
     /**
      * Compile a "between" where clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereBetween(Builder $query, $where): string
@@ -360,14 +320,14 @@ class CypherGrammar extends Grammar
 
         $max = $this->parameter(end($where['values']));
 
-        return $this->wrap($where['column']).' '.$between.' '.$min.' and '.$max;
+        return $this->wrap($where['column']) . ' ' . $between . ' ' . $min . ' and ' . $max;
     }
 
     /**
      * Compile a "between" where clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereBetweenColumns(Builder $query, $where): string
@@ -378,14 +338,14 @@ class CypherGrammar extends Grammar
 
         $max = $this->wrap(end($where['values']));
 
-        return $this->wrap($where['column']).' '.$between.' '.$min.' and '.$max;
+        return $this->wrap($where['column']) . ' ' . $between . ' ' . $min . ' and ' . $max;
     }
 
     /**
      * Compile a "where date" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereDate(Builder $query, $where): string
@@ -397,7 +357,7 @@ class CypherGrammar extends Grammar
      * Compile a "where time" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereTime(Builder $query, $where): string
@@ -409,7 +369,7 @@ class CypherGrammar extends Grammar
      * Compile a "where day" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereDay(Builder $query, $where): string
@@ -421,7 +381,7 @@ class CypherGrammar extends Grammar
      * Compile a "where month" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereMonth(Builder $query, $where): string
@@ -433,7 +393,7 @@ class CypherGrammar extends Grammar
      * Compile a "where year" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereYear(Builder $query, $where): string
@@ -444,35 +404,35 @@ class CypherGrammar extends Grammar
     /**
      * Compile a date based where clause.
      *
-     * @param  string  $type
+     * @param string $type
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function dateBasedWhere($type, Builder $query, $where): string
     {
         $value = $this->parameter($where['value']);
 
-        return $type.'('.$this->wrap($where['column']).') '.$where['operator'].' '.$value;
+        return $type . '(' . $this->wrap($where['column']) . ') ' . $where['operator'] . ' ' . $value;
     }
 
     /**
      * Compile a where clause comparing two columns.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereColumn(Builder $query, $where): string
     {
-        return $this->wrap($where['first']).' '.$where['operator'].' '.$this->wrap($where['second']);
+        return $this->wrap($where['first']) . ' ' . $where['operator'] . ' ' . $this->wrap($where['second']);
     }
 
     /**
      * Compile a nested where clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereNested(Builder $query, $where): string
@@ -482,52 +442,52 @@ class CypherGrammar extends Grammar
         // if it is a normal query we need to take the leading "where" of queries.
         $offset = $query instanceof JoinClause ? 3 : 6;
 
-        return '('.substr($this->compileWheres($where['query']), $offset).')';
+        return '(' . substr($this->compileWheres($where['query']), $offset) . ')';
     }
 
     /**
      * Compile a where condition with a sub-select.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereSub(Builder $query, $where): string
     {
         $select = $this->compileSelect($where['query']);
 
-        return $this->wrap($where['column']).' '.$where['operator']." ($select)";
+        return $this->wrap($where['column']) . ' ' . $where['operator'] . " ($select)";
     }
 
     /**
      * Compile a where exists clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereExists(Builder $query, $where): string
     {
-        return 'exists ('.$this->compileSelect($where['query']).')';
+        return 'exists (' . $this->compileSelect($where['query']) . ')';
     }
 
     /**
      * Compile a where exists clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereNotExists(Builder $query, $where): string
     {
-        return 'not exists ('.$this->compileSelect($where['query']).')';
+        return 'not exists (' . $this->compileSelect($where['query']) . ')';
     }
 
     /**
      * Compile a where row values condition.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereRowValues(Builder $query, $where): string
@@ -536,14 +496,14 @@ class CypherGrammar extends Grammar
 
         $values = $this->parameterize($where['values']);
 
-        return '('.$columns.') '.$where['operator'].' ('.$values.')';
+        return '(' . $columns . ') ' . $where['operator'] . ' (' . $values . ')';
     }
 
     /**
      * Compile a "where JSON boolean" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereJsonBoolean(Builder $query, $where): string
@@ -554,21 +514,21 @@ class CypherGrammar extends Grammar
             $this->parameter($where['value'])
         );
 
-        return $column.' '.$where['operator'].' '.$value;
+        return $column . ' ' . $where['operator'] . ' ' . $value;
     }
 
     /**
      * Compile a "where JSON contains" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereJsonContains(Builder $query, $where): string
     {
         $not = $where['not'] ? 'not ' : '';
 
-        return $not.$this->compileJsonContains(
+        return $not . $this->compileJsonContains(
                 $where['column'],
                 $this->parameter($where['value'])
             );
@@ -577,8 +537,8 @@ class CypherGrammar extends Grammar
     /**
      * Compile a "JSON contains" statement into SQL.
      *
-     * @param  string  $column
-     * @param  string  $value
+     * @param string $column
+     * @param string $value
      * @return string
      *
      * @throws RuntimeException
@@ -604,7 +564,7 @@ class CypherGrammar extends Grammar
      * Compile a "where JSON length" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     protected function whereJsonLength(Builder $query, $where): string
@@ -619,9 +579,9 @@ class CypherGrammar extends Grammar
     /**
      * Compile a "JSON length" statement into SQL.
      *
-     * @param  string  $column
-     * @param  string  $operator
-     * @param  string  $value
+     * @param string $column
+     * @param string $operator
+     * @param string $value
      * @return string
      *
      * @throws RuntimeException
@@ -635,7 +595,7 @@ class CypherGrammar extends Grammar
      * Compile a "where fulltext" clause.
      *
      * @param Builder $query
-     * @param  array  $where
+     * @param array $where
      * @return string
      */
     public function whereFullText(Builder $query, $where): string
@@ -661,7 +621,7 @@ class CypherGrammar extends Grammar
     /**
      * Compile a single having clause.
      *
-     * @param  array  $having
+     * @param array $having
      * @return string
      */
     protected function compileHaving(array $having): string
@@ -670,7 +630,7 @@ class CypherGrammar extends Grammar
         // without doing any more processing on it. Otherwise, we will compile the
         // clause into SQL based on the components that make it up from builder.
         if ($having['type'] === 'Raw') {
-            return $having['boolean'].' '.$having['sql'];
+            return $having['boolean'] . ' ' . $having['sql'];
         }
 
         if ($having['type'] === 'between') {
@@ -683,7 +643,7 @@ class CypherGrammar extends Grammar
     /**
      * Compile a basic having clause.
      *
-     * @param  array  $having
+     * @param array $having
      * @return string
      */
     protected function compileBasicHaving($having): string
@@ -692,13 +652,13 @@ class CypherGrammar extends Grammar
 
         $parameter = $this->parameter($having['value']);
 
-        return $having['boolean'].' '.$column.' '.$having['operator'].' '.$parameter;
+        return $having['boolean'] . ' ' . $column . ' ' . $having['operator'] . ' ' . $parameter;
     }
 
     /**
      * Compile a "between" having clause.
      *
-     * @param  array  $having
+     * @param array $having
      * @return string
      */
     protected function compileHavingBetween($having): string
@@ -711,7 +671,7 @@ class CypherGrammar extends Grammar
 
         $max = $this->parameter(last($having['values']));
 
-        return $having['boolean'].' '.$column.' '.$between.' '.$min.' and '.$max;
+        return $having['boolean'] . ' ' . $column . ' ' . $between . ' ' . $min . ' and ' . $max;
     }
 
     /**
@@ -730,20 +690,20 @@ class CypherGrammar extends Grammar
      * Compile the query orders to an array.
      *
      * @param Builder $query
-     * @param  array  $orders
+     * @param array $orders
      * @return array
      */
     protected function compileOrdersToArray(Builder $query, $orders): array
     {
         return array_map(function ($order) {
-            return $order['sql'] ?? ($this->wrap($order['column']).' '.$order['direction']);
+            return $order['sql'] ?? ($this->wrap($order['column']) . ' ' . $order['direction']);
         }, $orders);
     }
 
     /**
      * Compile the random statement into SQL.
      *
-     * @param  string  $seed
+     * @param string $seed
      * @return string
      */
     public function compileRandom($seed): string
@@ -755,7 +715,7 @@ class CypherGrammar extends Grammar
      * Compile the "limit" portions of the query.
      *
      * @param Builder $query
-     * @param  string|int  $limit
+     * @param string|int $limit
      */
     protected function translateLimit(Builder $query, $limit, Query $dsl): void
     {
@@ -766,7 +726,7 @@ class CypherGrammar extends Grammar
      * Compile the "offset" portions of the query.
      *
      * @param Builder $query
-     * @param  string|int  $offset
+     * @param string|int $offset
      */
     protected function translateOffset(Builder $query, $offset, Query $dsl): void
     {
@@ -802,25 +762,25 @@ class CypherGrammar extends Grammar
     /**
      * Compile a single union statement.
      *
-     * @param  array  $union
+     * @param array $union
      * @return string
      */
     protected function compileUnion(array $union): string
     {
         $conjunction = $union['all'] ? ' union all ' : ' union ';
 
-        return $conjunction.$this->wrapUnion($union['query']->toSql());
+        return $conjunction . $this->wrapUnion($union['query']->toSql());
     }
 
     /**
      * Wrap a union subquery in parentheses.
      *
-     * @param  string  $sql
+     * @param string $sql
      * @return string
      */
     protected function wrapUnion($sql): string
     {
-        return '('.$sql.')';
+        return '(' . $sql . ')';
     }
 
     /**
@@ -872,7 +832,7 @@ class CypherGrammar extends Grammar
      * Compile an insert statement into SQL.
      *
      * @param Builder $query
-     * @param  array  $values
+     * @param array $values
      * @return string
      */
     public function compileInsert(Builder $query, array $values): string
@@ -880,7 +840,7 @@ class CypherGrammar extends Grammar
         $node = Query::node()->labeled($query->from);
         $assignments = [];
         foreach ($values as $key => $value) {
-            $assignments[] = $node->property($key)->assign(Query::rawExpression('value.'.$key));
+            $assignments[] = $node->property($key)->assign(Query::rawExpression('value.' . $key));
         }
 
         return Query::new()
@@ -895,7 +855,7 @@ class CypherGrammar extends Grammar
      * Compile an insert ignore statement into SQL.
      *
      * @param Builder $query
-     * @param  array  $values
+     * @param array $values
      * @return string
      *
      * @throws RuntimeException
@@ -909,8 +869,8 @@ class CypherGrammar extends Grammar
      * Compile an insert and get ID statement into SQL.
      *
      * @param Builder $query
-     * @param  array  $values
-     * @param  string  $sequence
+     * @param array $values
+     * @param string $sequence
      * @return string
      */
     public function compileInsertGetId(Builder $query, $values, $sequence): string
@@ -922,8 +882,8 @@ class CypherGrammar extends Grammar
      * Compile an insert statement using a subquery into SQL.
      *
      * @param Builder $query
-     * @param  array  $columns
-     * @param  string  $sql
+     * @param array $columns
+     * @param string $sql
      * @return string
      */
     public function compileInsertUsing(Builder $query, array $columns, string $sql): string
@@ -940,19 +900,14 @@ class CypherGrammar extends Grammar
      * Compile an update statement into SQL.
      *
      * @param Builder $query
-     * @param  array  $values
+     * @param array $values
      * @return string
      */
     public function compileUpdate(Builder $query, array $values): string
     {
         $dsl = Query::new();
 
-        $original = $query->columns;
-        $query->columns = null;
-
-        $this->translateSelect($query, $dsl);
-
-        $query->columns = $original;
+        $this->translateMatch($query, $dsl);
 
         $expressions = [];
         $node = $this->getMatchedNode();
@@ -968,13 +923,13 @@ class CypherGrammar extends Grammar
      * Compile the columns for an update statement.
      *
      * @param Builder $query
-     * @param  array  $values
+     * @param array $values
      * @return string
      */
     protected function compileUpdateColumns(Builder $query, array $values): string
     {
         return collect($values)->map(function ($value, $key) {
-            return $this->wrap($key).' = '.$this->parameter($value);
+            return $this->wrap($key) . ' = ' . $this->parameter($value);
         })->implode(', ');
     }
 
@@ -982,9 +937,9 @@ class CypherGrammar extends Grammar
      * Compile an "upsert" statement into SQL.
      *
      * @param Builder $query
-     * @param  array  $values
-     * @param  array  $uniqueBy
-     * @param  array  $update
+     * @param array $values
+     * @param array $uniqueBy
+     * @param array $update
      * @return string
      *
      * @throws RuntimeException
@@ -997,8 +952,8 @@ class CypherGrammar extends Grammar
     /**
      * Prepare the bindings for an update statement.
      *
-     * @param  array  $bindings
-     * @param  array  $values
+     * @param array $bindings
+     * @param array $values
      * @return array
      */
     public function prepareBindingsForUpdate(array $bindings, array $values): array
@@ -1039,14 +994,14 @@ class CypherGrammar extends Grammar
     {
         $node = Query::node()->labeled($query->from);
 
-        return [ Query::new()->match($node)->delete($node)->toQuery() ];
+        return [Query::new()->match($node)->delete($node)->toQuery()];
     }
 
     /**
      * Compile the lock into SQL.
      *
      * @param Builder $query
-     * @param  bool|string  $value
+     * @param bool|string $value
      * @return string
      */
     protected function compileLock(Builder $query, $value): string
@@ -1067,7 +1022,7 @@ class CypherGrammar extends Grammar
     /**
      * Compile the SQL statement to define a savepoint.
      *
-     * @param  string  $name
+     * @param string $name
      * @return string
      */
     public function compileSavepoint($name): string
@@ -1078,48 +1033,18 @@ class CypherGrammar extends Grammar
     /**
      * Compile the SQL statement to execute a savepoint rollback.
      *
-     * @param  string  $name
+     * @param string $name
      * @return string
      */
     public function compileSavepointRollBack($name): string
     {
-        return 'ROLLBACK TO SAVEPOINT '.$name;
-    }
-
-    /**
-     * Wrap a value in keyword identifiers.
-     *
-     * @param  Expression|string  $value
-     * @param  bool  $prefixAlias
-     * @return string
-     */
-    public function wrap($value, $prefixAlias = false): string
-    {
-        if ($this->isExpression($value)) {
-            return $this->getValue($value);
-        }
-
-        // If the value being wrapped has a column alias we will need to separate out
-        // the pieces so we can wrap each of the segments of the expression on its
-        // own, and then join these both back together using the "as" connector.
-        if (stripos($value, ' as ') !== false) {
-            return $this->wrapAliasedValue($value, $prefixAlias);
-        }
-
-        // If the given value is a JSON selector we will wrap it differently than a
-        // traditional value. We will need to split this path and wrap each part
-        // wrapped, etc. Otherwise, we will simply wrap the value as a string.
-        if ($this->isJsonSelector($value)) {
-            return $this->wrapJsonSelector($value);
-        }
-
-        return $this->wrapSegments(explode('.', $value));
+        throw new BadMethodCallException('Savepoints aren\'t supported in Neo4J');
     }
 
     /**
      * Wrap the given JSON selector.
      *
-     * @param  string  $value
+     * @param string $value
      * @return string
      *
      * @throws RuntimeException
@@ -1130,86 +1055,75 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * Wrap the given JSON selector for boolean values.
+     * Determine if the given value is a raw expression.
      *
-     * @param  string  $value
-     * @return string
-     */
-    protected function wrapJsonBooleanSelector($value): string
-    {
-        return $this->wrapJsonSelector($value);
-    }
-
-    /**
-     * Wrap the given JSON boolean value.
-     *
-     * @param  string  $value
-     * @return string
-     */
-    protected function wrapJsonBooleanValue($value): string
-    {
-        return $value;
-    }
-
-    /**
-     * Split the given JSON selector into the field and the optional path and wrap them separately.
-     *
-     * @param  string  $column
-     * @return array
-     */
-    protected function wrapJsonFieldAndPath($column): array
-    {
-        $parts = explode('->', $column, 2);
-
-        $field = $this->wrap($parts[0]);
-
-        $path = count($parts) > 1 ? ', '.$this->wrapJsonPath($parts[1], '->') : '';
-
-        return [$field, $path];
-    }
-
-    /**
-     * Wrap the given JSON path.
-     *
-     * @param  string  $value
-     * @param  string  $delimiter
-     * @return string
-     */
-    protected function wrapJsonPath($value, $delimiter = '->'): string
-    {
-        $value = preg_replace("/([\\\\]+)?'/", "''", $value);
-
-        return '\'$."'.str_replace($delimiter, '"."', $value).'"\'';
-    }
-
-    /**
-     * Determine if the given string is a JSON selector.
-     *
-     * @param  string  $value
+     * @param mixed $value
      * @return bool
      */
-    protected function isJsonSelector($value): bool
+    public function isExpression($value): bool
     {
-        return Str::contains($value, '->');
+        return parent::isExpression($value) || $value instanceof QueryConvertable;
     }
 
     /**
-     * Get the grammar specific operators.
+     * Get the value of a raw expression.
      *
-     * @return array
+     * @param Expression|QueryConvertable $expression
+     * @return mixed
      */
-    public function getOperators(): array
+    public function getValue($expression)
     {
-        return $this->operators;
+        if ($expression instanceof QueryConvertable) {
+            return $expression->toQuery();
+        }
+
+        return parent::getValue($expression);
     }
 
-    /**
-     * Get the grammar specific bitwise operators.
-     *
-     * @return array
-     */
-    public function getBitwiseOperators(): array
+    protected function translateMatch(Builder $query, Query $dsl = null): Query
     {
-        return $this->bitwiseOperators;
+        $dsl ??= Query::new();
+
+        if (($query->unions || $query->havings) && $query->aggregate) {
+            $this->translateUnionAggregate($query, $dsl);
+        }
+
+        if ($query->unions) {
+            $this->translateUnions($query, $query->unions, $dsl);
+        }
+
+        $this->translateFrom($query, $query->from, $dsl);
+        $this->translateJoins($query, $query->joins, $dsl);
+
+        $this->translateWheres($query, $query->wheres, $dsl);
+        $this->translateHavings($query, $query->havings, $dsl);
+
+        $this->translateGroups($query, $query->groups, $dsl);
+        $this->translateAggregate($query, $query->aggregate, $dsl);
+
+        return $dsl;
+    }
+
+    public function isUsingLegacyIds(): bool
+    {
+        return $this->usesLegacyIds;
+    }
+
+    public function useLegacyIds(bool $useLegacyIds = true): void
+    {
+        $this->usesLegacyIds = $useLegacyIds;
+    }
+
+    public function parameter($value): string
+    {
+        if ($this->isExpression($value)) {
+            $value = $this->getValue($value);
+        }
+
+        if ($value === 'id' && $this->isUsingLegacyIds()) {
+            $value = 'idn';
+        }
+
+        return Query::parameter($value)->toQuery();
     }
 }
