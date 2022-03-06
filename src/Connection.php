@@ -6,7 +6,6 @@ use Closure;
 use Generator;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Expression;
-use Illuminate\Database\Query\Grammars\Grammar;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
@@ -18,20 +17,26 @@ use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
 use LogicException;
 use Vinelab\NeoEloquent\Query\Builder;
+use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 
 final class Connection implements ConnectionInterface
 {
     private Driver $driver;
     private Grammar $grammar;
-    private string $database;
     private ?UnmanagedTransactionInterface $tsx = null;
     private bool $pretending = false;
+    private SessionConfiguration $config;
 
-    public function __construct(Driver $driver, Grammar $grammar, string $database)
+    public function __construct(Driver $driver, Grammar $grammar, SessionConfiguration $config)
     {
         $this->driver = $driver;
         $this->grammar = $grammar;
-        $this->database = $database;
+        $this->config = $config;
+    }
+
+    public function getDriver(): Driver
+    {
+        return $this->driver;
     }
 
     public function table($table, $as = null)
@@ -66,7 +71,9 @@ final class Connection implements ConnectionInterface
 
     public function getDatabaseName(): string
     {
-        return $this->database;
+        // Null means the server-configured default will be used.
+        // The type hint makes it impossible to return null, so we return an empty string.
+        return $this->config->getDatabase() ?? '';
     }
 
     public function raw($value): Expression

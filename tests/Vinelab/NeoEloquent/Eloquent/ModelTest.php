@@ -12,7 +12,7 @@ class Model extends NeoEloquent
 
 class Labeled extends NeoEloquent
 {
-    protected $label = 'Labeled';
+    protected $table = 'Labeled';
 }
 
 class Table extends NeoEloquent

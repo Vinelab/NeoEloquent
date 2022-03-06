@@ -4,21 +4,24 @@ namespace Vinelab\NeoEloquent\Query;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
+use Illuminate\Support\Traits\Macroable;
+use Laudis\Neo4j\Databags\Pair;
+use WikibaseSolutions\CypherDSL\BinaryOperator;
 use WikibaseSolutions\CypherDSL\Patterns\Node;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\RawExpression;
 use WikibaseSolutions\CypherDSL\Types\AnyType;
+use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use WikibaseSolutions\CypherDSL\Variable;
-use function collect;
 use function count;
-use function is_array;
-use function is_null;
+use function is_a;
 use function preg_split;
 use function stripos;
-use function trim;
 
 class CypherGrammar
 {
+    use Macroable;
+
     /**
      * The components that make up a select clause.
      *
@@ -45,11 +48,11 @@ class CypherGrammar
     {
         $query = Query::new();
 
-        $node = $this->translateFrom($builder, $query);
-        /** @var Variable $nodeVariable */
-        $nodeVariable = $node->getName();
+        /** @var Variable $node */
+        $node = $this->translateFrom($builder, $query)->getName();
 
-        $this->translateReturning($builder, $query, $nodeVariable);
+        $this->translateWheres($builder, $query, $node);
+        $this->translateReturning($builder, $query, $node);
 
         return $query->build();
     }
@@ -57,7 +60,7 @@ class CypherGrammar
     /**
      * Wrap a value in keyword identifiers.
      *
-     * @param  Expression|string  $value
+     * @param Expression|string $value
      */
     private function wrap($value, Variable $node): AnyType
     {
@@ -75,29 +78,22 @@ class CypherGrammar
         return $node->property($value);
     }
 
-    /**
-     * Compile the "where" portions of the query.
-     *
-     * @param Builder $query
-     * @return string
-     */
-    public function compileWheres(Builder $query)
+    private function translateWheres(Builder $builder, Query $query, Variable $node): void
     {
-        // Each type of where clauses has its own compiler function which is responsible
-        // for actually creating the where clauses SQL. This helps keep the code nice
-        // and maintainable since each clause has a very small method that it uses.
-        if (is_null($query->wheres)) {
-            return '';
+        if ($builder->wheres === []) {
+            return;
         }
 
-        // If we actually have some where clauses, we will strip off the first boolean
-        // operator, which is added by the query builders for convenience so we can
-        // avoid checking for the first clauses in each of the compilers methods.
-        if (count($sql = $this->compileWheresToArray($query)) > 0) {
-            return $this->concatenateWhereClauses($query, $sql);
-        }
+        $i = 0;
+        /** @var BooleanType|null $expression */
+        $expression = null;
+        do {
+            $expression = $this->buildFromWhere($builder->wheres[$i], $expression);
 
-        return '';
+            ++$i;
+        } while (count($builder->wheres) > $i);
+
+        $query->where($expression);
     }
 
     private function translateReturning(Builder $builder, Query $query, Variable $node): void
@@ -120,5 +116,19 @@ class CypherGrammar
         $query->match($node);
 
         return $node;
+    }
+
+    private function buildFromWhere(array $where, ?BooleanType $expression): BooleanType
+    {
+        $newClass = $where['type'];
+        if (is_a($newClass, BinaryOperator::class, true)) {
+            $newExpression = new $newClass($where['']);
+        }
+
+        if ($expression) {
+            return $expression->and($newExpression);
+        }
+
+        return $newExpression;
     }
 }

@@ -3,15 +3,15 @@
 namespace Vinelab\NeoEloquent;
 
 
+use Illuminate\Contracts\Config\Repository;
+use Illuminate\Database\ConnectionResolver;
+use Throwable;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory;
-use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
-use Vinelab\NeoEloquent\Connection as NeoEloquentConnection;
-
-use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 
 use Faker\Generator as FakerGenerator;
+use function array_filter;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {
@@ -20,34 +20,31 @@ class NeoEloquentServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Model::setConnectionResolver($this->app['db']);
+        $resolver = new ConnectionResolver();
+        $factory = ConnectionFactory::default();
+        /** @var Repository $config */
+        $config = $this->app->get('config');
+        $connections = $config->get('database.connections', []);
+        $connections = array_filter($connections, static fn (array $x) => ($x['driver'] ?? '') === 'neo4j');
 
-        Model::setEventDispatcher($this->app->make(Dispatcher::class));
+        foreach ($connections as $name => $connection) {
+            $resolver->addConnection($name, $factory->make($connection));
+        }
+
+        if ($config->has('database.default')) {
+            $resolver->setDefaultConnection($config->get('database.default'));
+        }
+
+        Model::setConnectionResolver($resolver);
     }
 
     /**
      * Register the service provider.
+     *
+     * @throws Throwable
      */
     public function register(): void
     {
-        $this->app['db']->extend('neo4j', function ($config) {
-            $this->config = $config;
-            $conn = new ConnectionAdapter($config);
-            $conn->setSchemaGrammar(new CypherGrammar());
-
-            return $conn;
-        });
-
-        $this->app->bind('neoeloquent.connection', function() {
-            // $config is set by the previous binding,
-            // so that we get the correct configuration
-            // set by the user.
-            $conn = new NeoEloquentConnection($this->config);
-            $conn->setSchemaGrammar(new CypherGrammar());
-
-            return $conn;
-        });
-    
         $this->app->singleton(NeoEloquentFactory::class, function ($app) {
             return NeoEloquentFactory::construct(
                 $app->make(FakerGenerator::class), $this->app->databasePath('factories')
