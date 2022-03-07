@@ -16,8 +16,10 @@ use RuntimeException;
 use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\OperatorRepository;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
+use WikibaseSolutions\CypherDSL\Clauses\MergeClause;
 use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
+use WikibaseSolutions\CypherDSL\Clauses\SetClause;
 use WikibaseSolutions\CypherDSL\Equality;
 use WikibaseSolutions\CypherDSL\Label;
 use WikibaseSolutions\CypherDSL\Parameter;
@@ -27,6 +29,7 @@ use WikibaseSolutions\CypherDSL\QueryConvertable;
 use WikibaseSolutions\CypherDSL\RawExpression;
 use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
+use function array_diff;
 use function array_keys;
 use function array_map;
 use function array_merge;
@@ -964,7 +967,29 @@ class CypherGrammar extends Grammar
      */
     public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update): string
     {
-        throw new RuntimeException('This database engine does not support upserts.');
+        $node = $this->initialiseNode($query);
+        $createKeys = array_values(array_diff($this->valuesToKeys($values), $uniqueBy, $update));
+
+        $mergeExpression = $this->buildMergeExpression($uniqueBy, $node, $query);
+        $onMatch = $this->buildSetClause($update, $node);
+        $onCreate = $this->buildSetClause($createKeys, $node);
+
+        $merge = new MergeClause();
+        $merge->setPattern($mergeExpression);
+
+        if (count($onMatch->getExpressions()) > 0) {
+            $merge->setOnMatch($onMatch);
+        }
+
+        if (count($onCreate->getExpressions()) > 0) {
+            $merge->setOnCreate($onCreate);
+        }
+
+        $tbr = Query::new()
+            ->raw('UNWIND', '$valueSets as values')
+            ->addClause($merge);
+
+        return $tbr->toQuery();
     }
 
     /**
@@ -1187,5 +1212,43 @@ class CypherGrammar extends Grammar
         }
 
         return $this->node;
+    }
+
+    /**
+     * @param array $values
+     * @return array
+     */
+    protected function valuesToKeys(array $values): array
+    {
+        $keys = Collection::make($values)
+            ->map(static fn(array $value) => array_keys($value))
+            ->flatten()
+            ->filter(static fn($x) => is_string($x))
+            ->unique()
+            ->toArray();
+        return $keys;
+    }
+
+    private function buildMergeExpression(array $uniqueBy, Node $node, Builder $query): RawExpression
+    {
+        $map = Query::map([]);
+        foreach ($uniqueBy as $column) {
+            $map->addProperty($column, new RawExpression('values.' . Node::escape($column)));
+        }
+        $label = new Label($node->getName(), [$query->from]);
+
+        return new RawExpression('(' . $label->toQuery() . ' ' . $map->toQuery() . ')');
+    }
+
+    private function buildSetClause(array $update, Node $node): SetClause
+    {
+        $setClause = new SetClause();
+        foreach ($update as $key) {
+            $assignment = $node->property($key)->assign(new RawExpression('values.' . Node::escape($key)));
+
+            $setClause->addAssignment($assignment);
+        }
+
+        return $setClause;
     }
 }

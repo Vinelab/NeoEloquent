@@ -6,9 +6,14 @@ use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\Connection;
 use function array_key_exists;
+use function array_keys;
 use function array_map;
 use function array_merge;
+use function collect;
 use function is_array;
+use function is_int;
+use function is_null;
+use function ksort;
 use function reset;
 
 /**
@@ -50,6 +55,13 @@ class Builder extends \Illuminate\Database\Query\Builder
         return $tbr;
     }
 
+    public function upsert(array $values, $uniqueBy, $update = null)
+    {
+        $cql = $this->grammar->compileUpsert($this, $values, $uniqueBy, $update);
+
+        return $this->massInsert($cql, $values);
+    }
+
     public function cleanBindings(array $bindings): array
     {
         // The Neo4J driver handles bindings and parametrization
@@ -67,22 +79,26 @@ class Builder extends \Illuminate\Database\Query\Builder
 
     public function insert(array $values): bool
     {
-        if (empty($values)) {
-            return true;
-        }
+        $cql = $this->grammar->compileInsert($this, $values);
 
-        $values = ! is_array(reset($values)) ? [$values]: $values;
-
-        $this->applyBeforeQueryCallbacks();
-
-        return $this->connection->insert(
-            $this->grammar->compileInsert($this, $values),
-            ['valueSets' => $values]
-        );
+        return $this->massInsert($cql, $values);
     }
 
     public function toCypher(): string
     {
         return $this->toSql();
+    }
+
+    protected function massInsert(string $cql, array $values): bool
+    {
+        if (empty($values)) {
+            return true;
+        }
+
+        $values = !is_array(reset($values)) ? [$values] : $values;
+
+        $this->applyBeforeQueryCallbacks();
+
+        return $this->connection->insert($cql, ['valueSets' => $values]);
     }
 }

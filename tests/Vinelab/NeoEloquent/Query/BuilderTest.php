@@ -69,6 +69,29 @@ class BuilderTest extends TestCase
         $this->assertEquals(['Hero', 'MaLabel'], $node->getLabels()->toArray());
     }
 
+    public function testUpsert(): void
+    {
+        $this->builder->from('Hero')->upsert([
+            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
+            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
+        ], ['a'], ['c']);
+
+        self::assertEquals([
+            ['a' => 'aa', 'b' => 'bb'],
+            ['a' => 'aaa', 'b' => 'bbb'],
+        ], $this->builder->get()->toArray());
+
+        $this->builder->from('Hero')->upsert([
+            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
+            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
+        ], ['a'], ['c']);
+
+        self::assertEquals([
+            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
+            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
+        ], $this->builder->get()->toArray());
+    }
+
 
     public function testFailingWhereWithNullValue(): void
     {
