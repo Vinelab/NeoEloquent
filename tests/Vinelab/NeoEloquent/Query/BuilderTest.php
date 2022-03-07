@@ -45,6 +45,20 @@ class BuilderTest extends TestCase
         $this->assertEquals($values, $this->builder->from('Hero')->first());
     }
 
+    public function testBatchInsert(): void
+    {
+        $this->builder->from('Hero')->insert([
+            ['a' => 'b'],
+            ['c' => 'd']
+        ]);
+
+        $results = $this->builder->get();
+        self::assertEquals([
+            ['a' => 'b'],
+            ['c' => 'd']
+        ], $results->toArray());
+    }
+
     public function testMakingLabel(): void
     {
         $this->assertTrue($this->builder->from('Hero')->insert(['a' => 'b']));

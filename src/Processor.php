@@ -5,8 +5,6 @@ namespace Vinelab\NeoEloquent;
 use Illuminate\Database\Query\Builder;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
 use Laudis\Neo4j\Types\Node;
-use function array_key_exists;
-use function is_array;
 use function is_iterable;
 
 class Processor extends \Illuminate\Database\Query\Processors\Processor
