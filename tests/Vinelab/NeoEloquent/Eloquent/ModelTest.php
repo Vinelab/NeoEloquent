@@ -81,15 +81,11 @@ class ModelTest extends TestCase
     {
         //create a new model object
         $m = new Labeled();
-        $m->setLabel(['User', 'Fan']); //set some labels
-        $m->save();
-        //get the node id, we need it to verify if the label is actually added in graph
-        $id = $m->id;
 
         //add the label
         $m->addLabels(['Superuniqelabel1']);
 
-        $labels = $this->getNodeLabels($id);
+        $labels = $this->loadAllLabels($id);
 
         $this->assertTrue(in_array('Superuniqelabel1', $labels));
     }

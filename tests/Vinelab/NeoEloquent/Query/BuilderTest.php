@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
+use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use function array_values;
@@ -46,8 +47,12 @@ class BuilderTest extends TestCase
 
     public function testMakingLabel(): void
     {
-        $label = 'MaLabel';
-        $this->assertEquals($label, $this->builder->makeLabel($label));
+        $this->assertTrue($this->builder->from('Hero')->insert(['a' => 'b']));
+
+        $this->assertEquals(1, $this->builder->update([new LabelAction('MaLabel')]));
+
+        $node = $this->getConnection()->getPdo()->run('MATCH (x) RETURN x')->first()->get('x');
+        $this->assertEquals(['Hero', 'MaLabel'], $node->getLabels()->toArray());
     }
 
 

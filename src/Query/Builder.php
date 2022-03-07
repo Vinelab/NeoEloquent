@@ -9,6 +9,7 @@ use function array_key_exists;
 use function array_map;
 use function array_merge;
 use function is_array;
+use function reset;
 
 /**
  * @method Connection getConnection()
@@ -64,17 +65,24 @@ class Builder extends \Illuminate\Database\Query\Builder
         return $this->getConnection()->select($cypher, $values, false)[0]['id'];
     }
 
+    public function insert(array $values): bool
+    {
+        if (empty($values)) {
+            return true;
+        }
+
+        $values = ! is_array(reset($values)) ? [$values]: $values;
+
+        $this->applyBeforeQueryCallbacks();
+
+        return $this->connection->insert(
+            $this->grammar->compileInsert($this, $values),
+            ['valueSets' => $values]
+        );
+    }
+
     public function toCypher(): string
     {
         return $this->toSql();
-    }
-
-    public function makeLabel(string $label): string
-    {
-        $cypher = $this->getGrammar()->compileLabel($this, $label);
-
-        $this->getConnection()->affectingStatement($cypher);
-
-        return $label;
     }
 }

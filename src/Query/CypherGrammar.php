@@ -10,6 +10,7 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Vinelab\NeoEloquent\LabelAction;
@@ -26,6 +27,7 @@ use WikibaseSolutions\CypherDSL\QueryConvertable;
 use WikibaseSolutions\CypherDSL\RawExpression;
 use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
+use function array_keys;
 use function array_map;
 use function array_merge;
 use function array_values;
@@ -67,13 +69,6 @@ class CypherGrammar extends Grammar
 
     private ?Node $node = null;
     private bool $usesLegacyIds = false;
-
-    public function compileLabel(Builder $query, string $label): string
-    {
-        return $this->translateMatch($query)
-            ->set(new Label($this->getMatchedNode()->getName(), [$label]))
-            ->toQuery();
-    }
 
     public function translateSelect(Builder $query, Query $dsl): void
     {
@@ -849,11 +844,27 @@ class CypherGrammar extends Grammar
     {
         $node = $this->initialiseNode($query);
 
-        $tbr =  Query::new()->create($node);
+        $keys = Collection::make($values)
+            ->map(static fn (array $value) => array_keys($value))
+            ->flatten()
+            ->filter(static fn ($x) => is_string($x))
+            ->unique()
+            ->toArray();
 
-        $this->decorateUpdateAndRemoveExpressions($values, $tbr);
+        $tbr = Query::new()
+            ->raw('UNWIND', '$valueSets as values')
+            ->create($node);
 
-        return $tbr->returning(['id' => $node->property('id')])->toQuery();
+        $sets = [];
+        foreach ($keys as $key) {
+            $sets[] = $node->property($key)->assign(new RawExpression('values.' . Node::escape($key)));
+        }
+
+        if (count($sets) > 0) {
+            $tbr->set($sets);
+        }
+
+        return $tbr->toQuery();
     }
 
     /**
@@ -880,7 +891,14 @@ class CypherGrammar extends Grammar
      */
     public function compileInsertGetId(Builder $query, $values, $sequence): string
     {
-        return $this->compileInsert($query, $values);
+        $node = $this->initialiseNode($query, $query->from);
+
+        $tbr = Query::new()
+            ->create($node);
+
+        $this->decorateUpdateAndRemoveExpressions($values, $tbr);
+
+        return $tbr->returning(['id' => $node->property('id')])->toQuery();
     }
 
     /**
@@ -1137,22 +1155,25 @@ class CypherGrammar extends Grammar
         $node = $this->getMatchedNode();
         $expressions = [];
         $removeExpressions = [];
+
         foreach ($values as $key => $value) {
             if ($value instanceof LabelAction) {
-                $labelExpression = trim(Query::node($value->getLabel())
-                    ->named($node->getName())
-                    ->toQuery(), '()');
+                $labelExpression = new Label($node->getName(), [$value->getLabel()]);
 
                 if ($value->setsLabel()) {
-                    $expressions[] = new RawExpression('SET ' . $labelExpression);
+                    $expressions[] = $labelExpression;
                 } else {
-                    $removeExpressions[] = new RawExpression('REMOVE ' . $labelExpression);
+                    $removeExpressions[] = $labelExpression;
                 }
             } else {
                 $expressions[] = $node->property($key)->assign(Query::parameter($key));
             }
         }
-        $dsl->set($expressions);
+
+        if (count($expressions) > 0) {
+            $dsl->set($expressions);
+        }
+
         if (count($removeExpressions) > 0) {
             $dsl->remove($removeExpressions);
         }

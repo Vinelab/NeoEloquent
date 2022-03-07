@@ -18,6 +18,7 @@ use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 use function array_key_exists;
 use function get_debug_type;
+use function is_string;
 
 final class Connection extends \Illuminate\Database\Connection
 {
@@ -166,8 +167,15 @@ final class Connection extends \Illuminate\Database\Connection
             $bindings['idn'] = $id;
         }
 
+        $tbr = [];
+        foreach ($bindings as $key => $binding) {
+            if (is_string($key)) {
+                $tbr[$key] = $binding;
+            }
+        }
+
         // The preparation is already done by the driver
-        return $bindings;
+        return $tbr;
     }
 
     public function beginTransaction(): void
