@@ -2,10 +2,11 @@
 
 namespace Vinelab\NeoEloquent\Tests\Query;
 
+use Illuminate\Support\Arr;
 use InvalidArgumentException;
-use Mockery as M;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
+use function array_values;
 
 class BuilderTest extends TestCase
 {
@@ -43,54 +44,17 @@ class BuilderTest extends TestCase
         $this->assertEquals($values, $this->builder->from('Hero')->first());
     }
 
-    public function testTransformingQueryToCypher(): void
-    {
-        $this->grammar->shouldReceive('compileSelect')->once()->with($this->builder)->andReturn(true);
-        $this->assertTrue($this->builder->toCypher());
-    }
-
     public function testMakingLabel(): void
     {
-        $label = ['MaLabel'];
+        $label = 'MaLabel';
         $this->assertEquals($label, $this->builder->makeLabel($label));
-    }
-
-    /**
-     * @depends testTransformingQueryToCypher
-     */
-    public function testSelectResult(): void
-    {
-        $cypher = 'Some cypher here';
-        $this->grammar->shouldReceive('compileSelect')->once()->andReturn($cypher);
-        $this->connection->shouldReceive('select')->once()
-            ->with($cypher, [])->andReturn('result');
-
-        $result = $this->builder->getFresh();
-
-        $this->assertEquals($result, 'result');
-    }
-
-    /**
-     * @depends testTransformingQueryToCypher
-     */
-    public function testSelectingProperties(): void
-    {
-        $cypher = 'Some cypher here';
-        $this->grammar->shouldReceive('compileSelect')->once()->andReturn($cypher);
-        $this->connection->shouldReceive('select')->once()
-            ->with($cypher, [])->andReturn('result');
-
-        $result = $this->builder->getFresh(['poop', 'head']);
-
-        $this->assertEquals($result, 'result');
-        $this->assertEquals($this->builder->columns, ['poop', 'head'], 'make sure the columns were set');
     }
 
 
     public function testFailingWhereWithNullValue(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectErrorMessage('Value must be provided.');
+        $this->expectErrorMessage('Illegal operator and value combination.');
         $this->builder->where('id', '>', null);
     }
 
@@ -101,16 +65,12 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             [
                 'type' => 'Basic',
-                'column' => 'id(n)',
+                'column' => 'id',
                 'operator' => '=',
                 'value' => 19,
-                'boolean' => 'and',
-                'binding' => 'id(n)',
+                'boolean' => 'and'
             ],
         ], $this->builder->wheres, 'make sure the statement was atted to $wheres');
-        // When the '$from' attribute is not set on the query builder, the grammar
-        // will use 'n' as the default node identifier.
-        $this->assertEquals(['idn' => 19], $this->builder->getBindings());
     }
 
     public function testBasicWhereBindingsWithFromField(): void
@@ -121,16 +81,12 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             [
                 'type' => 'Basic',
-                'column' => 'id(user)',
+                'column' => 'id',
                 'operator' => '=',
                 'value' => 19,
-                'boolean' => 'and',
-                'binding' => 'id(user)',
+                'boolean' => 'and'
             ],
-        ], $this->builder->wheres, 'make sure the statement was atted to $wheres');
-        // When no query builder is passed to the grammar then it will return 'n'
-        // as node identifier by default.
-        $this->assertEquals(['iduser' => 19], $this->builder->getBindings());
+        ], $this->builder->wheres);
     }
 
     public function testNullWhereBindings(): void
@@ -141,12 +97,9 @@ class BuilderTest extends TestCase
             [
                 'type' => 'Null',
                 'boolean' => 'and',
-                'column' => 'farted',
-                'binding' => 'farted',
+                'column' => 'farted'
             ],
         ], $this->builder->wheres);
-
-        $this->assertEmpty($this->builder->getBindings(), 'no bindings should be added when dealing with null stuff..');
     }
 
     public function testWhereTransformsNodeIdBinding(): void
@@ -163,11 +116,8 @@ class BuilderTest extends TestCase
                 'boolean' => 'and',
                 'operator' => '=',
                 'value' => 200,
-                'binding' => 'id(n)',
             ],
         ], $this->builder->wheres);
-
-        $this->assertEquals(['idn' => 200], $this->builder->getBindings());
     }
 
     public function testNestedWhere(): void
@@ -184,7 +134,7 @@ class BuilderTest extends TestCase
     {
         $builder = $this->getBuilder();
         $builder->select('*')->from('User');
-        $this->assertEquals('MATCH (user:User) RETURN *', $builder->toCypher());
+        $this->assertMatchesRegularExpression('/MATCH \(var\w+:User\) RETURN var\w+/', $builder->toCypher());
     }
 
     public function testBasicAlias(): void
@@ -192,14 +142,20 @@ class BuilderTest extends TestCase
         $builder = $this->getBuilder();
         $builder->select('foo as bar')->from('User');
 
-        $this->assertEquals('MATCH (user:User) RETURN user.foo as bar, user', $builder->toCypher());
+        $this->assertMatchesRegularExpression(
+            '/MATCH \(var\w+:User\) RETURN var\w+\.foo AS bar/',
+            $builder->toCypher()
+        );
     }
 
-    public function testAddigSelects(): void
+    public function testAddingSelects(): void
     {
         $builder = $this->getBuilder();
         $builder->select('foo')->addSelect('bar')->addSelect(['baz', 'boom'])->from('User');
-        $this->assertEquals('MATCH (user:User) RETURN user.foo, user.bar, user.baz, user.boom, user', $builder->toCypher());
+        $this->assertMatchesRegularExpression(
+            '/MATCH \(var\w+:User\) RETURN var\w+\.foo, var\w+\.bar, var\w+\.baz, var\w+\.boom/',
+            $builder->toCypher()
+        );
     }
 
     public function testBasicWheres(): void
@@ -207,9 +163,14 @@ class BuilderTest extends TestCase
         $builder = $this->getBuilder();
         $builder->select('*')->from('User')->where('username', '=', 'bakalazma');
 
+        $this->assertMatchesRegularExpression(
+            '/MATCH \(var\w+:User\) WHERE \(var\w+\.username = \$param\w+\) RETURN var\w+/',
+            $builder->toCypher()
+        );
+
         $bindings = $builder->getBindings();
-        $this->assertEquals('MATCH (user:User) WHERE user.username = $userusername RETURN *', $builder->toCypher());
-        $this->assertEquals(['userusername' => 'bakalazma'], $bindings);
+        $this->assertTrue(Arr::isAssoc($bindings));
+        $this->assertEquals(['bakalazma'], array_values($bindings));
     }
 
     public function testBasicSelectDistinct(): void
@@ -217,7 +178,10 @@ class BuilderTest extends TestCase
         $builder = $this->getBuilder();
         $builder->distinct()->select('foo', 'bar')->from('User');
 
-        $this->assertEquals('MATCH (user:User) RETURN DISTINCT user.foo, user.bar, user', $builder->toCypher());
+        $this->assertMatchesRegularExpression(
+            '/MATCH \(var\w+:User\) RETURN DISTINCT var\w+\.foo, var\w+\.bar/',
+            $builder->toCypher()
+        );
     }
 
     public function testAddBindingWithArrayMergesBindings(): void
@@ -260,32 +224,8 @@ class BuilderTest extends TestCase
         ], $builder->getBindings());
     }
 
-    /*
-     *  Utility functions down this line
-     */
-
-    public function setupCacheTestQuery($cache, $driver)
-    {
-        $connection = m::mock('Vinelab\NeoEloquent\Connection');
-        $connection->shouldReceive('getClient')->once()->andReturn(M::mock('Everyman\Neo4j\Client'));
-        $connection->shouldReceive('getName')->andReturn('default');
-        $connection->shouldReceive('getCacheManager')->once()->andReturn($cache);
-        $cache->shouldReceive('driver')->once()->andReturn($driver);
-        $grammar = new CypherGrammar();
-
-        $builder = $this->getMock('Vinelab\NeoEloquent\Query\Builder', ['getFresh'], [$connection, $grammar]);
-        $builder->expects($this->once())->method('getFresh')->with($this->equalTo(['*']))->will($this->returnValue(['results']));
-
-        return $builder->select('*')->from('User')->where('email', 'foo@bar.com');
-    }
-
     protected function getBuilder(): Builder
     {
-        $connection = M::mock('Vinelab\NeoEloquent\Connection');
-        $client = M::mock('Everyman\Neo4j\Client');
-        $connection->shouldReceive('getClient')->once()->andReturn($client);
-        $grammar = new CypherGrammar();
-
-        return new Builder($connection, $grammar);
+        return new Builder($this->getConnection());
     }
 }

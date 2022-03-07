@@ -10,15 +10,20 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use RuntimeException;
+use Vinelab\NeoEloquent\OperatorRepository;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
+use WikibaseSolutions\CypherDSL\Equality;
 use WikibaseSolutions\CypherDSL\Label;
+use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Patterns\Node;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
 use WikibaseSolutions\CypherDSL\RawExpression;
+use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use function array_map;
 use function array_merge;
@@ -31,7 +36,9 @@ use function implode;
 use function is_string;
 use function last;
 use function reset;
+use function str_contains;
 use function str_replace;
+use function strtolower;
 use function substr;
 
 class CypherGrammar extends Grammar
@@ -129,17 +136,24 @@ class CypherGrammar extends Grammar
             $return->addColumn($this->getMatchedNode()->getName());
         } else {
             foreach ($columns as $column) {
-                $return->addColumn($this->getMatchedNode()->property($column));
+                $alias = '';
+                if (str_contains(strtolower($column), ' as ')) {
+                    [$column, $alias] = explode(' as ', str_ireplace(' as ', ' as ', $column));
+                }
+
+                $return->addColumn($this->getMatchedNode()->property($column), $alias);
             }
         }
     }
 
-    protected function translateFrom(Builder $query, string $table, Query $dsl): void
+    protected function translateFrom(Builder $query, ?string $table, Query $dsl): void
     {
-        $this->node = Query::node()->labeled($query->from ?? $table);
+        $this->node = Query::node();
+        if (($query->from ?? $table) !== null) {
+            $this->node->labeled($query->from ?? $table);
+        }
 
         $dsl->match($this->node);
-//        return 'from '.$this->wrapTable($table);
     }
 
     protected function translateJoins(Builder $query, array $joins, Query $dsl = null): void
@@ -170,7 +184,7 @@ class CypherGrammar extends Grammar
             }
         }
 
-        if ($wheres) {
+        if ($expression) {
             $dsl->where($expression);
         }
     }
@@ -188,15 +202,15 @@ class CypherGrammar extends Grammar
      *
      * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereBasic(Builder $query, $where): string
+    protected function whereBasic(Builder $query, $where): AnyType
     {
-        $value = $this->parameter($where['value']);
+        $column = $this->getMatchedNode()->property($where['column']);
+        $parameter = new Parameter('param' . str_replace('-', '', Str::uuid()));
 
-        $operator = str_replace('?', '??', $where['operator']);
+        $query->addBinding([$parameter->getParameter() => $where['value']], 'where');
 
-        return $this->wrap($where['column']) . ' ' . $operator . ' ' . $value;
+        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter);
     }
 
     /**

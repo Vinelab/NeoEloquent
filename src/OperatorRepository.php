@@ -26,6 +26,7 @@ use WikibaseSolutions\CypherDSL\OrOperator;
 use WikibaseSolutions\CypherDSL\RawExpression;
 use WikibaseSolutions\CypherDSL\StartsWith;
 use WikibaseSolutions\CypherDSL\Subtraction;
+use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use WikibaseSolutions\CypherDSL\XorOperator;
 use function array_key_exists;
@@ -71,9 +72,11 @@ final class OperatorRepository
      *
      * @return BooleanType
      */
-    public static function fromSymbol(string $symbol, $lhs = null, $rhs = null, $insertParenthesis = null): BooleanType
+    public static function fromSymbol(string $symbol, $lhs = null, $rhs = null, $insertParenthesis = true): AnyType
     {
+        $class = self::OPERATORS[$symbol];
 
+        return new $class($lhs, $rhs, $insertParenthesis);
     }
 
     public static function symbolExists(string $symbol): bool
