@@ -451,6 +451,16 @@ class Connection implements ConnectionInterface
     }
 
     /**
+     * Get the database name.
+     *
+     * @return null|string
+     */
+    public function getDatabase(array $config)
+    {
+        return Arr::get($config, 'database', null);
+    }
+
+    /**
      * Get the connection username.
      *
      * @return int|string
@@ -1208,6 +1218,11 @@ class Connection implements ConnectionInterface
         $port = $this->getPort($config);
         if ($port) {
             $uri .= ':' . $port;
+        }
+
+        $database = $this->getDatabase($config);
+        if ($database) {
+            $uri .= '?database='.urlencode($database);
         }
 
         return $uri;
