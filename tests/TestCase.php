@@ -2,113 +2,57 @@
 
 namespace Vinelab\NeoEloquent\Tests;
 
-use Laudis\Neo4j\Contracts\ClientInterface;
-use Laudis\Neo4j\Databags\SummarizedResult;
-use Mockery as M;
-use Vinelab\NeoEloquent\Connection;
-use PHPUnit\Framework\TestCase as PHPUnit;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Contracts\Config\Repository;
+use Orchestra\Testbench\TestCase as BaseTestCase;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Vinelab\NeoEloquent\NeoEloquentServiceProvider;
+use function env;
 
-class Stub extends Model
+class TestCase extends BaseTestCase
 {
-}
-
-class TestCase extends PHPUnit
-{
-    public function __construct()
+    protected function getPackageProviders($app): array
     {
-        parent::__construct();
-
-        // load custom configuration file
-        $this->dbConfig = require 'config/database.php';
-    }
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-
-        Stub::setConnectionResolver($resolver);
-        $this->flushDb();
-    }
-
-    public function tearDown(): void
-    {
-        // everything should be clean before every test
-        $this->flushDb();
-
-        parent::tearDown();
-    }
-
-    public static function setUpBeforeClass(): void
-    {
-        date_default_timezone_set('Asia/Beirut');
+        return [
+            NeoEloquentServiceProvider::class
+        ];
     }
 
     /**
-     * Get the connection with a given or the default configuration.
-     *
-     * @param string $config As specified in config/database.php
-     *
-     * @return \Vinelab\NeoEloquent\Connection
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    protected function getConnectionWithConfig($config = null)
+    protected function getEnvironmentSetUp($app): void
     {
-        $connection = is_null($config) ? $this->dbConfig['connections']['default'] :
-                                         $this->dbConfig['connections'][$config];
+        parent::getEnvironmentSetUp($app);
+        /** @var Repository $config */
+        $config = $app->get('config');
+        $config->set('database.default', 'neo4j');
 
-        return new Connection($connection);
+        $connections = $config->get('database.connections');
+        $connections = array_merge($connections, [
+            'default' => [
+                'driver' => 'neo4j',
+                'host' => env('NEO4J_HOST', 'localhost'),
+                'database' => env('NEO4J_DATABASE', 'neo4j'),
+                'port' => env('NEO4J_PORT', 7687),
+                'username' => env('NEO4J_USER', 'neo4j'),
+                'password' => env('NEO4J_PASSWORD', 'test'),
+            ],
+            'neo4j' => [
+                'driver' => 'neo4j',
+                'host' => env('NEO4J_HOST', 'localhost'),
+                'database' => env('NEO4J_DATABASE', 'neo4j'),
+                'port' => env('NEO4J_PORT', 7687),
+                'username' => env('NEO4J_USER', 'neo4j'),
+                'password' => env('NEO4J_PASSWORD', 'test'),
+            ]
+        ]);
+        $config->set('database.connections', $connections);
     }
 
-    /**
-     * Flush all database records.
-     */
-    protected function flushDb()
+    public function getAnnotations(): array
     {
-        /** @var ClientInterface $client */
-        $client = $this->getClient();
-
-        $flushQuery = 'MATCH (n) DETACH DELETE n';
-
-        $client->run($flushQuery);
-    }
-
-    protected function getClient()
-    {
-        $connection = (new Stub())->getConnection();
-
-        return $connection->getClient();
-    }
-
-    /**
-     * get the node by the given id.
-     *
-     * @param int $id
-     *
-     * @return \Neoxygen\NeoClient\Formatter\Node
-     */
-    protected function getNodeById($id)
-    {
-        //get the labels using NeoClient
-        $connection = $this->getConnectionWithConfig('neo4j');
-        $client = $connection->getClient();
-        /** @var SummarizedResult $result */
-        $result = $client->run("MATCH (n) WHERE id(n)=$id RETURN n");
-
-        return $result->first()->first()->getValue();
-    }
-
-    /**
-     * Get node labels of a node by the given id.
-     *
-     * @param int $id
-     *
-     * @return array
-     */
-    protected function getNodeLabels($id)
-    {
-        return $this->getNodeById($id)->labels()->toArray();
+        return [];
     }
 }

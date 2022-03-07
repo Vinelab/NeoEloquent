@@ -3,7 +3,6 @@
 namespace Vinelab\NeoEloquent\Schema;
 
 use Closure;
-use Vinelab\NeoEloquent\ConnectionInterface;
 
 class Builder
 {

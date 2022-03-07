@@ -11,14 +11,12 @@ class BaseCommand extends Command
      *
      * @var string
      */
-    const LABELS_DIRECTORY = 'labels';
+    public const LABELS_DIRECTORY = 'labels';
 
     /**
      * Get the path to the migration directory.
-     *
-     * @return string
      */
-    protected function getMigrationPath()
+    protected function getMigrationPath(): string
     {
         $path = $this->input->getOption('path');
 
@@ -34,7 +32,7 @@ class BaseCommand extends Command
         // If the package is in the list of migration paths we received we will put
         // the migrations in that path. Otherwise, we will assume the package is
         // is in the package directories and will place them in that location.
-        if (!is_null($package)) {
+        if (!$package !== null && !empty($this->packagePath)) {
             return $this->packagePath.'/'.$package.'/src/'.self::LABELS_DIRECTORY;
         }
 
@@ -44,7 +42,7 @@ class BaseCommand extends Command
         // specifying the full path for a "workbench" project. Workbenches allow
         // developers to develop packages along side a "standard" app install.
         if (!is_null($bench)) {
-            $path = "/workbench/{$bench}/src/".self::LABELS_DIRECTORY;
+            $path = "/workbench/$bench/src/".self::LABELS_DIRECTORY;
 
             return $this->laravel['path.base'].$path;
         }

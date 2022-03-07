@@ -25,7 +25,7 @@ class Foo extends Model
     protected $fillable = ['prop'];
     public function bar()
     {
-        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\AddDropLabels\Bar', 'OWNS');
+        return $this->hasOne(Bar::class, 'OWNS');
     }
 }
 

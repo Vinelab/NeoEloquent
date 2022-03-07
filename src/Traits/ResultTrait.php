@@ -37,6 +37,11 @@ trait ResultTrait
         return $relationships;
     }
 
+    /**
+     * @param CypherList $result
+     *
+     * @return Node[]
+     */
     public function getNodeRecords(CypherList $result): array
     {
         $nodes = [];
@@ -50,13 +55,12 @@ trait ResultTrait
 
     /**
      * @param CypherList $result
+     *
      * @return mixed
      */
     public function getSingleItem(CypherList $result)
     {
-        /** @var CypherMap $map */
-        $map = $result->first();
-        return $map->first()->getValue();
+        return $result->getAsCypherMap(0)->first()->getValue();
     }
 
     public function getNodeByType(Relationship $relation, array $nodes, string $type = 'start'): Node
@@ -86,7 +90,7 @@ trait ResultTrait
 
         foreach ($record as $value) {
             if($value instanceof Node) {
-                $nodes[] = $value;
+                $nodes[$value->getId()] = $value;
             }
         }
 
@@ -102,7 +106,7 @@ trait ResultTrait
 
         foreach ($record as $item) {
             if($item instanceof Relationship) {
-                $relationships[] = $item;
+                $relationships[$item->getId()] = $item;
             }
         }
 
