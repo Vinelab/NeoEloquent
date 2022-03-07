@@ -2,8 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
-use Mockery as M;
+use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Model as NeoEloquent;
+use Vinelab\NeoEloquent\Query\Builder as BaseBuilder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class Model extends NeoEloquent
@@ -22,106 +23,88 @@ class Table extends NeoEloquent
 
 class ModelTest extends TestCase
 {
-    public function tearDown(): void
+    public function testDefaultNodeLabel(): void
     {
-        M::close();
+        $label = (new Model())->getLabel();
 
-        parent::tearDown();
+        $this->assertEquals('Model', $label);
     }
 
-    public function testDefaultNodeLabel()
+    public function testOverriddenNodeLabel(): void
     {
-        $m = new Model();
+        $label = (new Labeled())->getLabel();
 
-        $label = $m->getDefaultNodeLabel();
-
-        // By default the label should be the concatenation of the class's namespace
-        $this->assertEquals('VinelabNeoEloquentTestsEloquentModel', reset($label));
+        $this->assertEquals('Labeled', $label);
     }
 
-    public function testOverriddenNodeLabel()
+    public function testLabelBackwardCompatibilityWithTable(): void
     {
-        $m = new Labeled();
+        $label = (new Table())->nodeLabel();
 
-        $label = $m->getDefaultNodeLabel();
-
-        $this->assertEquals('Labeled', reset($label));
+        $this->assertEquals('Table', $label);
     }
 
-    public function testLabelBackwardCompatibilityWithTable()
-    {
-        $m = new Table();
-
-        $label = $m->nodeLabel();
-
-        $this->assertEquals('Table', reset($label));
-    }
-
-    public function testSettingLabelAtRuntime()
+    public function testSettingLabelAtRuntime(): void
     {
         $m = new Model();
 
         $m->setLabel('Padrouga');
 
-        $label = $m->getDefaultNodeLabel();
+        $label = $m->getLabel();
 
-        $this->assertEquals('Padrouga', reset($label));
+        $this->assertEquals('Padrouga', $label);
     }
 
-    public function testDifferentTypesOfLabelsAlwaysLandsAnArray()
+    public function testDifferentTypesOfLabelsAlwaysLandsAnArray(): void
     {
         $m = new Model();
 
-        $m->setLabel(array('User', 'Fan'));
-        $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(array('User', 'Fan'), $label);
-
-        $m->setLabel(':User:Fan');
-        $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(array('User', 'Fan'), $label);
-
-        $m->setLabel('User:Fan:Maker:Baker');
-        $label = $m->getDefaultNodeLabel();
-        $this->assertEquals(array('User', 'Fan', 'Maker', 'Baker'), $label);
+        $m->setLabel('User:Fan');
+        $label = $m->getLabel();
+        $this->assertEquals('User:Fan', $label);
     }
 
-    public function testGettingEloquentBuilder()
+    public function testGettingEloquentBuilder(): void
     {
-        $m = new Model();
+        $this->assertInstanceOf(Builder::class, (new Model())->newQuery());
+        $this->assertInstanceOf(Builder::class, (new Model())->newQueryForRestoration([]));
+        $this->assertInstanceOf(Builder::class, (new Model())->newQueryWithoutRelationships());
+        $this->assertInstanceOf(Builder::class, (new Model())->newQueryWithoutScope('x'));
+        $this->assertInstanceOf(Builder::class, (new Model())->newQueryWithoutScopes());
+        $this->assertInstanceOf(Builder::class, (new Model())->newModelQuery());
 
-        $builder = $m->newEloquentBuilder(M::mock('Vinelab\NeoEloquent\Query\Builder'));
-
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Builder', $builder);
+        $query = new BaseBuilder($this->getConnection());
+        $this->assertInstanceOf(Builder::class, (new Model())->newEloquentBuilder($query));
     }
 
-    public function testAddLabels()
+    public function testAddLabels(): void
     {
         //create a new model object
         $m = new Labeled();
-        $m->setLabel(array('User', 'Fan')); //set some labels
+        $m->setLabel(['User', 'Fan']); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph
         $id = $m->id;
 
         //add the label
-        $m->addLabels(array('Superuniqelabel1'));
+        $m->addLabels(['Superuniqelabel1']);
 
         $labels = $this->getNodeLabels($id);
 
         $this->assertTrue(in_array('Superuniqelabel1', $labels));
     }
 
-    public function testDropLabels()
+    public function testDropLabels(): void
     {
         //create a new model object
         $m = new Labeled();
-        $m->setLabel(array('User', 'Fan', 'Superuniqelabel2')); //set some labels
+        $m->setLabel(['User', 'Fan', 'Superuniqelabel2']); //set some labels
         $m->save();
         //get the node id, we need it to verify if the label is actually added in graph
         $id = $m->id;
 
         //drop the label
-        $m->dropLabels(array('Superuniqelabel2'));
+        $m->dropLabels(['Superuniqelabel2']);
         $this->assertFalse(in_array('Superuniqelabel2', $this->getNodeLabels($id)));
     }
 }

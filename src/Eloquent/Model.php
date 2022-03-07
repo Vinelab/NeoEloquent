@@ -6,11 +6,25 @@ use Illuminate\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 
+use Vinelab\NeoEloquent\LabelAction;
 use function class_basename;
 use function is_string;
 
+/**
+ * @method Builder newQuery()
+ * @method Builder newQueryForRestoration()
+ * @method Builder newQueryWithoutRelationships()
+ * @method Builder newQueryWithoutScope()
+ * @method Builder newQueryWithoutScopes()
+ * @method Builder newModelQuery()
+ */
 abstract class Model extends \Illuminate\Database\Eloquent\Model
 {
+    public function newEloquentBuilder($query): Builder
+    {
+        return new Builder($query);
+    }
+
     /**
      * @return static
      */
@@ -26,7 +40,7 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
      */
     public function getLabel(): string
     {
-        return $this->table;
+        return $this->getTable();
     }
 
     public function getTable(): string
@@ -174,38 +188,13 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
      */
     public function updateLabels($labels, $operation = 'add'): bool
     {
-        $query = $this->newQueryWithoutScopes();
-        if (is_string($labels)) {
-            $labels = [$labels];
-        }
-
-        // If the "saving" event returns false we'll bail out of the save and return
-        // false, indicating that the save failed. This gives an opportunities to
-        // listeners to cancel save operations if validations fail or whatever.
-        if ($this->fireModelEvent('saving') === false) {
-            return false;
-        }
-
-        if (!is_array($labels) || count($labels) == 0) {
-            return false;
-        }
+        $labelChanges = [];
+        $labels = is_string($labels) ? [$labels] : $labels;
 
         foreach ($labels as $label) {
-            if (!preg_match('/^[a-z]([a-z0-9]+)$/i', $label)) {
-                return false;
-            }
+            $labelChanges[] = new LabelAction($label, $operation === 'add');
         }
 
-        // If the model already exists in the database we can just update our record
-        // that is already in this database using the current IDs in this "where"
-        // clause to only update this model. Otherwise, we'll return false.
-        if ($this->exists) {
-            $this->setKeysForSaveQuery($query)->updateLabels($labels, $operation);
-            $this->fireModelEvent('updated', false);
-        } else {
-            return false;
-        }
-
-        return true;
+        return $this->update($labelChanges);
     }
 }

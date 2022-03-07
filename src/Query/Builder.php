@@ -5,13 +5,10 @@ namespace Vinelab\NeoEloquent\Query;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\Connection;
-use WikibaseSolutions\CypherDSL\Parameter;
 use function array_key_exists;
 use function array_map;
 use function array_merge;
-use function array_values;
 use function is_array;
-use function str_starts_with;
 
 /**
  * @method Connection getConnection()

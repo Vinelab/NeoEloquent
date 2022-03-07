@@ -12,6 +12,7 @@ use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\OperatorRepository;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
@@ -148,10 +149,7 @@ class CypherGrammar extends Grammar
 
     protected function translateFrom(Builder $query, ?string $table, Query $dsl): void
     {
-        $this->node = Query::node();
-        if (($query->from ?? $table) !== null) {
-            $this->node->labeled($query->from ?? $table);
-        }
+        $this->initialiseNode($query, $table);
 
         $dsl->match($this->node);
     }
@@ -849,17 +847,13 @@ class CypherGrammar extends Grammar
      */
     public function compileInsert(Builder $query, array $values): string
     {
-        $node = Query::node()->labeled($query->from);
-        $assignments = [];
-        foreach ($values as $key => $value) {
-            $assignments[] = $node->property($key)->assign(Query::parameter($key));
-        }
+        $node = $this->initialiseNode($query);
 
-        return Query::new()
-            ->create($node)
-            ->set($assignments)
-            ->returning(['id' => $node->property('id')])
-            ->toQuery();
+        $tbr =  Query::new()->create($node);
+
+        $this->decorateUpdateAndRemoveExpressions($values, $tbr);
+
+        return $tbr->returning(['id' => $node->property('id')])->toQuery();
     }
 
     /**
@@ -920,12 +914,7 @@ class CypherGrammar extends Grammar
 
         $this->translateMatch($query, $dsl);
 
-        $expressions = [];
-        $node = $this->getMatchedNode();
-        foreach ($values as $key => $value) {
-            $expressions[] = $node->property($key)->assign(Query::parameter($key));
-        }
-        $dsl->set($expressions);
+        $this->decorateUpdateAndRemoveExpressions($values, $dsl);
 
         return $dsl->toQuery();
     }
@@ -1136,5 +1125,46 @@ class CypherGrammar extends Grammar
         }
 
         return Query::parameter($value)->toQuery();
+    }
+
+    /**
+     * @param array $values
+     * @param Query $dsl
+     * @return void
+     */
+    protected function decorateUpdateAndRemoveExpressions(array $values, Query $dsl): void
+    {
+        $node = $this->getMatchedNode();
+        $expressions = [];
+        $removeExpressions = [];
+        foreach ($values as $key => $value) {
+            if ($value instanceof LabelAction) {
+                $labelExpression = trim(Query::node($value->getLabel())
+                    ->named($node->getName())
+                    ->toQuery(), '()');
+
+                if ($value->setsLabel()) {
+                    $expressions[] = new RawExpression('SET ' . $labelExpression);
+                } else {
+                    $removeExpressions[] = new RawExpression('REMOVE ' . $labelExpression);
+                }
+            } else {
+                $expressions[] = $node->property($key)->assign(Query::parameter($key));
+            }
+        }
+        $dsl->set($expressions);
+        if (count($removeExpressions) > 0) {
+            $dsl->remove($removeExpressions);
+        }
+    }
+
+    protected function initialiseNode(Builder $query, ?string $table = null): Node
+    {
+        $this->node = Query::node();
+        if (($query->from ?? $table) !== null) {
+            $this->node->labeled($query->from ?? $table);
+        }
+
+        return $this->node;
     }
 }
