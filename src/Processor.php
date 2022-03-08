@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent;
 
 use Illuminate\Database\Query\Builder;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
-use Laudis\Neo4j\Types\Node;
 use function is_iterable;
 
 class Processor extends \Illuminate\Database\Query\Processors\Processor
@@ -30,7 +29,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         if (is_iterable($x)) {
             $tbr = [];
             foreach ($x as $key => $y) {
-                if ($depth === 1 && $y instanceof Node) {
+                if ($depth === 1 && $y instanceof HasPropertiesInterface) {
                     foreach ($y->getProperties() as $prop => $value) {
                         $tbr[$prop] = $value;
                     }

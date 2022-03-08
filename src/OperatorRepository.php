@@ -65,6 +65,11 @@ final class OperatorRepository
         'RAW' => RawExpression::class,
     ];
 
+    public static function bitwiseOperations(): array
+    {
+        return ['&', '|', '^', '~', '<<', '>>', '>>>'];
+    }
+
     /**
      * @param string $symbol
      * @param mixed $lhs
