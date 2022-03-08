@@ -8,7 +8,6 @@ use BadMethodCallException;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
-use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -20,14 +19,18 @@ use WikibaseSolutions\CypherDSL\Clauses\MergeClause;
 use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
 use WikibaseSolutions\CypherDSL\Clauses\SetClause;
-use WikibaseSolutions\CypherDSL\Equality;
+use WikibaseSolutions\CypherDSL\Clauses\WhereClause;
+use WikibaseSolutions\CypherDSL\ExpressionList;
+use WikibaseSolutions\CypherDSL\Functions\RawFunction;
+use WikibaseSolutions\CypherDSL\In;
 use WikibaseSolutions\CypherDSL\Label;
+use WikibaseSolutions\CypherDSL\Not;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Patterns\Node;
+use WikibaseSolutions\CypherDSL\Property;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
 use WikibaseSolutions\CypherDSL\RawExpression;
-use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use function array_diff;
 use function array_keys;
@@ -38,14 +41,12 @@ use function collect;
 use function count;
 use function end;
 use function head;
-use function implode;
 use function is_string;
 use function last;
 use function reset;
 use function str_contains;
 use function str_replace;
 use function strtolower;
-use function substr;
 
 class CypherGrammar extends Grammar
 {
@@ -77,10 +78,12 @@ class CypherGrammar extends Grammar
     {
         $this->translateMatch($query, $dsl);
 
-        $this->translateColumns($query, $query->columns ?? ['*'], $dsl);
-        $this->translateOrders($query, $query->orders ?? [], $dsl);
-        $this->translateLimit($query, $query->limit, $dsl);
-        $this->translateOffset($query, $query->offset, $dsl);
+        if ($query->aggregate === []) {
+            $this->translateColumns($query, $query->columns ?? ['*'], $dsl);
+            $this->translateOrders($query, $query->orders ?? [], $dsl);
+            $this->translateLimit($query, $query->limit, $dsl);
+            $this->translateOffset($query, $query->offset, $dsl);
+        }
     }
 
     /**
@@ -95,35 +98,29 @@ class CypherGrammar extends Grammar
         return $dsl->toQuery();
     }
 
-    /**
-     * Compile the components necessary for a select clause.
-     */
-    protected function translateComponents(Builder $query, Query $dsl): void
-    {
-    }
-
     protected function translateAggregate(Builder $query, array $aggregate, Query $dsl = null): void
     {
-//        $column = $this->columnize($aggregate['columns']);
-//
-//        // If the query has a "distinct" constraint and we're not asking for all columns
-//        // we need to prepend "distinct" onto the column name so that the query takes
-//        // it into account when it performs the aggregating operations on the data.
-//        if (is_array($query->distinct)) {
-//            $column = 'distinct '.$this->columnize($query->distinct);
-//        } elseif ($query->distinct && $column !== '*') {
-//            $column = 'distinct '.$column;
-//        }
+        if ($query->distinct) {
+            $columns = [];
+            foreach ($aggregate['columns'] as $column) {
+                $columns[$column] = $column;
+            }
+            $dsl->with($columns);
+        }
+        $column = $this->columnize($aggregate['columns']);
+
+        // If the query has a "distinct" constraint and we're not asking for all columns
+        // we need to prepend "distinct" onto the column name so that the query takes
+        // it into account when it performs the aggregating operations on the data.
+        if (is_array($query->distinct)) {
+            $column = 'distinct '.$this->columnize($query->distinct);
+        } elseif ($query->distinct && $column !== '*') {
+            $column = 'distinct '.$column;
+        }
 
         //return 'select '.$aggregate['function'].'('.$column.') as aggregate';
     }
 
-    /**
-     * Compile the "select *" portion of the query.
-     *
-     * @param Builder $query
-     * @param array $columns
-     */
     protected function translateColumns(Builder $query, array $columns, Query $dsl): void
     {
         $return = new ReturnClause();
@@ -165,7 +162,7 @@ class CypherGrammar extends Grammar
 //        })->implode(' ');
     }
 
-    public function translateWheres(Builder $query, array $wheres, Query $dsl): void
+    public function translateWheres(Builder $query, array $wheres): WhereClause
     {
         /** @var BooleanType $expression */
         $expression = null;
@@ -180,9 +177,12 @@ class CypherGrammar extends Grammar
             }
         }
 
-        if ($expression) {
-            $dsl->where($expression);
+        $where = new WhereClause();
+        if ($expression !== null) {
+            $where->setExpression($expression);
         }
+
+        return $where;
     }
 
     /**
@@ -194,335 +194,240 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * Compile a basic where clause.
-     *
-     * @param Builder $query
      * @param array $where
      */
-    protected function whereBasic(Builder $query, $where): AnyType
+    protected function whereBasic(Builder $query, $where): BooleanType
     {
-        $column = $this->getMatchedNode()->property($where['column']);
-        $parameter = new Parameter('param' . str_replace('-', '', Str::uuid()));
-
-        $query->addBinding([$parameter->getParameter() => $where['value']], 'where');
+        $column = $this->column($where['column']);
+        $parameter = $this->whereParameter($query, $where['value']);
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter);
     }
 
     /**
-     * Compile a bitwise operator where clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereBitwise(Builder $query, $where): string
+    protected function whereBitwise(Builder $query, $where): RawFunction
+    {
+        return new RawFunction('apoc.bitwise.op', [
+            $this->column($where['column']),
+            Query::literal($where['operator']),
+            $this->whereParameter($query, $where['value'])
+        ]);
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereIn(Builder $query, $where): In
+    {
+        return new In(
+            $this->column($where['column']),
+            $this->whereParameter($query, $where['values'])
+        );
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereNotIn(Builder $query, $where): Not
+    {
+        return new Not($this->whereIn($query, $where));
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereNotInRaw(Builder $query, $where): Not
+    {
+        return new Not($this->whereInRaw($query, $where));
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereInRaw(Builder $query, $where): In
+    {
+        return new In(
+            $this->column($where['column']),
+            new ExpressionList(array_map(static fn ($x) => Query::literal($x), $where['values']))
+        );
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereNull(Builder $query, $where): RawExpression
+    {
+        return new RawExpression($this->column($where['column'])->toQuery() . ' IS NULL');
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereNotNull(Builder $query, $where): RawExpression
+    {
+        return new RawExpression($this->column($where['column'])->toQuery() . ' IS NOT NULL');
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereBetween(Builder $query, $where): BooleanType
+    {
+        $min = Query::literal(reset($where['values']));
+        $max = Query::literal(end($where['values']));
+
+        $tbr = $this->whereBasic($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min])
+            ->and($this->whereBasic($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max]));
+
+        if ($where['not']) {
+            return new Not($tbr);
+        }
+
+        return $tbr;
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereBetweenColumns(Builder $query, $where): BooleanType
+    {
+        $min = reset($where['values']);
+        $max = end($where['values']);
+
+        $tbr = $this->whereColumn($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min])
+            ->and($this->whereColumn($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max]));
+
+        if ($where['not']) {
+            return new Not($tbr);
+        }
+
+        return $tbr;
+    }
+
+    /**
+     * @param array $where
+     */
+    protected function whereDate(Builder $query, $where): BooleanType
     {
         return $this->whereBasic($query, $where);
     }
 
     /**
-     * Compile a "where in" clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereIn(Builder $query, $where): string
+    protected function whereTime(Builder $query, $where): BooleanType
     {
-        if (!empty($where['values'])) {
-            return $this->wrap($where['column']) . ' in (' . $this->parameterize($where['values']) . ')';
-        }
-
-        return '0 = 1';
+        return $this->dateBasedWhere('epochMillis', $query, $where);
     }
 
     /**
-     * Compile a "where not in" clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereNotIn(Builder $query, $where): string
-    {
-        if (!empty($where['values'])) {
-            return $this->wrap($where['column']) . ' not in (' . $this->parameterize($where['values']) . ')';
-        }
-
-        return '1 = 1';
-    }
-
-    /**
-     * Compile a "where not in raw" clause.
-     *
-     * For safety, whereIntegerInRaw ensures this method is only used with integer values.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereNotInRaw(Builder $query, $where): string
-    {
-        if (!empty($where['values'])) {
-            return $this->wrap($where['column']) . ' not in (' . implode(', ', $where['values']) . ')';
-        }
-
-        return '1 = 1';
-    }
-
-    /**
-     * Compile a "where in raw" clause.
-     *
-     * For safety, whereIntegerInRaw ensures this method is only used with integer values.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereInRaw(Builder $query, $where): string
-    {
-        if (!empty($where['values'])) {
-            return $this->wrap($where['column']) . ' in (' . implode(', ', $where['values']) . ')';
-        }
-
-        return '0 = 1';
-    }
-
-    /**
-     * Compile a "where null" clause.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereNull(Builder $query, $where): string
-    {
-        return $this->wrap($where['column']) . ' is null';
-    }
-
-    /**
-     * Compile a "where not null" clause.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereNotNull(Builder $query, $where): string
-    {
-        return $this->wrap($where['column']) . ' is not null';
-    }
-
-    /**
-     * Compile a "between" where clause.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereBetween(Builder $query, $where): string
-    {
-        $between = $where['not'] ? 'not between' : 'between';
-
-        $min = $this->parameter(reset($where['values']));
-
-        $max = $this->parameter(end($where['values']));
-
-        return $this->wrap($where['column']) . ' ' . $between . ' ' . $min . ' and ' . $max;
-    }
-
-    /**
-     * Compile a "between" where clause.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereBetweenColumns(Builder $query, $where): string
-    {
-        $between = $where['not'] ? 'not between' : 'between';
-
-        $min = $this->wrap(reset($where['values']));
-
-        $max = $this->wrap(end($where['values']));
-
-        return $this->wrap($where['column']) . ' ' . $between . ' ' . $min . ' and ' . $max;
-    }
-
-    /**
-     * Compile a "where date" clause.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereDate(Builder $query, $where): string
-    {
-        return $this->dateBasedWhere('date', $query, $where);
-    }
-
-    /**
-     * Compile a "where time" clause.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereTime(Builder $query, $where): string
-    {
-        return $this->dateBasedWhere('time', $query, $where);
-    }
-
-    /**
-     * Compile a "where day" clause.
-     *
-     * @param Builder $query
-     * @param array $where
-     * @return string
-     */
-    protected function whereDay(Builder $query, $where): string
+    protected function whereDay(Builder $query, $where): BooleanType
     {
         return $this->dateBasedWhere('day', $query, $where);
     }
 
     /**
-     * Compile a "where month" clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereMonth(Builder $query, $where): string
+    protected function whereMonth(Builder $query, $where): BooleanType
     {
         return $this->dateBasedWhere('month', $query, $where);
     }
 
     /**
-     * Compile a "where year" clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereYear(Builder $query, $where): string
+    protected function whereYear(Builder $query, $where): BooleanType
     {
         return $this->dateBasedWhere('year', $query, $where);
     }
 
     /**
-     * Compile a date based where clause.
-     *
-     * @param string $type
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function dateBasedWhere($type, Builder $query, $where): string
+    protected function dateBasedWhere($type, Builder $query, $where): BooleanType
     {
-        $value = $this->parameter($where['value']);
+        $column = new RawExpression($this->column($where['column'])->toQuery() . '.' . Query::escape($type));
+        $parameter = $this->whereParameter($query, $where['value']);
 
-        return $type . '(' . $this->wrap($where['column']) . ') ' . $where['operator'] . ' ' . $value;
+        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter);
     }
 
     /**
-     * Compile a where clause comparing two columns.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereColumn(Builder $query, $where): string
+    protected function whereColumn(Builder $query, $where): BooleanType
     {
-        return $this->wrap($where['first']) . ' ' . $where['operator'] . ' ' . $this->wrap($where['second']);
+        $x = $this->column($where['first']);
+        $y = $this->column($where['second']);
+
+        return OperatorRepository::fromSymbol($where['operator'], $x, $y);
     }
 
     /**
-     * Compile a nested where clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereNested(Builder $query, $where): string
+    protected function whereNested(Builder $query, $where): BooleanType
     {
-        // Here we will calculate what portion of the string we need to remove. If this
-        // is a join clause query, we need to remove the "on" portion of the SQL and
-        // if it is a normal query we need to take the leading "where" of queries.
-        $offset = $query instanceof JoinClause ? 3 : 6;
+        $where['query']->wheres[count($where['query']->wheres) - 1]['boolean'] = 'and';
 
-        return '(' . substr($this->compileWheres($where['query']), $offset) . ')';
+        return $this->translateWheres($where['query'], $where['query']->wheres)->getExpression();
     }
 
     /**
-     * Compile a where condition with a sub-select.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereSub(Builder $query, $where): string
+    protected function whereSub(Builder $query, $where): BooleanType
     {
-        $select = $this->compileSelect($where['query']);
-
-        return $this->wrap($where['column']) . ' ' . $where['operator'] . " ($select)";
+        throw new BadMethodCallException('Sub selects are not supported at the moment');
     }
 
     /**
-     * Compile a where exists clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereExists(Builder $query, $where): string
+    protected function whereExists(Builder $query, $where): BooleanType
     {
-        return 'exists (' . $this->compileSelect($where['query']) . ')';
+        throw new BadMethodCallException('Exists on queries are not supported at the moment');
     }
 
     /**
-     * Compile a where exists clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereNotExists(Builder $query, $where): string
+    protected function whereNotExists(Builder $query, $where): BooleanType
     {
-        return 'not exists (' . $this->compileSelect($where['query']) . ')';
+        return new Not($this->whereExists($query, $where));
     }
 
     /**
-     * Compile a where row values condition.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
-    protected function whereRowValues(Builder $query, $where): string
+    protected function whereRowValues(Builder $query, $where): BooleanType
     {
-        $columns = $this->columnize($where['columns']);
+        $expressions = [];
+        foreach ($where['columns'] as $column) {
+            $expressions[] = $this->column($column);
+        }
+        $lhs = new ExpressionList($expressions);
 
-        $values = $this->parameterize($where['values']);
+        $expressions = [];
+        foreach ($where['values'] as $value) {
+            $expressions[] = $this->whereParameter($query, $value);
+        }
+        $rhs = new ExpressionList($expressions);
 
-        return '(' . $columns . ') ' . $where['operator'] . ' (' . $values . ')';
+        return OperatorRepository::fromSymbol($where['operator'], $lhs, $rhs);
     }
 
     /**
-     * Compile a "where JSON boolean" clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
     protected function whereJsonBoolean(Builder $query, $where): string
     {
-        $column = $this->wrapJsonBooleanSelector($where['column']);
-
-        $value = $this->wrapJsonBooleanValue(
-            $this->parameter($where['value'])
-        );
-
-        return $column . ' ' . $where['operator'] . ' ' . $value;
+        throw new BadMethodCallException('Where on JSON types are not supported at the moment');
     }
 
     /**
@@ -534,81 +439,50 @@ class CypherGrammar extends Grammar
      */
     protected function whereJsonContains(Builder $query, $where): string
     {
-        $not = $where['not'] ? 'not ' : '';
-
-        return $not . $this->compileJsonContains(
-                $where['column'],
-                $this->parameter($where['value'])
-            );
+        throw new BadMethodCallException('Where JSON contains are not supported at the moment');
     }
 
     /**
-     * Compile a "JSON contains" statement into SQL.
-     *
      * @param string $column
      * @param string $value
-     * @return string
-     *
-     * @throws RuntimeException
      */
     protected function compileJsonContains($column, $value): string
     {
-        throw new RuntimeException('This database engine does not support JSON contains operations.');
+        throw new BadMethodCallException('This database engine does not support JSON contains operations.');
     }
 
     /**
-     * Prepare the binding for a "JSON contains" statement.
-     *
      * @param mixed $binding
-     * @return string
      */
     public function prepareBindingForJsonContains($binding): string
     {
-        /** @noinspection PhpComposerExtensionStubsInspection */
-        return json_encode($binding, JSON_THROW_ON_ERROR);
+        throw new BadMethodCallException('JSON operations are not supported at the moment');
     }
 
     /**
-     * Compile a "where JSON length" clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
     protected function whereJsonLength(Builder $query, $where): string
     {
-        return $this->compileJsonLength(
-            $where['column'],
-            $where['operator'],
-            $this->parameter($where['value'])
-        );
+        throw new BadMethodCallException('JSON operations are not supported at the moment');
     }
 
     /**
-     * Compile a "JSON length" statement into SQL.
-     *
      * @param string $column
      * @param string $operator
      * @param string $value
-     * @return string
-     *
-     * @throws RuntimeException
      */
     protected function compileJsonLength($column, $operator, $value): string
     {
-        throw new RuntimeException('This database engine does not support JSON length operations.');
+        throw new BadMethodCallException('JSON operations are not supported at the moment');
     }
 
     /**
-     * Compile a "where fulltext" clause.
-     *
-     * @param Builder $query
      * @param array $where
-     * @return string
      */
     public function whereFullText(Builder $query, $where): string
     {
-        throw new RuntimeException('This database engine does not support fulltext search operations.');
+        throw new BadMethodCallException('Fulltext where operations are not supported at the moment');
     }
 
     protected function translateGroups(Builder $query, array $groups, Query $dsl): void
@@ -1138,7 +1012,7 @@ class CypherGrammar extends Grammar
         $this->translateFrom($query, $query->from, $dsl);
         $this->translateJoins($query, $query->joins ?? [], $dsl);
 
-        $this->translateWheres($query, $query->wheres ?? [], $dsl);
+        $dsl->addClause($this->translateWheres($query, $query->wheres ?? []));
         $this->translateHavings($query, $query->havings ?? [], $dsl);
 
         $this->translateGroups($query, $query->groups ?? [], $dsl);
@@ -1214,19 +1088,14 @@ class CypherGrammar extends Grammar
         return $this->node;
     }
 
-    /**
-     * @param array $values
-     * @return array
-     */
     protected function valuesToKeys(array $values): array
     {
-        $keys = Collection::make($values)
+        return Collection::make($values)
             ->map(static fn(array $value) => array_keys($value))
             ->flatten()
             ->filter(static fn($x) => is_string($x))
             ->unique()
             ->toArray();
-        return $keys;
     }
 
     private function buildMergeExpression(array $uniqueBy, Node $node, Builder $query): RawExpression
@@ -1250,5 +1119,24 @@ class CypherGrammar extends Grammar
         }
 
         return $setClause;
+    }
+
+    /**
+     * @return Property
+     */
+    protected function column(string $column): Property
+    {
+        return $this->getMatchedNode()->property($column);
+    }
+
+    /**
+     * @param mixed $value
+     */
+    protected function whereParameter(Builder $query, $value): Parameter
+    {
+        $parameter = new Parameter('param' . str_replace('-', '', Str::uuid()));
+        $query->addBinding([$parameter->getParameter() => $value], 'where');
+
+        return $parameter;
     }
 }

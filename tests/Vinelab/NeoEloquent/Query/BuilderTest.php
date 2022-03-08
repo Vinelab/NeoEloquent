@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\Query\Builder;
@@ -19,6 +20,11 @@ class BuilderTest extends TestCase
         $this->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
 
         $this->builder = new Builder($this->getConnection());
+    }
+
+    public function testDBIntegration(): void
+    {
+        self::assertInstanceOf(Builder::class, DB::table('Node'));
     }
 
     public function testSettingNodeLabels(): void

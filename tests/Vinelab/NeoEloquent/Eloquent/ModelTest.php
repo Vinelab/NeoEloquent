@@ -14,6 +14,8 @@ class Model extends NeoEloquent
 class Labeled extends NeoEloquent
 {
     protected $table = 'Labeled';
+
+    protected $fillable = ['a'];
 }
 
 class Table extends NeoEloquent
@@ -23,6 +25,12 @@ class Table extends NeoEloquent
 
 class ModelTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
+    }
+
     public function testDefaultNodeLabel(): void
     {
         $label = (new Model())->getLabel();
@@ -80,14 +88,14 @@ class ModelTest extends TestCase
     public function testAddLabels(): void
     {
         //create a new model object
-        $m = new Labeled();
+        $m = Labeled::create(['a' => 'b']);
 
         //add the label
         $m->addLabels(['Superuniqelabel1']);
 
-        $labels = $this->loadAllLabels($id);
-
-        $this->assertTrue(in_array('Superuniqelabel1', $labels));
+        $this->assertEquals(1, $this->getConnection()->query()->count());
+        $this->assertEquals(1, $this->getConnection()->query()->from('SuperUniqueLabel')->count());
+        $this->assertEquals(1, $this->getConnection()->query()->from('Labeled')->count());
     }
 
     public function testDropLabels(): void
