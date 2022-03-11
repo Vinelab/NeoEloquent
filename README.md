@@ -2,7 +2,7 @@
 
 # NeoEloquent
 
-Neo4j Graph Eloquent Driver for Laravel 5.
+Neo4j Graph Eloquent Driver for Laravel.
 
 ## Quick Reference
 
