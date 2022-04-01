@@ -871,8 +871,9 @@ class CypherGrammar extends Grammar
             $endKey = $attributes['end']['id']['key'];
             $endNode = 'rel_'.$this->modelAsNode($attributes['label']);
             $endLabel = $this->prepareLabels($attributes['end']['label']);
+            $endId = null;
 
-            if ($attributes['end']['id']['value']) {
+            if ($attributes['end']['id']['value'] || $attributes['end']['id']['value'] === 0) {
                 if ($endKey === 'id') {
                     // when it's 'id' it has to be numeric
                     $endKey = 'id('.$endNode.')';
@@ -883,7 +884,7 @@ class CypherGrammar extends Grammar
                 }
             }
 
-            $endCondition = (!empty($endId)) ? $endKey.'='.$endId : '';
+            $endCondition = (!is_null($endId)) ? $endKey.'='.$endId : '';
 
             $query .= ", ($endNode$endLabel)";
         }

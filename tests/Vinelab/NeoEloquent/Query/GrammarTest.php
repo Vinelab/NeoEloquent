@@ -131,4 +131,40 @@ class GrammarTest extends TestCase
         $this->assertEquals('idcola', $this->grammar->getIdReplacement('id'));
         $this->assertEquals('iddd', $this->grammar->getIdReplacement('id(dd)'));
     }
+    
+    public function testCompileMatchRelationship()
+    {
+        $builder = M::mock('Vinelab\NeoEloquent\Query\Builder');
+        $attributes = [
+            'label' => 'WROTE',
+            'start' => [
+                'id' => ['key' => 'id', 'value' => 12],
+                'label' => ['Author'],
+            ],
+            'end' => [
+                'id' => ['key' => 'id', 'value' => 11],
+                'label' => ['Book'],
+            ],
+        ];
+        
+        $this->assertEquals('MATCH (author:`Author`), (rel_wrote:`Book`) WHERE id(author)=12 AND id(rel_wrote)=11', $this->grammar->compileMatchRelationship($builder, $attributes));
+    }
+
+    public function testCompileMatchRelationshipWithZeroEndId()
+    {
+        $builder = M::mock('Vinelab\NeoEloquent\Query\Builder');
+        $attributes = [
+            'label' => 'WROTE',
+            'start' => [
+                'id' => ['key' => 'id', 'value' => 12],
+                'label' => ['Author'],
+            ],
+            'end' => [
+                'id' => ['key' => 'id', 'value' => 0],
+                'label' => ['Book'],
+            ],
+        ];
+        
+        $this->assertEquals('MATCH (author:`Author`), (rel_wrote:`Book`) WHERE id(author)=12 AND id(rel_wrote)=0', $this->grammar->compileMatchRelationship($builder, $attributes));
+    }
 }
