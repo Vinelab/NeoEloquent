@@ -18,6 +18,7 @@ use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
 use WikibaseSolutions\CypherDSL\Clauses\SetClause;
 use WikibaseSolutions\CypherDSL\Clauses\WhereClause;
+use WikibaseSolutions\CypherDSL\Clauses\WithClause;
 use WikibaseSolutions\CypherDSL\ExpressionList;
 use WikibaseSolutions\CypherDSL\Functions\FunctionCall;
 use WikibaseSolutions\CypherDSL\Functions\RawFunction;
@@ -47,11 +48,11 @@ use function explode;
 use function head;
 use function in_array;
 use function is_array;
-use function is_null;
 use function is_string;
 use function last;
 use function preg_split;
 use function reset;
+use function str_contains;
 use function str_ireplace;
 use function stripos;
 use function strtolower;
@@ -255,28 +256,31 @@ final class DSLGrammar
         return $dsl;
     }
 
-    private function compileAggregate(Builder $query, array $aggregate): ReturnClause
+    private function compileAggregate(Builder $query, Query $dsl): void
     {
-        $tbr = new ReturnClause();
-        foreach ($aggregate['columns'] ?? [] as $column) {
-            $wrap = $this->wrap($column);
-            if ($query->distinct) {
-                $wrap = new RawExpression('DISTINCT ' . $wrap->toQuery());
-            }
-            $tbr->addColumn(Query::function()::raw('count', [$wrap]));
-        }
+        if ($query->aggregate) {
+            $tbr = new WithClause();
 
-        return $tbr;
+            $column = $query->aggregate['columns'];
+            if (!str_contains($column, '.')) {
+                $column = $query->from . '.' . $column;
+            }
+            $wrap = $this->wrap($column);
+            $tbr->addEntry(Query::function()::raw($query->aggregate['function'], [$wrap])->alias($query->from));
+
+            $dsl->addClause($tbr);
+        }
     }
 
     private function translateColumns(Builder $query, array $columns, Query $dsl): void
     {
         $return = new ReturnClause();
-        $return->setDistinct($query->distinct);
-        $dsl->addClause($return);
 
+        $return->setDistinct($query->distinct);
+
+        $node = $this->wrapTable($query->from);
         if ($columns === ['*']) {
-            $return->addColumn($this->getMatchedNode()->getName());
+            $return->addColumn($node->getName());
         } else {
             foreach ($columns as $column) {
                 $alias = '';
@@ -284,9 +288,11 @@ final class DSLGrammar
                     [$column, $alias] = explode(' as ', str_ireplace(' as ', ' as ', $column));
                 }
 
-                $return->addColumn($this->getMatchedNode()->property($column), $alias);
+                $return->addColumn($node->property($column), $alias);
             }
         }
+
+        $dsl->addClause($return);
     }
 
     /**
@@ -305,7 +311,7 @@ final class DSLGrammar
         $dsl->match($node);
 
         /** @var JoinClause $join */
-        foreach ($query->joins as $join) {
+        foreach ($query->joins ?? [] as $join) {
             $dsl->with($variables);
 
             $node = $this->wrapTable($join->table);
@@ -1070,7 +1076,7 @@ final class DSLGrammar
         $this->translateHavings($builder, $builder->havings ?? [], $query);
 
         $this->translateGroups($builder, $builder->groups ?? [], $query);
-        $this->compileAggregate($builder, $builder->aggregate ?? [], $query);
+        $this->compileAggregate($builder, $query);
 
         $query->returning($variables);
     }

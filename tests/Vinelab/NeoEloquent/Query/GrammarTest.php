@@ -2,19 +2,32 @@
 
 namespace Vinelab\NeoEloquent\Tests\Query;
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
+use PHPUnit\Framework\MockObject\MockObject;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class GrammarTest extends TestCase
 {
+    /**
+     * @var CypherGrammar
+     */
+    private CypherGrammar $grammar;
+    /** @var Connection&MockObject  */
+    private Connection $connection;
+    private Builder $table;
+
     public function setUp(): void
     {
         parent::setUp();
-
         $this->grammar = new CypherGrammar();
+        $this->table = DB::table('Node');
+        $this->connection = $this->createMock(Connection::class);
+        $this->table->connection = $this->connection;
+        $this->table->grammar = $this->grammar;
     }
 
     public function tearDown(): void
@@ -73,25 +86,49 @@ class GrammarTest extends TestCase
 
     public function testSimpleFrom(): void
     {
-        $query = DB::table('Test');
-        $select = $this->grammar->compileSelect($query);
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with('MATCH (Node:Node) RETURN Node', [], true);
 
-        self::assertEquals('MATCH (Test:Test) RETURN Test', $select);
+        $this->table->get();
     }
 
     public function testSimpleCrossJoin(): void
     {
-        $query = DB::table('Test')->crossJoin('NewTest');
-        $select = $this->grammar->compileSelect($query);
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) RETURN Node, NewTest',
+                [],
+                true
+            );
 
-        self::assertEquals('MATCH (Test:Test) WITH Test MATCH (NewTest:NewTest) RETURN Test, NewTest', $select);
+        $this->table->crossJoin('NewTest')->get();
     }
 
     public function testInnerJoin(): void
     {
-        $query = DB::table('Test')->join('NewTest', 'Test.id', '=', 'NewTest.test_id');
-        $select = $this->grammar->compileSelect($query);
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN Node, NewTest',
+                [],
+                true
+            );
 
-        self::assertEquals('MATCH (Test:Test) WITH Test MATCH (NewTest:NewTest) WHERE Test.id = NewTest.`test_id` RETURN Test, NewTest', $select);
+        $this->table->join('NewTest', 'Node.id', '=', 'NewTest.test_id')->get();
+    }
+
+    public function testAggregate(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH count(Node.views) AS Node RETURN Node',
+                [],
+                true
+            );
+
+        $this->table->aggregate('count', 'views');
     }
 }
