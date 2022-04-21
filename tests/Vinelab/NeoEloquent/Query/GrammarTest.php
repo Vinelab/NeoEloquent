@@ -89,9 +89,19 @@ class GrammarTest extends TestCase
     {
         $this->connection->expects($this->once())
             ->method('select')
-            ->with('MATCH (Node:Node) RETURN Node', [], true);
+            ->with('MATCH (Node:Node) RETURN *', [], true);
 
         $this->table->get();
+    }
+
+    public function testOrderBy(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with('MATCH (Node:Node) RETURN * ORDER BY Node.x, Node.y, Node.z DESC', [], true);
+
+//        $this->table->grammar = new MySqlGrammar();
+        $this->table->orderBy('x')->orderBy('y')->orderBy('z', 'desc')->get();
     }
 
     public function testSimpleCrossJoin(): void
@@ -99,7 +109,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) RETURN Node, NewTest',
+                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) RETURN *',
                 [],
                 true
             );
@@ -112,7 +122,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN Node, NewTest',
+                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN *',
                 [],
                 true
             );

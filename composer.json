@@ -26,7 +26,7 @@
         "psr/container": "^1.0",
         "illuminate/contracts": "^8.0",
         "stefanak-michal/bolt": "^3.0",
-        "wikibase-solutions/php-cypher-dsl": "dev-nullables"
+        "wikibase-solutions/php-cypher-dsl": "dev-main"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",

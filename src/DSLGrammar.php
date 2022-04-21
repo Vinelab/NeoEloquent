@@ -15,6 +15,7 @@ use WikibaseSolutions\CypherDSL\Alias;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\MergeClause;
 use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
+use WikibaseSolutions\CypherDSL\Clauses\OrderByClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
 use WikibaseSolutions\CypherDSL\Clauses\SetClause;
 use WikibaseSolutions\CypherDSL\Clauses\WhereClause;
@@ -247,11 +248,23 @@ final class DSLGrammar
 
         $this->translateMatch($builder, $dsl);
 
-        if ($builder->aggregate === []) {
-            $this->translateColumns($builder, $builder->columns ?? ['*'], $dsl);
-            $this->translateOrders($builder, $builder->orders ?? [], $dsl);
-            $this->translateLimit($builder, $builder->limit, $dsl);
-            $this->translateOffset($builder, $builder->offset, $dsl);
+
+        if ($builder->aggregate) {
+            $this->compileAggregate($builder, $dsl);
+        } else {
+            $this->translateColumns($builder, $dsl);
+
+            if ($builder->orders) {
+                $this->translateOrders($builder, $dsl);
+            }
+
+            if ($builder->limit) {
+                $this->translateLimit($builder, $dsl);
+            }
+
+            if ($builder->offset) {
+                $this->translateOffset($builder, $dsl);
+            }
         }
 
         return $dsl;
@@ -282,24 +295,15 @@ final class DSLGrammar
         $dsl->addClause($tbr);
     }
 
-    private function translateColumns(Builder $query, array $columns, Query $dsl): void
+    private function translateColumns(Builder $query, Query $dsl): void
     {
         $return = new ReturnClause();
 
         $return->setDistinct($query->distinct);
 
-        $node = $this->wrapTable($query->from);
-        if ($columns === ['*']) {
-            $return->addColumn($node->getName());
-        } else {
-            foreach ($columns as $column) {
-                $alias = '';
-                if (str_contains(strtolower($column), ' as ')) {
-                    [$column, $alias] = explode(' as ', str_ireplace(' as ', ' as ', $column));
-                }
-
-                $return->addColumn($node->property($column), $alias);
-            }
+        $columns = $this->wrapColumns($query, $query->columns);
+        foreach ($columns as $column) {
+            $return->addColumn($column);
         }
 
         $dsl->addClause($return);
@@ -735,13 +739,16 @@ final class DSLGrammar
     /**
      * Compile the "order by" portions of the query.
      */
-    private function translateOrders(Builder $query, array $orders, Query $dsl): void
+    private function translateOrders(Builder $query, Query $dsl): void
     {
-//        if (! empty($orders)) {
-//            return 'order by '.implode(', ', $this->compileOrdersToArray($query, $orders));
-//        }
-//
-//        return '';
+        $orderBy = new OrderByClause();
+        $columns = $this->wrapColumns($query, Arr::pluck($query->orders, 'column'));
+        $dirs = Arr::pluck($query->orders, 'direction');
+        foreach ($columns AS $i => $column) {
+            $orderBy->addProperty($column, $dirs[$i] === 'asc' ? null : 'desc');
+        }
+
+        $dsl->addClause($orderBy);
     }
 
     /**
@@ -765,24 +772,18 @@ final class DSLGrammar
 
     /**
      * Compile the "limit" portions of the query.
-     *
-     * @param Builder $query
-     * @param string|int $limit
      */
-    private function translateLimit(Builder $query, $limit, Query $dsl): void
+    private function translateLimit(Builder $query, Query $dsl): void
     {
-//        return 'limit '.(int) $limit;
+        $dsl->limit(Query::literal()::decimal((int) $query->limit));
     }
 
     /**
      * Compile the "offset" portions of the query.
-     *
-     * @param Builder $query
-     * @param string|int $offset
      */
-    private function translateOffset(Builder $query, $offset, Query $dsl): void
+    private function translateOffset(Builder $query, Query $dsl): void
     {
-//        return 'offset '.(int) $offset;
+        $dsl->limit(Query::literal()::decimal((int) $query->offset));
     }
 
     /**
@@ -1086,11 +1087,6 @@ final class DSLGrammar
         $this->translateHavings($builder, $builder->havings ?? [], $query);
 
         $this->translateGroups($builder, $builder->groups ?? [], $query);
-        if ($builder->aggregate) {
-            $this->compileAggregate($builder, $query);
-        } else {
-            $query->returning($variables);
-        }
     }
 
     private function decorateUpdateAndRemoveExpressions(array $values, Query $dsl): void
@@ -1168,7 +1164,7 @@ final class DSLGrammar
     /**
      * @param list<string>|string $columns
      *
-     * @return array
+     * @return list<AnyType>
      */
     private function wrapColumns(Builder $query, $columns): array
     {
