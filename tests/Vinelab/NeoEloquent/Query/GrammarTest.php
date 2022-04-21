@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -130,5 +131,31 @@ class GrammarTest extends TestCase
             );
 
         $this->table->aggregate('count', 'views');
+    }
+
+    public function testAggregateDefault(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH count(*) AS Node RETURN Node',
+                [],
+                true
+            );
+
+        $this->table->aggregate('count');
+    }
+
+    public function testAggregateIgnoresMultiple(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH count(Node.views) AS Node RETURN Node',
+                [],
+                true
+            );
+
+        $this->table->aggregate('count', ['views', 'other']);
     }
 }

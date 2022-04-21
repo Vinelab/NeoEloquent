@@ -261,12 +261,17 @@ final class DSLGrammar
         if ($query->aggregate) {
             $tbr = new WithClause();
 
-            $column = $query->aggregate['columns'];
-            if (!str_contains($column, '.')) {
+            $columns = [];
+            $column = Arr::wrap($query->aggregate['columns'])[0];
+            if ($column === '*') {
+                $columns[]= Query::rawExpression('*');
+            } elseif (!str_contains($column, '.')) {
                 $column = $query->from . '.' . $column;
+                $columns[] = $this->wrap($column);
+            } else {
+                $columns[] = $this->wrap($column);
             }
-            $wrap = $this->wrap($column);
-            $tbr->addEntry(Query::function()::raw($query->aggregate['function'], [$wrap])->alias($query->from));
+            $tbr->addEntry(Query::function()::raw($query->aggregate['function'], $columns)->alias($query->from));
 
             $dsl->addClause($tbr);
         }
