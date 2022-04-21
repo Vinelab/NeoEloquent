@@ -125,7 +125,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH count(Node.views) AS Node RETURN Node',
+                'MATCH (Node:Node) RETURN count(Node.views) AS count',
                 [],
                 true
             );
@@ -138,7 +138,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH count(*) AS Node RETURN Node',
+                'MATCH (Node:Node) RETURN count(*) AS count',
                 [],
                 true
             );
@@ -146,12 +146,12 @@ class GrammarTest extends TestCase
         $this->table->aggregate('count');
     }
 
-    public function testAggregateIgnoresMultiple(): void
+    public function testAggregateMultiple(): void
     {
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH count(Node.views) AS Node RETURN Node',
+                'MATCH (Node:Node) WITH Node.views, Node.other WHERE Node.views IS NOT NULL OR Node.other IS NOT NULL RETURN count(*) AS count',
                 [],
                 true
             );

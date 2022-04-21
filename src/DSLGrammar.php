@@ -24,6 +24,7 @@ use WikibaseSolutions\CypherDSL\Functions\FunctionCall;
 use WikibaseSolutions\CypherDSL\Functions\RawFunction;
 use WikibaseSolutions\CypherDSL\In;
 use WikibaseSolutions\CypherDSL\Label;
+use WikibaseSolutions\CypherDSL\LessThan;
 use WikibaseSolutions\CypherDSL\Literals\Literal;
 use WikibaseSolutions\CypherDSL\Not;
 use WikibaseSolutions\CypherDSL\Parameter;
@@ -107,7 +108,7 @@ final class DSLGrammar
     public function wrap($value, bool $prefixAlias = false): AnyType
     {
         if ($this->isExpression($value)) {
-            return new Variable($this->getValue($value));
+            $value = $this->getValue($value);
         }
 
         if (stripos($value, ' as ') !== false) {
@@ -258,23 +259,27 @@ final class DSLGrammar
 
     private function compileAggregate(Builder $query, Query $dsl): void
     {
-        if ($query->aggregate) {
-            $tbr = new WithClause();
+        $tbr = new ReturnClause();
 
-            $columns = [];
-            $column = Arr::wrap($query->aggregate['columns'])[0];
-            if ($column === '*') {
-                $columns[]= Query::rawExpression('*');
-            } elseif (!str_contains($column, '.')) {
-                $column = $query->from . '.' . $column;
-                $columns[] = $this->wrap($column);
-            } else {
-                $columns[] = $this->wrap($column);
-            }
-            $tbr->addEntry(Query::function()::raw($query->aggregate['function'], $columns)->alias($query->from));
+        $columns = $this->wrapColumns($query, $query->aggregate['columns']);
 
-            $dsl->addClause($tbr);
+        // All the aggregating functions used by laravel and mysql allow combining multiple columns as parameters.
+        // In reality, they are a shorthand to check against a combination with null in them.
+        // https://dba.stackexchange.com/questions/127564/how-to-use-count-with-multiple-columns
+        // While neo4j does not directly support multiple parameters for the aggregating functions
+        // provided in SQL, it does provide WITH and WHERE to achieve the same result.
+        if (count($columns) > 1) {
+            $this->buildWithClause($query, $columns, $dsl);
+
+            $this->addWhereNotNull($columns, $dsl);
+
+            $columns = [Query::rawExpression('*')];
         }
+
+        $function = $query->aggregate['function'];
+        $tbr->addColumn(Query::function()::raw($function, $columns)->alias($function));
+
+        $dsl->addClause($tbr);
     }
 
     private function translateColumns(Builder $query, array $columns, Query $dsl): void
@@ -1081,9 +1086,11 @@ final class DSLGrammar
         $this->translateHavings($builder, $builder->havings ?? [], $query);
 
         $this->translateGroups($builder, $builder->groups ?? [], $query);
-        $this->compileAggregate($builder, $query);
-
-        $query->returning($variables);
+        if ($builder->aggregate) {
+            $this->compileAggregate($builder, $query);
+        } else {
+            $query->returning($variables);
+        }
     }
 
     private function decorateUpdateAndRemoveExpressions(array $values, Query $dsl): void
@@ -1156,5 +1163,66 @@ final class DSLGrammar
     public function getOperators(): array
     {
         return [];
+    }
+
+    /**
+     * @param list<string>|string $columns
+     *
+     * @return array
+     */
+    private function wrapColumns(Builder $query, $columns): array
+    {
+        $tbr = [];
+        foreach (Arr::wrap($columns) as $column) {
+            if ($column === '*') {
+                $tbr[] = Query::rawExpression('*');
+            } elseif (!str_contains($column, '.')) {
+                $tbr[] = $this->wrap($query->from . '.' . $column);
+            } else {
+                $tbr[] = $this->wrap($column);
+            }
+        }
+
+        return $tbr;
+    }
+
+    /**
+     * @param list<AnyType> $columns
+     */
+    private function buildWithClause(Builder $query, array $columns, Query $dsl): void
+    {
+        $with = new WithClause();
+
+        if ($query->distinct) {
+            $with->addEntry(Query::rawExpression('DISTINCT'));
+        }
+
+        foreach ($columns as $column) {
+            $with->addEntry($column);
+        }
+
+        $dsl->addClause($with);
+    }
+
+    /**
+     * @param list<PropertyType> $columns
+     * @param Query $dsl
+     * @return void
+     */
+    private function addWhereNotNull(array $columns, Query $dsl): void
+    {
+        $expression = null;
+        foreach ($columns as $column) {
+            $test = $column->isNotNull(false);
+            if ($expression === null) {
+                $expression = $test;
+            } else {
+                $expression = $expression->or($test, false);
+            }
+        }
+
+        $where = new WhereClause();
+        $where->setExpression($expression);
+        $dsl->addClause($where);
     }
 }
