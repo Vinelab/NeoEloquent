@@ -24,6 +24,8 @@ use WikibaseSolutions\CypherDSL\ExpressionList;
 use WikibaseSolutions\CypherDSL\Functions\FunctionCall;
 use WikibaseSolutions\CypherDSL\Functions\RawFunction;
 use WikibaseSolutions\CypherDSL\In;
+use WikibaseSolutions\CypherDSL\IsNotNull;
+use WikibaseSolutions\CypherDSL\IsNull;
 use WikibaseSolutions\CypherDSL\Label;
 use WikibaseSolutions\CypherDSL\LessThan;
 use WikibaseSolutions\CypherDSL\Literals\Literal;
@@ -39,11 +41,14 @@ use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\PropertyType;
 use WikibaseSolutions\CypherDSL\Variable;
 use function array_diff;
+use function array_key_exists;
 use function array_keys;
 use function array_map;
 use function array_merge;
 use function array_shift;
+use function array_unshift;
 use function array_values;
+use function collect;
 use function count;
 use function end;
 use function explode;
@@ -66,6 +71,39 @@ use function trim;
 final class DSLGrammar
 {
     private string $tablePrefix = '';
+    /** @var array<string, callable(Builder, array): AnyType */
+    private array $wheres = [];
+
+    public function __construct()
+    {
+        $this->wheres = [
+            'Raw' => Closure::fromCallable([$this, 'whereRaw']),
+            'Basic' => Closure::fromCallable([$this, 'whereBasic']),
+            'In' => Closure::fromCallable([$this, 'whereIn']),
+            'NotIn' => Closure::fromCallable([$this, 'whereNotIn']),
+            'InRaw' => Closure::fromCallable([$this, 'whereInRaw']),
+            'NotInRaw' => Closure::fromCallable([$this, 'whereNotInRaw']),
+            'Null' => Closure::fromCallable([$this, 'whereNull']),
+            'NotNull' => Closure::fromCallable([$this, 'whereNotNull']),
+            'Between' => Closure::fromCallable([$this, 'whereBetween']),
+            'BetweenColumns' => Closure::fromCallable([$this, 'whereBetweenColumns']),
+            'Date' => Closure::fromCallable([$this, 'whereDate']),
+            'Time' => Closure::fromCallable([$this, 'whereTime']),
+            'Day' => Closure::fromCallable([$this, 'whereDay']),
+            'Month' => Closure::fromCallable([$this, 'whereMonth']),
+            'Year' => Closure::fromCallable([$this, 'whereYear']),
+            'Column' => Closure::fromCallable([$this, 'whereColumn']),
+            'Nested' => Closure::fromCallable([$this, 'whereNested']),
+            'Sub' => Closure::fromCallable([$this, 'whereSub']),
+            'Exists' => Closure::fromCallable([$this, 'whereExists']),
+            'NotSub' => Closure::fromCallable([$this, 'whereNotExists']),
+            'RowValues' => Closure::fromCallable([$this, 'whereRowValues']),
+            'JsonBoolean' => Closure::fromCallable([$this, 'whereJsonBoolean']),
+            'JsonContains' => Closure::fromCallable([$this, 'whereJsonContains']),
+            'JsonLength' => Closure::fromCallable([$this, 'whereJsonLength']),
+            'FullText' => Closure::fromCallable([$this, 'whereFullText']),
+        ];
+    }
 
     /**
      * @param  array  $values
@@ -86,27 +124,25 @@ final class DSLGrammar
             $table = $this->getValue($table);
         }
 
-        $table = $this->tablePrefix . $table;
-
-        if (stripos($table, ' as ') !== false) {
+        if (stripos(strtolower($table), ' as ') !== false) {
             $segments = preg_split('/\s+as\s+/i', $table);
 
-            return Query::node($segments[0])->named($segments[1]);
+            return Query::node($this->tablePrefix.$segments[0])->named($this->tablePrefix.$segments[1]);
         }
 
-        return Query::node($table)->named($table);
+        return Query::node($this->tablePrefix.$table)->named($this->tablePrefix.$table);
     }
 
     /**
      * @param  Expression|QueryConvertable|string  $value
      *
-     * @return Variable|Alias
+     * @return Variable|Alias|Node
      *
      * @see Grammar::wrap
      *
      * @noinspection PhpUnusedParameterInspection
      */
-    public function wrap($value, bool $prefixAlias = false): AnyType
+    public function wrap($value, bool $prefixAlias = false, Builder $builder = null): AnyType
     {
         if ($this->isExpression($value)) {
             $value = $this->getValue($value);
@@ -116,7 +152,7 @@ final class DSLGrammar
             return $this->wrapAliasedValue($value);
         }
 
-        return $this->wrapSegments(explode('.', $value));
+        return $this->wrapSegments(explode('.', $value), $builder);
     }
 
     /**
@@ -134,9 +170,21 @@ final class DSLGrammar
      *
      * @return Property|Variable
      */
-    private function wrapSegments(array $segments): AnyType
+    private function wrapSegments(array $segments, ?Builder $query = null): AnyType
     {
-        $variable = Query::variable(array_shift($segments));
+        if (count($segments) === 1) {
+            if (trim($segments[0]) === '*') {
+                return Query::rawExpression('*');
+            }
+
+            if ($query !== null) {
+                array_unshift($segments, $query->from);
+            }
+        }
+        if ($query !== null && count($segments) === 1) {
+            array_unshift($segments, $query->from);
+        }
+        $variable = $this->wrapTable(array_shift($segments));
         foreach ($segments as $segment) {
             $variable = $variable->property($segment);
         }
@@ -301,8 +349,7 @@ final class DSLGrammar
 
         $return->setDistinct($query->distinct);
 
-        $columns = $this->wrapColumns($query, $query->columns);
-        foreach ($columns as $column) {
+        foreach ($this->wrapColumns($query, $query->columns) as $column) {
             $return->addColumn($column);
         }
 
@@ -353,13 +400,17 @@ final class DSLGrammar
         /** @var BooleanType $expression */
         $expression = null;
         foreach ($query->wheres as $where) {
-            $dslWhere = $this->{"where{$where['type']}"}($query, $where);
+            if (!array_key_exists($where['type'], $this->wheres)) {
+                throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
+            }
+
+            $dslWhere = $this->wheres[$where['type']]($query, $where);
             if ($expression === null) {
                 $expression = $dslWhere;
             } elseif (strtolower($where['boolean']) === 'and') {
-                $expression = $expression->and($dslWhere);
+                $expression = $expression->and($dslWhere, false);
             } else {
-                $expression = $expression->or($dslWhere);
+                $expression = $expression->or($dslWhere, false);
             }
         }
 
@@ -371,23 +422,6 @@ final class DSLGrammar
         return $where;
     }
 
-    /** @var array<string, callable(Builder, array): AnyType */
-    private array $wheres = [];
-
-    public function __construct()
-    {
-        $this->wheres = [
-            'raw' => Closure::fromCallable([$this, 'whereRaw']),
-            'basic' => Closure::fromCallable([$this, 'whereBasic']),
-            'in' => Closure::fromCallable([$this, 'whereIn']),
-            'not in' => Closure::fromCallable([$this, 'whereNotIn']),
-            'in raw' => Closure::fromCallable([$this, 'whereInRaw']),
-            'not in raw' => Closure::fromCallable([$this, 'whereNotInRaw']),
-            'null' => Closure::fromCallable([$this, 'whereNull']),
-            'not null' => Closure::fromCallable([$this, 'whereNotNull']),
-        ];
-    }
-
     private function whereRaw(Builder $query, array $where): RawExpression
     {
         return new RawExpression($where['sql']);
@@ -395,8 +429,8 @@ final class DSLGrammar
 
     private function whereBasic(Builder $query, array $where): BooleanType
     {
-        $column = $this->wrap($where['column']);
-        $parameter = $this->parameter($query, $where['value']);
+        $column = $this->wrap($where['column'], false, $query);
+        $parameter = $this->parameter($where['value'], $query);
 
         if (in_array($where['operator'], ['&', '|', '^', '~', '<<', '>>', '>>>'])) {
             return new RawFunction('apoc.bitwise.op', [
@@ -437,17 +471,17 @@ final class DSLGrammar
     /**
      * @param array $where
      */
-    private function whereNull(Builder $query, array $where): RawExpression
+    private function whereNull(Builder $query, array $where): IsNull
     {
-        return new RawExpression($this->wrap($where['column'])->toQuery() . ' IS NULL');
+        return new IsNull($this->wrap($where['column']));
     }
 
     /**
      * @param array $where
      */
-    private function whereNotNull(Builder $query, array $where): RawExpression
+    private function whereNotNull(Builder $query, array $where): IsNotNull
     {
-        return new RawExpression($this->wrap($where['column'])->toQuery() . ' IS NOT NULL');
+        return new IsNotNull($this->wrap($where['column']));
     }
 
     /**
@@ -491,7 +525,10 @@ final class DSLGrammar
      */
     private function whereDate(Builder $query, array $where): BooleanType
     {
-        return $this->whereBasic($query, $where);
+        $column = $this->wrap($where['column'], false, $query);
+        $parameter = Query::function()::date($this->parameter($where['value'], $query));
+
+        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
     /**
@@ -499,7 +536,10 @@ final class DSLGrammar
      */
     private function whereTime(Builder $query, array $where): BooleanType
     {
-        return $this->dateBasedWhere('epochMillis', $query, $where);
+        $column = $this->wrap($where['column'], false, $query);
+        $parameter = Query::function()::time($this->parameter($where['value'], $query));
+
+        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
     /**
@@ -507,7 +547,10 @@ final class DSLGrammar
      */
     private function whereDay(Builder $query, array $where): BooleanType
     {
-        return $this->dateBasedWhere('day', $query, $where);
+        $column = $this->wrap($where['column'], false, $query)->property('day');
+        $parameter = $this->parameter($where['value'], $query);
+
+        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
     /**
@@ -515,7 +558,10 @@ final class DSLGrammar
      */
     private function whereMonth(Builder $query, array $where): BooleanType
     {
-        return $this->dateBasedWhere('month', $query, $where);
+        $column = $this->wrap($where['column'], false, $query)->property('month');
+        $parameter = $this->parameter($where['value'], $query);
+
+        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
     /**
@@ -523,18 +569,11 @@ final class DSLGrammar
      */
     private function whereYear(Builder $query, array $where): BooleanType
     {
-        return $this->dateBasedWhere('year', $query, $where);
-    }
 
-    /**
-     * @param array $where
-     */
-    private function dateBasedWhere($type, Builder $query, array $where): BooleanType
-    {
-        $column = new RawExpression($this->column($where['column'])->toQuery() . '.' . Query::escape($type));
-        $parameter = $this->addParameter($query, $where['value']);
+        $column = $this->wrap($where['column'], false, $query)->property('year');
+        $parameter = $this->parameter($where['value'], $query);
 
-        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter);
+        return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
     /**
@@ -1081,7 +1120,7 @@ final class DSLGrammar
             $this->translateUnions($builder, $builder->unions, $query);
         }
 
-        $variables = $this->translateFrom($builder, $query);
+        $this->translateFrom($builder, $query);
 
         $query->addClause($this->compileWheres($builder));
         $this->translateHavings($builder, $builder->havings ?? [], $query);
@@ -1170,13 +1209,7 @@ final class DSLGrammar
     {
         $tbr = [];
         foreach (Arr::wrap($columns) as $column) {
-            if ($column === '*') {
-                $tbr[] = Query::rawExpression('*');
-            } elseif (!str_contains($column, '.')) {
-                $tbr[] = $this->wrap($query->from . '.' . $column);
-            } else {
-                $tbr[] = $this->wrap($column);
-            }
+            $tbr[] = $this->wrap($column, false, $query);
         }
 
         return $tbr;

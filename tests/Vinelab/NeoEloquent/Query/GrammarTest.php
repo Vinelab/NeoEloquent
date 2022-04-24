@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -74,7 +73,7 @@ class GrammarTest extends TestCase
         $this->grammar->setTablePrefix('x_');
         $p = $this->grammar->wrapTable('Node AS x');
 
-        $this->assertEquals('(x:`x_Node`)', $p);
+        $this->assertEquals('(`x_x`:`x_Node`)', $p);
     }
 
     public function testTablePrefix(): void
@@ -102,6 +101,97 @@ class GrammarTest extends TestCase
 
 //        $this->table->grammar = new MySqlGrammar();
         $this->table->orderBy('x')->orderBy('y')->orderBy('z', 'desc')->get();
+    }
+
+    public function testBasicWhereEquals(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = \$param[\dabcdef]+ RETURN */'),
+                $this->countOf(1),
+                true
+            );
+
+        $this->table->where('x', 'y')->get();
+    }
+
+    public function testBasicWhereLessThan(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x < \$param[\dabcdef]+ RETURN */'),
+                $this->countOf(1),
+                true
+            );
+
+        $this->table->where('x', '<', 'y')->get();
+    }
+
+    public function testWhereTime(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x < time\(\$param[\dabcdef]+\) RETURN */'),
+                $this->countOf(1),
+                true
+            );
+
+        $this->table->whereTime('x', '<', '20:00')->get();
+    }
+
+    public function testWhereDate(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = date\(\$param[\dabcdef]+\) RETURN */'),
+                $this->countOf(1),
+                true
+            );
+
+        $this->table->whereDate('x', '2020-01-02')->get();
+    }
+
+    public function testWhereYear(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x.year = \$param[\dabcdef]+ RETURN */'),
+                $this->countOf(1),
+                true
+            );
+
+        $this->table->whereYear('x', 2023)->get();
+    }
+
+    public function testWhereMonth(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x.month = \$param[\dabcdef]+ RETURN */'),
+                $this->countOf(1),
+                true
+            );
+
+        $this->table->whereMonth('x', '05')->get();
+    }
+
+    public function testWhereDay(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x.day = \$param[\dabcdef]+ RETURN */'),
+                $this->countOf(1),
+                true
+            );
+
+        $this->table->whereDay('x', 5)->get();
     }
 
     public function testSimpleCrossJoin(): void
