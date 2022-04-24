@@ -27,7 +27,6 @@ use WikibaseSolutions\CypherDSL\In;
 use WikibaseSolutions\CypherDSL\IsNotNull;
 use WikibaseSolutions\CypherDSL\IsNull;
 use WikibaseSolutions\CypherDSL\Label;
-use WikibaseSolutions\CypherDSL\LessThan;
 use WikibaseSolutions\CypherDSL\Literals\Literal;
 use WikibaseSolutions\CypherDSL\Not;
 use WikibaseSolutions\CypherDSL\Parameter;
@@ -48,7 +47,6 @@ use function array_merge;
 use function array_shift;
 use function array_unshift;
 use function array_values;
-use function collect;
 use function count;
 use function end;
 use function explode;
@@ -59,8 +57,6 @@ use function is_string;
 use function last;
 use function preg_split;
 use function reset;
-use function str_contains;
-use function str_ireplace;
 use function stripos;
 use function strtolower;
 use function trim;
@@ -71,8 +67,8 @@ use function trim;
 final class DSLGrammar
 {
     private string $tablePrefix = '';
-    /** @var array<string, callable(Builder, array): AnyType */
-    private array $wheres = [];
+    /** @var array<string, callable(Builder, array, Query, DSLContext, BooleanType|EmptyBoolean): void */
+    private array $wheres;
 
     public function __construct()
     {
@@ -94,7 +90,6 @@ final class DSLGrammar
             'Year' => Closure::fromCallable([$this, 'whereYear']),
             'Column' => Closure::fromCallable([$this, 'whereColumn']),
             'Nested' => Closure::fromCallable([$this, 'whereNested']),
-            'Sub' => Closure::fromCallable([$this, 'whereSub']),
             'Exists' => Closure::fromCallable([$this, 'whereExists']),
             'NotSub' => Closure::fromCallable([$this, 'whereNotExists']),
             'RowValues' => Closure::fromCallable([$this, 'whereRowValues']),
@@ -102,21 +97,22 @@ final class DSLGrammar
             'JsonContains' => Closure::fromCallable([$this, 'whereJsonContains']),
             'JsonLength' => Closure::fromCallable([$this, 'whereJsonLength']),
             'FullText' => Closure::fromCallable([$this, 'whereFullText']),
+            'Sub' => Closure::fromCallable([$this, 'whereSub']),
         ];
     }
 
     /**
-     * @param  array  $values
+     * @param array $values
      */
     public function wrapArray(array $values): ExpressionList
     {
-        return new ExpressionList(array_map([$this, 'wrap'], $values));
+        return Query::list(array_map([$this, 'wrap'], $values));
     }
 
     /**
+     * @param Expression|QueryConvertable|string $table
      * @see Grammar::wrapTable
      *
-     * @param  Expression|QueryConvertable|string  $table
      */
     public function wrapTable($table): Node
     {
@@ -124,17 +120,18 @@ final class DSLGrammar
             $table = $this->getValue($table);
         }
 
+        $alias = null;
         if (stripos(strtolower($table), ' as ') !== false) {
             $segments = preg_split('/\s+as\s+/i', $table);
 
-            return Query::node($this->tablePrefix.$segments[0])->named($this->tablePrefix.$segments[1]);
+            [$table, $alias] = $segments;
         }
 
-        return Query::node($this->tablePrefix.$table)->named($this->tablePrefix.$table);
+        return Query::node($this->tablePrefix . $table)->named($this->tablePrefix . ($alias ?? $table));
     }
 
     /**
-     * @param  Expression|QueryConvertable|string  $value
+     * @param Expression|QueryConvertable|string $value
      *
      * @return Variable|Alias|Node
      *
@@ -160,9 +157,9 @@ final class DSLGrammar
      */
     private function wrapAliasedValue(string $value): Alias
     {
-        $segments = preg_split('/\s+as\s+/i', $value);
+        [$table, $alias] = preg_split('/\s+as\s+/i', $value);
 
-        return Query::variable($segments[0])->alias($segments[1]);
+        return Query::variable($table)->alias($alias);
     }
 
     /**
@@ -195,7 +192,7 @@ final class DSLGrammar
     /**
      * Convert an array of column names into a delimited string.
      *
-     * @param string[]  $columns
+     * @param string[] $columns
      *
      * @return array<Variable|Alias>
      */
@@ -207,37 +204,33 @@ final class DSLGrammar
     /**
      * Create query parameter place-holders for an array.
      *
-     * @param  array  $values
+     * @param array $values
      *
      * @return Parameter[]
      */
-    public function parameterize(array $values): array
+    public function parameterize(array $values, ?DSLContext $context = null): array
     {
-        return array_map([$this, 'parameter'], $values);
+        return array_map(fn ($x) => $this->parameter($x, $context), $values);
     }
 
     /**
      * Get the appropriate query parameter place-holder for a value.
      *
-     * @param  mixed  $value
+     * @param mixed $value
      */
-    public function parameter($value, Builder $query = null): Parameter
+    public function parameter($value, ?DSLContext $context = null): Parameter
     {
-        $parameter = $this->isExpression($value) ?
-            new Parameter($this->getValue($value)) :
-            new Parameter();
+        $context ??= new DSLContext();
 
-        if ($query) {
-            $query->addBinding([$parameter->getParameter() => $value], 'where');
-        }
+        $value = $this->isExpression($value) ? $this->getValue($value) : $value;
 
-        return $parameter;
+        return $context->addParameter($value);
     }
 
     /**
      * Quote the given string literal.
      *
-     * @param  string|array  $value
+     * @param string|array $value
      * @return PropertyType[]
      */
     public function quoteString($value): array
@@ -252,11 +245,11 @@ final class DSLGrammar
     /**
      * Determine if the given value is a raw expression.
      *
-     * @param  mixed  $value
+     * @param mixed $value
      */
     public function isExpression($value): bool
     {
-        return $value instanceof Expression || $value instanceof QueryConvertable;
+        return $value instanceof Expression;
     }
 
     /**
@@ -280,7 +273,7 @@ final class DSLGrammar
     /**
      * Set the grammar's table prefix.
      *
-     * @param  string  $prefix
+     * @param string $prefix
      * @return self
      */
     public function setTablePrefix(string $prefix): self
@@ -359,34 +352,27 @@ final class DSLGrammar
     /**
      * @param Builder $query
      * @param Query $dsl
-     *
-     * @return Variable[]
      */
-    private function translateFrom(Builder $query, Query $dsl): array
+    private function translateFrom(Builder $query, Query $dsl, DSLContext $context): void
     {
-        $variables = [];
-
         $node = $this->wrapTable($query->from);
-        $variables[] = $node->getVariable();
+        $context->addVariable($node->getName());
 
         $dsl->match($node);
 
         /** @var JoinClause $join */
         foreach ($query->joins ?? [] as $join) {
-            $dsl->with($variables);
+            $dsl->with($context->getVariables());
 
             $node = $this->wrapTable($join->table);
+            $context->addVariable($node->getName());
             if ($join->type === 'cross') {
                 $dsl->match($node);
             } elseif ($join->type === 'inner') {
                 $dsl->match($node);
-                $dsl->addClause($this->compileWheres($join));
+                $dsl->addClause($this->compileWheres($join, false, $dsl));
             }
-
-            $variables[] = $node->getVariable();
         }
-
-        return $variables;
     }
 
     /**
@@ -395,11 +381,17 @@ final class DSLGrammar
      * @param Builder $query
      * @return WhereClause
      */
-    public function compileWheres(Builder $query, bool $surroundParentheses = false): WhereClause
+    public function compileWheres(Builder $query, bool $surroundParentheses, Query $dsl): WhereClause
     {
         /** @var BooleanType $expression */
         $expression = null;
         foreach ($query->wheres as $i => $where) {
+            if ($where['type'] === 'Sub') {
+                $this->whereSub($query, $where, $dsl);
+
+                continue;
+            }
+
             if (!array_key_exists($where['type'], $this->wheres)) {
                 throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
             }
@@ -603,12 +595,29 @@ final class DSLGrammar
         return $tbr;
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereSub(Builder $query, array $where): BooleanType
+    private function whereSub(WhereContext $context): BooleanType
     {
-        throw new BadMethodCallException('Sub selects are not supported at the moment');
+        /** @var Alias $subresult */
+        $subresult = null;
+        // Calls can be added subsequently without a WITH in between. Since this is the only comparator in
+        // the WHERE series that requires a preceding clause, we don't need to worry about WITH statements between
+        // possible multiple whereSubs in the same query depth.
+        $context->getQuery()->call(function (Query $sub) use ($context, &$subresult) {
+            $select = $this->compileSelect($context->getWhere()['query']);
+
+            $sub->with($context->getContext()->getVariables());
+            foreach ($select->getClauses() as $clause) {
+                if ($clause instanceof ReturnClause) {
+                    $subresult = $context->getContext()->createSubResult($clause->getColumns()[0]);
+                    $clause->addColumn($subresult);
+                }
+                $sub->addClause($clause);
+            }
+        });
+
+        $where = $context->getWhere();
+
+        return OperatorRepository::fromSymbol($where['operator'], $this->wrap($where['column']), $subresult->getVariable());
     }
 
     /**
@@ -789,7 +798,7 @@ final class DSLGrammar
         $orderBy = new OrderByClause();
         $columns = $this->wrapColumns($query, Arr::pluck($query->orders, 'column'));
         $dirs = Arr::pluck($query->orders, 'direction');
-        foreach ($columns AS $i => $column) {
+        foreach ($columns as $i => $column) {
             $orderBy->addProperty($column, $dirs[$i] === 'asc' ? null : 'desc');
         }
 
@@ -820,7 +829,7 @@ final class DSLGrammar
      */
     private function translateLimit(Builder $query, Query $dsl): void
     {
-        $dsl->limit(Query::literal()::decimal((int) $query->limit));
+        $dsl->limit(Query::literal()::decimal((int)$query->limit));
     }
 
     /**
@@ -828,7 +837,7 @@ final class DSLGrammar
      */
     private function translateOffset(Builder $query, Query $dsl): void
     {
-        $dsl->limit(Query::literal()::decimal((int) $query->offset));
+        $dsl->limit(Query::literal()::decimal((int)$query->offset));
     }
 
     /**
@@ -925,9 +934,9 @@ final class DSLGrammar
         $node = $this->initialiseNode($query);
 
         $keys = Collection::make($values)
-            ->map(static fn (array $value) => array_keys($value))
+            ->map(static fn(array $value) => array_keys($value))
             ->flatten()
-            ->filter(static fn ($x) => is_string($x))
+            ->filter(static fn($x) => is_string($x))
             ->unique()
             ->toArray();
 
@@ -1065,7 +1074,7 @@ final class DSLGrammar
     /**
      * Prepare the bindings for a delete statement.
      *
-     * @param  array  $bindings
+     * @param array $bindings
      * @return array
      */
     public function prepareBindingsForDelete(array $bindings): array
@@ -1104,15 +1113,11 @@ final class DSLGrammar
     /**
      * Get the value of a raw expression.
      *
-     * @param Expression|QueryConvertable $expression
+     * @param Expression $expression
      * @return mixed
      */
-    public function getValue($expression)
+    public function getValue(Expression $expression)
     {
-        if ($expression instanceof QueryConvertable) {
-            return $expression->toQuery();
-        }
-
         return $expression->getValue();
     }
 
@@ -1125,7 +1130,6 @@ final class DSLGrammar
         if ($builder->unions) {
             $this->translateUnions($builder, $builder->unions, $query);
         }
-
         $this->translateFrom($builder, $query);
 
         $query->addClause($this->compileWheres($builder));

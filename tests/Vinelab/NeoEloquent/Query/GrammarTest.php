@@ -108,8 +108,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = \$param[\dabcdef]+ RETURN */'),
-                $this->countOf(1),
+                'MATCH (Node:Node) WHERE Node.x = $param0 RETURN *',
+                ['param0' => 'y'],
                 true
             );
 
@@ -121,8 +121,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x < \$param[\dabcdef]+ RETURN */'),
-                $this->countOf(1),
+                '/MATCH (Node:Node) WHERE Node.x < $param0 RETURN *',
+                ['param0' => 'y'],
                 true
             );
 
@@ -134,8 +134,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x < time\(\$param[\dabcdef]+\) RETURN */'),
-                $this->countOf(1),
+                'MATCH (Node:Node) WHERE Node.x < time($param0) RETURN *',
+                ['param0' => '20:00'],
                 true
             );
 
@@ -147,8 +147,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = date\(\$param[\dabcdef]+\) RETURN */'),
-                $this->countOf(1),
+                'MATCH (Node:Node) WHERE Node.x = date($param0) RETURN *',
+                ['param0' => '2020-01-02'],
                 true
             );
 
@@ -160,7 +160,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x.year = \$param[\dabcdef]+ RETURN */'),
+                'MATCH (Node:Node) WHERE Node.x.year = $param0 RETURN *',
                 $this->countOf(1),
                 true
             );
@@ -173,8 +173,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x.month = \$param[\dabcdef]+ RETURN */'),
-                $this->countOf(1),
+                'MATCH (Node:Node) WHERE Node.x.month = $param0 RETURN *',
+                ['param0' => '05'],
                 true
             );
 
@@ -186,8 +186,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x.day = \$param[\dabcdef]+ RETURN */'),
-                $this->countOf(1),
+                'MATCH (Node:Node) WHERE Node.x.day = $param0 RETURN *',
+                ['param0' => 5],
                 true
             );
 
@@ -199,7 +199,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = Node\.y RETURN \*/'),
+                'MATCH (Node:Node) WHERE Node.x = Node.y RETURN *',
                 [],
                 true
             );
@@ -207,13 +207,47 @@ class GrammarTest extends TestCase
         $this->table->whereColumn('x', 'y')->get();
     }
 
+    public function testWhereSubComplex(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = Node\.y RETURN \*/'),
+                [],
+                true
+            );
+
+        $this->table->where('x', '=', function (Builder $query) {
+            $query->from('Y')
+                ->select('i')
+                ->whereColumn('Test.i', 'i')
+                ->limit(1);
+        })->whereNested(function (Builder $query) {
+            $query->where('i', function (Builder $query) {
+                $query->from('ZZ')
+                    ->select('i as har')
+                    ->whereColumn('Test.i', 'har')
+                    ->limit(1);
+            })->orWhere('j', function (Builder $query) {
+                $query->select('i')
+                    ->where('i', 'i')
+                    ->limit(1);
+            });
+        })->get();
+    }
+
     public function testWhereNested(): void
     {
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = \$param[\dabcdef]+ OR \(Node\.xy = \$param[\dabcdef]+ OR Node\.z = \$param[\dabcdef]+\) AND Node\.xx = \$param[\dabcdef]+ RETURN \*/'),
-                $this->countOf(4),
+                'MATCH (Node:Node) WHERE Node.x = $param0 OR (Node.xy = $param1 OR Node.z = $param2 AND Node.xx = $param3 RETURN *',
+                [
+                    'param0' => 'y',
+                    'param1' => 'y',
+                    'param2' => 'x',
+                    'param3' => 'zz'
+                ],
                 true
             );
 
