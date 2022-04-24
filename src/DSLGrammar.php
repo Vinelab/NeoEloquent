@@ -395,11 +395,11 @@ final class DSLGrammar
      * @param Builder $query
      * @return WhereClause
      */
-    public function compileWheres(Builder $query): WhereClause
+    public function compileWheres(Builder $query, bool $surroundParentheses = false): WhereClause
     {
         /** @var BooleanType $expression */
         $expression = null;
-        foreach ($query->wheres as $where) {
+        foreach ($query->wheres as $i => $where) {
             if (!array_key_exists($where['type'], $this->wheres)) {
                 throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
             }
@@ -408,9 +408,9 @@ final class DSLGrammar
             if ($expression === null) {
                 $expression = $dslWhere;
             } elseif (strtolower($where['boolean']) === 'and') {
-                $expression = $expression->and($dslWhere, false);
+                $expression = $expression->and($dslWhere, (count($query->wheres) - 1) === $i && $surroundParentheses);
             } else {
-                $expression = $expression->or($dslWhere, false);
+                $expression = $expression->or($dslWhere, (count($query->wheres) - 1) === $i && $surroundParentheses);
             }
         }
 
@@ -569,7 +569,6 @@ final class DSLGrammar
      */
     private function whereYear(Builder $query, array $where): BooleanType
     {
-
         $column = $this->wrap($where['column'], false, $query)->property('year');
         $parameter = $this->parameter($where['value'], $query);
 
@@ -581,8 +580,8 @@ final class DSLGrammar
      */
     private function whereColumn(Builder $query, array $where): BooleanType
     {
-        $x = $this->wrap($where['first']);
-        $y = $this->wrap($where['second']);
+        $x = $this->wrap($where['first'], false, $query);
+        $y = $this->wrap($where['second'], false, $query);
 
         return OperatorRepository::fromSymbol($where['operator'], $x, $y, false);
     }
@@ -592,9 +591,16 @@ final class DSLGrammar
      */
     private function whereNested(Builder $query, array $where): BooleanType
     {
-        $where['query']->wheres[count($where['query']->wheres) - 1]['boolean'] = 'and';
+        /** @var Builder $nestedQuery */
+        $nestedQuery = $where['query'];
 
-        return $this->compileWheres($where['query'], $where['query']->wheres)->getExpression();
+        $tbr = $this->compileWheres($nestedQuery, true)->getExpression();
+
+        foreach ($nestedQuery->getBindings() as $key => $binding) {
+            $query->addBinding([$key => $binding]);
+        }
+
+        return $tbr;
     }
 
     /**

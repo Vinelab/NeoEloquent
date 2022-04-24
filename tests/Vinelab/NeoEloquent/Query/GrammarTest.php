@@ -194,6 +194,34 @@ class GrammarTest extends TestCase
         $this->table->whereDay('x', 5)->get();
     }
 
+    public function testWhereColumn(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = Node\.y RETURN \*/'),
+                [],
+                true
+            );
+
+        $this->table->whereColumn('x', 'y')->get();
+    }
+
+    public function testWhereNested(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = \$param[\dabcdef]+ OR \(Node\.xy = \$param[\dabcdef]+ OR Node\.z = \$param[\dabcdef]+\) AND Node\.xx = \$param[\dabcdef]+ RETURN \*/'),
+                $this->countOf(4),
+                true
+            );
+
+        $this->table->where('x', 'y')->whereNested(function (Builder $query) {
+            $query->where('xy', 'y')->orWhere('z', 'x');
+        }, 'or')->where('xx', 'zz')->get();
+    }
+
     public function testSimpleCrossJoin(): void
     {
         $this->connection->expects($this->once())
