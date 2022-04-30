@@ -37,6 +37,13 @@ class DSLContext
         return $subresult;
     }
 
+    public function addSubResult(Alias $alias): Alias
+    {
+        ++$this->subResultCounter;
+
+        return $alias;
+    }
+
     public function addVariable(Variable $variable): void
     {
         $this->withStack[] = $variable;

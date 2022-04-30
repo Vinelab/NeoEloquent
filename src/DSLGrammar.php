@@ -11,7 +11,9 @@ use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use RuntimeException;
+use Vinelab\NeoEloquent\Query\Wheres\Where;
 use WikibaseSolutions\CypherDSL\Alias;
+use WikibaseSolutions\CypherDSL\Clauses\CallClause;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\MergeClause;
 use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
@@ -67,7 +69,7 @@ use function trim;
 final class DSLGrammar
 {
     private string $tablePrefix = '';
-    /** @var array<string, callable(Builder, array, Query, DSLContext, BooleanType|EmptyBoolean): void */
+    /** @var array<string, callable(Builder, array, Query, DSLContext): array{0: AnyType, 1: list<CallClause>} */
     private array $wheres;
 
     public function __construct()
@@ -112,7 +114,6 @@ final class DSLGrammar
     /**
      * @param Expression|QueryConvertable|string $table
      * @see Grammar::wrapTable
-     *
      */
     public function wrapTable($table): Node
     {
@@ -372,7 +373,7 @@ final class DSLGrammar
                 $dsl->match($node);
             } elseif ($join->type === 'inner') {
                 $dsl->match($node);
-                $dsl->addClause($this->compileWheres($join, false, $dsl));
+                $dsl->addClause($this->compileWheres($join, false, $dsl, $context));
             }
         }
     }
@@ -383,22 +384,23 @@ final class DSLGrammar
      * @param Builder $builder
      * @return WhereClause
      */
-    public function compileWheres(Builder $builder, bool $surroundParentheses, Query $query): WhereClause
+    public function compileWheres(Builder $builder, bool $surroundParentheses, Query $query, DSLContext $context): WhereClause
     {
         /** @var BooleanType $expression */
         $expression = null;
         foreach ($builder->wheres as $i => $where) {
-            if ($where['type'] === 'Sub') {
-                $this->whereSub($builder, $where, $query);
-
-                continue;
-            }
-
             if (!array_key_exists($where['type'], $this->wheres)) {
                 throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
             }
 
-            $dslWhere = $this->wheres[$where['type']]($builder, $where);
+            $dslWhere = $this->wheres[$where['type']]($builder, $where, $context, $query);
+            if (is_array($dslWhere)) {
+                [$dslWhere, $calls] = $dslWhere;
+                foreach ($calls as $call) {
+                    $query->addClause($call);
+                }
+            }
+
             if ($expression === null) {
                 $expression = $dslWhere;
             } elseif (strtolower($where['boolean']) === 'and') {
@@ -421,10 +423,10 @@ final class DSLGrammar
         return new RawExpression($where['sql']);
     }
 
-    private function whereBasic(Builder $query, array $where): BooleanType
+    private function whereBasic(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $column = $this->wrap($where['column'], false, $query);
-        $parameter = $this->parameter($where['value'], $query);
+        $parameter = $this->parameter($where['value'], $context);
 
         if (in_array($where['operator'], ['&', '|', '^', '~', '<<', '>>', '>>>'])) {
             return new RawFunction('apoc.bitwise.op', [
@@ -437,57 +439,45 @@ final class DSLGrammar
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
-    private function whereIn(Builder $query, array $where): In
+    private function whereIn(Builder $query, array $where, DSLContext $context): In
     {
-        return new In($this->wrap($where['column']), $this->parameter($query, $where['values']));
+        return new In($this->wrap($where['column']), $this->parameter($where['values'], $context));
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereNotIn(Builder $query, array $where): Not
+    private function whereNotIn(Builder $query, array $where, DSLContext $context): Not
     {
-        return new Not($this->whereIn($query, $where));
+        return new Not($this->whereIn($query, $where, $context));
     }
 
-    private function whereNotInRaw(Builder $query, array $where): Not
+    private function whereNotInRaw(Builder $query, array $where, DSLContext $context): Not
     {
-        return new Not($this->whereInRaw($query, $where));
+        return new Not($this->whereInRaw($query, $where, $context));
     }
 
-    private function whereInRaw(Builder $query, array $where): In
+    private function whereInRaw(Builder $query, array $where, DSLContext $context): In
     {
         $list = new ExpressionList(array_map(static fn($x) => Query::literal($x), $where['values']));
 
         return new In($this->wrap($where['column']), $list);
     }
 
-    /**
-     * @param array $where
-     */
     private function whereNull(Builder $query, array $where): IsNull
     {
         return new IsNull($this->wrap($where['column']));
     }
 
-    /**
-     * @param array $where
-     */
     private function whereNotNull(Builder $query, array $where): IsNotNull
     {
         return new IsNotNull($this->wrap($where['column']));
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereBetween(Builder $query, array $where): BooleanType
+    private function whereBetween(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $min = Query::literal(reset($where['values']));
         $max = Query::literal(end($where['values']));
 
-        $tbr = $this->whereBasic($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min])
-            ->and($this->whereBasic($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max]));
+        $tbr = $this->whereBasic($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min], $context)
+            ->and($this->whereBasic($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max], $context));
 
         if ($where['not']) {
             return new Not($tbr);
@@ -496,16 +486,13 @@ final class DSLGrammar
         return $tbr;
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereBetweenColumns(Builder $query, array $where): BooleanType
+    private function whereBetweenColumns(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $min = reset($where['values']);
         $max = end($where['values']);
 
-        $tbr = $this->whereColumn($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min])
-            ->and($this->whereColumn($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max]));
+        $tbr = $this->whereColumn($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min], $context)
+            ->and($this->whereColumn($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max], $context));
 
         if ($where['not']) {
             return new Not($tbr);
@@ -514,65 +501,47 @@ final class DSLGrammar
         return $tbr;
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereDate(Builder $query, array $where): BooleanType
+    private function whereDate(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $column = $this->wrap($where['column'], false, $query);
-        $parameter = Query::function()::date($this->parameter($where['value'], $query));
+        $parameter = Query::function()::date($this->parameter($where['value'], $context));
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereTime(Builder $query, array $where): BooleanType
+    private function whereTime(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $column = $this->wrap($where['column'], false, $query);
-        $parameter = Query::function()::time($this->parameter($where['value'], $query));
+        $parameter = Query::function()::time($this->parameter($where['value'], $context));
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereDay(Builder $query, array $where): BooleanType
+    private function whereDay(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $column = $this->wrap($where['column'], false, $query)->property('day');
-        $parameter = $this->parameter($where['value'], $query);
+        $parameter = $this->parameter($where['value'], $context);
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereMonth(Builder $query, array $where): BooleanType
+    private function whereMonth(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $column = $this->wrap($where['column'], false, $query)->property('month');
-        $parameter = $this->parameter($where['value'], $query);
+        $parameter = $this->parameter($where['value'], $context);
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereYear(Builder $query, array $where): BooleanType
+    private function whereYear(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $column = $this->wrap($where['column'], false, $query)->property('year');
-        $parameter = $this->parameter($where['value'], $query);
+        $parameter = $this->parameter($where['value'], $context);
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereColumn(Builder $query, array $where): BooleanType
+    private function whereColumn(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $x = $this->wrap($where['first'], false, $query);
         $y = $this->wrap($where['second'], false, $query);
@@ -580,46 +549,55 @@ final class DSLGrammar
         return OperatorRepository::fromSymbol($where['operator'], $x, $y, false);
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereNested(Builder $query, array $where): BooleanType
+    private function whereNested(Builder $query, array $where, DSLContext $context): array
     {
         /** @var Builder $nestedQuery */
         $nestedQuery = $where['query'];
 
-        $tbr = $this->compileWheres($nestedQuery, true)->getExpression();
+        $sub = Query::new()->match($this->wrapTable($query->from));
+        $calls = [];
+        $tbr = $this->compileWheres($nestedQuery, true, $sub, $context)->getExpression();
+        foreach ($sub->getClauses() as $clause) {
+            if ($clause instanceof CallClause) {
+                $calls[] = $clause;
+            }
+        }
 
         foreach ($nestedQuery->getBindings() as $key => $binding) {
             $query->addBinding([$key => $binding]);
         }
 
-        return $tbr;
+        return [$tbr, $calls];
     }
 
-    private function whereSub(WhereContext $context): BooleanType
+    private function whereSub(Builder $builder, array $where, DSLContext $context): array
     {
         /** @var Alias $subresult */
         $subresult = null;
         // Calls can be added subsequently without a WITH in between. Since this is the only comparator in
         // the WHERE series that requires a preceding clause, we don't need to worry about WITH statements between
         // possible multiple whereSubs in the same query depth.
-        $context->getQuery()->call(function (Query $sub) use ($context, &$subresult) {
-            $select = $this->compileSelect($context->getWhere()['query']);
+        $sub = Query::new();
+        if (!isset($where['query']->from)) {
+            $where['query']->from = $builder->from;
+        }
+        $select = $this->compileSelect($where['query']);
 
-            $sub->with($context->getContext()->getVariables());
-            foreach ($select->getClauses() as $clause) {
-                if ($clause instanceof ReturnClause) {
-                    $subresult = $context->getContext()->createSubResult($clause->getColumns()[0]);
+        $sub->with($context->getVariables());
+        foreach ($select->getClauses() as $clause) {
+            if ($clause instanceof ReturnClause) {
+                $subresult = $clause->getColumns()[0];
+                if ($subresult instanceof Alias) {
+                    $context->createSubResult($subresult);
+                } else {
+                    $subresult = $context->createSubResult($subresult);
                     $clause->addColumn($subresult);
                 }
-                $sub->addClause($clause);
             }
-        });
+            $sub->addClause($clause);
+        }
 
-        $where = $context->getWhere();
-
-        return OperatorRepository::fromSymbol($where['operator'], $this->wrap($where['column']), $subresult->getVariable());
+        return [OperatorRepository::fromSymbol($where['operator'], $this->wrap($where['column'], false, $builder), $subresult->getVariable()), [new CallClause($sub)]];
     }
 
     private function whereExists(WhereContext $context): BooleanType
@@ -1151,10 +1129,12 @@ final class DSLGrammar
         }
         $this->translateFrom($builder, $query, $context);
 
-        $query->addClause($this->compileWheres($builder, false, $query));
+        $query->addClause($this->compileWheres($builder, false, $query, $context));
         $this->translateHavings($builder, $builder->havings ?? [], $query);
 
         $this->translateGroups($builder, $builder->groups ?? [], $query);
+
+        $this->storeBindingsInBuilder($context, $builder);
     }
 
     private function decorateUpdateAndRemoveExpressions(array $values, Query $dsl): void
@@ -1282,5 +1262,17 @@ final class DSLGrammar
         $where = new WhereClause();
         $where->setExpression($expression);
         $dsl->addClause($where);
+    }
+
+    /**
+     * @param DSLContext $context
+     * @param Builder $builder
+     * @return void
+     */
+    private function storeBindingsInBuilder(DSLContext $context, Builder $builder): void
+    {
+        foreach ($context->getParameters() as $parameter => $value) {
+            $builder->addBinding([$parameter => $value]);
+        }
     }
 }

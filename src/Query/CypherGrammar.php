@@ -178,9 +178,9 @@ class CypherGrammar extends Grammar
         return implode(', ', array_map([$this, 'wrap'], $columns));
     }
 
-    public function parameterize(array $values): string
+    public function parameterize(array $values, ?DSLContext $context = null): string
     {
-        return implode(', ', array_map(static fn (Parameter $x) => $x->toQuery(), $this->dsl->parameterize($values)));
+        return implode(', ', array_map(static fn (Parameter $x) => $x->toQuery(), $this->dsl->parameterize($values, $context)));
     }
 
     /**

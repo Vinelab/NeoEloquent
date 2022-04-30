@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -59,6 +60,19 @@ class GrammarTest extends TestCase
     public function testParametrize(): void
     {
         $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c']));
+    }
+
+    public function testParametrizeRepeat(): void
+    {
+        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c']));
+        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c']));
+    }
+
+    public function testParametrizeRepeatWithContext(): void
+    {
+        $context = new DSLContext();
+        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c'], $context));
+        $this->assertEquals('$param3, $param4, $param5', $this->grammar->parameterize(['a', 'b', 'c'], $context));
     }
 
     public function testTable(): void
@@ -128,7 +142,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                '/MATCH (Node:Node) WHERE Node.x < $param0 RETURN *',
+                'MATCH (Node:Node) WHERE Node.x < $param0 RETURN *',
                 ['param0' => 'y'],
                 true
             );
@@ -219,7 +233,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                $this->matchesRegularExpression('/MATCH \(Node:Node\) WHERE Node\.x = Node\.y RETURN \*/'),
+                'MATCH (Node:Node) CALL { WITH Node MATCH (Y:Y) WHERE Node.i = Y.i RETURN Y.i, Y.i AS sub0 LIMIT 1 } CALL { WITH Node MATCH (ZZ:ZZ) WHERE Node.i = ZZ.har RETURN i AS har LIMIT 1 } CALL { WITH Node MATCH (Node:Node) WHERE Node.i = $param0 RETURN Node.i, Node.i AS sub2 LIMIT 1 } WHERE (Node.x = sub0) AND ((Node.i = har) OR (Node.j = sub2)) RETURN *',
                 [],
                 true
             );
@@ -227,13 +241,13 @@ class GrammarTest extends TestCase
         $this->table->where('x', '=', function (Builder $query) {
             $query->from('Y')
                 ->select('i')
-                ->whereColumn('Test.i', 'i')
+                ->whereColumn('Node.i', 'i')
                 ->limit(1);
         })->whereNested(function (Builder $query) {
             $query->where('i', function (Builder $query) {
                 $query->from('ZZ')
                     ->select('i as har')
-                    ->whereColumn('Test.i', 'har')
+                    ->whereColumn('Node.i', 'har')
                     ->limit(1);
             })->orWhere('j', function (Builder $query) {
                 $query->select('i')
@@ -248,7 +262,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WHERE Node.x = $param0 OR (Node.xy = $param1 OR Node.z = $param2 AND Node.xx = $param3 RETURN *',
+                'MATCH (Node:Node) WHERE Node.x = $param0 OR (Node.xy = $param1 OR Node.z = $param2) AND Node.xx = $param3 RETURN *',
                 [
                     'param0' => 'y',
                     'param1' => 'y',
