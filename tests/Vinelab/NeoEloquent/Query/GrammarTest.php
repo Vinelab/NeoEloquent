@@ -7,6 +7,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
+use Vinelab\NeoEloquent\DSLContext;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
@@ -45,13 +46,19 @@ class GrammarTest extends TestCase
 
     public function testGettingIdQueryParameter(): void
     {
-        $p = $this->grammar->parameter('id');
-        $this->assertStringStartsWith('$param', $p);
+        $context = new DSLContext();
+        $p = $this->grammar->parameter('id', $context);
+        $this->assertEquals('$param0', $p);
 
-        $p1 = $this->grammar->parameter('id');
-        $this->assertStringStartsWith('$param', $p);
+        $p1 = $this->grammar->parameter('id', $context);
+        $this->assertEquals('$param1', $p1);
 
         $this->assertNotEquals($p, $p1);
+    }
+
+    public function testParametrize(): void
+    {
+        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c']));
     }
 
     public function testTable(): void

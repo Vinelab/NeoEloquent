@@ -210,6 +210,7 @@ final class DSLGrammar
      */
     public function parameterize(array $values, ?DSLContext $context = null): array
     {
+        $context ??= new DSLContext();
         return array_map(fn ($x) => $this->parameter($x, $context), $values);
     }
 
@@ -286,8 +287,9 @@ final class DSLGrammar
     public function compileSelect(Builder $builder): Query
     {
         $dsl = Query::new();
+        $context = new DSLContext();
 
-        $this->translateMatch($builder, $dsl);
+        $this->translateMatch($builder, $dsl, $context);
 
 
         if ($builder->aggregate) {
@@ -378,16 +380,16 @@ final class DSLGrammar
     /**
      * TODO - can HAVING and WHERE be treated as the same in Neo4J?
      *
-     * @param Builder $query
+     * @param Builder $builder
      * @return WhereClause
      */
-    public function compileWheres(Builder $query, bool $surroundParentheses, Query $dsl): WhereClause
+    public function compileWheres(Builder $builder, bool $surroundParentheses, Query $query): WhereClause
     {
         /** @var BooleanType $expression */
         $expression = null;
-        foreach ($query->wheres as $i => $where) {
+        foreach ($builder->wheres as $i => $where) {
             if ($where['type'] === 'Sub') {
-                $this->whereSub($query, $where, $dsl);
+                $this->whereSub($builder, $where, $query);
 
                 continue;
             }
@@ -396,13 +398,13 @@ final class DSLGrammar
                 throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
             }
 
-            $dslWhere = $this->wheres[$where['type']]($query, $where);
+            $dslWhere = $this->wheres[$where['type']]($builder, $where);
             if ($expression === null) {
                 $expression = $dslWhere;
             } elseif (strtolower($where['boolean']) === 'and') {
-                $expression = $expression->and($dslWhere, (count($query->wheres) - 1) === $i && $surroundParentheses);
+                $expression = $expression->and($dslWhere, (count($builder->wheres) - 1) === $i && $surroundParentheses);
             } else {
-                $expression = $expression->or($dslWhere, (count($query->wheres) - 1) === $i && $surroundParentheses);
+                $expression = $expression->or($dslWhere, (count($builder->wheres) - 1) === $i && $surroundParentheses);
             }
         }
 
@@ -620,20 +622,37 @@ final class DSLGrammar
         return OperatorRepository::fromSymbol($where['operator'], $this->wrap($where['column']), $subresult->getVariable());
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereExists(Builder $query, array $where): BooleanType
+    private function whereExists(WhereContext $context): BooleanType
     {
-        throw new BadMethodCallException('Exists on queries are not supported at the moment');
+        /** @var Alias $subresult */
+        $subresult = null;
+        // Calls can be added subsequently without a WITH in between. Since this is the only comparator in
+        // the WHERE series that requires a preceding clause, we don't need to worry about WITH statements between
+        // possible multiple whereSubs in the same query depth.
+        $context->getQuery()->call(function (Query $sub) use ($context, &$subresult) {
+            $select = $this->compileSelect($context->getWhere()['query']);
+
+            $sub->with($context->getContext()->getVariables());
+            foreach ($select->getClauses() as $clause) {
+                if ($clause instanceof ReturnClause) {
+                    $collect = Query::function()::raw('collect', [$clause->getColumns()[0]]);
+                    $subresult = $context->getContext()->createSubResult($collect);
+
+                    $clause = new ReturnClause();
+                    $clause->addColumn($subresult);
+                }
+                $sub->addClause($clause);
+            }
+        });
+
+        $where = $context->getWhere();
+
+        return $subresult->getVariable()->property('length')->equals($this->wrap($where['column']));
     }
 
-    /**
-     * @param array $where
-     */
-    private function whereNotExists(Builder $query, array $where): BooleanType
+    private function whereNotExists(WhereContext $context): BooleanType
     {
-        return new Not($this->whereExists($query, $where));
+        return new Not($this->whereExists($context));
     }
 
     /**
@@ -1121,7 +1140,7 @@ final class DSLGrammar
         return $expression->getValue();
     }
 
-    private function translateMatch(Builder $builder, Query $query): void
+    private function translateMatch(Builder $builder, Query $query, DSLContext $context): void
     {
         if (($builder->unions || $builder->havings) && $builder->aggregate) {
             $this->translateUnionAggregate($builder, $query);
@@ -1130,9 +1149,9 @@ final class DSLGrammar
         if ($builder->unions) {
             $this->translateUnions($builder, $builder->unions, $query);
         }
-        $this->translateFrom($builder, $query);
+        $this->translateFrom($builder, $query, $context);
 
-        $query->addClause($this->compileWheres($builder));
+        $query->addClause($this->compileWheres($builder, false, $query));
         $this->translateHavings($builder, $builder->havings ?? [], $query);
 
         $this->translateGroups($builder, $builder->groups ?? [], $query);

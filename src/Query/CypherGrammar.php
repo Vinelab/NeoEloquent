@@ -5,7 +5,9 @@ namespace Vinelab\NeoEloquent\Query;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
+use Vinelab\NeoEloquent\DSLContext;
 use Vinelab\NeoEloquent\DSLGrammar;
+use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
 use function array_map;
@@ -178,15 +180,15 @@ class CypherGrammar extends Grammar
 
     public function parameterize(array $values): string
     {
-        return implode(', ', array_map([$this, 'getValue'], $this->dsl->parameterize($values)));
+        return implode(', ', array_map(static fn (Parameter $x) => $x->toQuery(), $this->dsl->parameterize($values)));
     }
 
     /**
      * @param  mixed  $value
      */
-    public function parameter($value): string
+    public function parameter($value, ?DSLContext $context = null): string
     {
-        return $this->dsl->parameter($value)->toQuery();
+        return $this->dsl->parameter($value, $context)->toQuery();
     }
 
     /**
