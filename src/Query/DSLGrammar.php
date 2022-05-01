@@ -17,6 +17,7 @@ use Vinelab\NeoEloquent\OperatorRepository;
 use Vinelab\NeoEloquent\Query\Wheres\Where;
 use Vinelab\NeoEloquent\WhereContext;
 use WikibaseSolutions\CypherDSL\Alias;
+use WikibaseSolutions\CypherDSL\Assignment;
 use WikibaseSolutions\CypherDSL\Clauses\CallClause;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\MergeClause;
@@ -38,6 +39,7 @@ use WikibaseSolutions\CypherDSL\Not;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Patterns\Node;
 use WikibaseSolutions\CypherDSL\Property;
+use WikibaseSolutions\CypherDSL\PropertyMap;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
 use WikibaseSolutions\CypherDSL\RawExpression;
@@ -957,15 +959,7 @@ final class DSLGrammar
      */
     public function compileInsertGetId(Builder $query, array $values, string $sequence): Query
     {
-        $node = $this->wrapTable($query->from);
-
-        $tbr = Query::new()->create($node);
-
-        $context = new DSLContext();
-
-        $this->decorateUpdateAndRemoveExpressions($values, $tbr, $node, $context);
-
-        return $tbr->returning(['id' => $node->property('id')]);
+        throw new BadMethodCallException('Neo4j driver does not support last insert id functionality');
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): Query
@@ -987,29 +981,38 @@ final class DSLGrammar
         return $dsl;
     }
 
-    public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update): Query
+    public function compileUpsert(Builder $builder, array $values, array $uniqueBy, array $update): Query
     {
-        $node = $this->initialiseNode($query);
-        $createKeys = array_values(array_diff($this->valuesToKeys($values), $uniqueBy, $update));
+        $query = Query::new();
 
-        $mergeExpression = $this->buildMergeExpression($uniqueBy, $node, $query);
-        $onMatch = $this->buildSetClause($update, $node);
-        $onCreate = $this->buildSetClause($createKeys, $node);
+        $paramCount = 0;
+        foreach ($values as $i => $valueRow) {
+            $node = $this->wrapTable($builder->from)->named($builder->from . $i);
+            $keyMap = [];
 
-        $merge = new MergeClause();
-        $merge->setPattern($mergeExpression);
+            $onCreate = new SetClause();
+            foreach ($valueRow as $key => $value) {
+                $keyMap[$key] = Query::parameter('param'.$paramCount);
+                $onCreate->addAssignment(new Assignment($node->getName()->property($key), $keyMap[$key]));
+                ++$paramCount;
+            }
 
-        if (count($onMatch->getExpressions()) > 0) {
-            $merge->setOnMatch($onMatch);
+            foreach ($uniqueBy as $uniqueAttribute) {
+                $node->withProperty($uniqueAttribute, $keyMap[$uniqueAttribute]);
+            }
+
+            $onUpdate = null;
+            if (!empty($update)) {
+                $onUpdate = new SetClause();
+                foreach ($update as $key) {
+                    $onUpdate->addAssignment(new Assignment($node->getName()->property($key), $keyMap[$key]));
+                }
+            }
+
+            $query->merge($node, $onCreate, $onUpdate);
         }
 
-        if (count($onCreate->getExpressions()) > 0) {
-            $merge->setOnCreate($onCreate);
-        }
-
-        return Query::new()
-            ->raw('UNWIND', '$valueSets as values')
-            ->addClause($merge);
+        return $query;
     }
 
     /**

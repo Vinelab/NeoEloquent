@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Tests\Query;
 
+use BadMethodCallException;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -47,8 +48,8 @@ class BuilderTest extends TestCase
             'id' => 69
         ];
 
-        $this->assertEquals(69, $this->builder->insertGetId($values));
-        $this->assertEquals($values, $this->builder->from('Hero')->first());
+        $this->expectException(BadMethodCallException::class);
+        $this->builder->insertGetId($values);
     }
 
     public function testBatchInsert(): void
@@ -83,18 +84,18 @@ class BuilderTest extends TestCase
         ], ['a'], ['c']);
 
         self::assertEquals([
-            ['a' => 'aa', 'b' => 'bb'],
-            ['a' => 'aaa', 'b' => 'bbb'],
+            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
+            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
         ], $this->builder->get()->toArray());
 
         $this->builder->from('Hero')->upsert([
-            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
-            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
+            ['a' => 'aa', 'b' => 'bb', 'c' => 'cdc'],
+            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
         ], ['a'], ['c']);
 
         self::assertEquals([
-            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
-            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
+            ['a' => 'aa', 'b' => 'bb', 'c' => 'cdc'],
+            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
         ], $this->builder->get()->toArray());
     }
 

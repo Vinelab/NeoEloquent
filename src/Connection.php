@@ -160,8 +160,6 @@ final class Connection extends \Illuminate\Database\Connection
         return $this->usesLegacyIds;
     }
 
-
-
     /**
      * Prepare the query bindings for execution.
      *

@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent;
 use Illuminate\Database\Query\Builder;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
 use function is_iterable;
+use function is_numeric;
 
 class Processor extends \Illuminate\Database\Query\Processors\Processor
 {
@@ -13,6 +14,15 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         $tbr = parent::processSelect($query, $results);
 
         return $this->processRecursive($tbr);
+    }
+
+    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
+    {
+        $query->getConnection()->insert($sql, $values);
+
+        $id = $query->getConnection()->getPdo()->lastInsertId($sequence);
+
+        return is_numeric($id) ? (int) $id : $id;
     }
 
     /**
