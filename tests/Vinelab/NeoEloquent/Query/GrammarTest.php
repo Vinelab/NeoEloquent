@@ -257,6 +257,42 @@ class GrammarTest extends TestCase
         })->get();
     }
 
+    public function testUnionSimple(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WHERE Node.x = $param0 RETURN * UNION MATCH (X:X) WHERE X.y = $param1 RETURN *',
+                ['param0' => 'y', 'param1' => 'z'],
+                true
+            );
+
+        $this->table->where('x', 'y')->union(function (Builder $query) {
+            $query->from('X')
+                ->where('y', 'z');
+        })->get();
+    }
+
+    public function testUnionSimpleComplexAll(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WHERE Node.x = y RETURN * UNION MATCH (x:X) WHERE Node.y = z RETURN *',
+                [],
+                true
+            );
+
+        $query = $this->table->where('x', 'y')->union(function (Builder $query) {
+            $query->from('X')
+                ->where('y', 'z');
+        }, true);
+
+        $query->unionOrders = [];
+
+        $query->get();
+    }
+
     public function testWhereNested(): void
     {
         $this->connection->expects($this->once())

@@ -285,33 +285,38 @@ final class DSLGrammar
         return $this;
     }
 
-    public function compileSelect(Builder $builder): Query
+    public function compileSelect(Builder $builder, ?DSLContext $context = null): Query
     {
-        $dsl = Query::new();
-        $context = new DSLContext();
+        $context ??= new DSLContext();
 
-        $this->translateMatch($builder, $dsl, $context);
+        if ($builder->unions) {
+            return $this->translateUnions($builder, $builder->unions, $context);
+        }
+
+        $query = Query::new();
+
+        $this->translateMatch($builder, $query, $context);
 
 
         if ($builder->aggregate) {
-            $this->compileAggregate($builder, $dsl);
+            $this->compileAggregate($builder, $query);
         } else {
-            $this->translateColumns($builder, $dsl);
+            $this->translateColumns($builder, $query);
 
             if ($builder->orders) {
-                $this->translateOrders($builder, $dsl);
+                $this->translateOrders($builder, $query);
             }
 
             if ($builder->limit) {
-                $this->translateLimit($builder, $dsl);
+                $this->translateLimit($builder, $query);
             }
 
             if ($builder->offset) {
-                $this->translateOffset($builder, $dsl);
+                $this->translateOffset($builder, $query);
             }
         }
 
-        return $dsl;
+        return $query;
     }
 
     private function compileAggregate(Builder $query, Query $dsl): void
@@ -345,7 +350,7 @@ final class DSLGrammar
 
         $return->setDistinct($query->distinct);
 
-        foreach ($this->wrapColumns($query, $query->columns) as $column) {
+        foreach ($this->wrapColumns($query, $query->columns ?? ['*']) as $column) {
             $return->addColumn($column);
         }
 
@@ -840,27 +845,45 @@ final class DSLGrammar
     /**
      * Compile the "union" queries attached to the main query.
      */
-    private function translateUnions(Builder $query, array $unions, Query $dsl): void
+    private function translateUnions(Builder $builder, array $unions, DSLContext $context): Query
     {
-//        $sql = '';
-//
-//        foreach ($query->unions as $union) {
-//            $sql .= $this->compileUnion($union);
-//        }
-//
-//        if (! empty($query->unionOrders)) {
-//            $sql .= ' '.$this->compileOrders($query, $query->unionOrders);
-//        }
-//
-//        if (isset($query->unionLimit)) {
-//            $sql .= ' '.$this->compileLimit($query, $query->unionLimit);
-//        }
-//
-//        if (isset($query->unionOffset)) {
-//            $sql .= ' '.$this->compileOffset($query, $query->unionOffset);
-//        }
-//
-//        return ltrim($sql);
+        $builder->unions = [];
+
+        $query = $this->compileSelect($builder, $context);
+        foreach ($unions as $union) {
+           $toUnionize = $this->compileSelect($union['query'], $context);
+           $query->union($toUnionize, (bool) ($union['all'] ?? false));
+        }
+
+        $builder->unions = $unions;
+
+        if (! empty($builder->unionOrders)) {
+            $orders = $builder->orders;
+            $builder->orders = $builder->unionOrders;
+            $this->translateOrders($builder, $query);
+
+            $builder->orders = $orders;
+        }
+
+        if (isset($builder->unionLimit)) {
+            $limit = $builder->limit;
+            $builder->limit = $builder->unionLimit;
+            $this->translateLimit($builder, $query);
+
+            $builder->limit = $limit;
+        }
+
+        if (isset($builder->unionOffset)) {
+            $offset = $builder->offset;
+            $builder->offset = $builder->unionOffset;
+            $this->translateOffset($builder, $query);
+
+            $builder->offset = $offset;
+        }
+
+        $this->storeBindingsInBuilder($context, $builder);
+
+        return $query;
     }
 
     /**
@@ -869,8 +892,13 @@ final class DSLGrammar
      * @param array $union
      * @return string
      */
-    private function compileUnion(array $union): string
+    private function compileUnion(array $union): array
     {
+        if ($union['all'] ?? false) {
+
+        } else {
+
+        }
         $conjunction = $union['all'] ? ' union all ' : ' union ';
 
         return $conjunction . $this->wrapUnion($union['query']->toSql());
@@ -1122,10 +1150,6 @@ final class DSLGrammar
     {
         if (($builder->unions || $builder->havings) && $builder->aggregate) {
             $this->translateUnionAggregate($builder, $query);
-        }
-
-        if ($builder->unions) {
-            $this->translateUnions($builder, $builder->unions, $query);
         }
         $this->translateFrom($builder, $query, $context);
 
