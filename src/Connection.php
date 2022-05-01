@@ -17,6 +17,7 @@ use LogicException;
 use Illuminate\Database\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
+use function array_filter;
 use function array_key_exists;
 use function get_debug_type;
 use function is_bool;
@@ -170,6 +171,8 @@ final class Connection extends \Illuminate\Database\Connection
     {
         $grammar = $this->getQueryGrammar();
         $tbr = [];
+
+        $bindings = array_values(array_filter($bindings, static fn ($x) => ! $x instanceof LabelAction));
 
         foreach ($bindings as $key => $value) {
             // We need to transform all instances of DateTimeInterface into the actual

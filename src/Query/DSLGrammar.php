@@ -1016,18 +1016,6 @@ final class DSLGrammar
     }
 
     /**
-     * Prepare the bindings for an update statement.
-     *
-     * @param array $bindings
-     * @param array $values
-     * @return array
-     */
-    public function prepareBindingsForUpdate(array $bindings, array $values): array
-    {
-        return array_merge($this->valuesToKeys($bindings), $this->valuesToKeys($values));
-    }
-
-    /**
      * Compile a delete statement into SQL.
      *
      * @param Builder $query
