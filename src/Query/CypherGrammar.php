@@ -6,7 +6,6 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\DSLContext;
-use Vinelab\NeoEloquent\DSLGrammar;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
@@ -66,7 +65,7 @@ class CypherGrammar extends Grammar
 
     public function compileInsert(Builder $query, array $values): string
     {
-        return $this->dsl->compileInsertOrIgnore($query, $values)->toQuery();
+        return $this->dsl->compileInsert($query, $values)->toQuery();
     }
 
     public function compileInsertOrIgnore(Builder $query, array $values): string
@@ -76,7 +75,7 @@ class CypherGrammar extends Grammar
 
     public function compileInsertGetId(Builder $query, $values, $sequence): string
     {
-        return $this->dsl->compileInsertGetId($query, $values, $sequence)->toQuery();
+        return $this->dsl->compileInsertGetId($query, $values ?? [], $sequence ?? '')->toQuery();
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): string

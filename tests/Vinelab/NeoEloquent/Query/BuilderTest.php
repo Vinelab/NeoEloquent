@@ -2,11 +2,11 @@
 
 namespace Vinelab\NeoEloquent\Tests\Query;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\LabelAction;
-use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use function array_values;
 

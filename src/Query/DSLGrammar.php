@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent;
+namespace Vinelab\NeoEloquent\Query;
 
 use BadMethodCallException;
 use Closure;
@@ -11,7 +11,11 @@ use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use RuntimeException;
+use Vinelab\NeoEloquent\DSLContext;
+use Vinelab\NeoEloquent\LabelAction;
+use Vinelab\NeoEloquent\OperatorRepository;
 use Vinelab\NeoEloquent\Query\Wheres\Where;
+use Vinelab\NeoEloquent\WhereContext;
 use WikibaseSolutions\CypherDSL\Alias;
 use WikibaseSolutions\CypherDSL\Clauses\CallClause;
 use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
@@ -870,38 +874,7 @@ final class DSLGrammar
             $this->translateOffset($builder, $query, (int)$builder->unionOffset);
         }
 
-        $this->storeBindingsInBuilder($context, $builder);
-
         return $query;
-    }
-
-    /**
-     * Compile a single union statement.
-     *
-     * @param array $union
-     * @return string
-     */
-    private function compileUnion(array $union): array
-    {
-        if ($union['all'] ?? false) {
-
-        } else {
-
-        }
-        $conjunction = $union['all'] ? ' union all ' : ' union ';
-
-        return $conjunction . $this->wrapUnion($union['query']->toSql());
-    }
-
-    /**
-     * Wrap a union subquery in parentheses.
-     *
-     * @param string $sql
-     * @return string
-     */
-    private function wrapUnion(string $sql): string
-    {
-        return '(' . $sql . ')';
     }
 
     /**
@@ -943,31 +916,26 @@ final class DSLGrammar
         return $dsl;
     }
 
-    public function compileInsert(Builder $query, array $values): Query
+    public function compileInsert(Builder $builder, array $values): Query
     {
-        $node = $this->initialiseNode($query);
+        $query = Query::new();
 
-        $keys = Collection::make($values)
-            ->map(static fn(array $value) => array_keys($value))
-            ->flatten()
-            ->filter(static fn($x) => is_string($x))
-            ->unique()
-            ->toArray();
+        $i = 0;
+        foreach ($values as $rowNumber => $keys) {
+            $node = $this->wrapTable($builder->from)->named($builder->from . $rowNumber);
+            $query->create($node);
 
-        $tbr = Query::new()
-            ->raw('UNWIND', '$valueSets as values')
-            ->create($node);
+            $sets = [];
+            foreach ($keys as $key => $value) {
+                $sets[] = $node->property($key)->assign(Query::parameter('param'.$i));
+            }
 
-        $sets = [];
-        foreach ($keys as $key) {
-            $sets[] = $node->property($key)->assign(new RawExpression('values.' . Node::escape($key)));
+            $query->set($sets);
+
+            ++$i;
         }
 
-        if (count($sets) > 0) {
-            $tbr->set($sets);
-        }
-
-        return $tbr;
+        return $query;
     }
 
     /**
@@ -975,13 +943,12 @@ final class DSLGrammar
      *
      * @param Builder $query
      * @param array $values
-     * @return string
      *
      * @throws RuntimeException
      */
     public function compileInsertOrIgnore(Builder $query, array $values): Query
     {
-        throw new BadMethodCallException('This database engine does not support inserting while ignoring errors.');
+        return $this->compileInsert($query, $values);
     }
 
     /**
@@ -990,11 +957,13 @@ final class DSLGrammar
      */
     public function compileInsertGetId(Builder $query, array $values, string $sequence): Query
     {
-        $node = $this->initialiseNode($query, $query->from);
+        $node = $this->wrapTable($query->from);
 
         $tbr = Query::new()->create($node);
 
-        $this->decorateUpdateAndRemoveExpressions($values, $tbr);
+        $context = new DSLContext();
+
+        $this->decorateUpdateAndRemoveExpressions($values, $tbr, $node, $context);
 
         return $tbr->returning(['id' => $node->property('id')]);
     }
@@ -1008,9 +977,12 @@ final class DSLGrammar
     {
         $dsl = Query::new();
 
-        $this->translateMatch($query, $dsl);
+        $context = new DSLContext();
+        $node = $this->wrapTable($query->from);
 
-        $this->decorateUpdateAndRemoveExpressions($values, $dsl);
+        $this->translateMatch($query, $dsl, $context);
+
+        $this->decorateUpdateAndRemoveExpressions($values, $dsl, $node, $context);
 
         return $dsl;
     }
@@ -1146,13 +1118,10 @@ final class DSLGrammar
         $this->translateHavings($builder, $builder->havings ?? [], $query);
 
         $this->translateGroups($builder, $builder->groups ?? [], $query);
-
-        $this->storeBindingsInBuilder($context, $builder);
     }
 
-    private function decorateUpdateAndRemoveExpressions(array $values, Query $dsl): void
+    private function decorateUpdateAndRemoveExpressions(array $values, Query $dsl, Node $node, DSLContext $context): void
     {
-        $node = $this->getMatchedNode();
         $expressions = [];
         $removeExpressions = [];
 
@@ -1166,7 +1135,7 @@ final class DSLGrammar
                     $removeExpressions[] = $labelExpression;
                 }
             } else {
-                $expressions[] = $node->property($key)->assign(Query::parameter($key));
+                $expressions[] = $node->property($key)->assign($context->addParameter($value));
             }
         }
 
@@ -1225,7 +1194,7 @@ final class DSLGrammar
     /**
      * @param list<string>|string $columns
      *
-     * @return list<AnyType>
+     * @return PropertyType
      */
     private function wrapColumns(Builder $query, $columns): array
     {
@@ -1238,7 +1207,7 @@ final class DSLGrammar
     }
 
     /**
-     * @param list<AnyType> $columns
+     * @param PropertyType $columns
      */
     private function buildWithClause(Builder $query, array $columns, Query $dsl): void
     {
@@ -1256,7 +1225,7 @@ final class DSLGrammar
     }
 
     /**
-     * @param list<PropertyType> $columns
+     * @param PropertyType $columns
      * @param Query $dsl
      * @return void
      */
@@ -1284,8 +1253,5 @@ final class DSLGrammar
      */
     private function storeBindingsInBuilder(DSLContext $context, Builder $builder): void
     {
-        foreach ($context->getParameters() as $parameter => $value) {
-            $builder->addBinding([$parameter => $value]);
-        }
     }
 }

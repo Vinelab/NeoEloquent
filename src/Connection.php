@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent;
 use BadMethodCallException;
 use Bolt\error\ConnectException;
 use Closure;
+use DateTimeInterface;
 use Generator;
 use Illuminate\Database\QueryException;
 use Laudis\Neo4j\Contracts\SessionInterface;
@@ -13,11 +14,12 @@ use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
 use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Types\CypherMap;
 use LogicException;
-use Vinelab\NeoEloquent\Query\Builder;
+use Illuminate\Database\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 use function array_key_exists;
 use function get_debug_type;
+use function is_bool;
 use function is_string;
 
 final class Connection extends \Illuminate\Database\Connection
@@ -159,22 +161,31 @@ final class Connection extends \Illuminate\Database\Connection
     }
 
 
+
+    /**
+     * Prepare the query bindings for execution.
+     *
+     * @param  array  $bindings
+     * @return array
+     */
     public function prepareBindings(array $bindings): array
     {
-        if ($this->usesLegacyIds && array_key_exists('id', $bindings)) {
-            $id = $bindings['id'];
-            unset($bindings['id']);
-            $bindings['idn'] = $id;
-        }
-
+        $grammar = $this->getQueryGrammar();
         $tbr = [];
-        foreach ($bindings as $key => $binding) {
-            if (is_string($key)) {
-                $tbr[$key] = $binding;
+
+        foreach ($bindings as $key => $value) {
+            // We need to transform all instances of DateTimeInterface into the actual
+            // date string. Each query grammar maintains its own date string format
+            // so we'll just ask the grammar for the format to get from the date.
+            if ($value instanceof DateTimeInterface) {
+                $bindings[$key] = $value->format($grammar->getDateFormat());
+            } elseif (is_bool($value)) {
+                $bindings[$key] = (int) $value;
             }
+
+            $tbr['param'.$key] = $bindings[$key];
         }
 
-        // The preparation is already done by the driver
         return $tbr;
     }
 

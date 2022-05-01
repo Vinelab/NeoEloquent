@@ -130,7 +130,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x = $param0 RETURN *',
-                ['param0' => 'y'],
+                ['y'],
                 true
             );
 
@@ -143,7 +143,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x < $param0 RETURN *',
-                ['param0' => 'y'],
+                ['y'],
                 true
             );
 
@@ -156,7 +156,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x < time($param0) RETURN *',
-                ['param0' => '20:00'],
+                ['20:00'],
                 true
             );
 
@@ -169,7 +169,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x = date($param0) RETURN *',
-                ['param0' => '2020-01-02'],
+                ['2020-01-02'],
                 true
             );
 
@@ -195,7 +195,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x.month = $param0 RETURN *',
-                ['param0' => '05'],
+                ['05'],
                 true
             );
 
@@ -208,7 +208,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x.day = $param0 RETURN *',
-                ['param0' => 5],
+                [5],
                 true
             );
 
@@ -234,7 +234,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) CALL { WITH Node MATCH (Y:Y) WHERE Node.i = Y.i RETURN Y.i, Y.i AS sub0 LIMIT 1 } CALL { WITH Node MATCH (ZZ:ZZ) WHERE Node.i = ZZ.har RETURN i AS har LIMIT 1 } CALL { WITH Node MATCH (Node:Node) WHERE Node.i = $param0 RETURN Node.i, Node.i AS sub2 LIMIT 1 } WHERE (Node.x = sub0) AND ((Node.i = har) OR (Node.j = sub2)) RETURN *',
-                [],
+                ['i', 'i'],
                 true
             );
 
@@ -263,7 +263,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x = $param0 RETURN * UNION MATCH (X:X) WHERE X.y = $param1 RETURN *',
-                ['param0' => 'y', 'param1' => 'z'],
+                ['y', 'z'],
                 true
             );
 
@@ -279,7 +279,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x = $param0 RETURN * UNION ALL MATCH (X:X) WHERE X.y = $param1 RETURN * ORDER BY Node.x, X.y LIMIT 10 SKIP 5',
-                ['param0' => 'y', 'param1' => 'z'],
+                ['y', 'z'],
                 true
             );
 
@@ -300,10 +300,12 @@ class GrammarTest extends TestCase
             ->with(
                 'MATCH (Node:Node) WHERE Node.x = $param0 OR (Node.xy = $param1 OR Node.z = $param2) AND Node.xx = $param3 RETURN *',
                 [
-                    'param0' => 'y',
-                    'param1' => 'y',
-                    'param2' => 'x',
-                    'param3' => 'zz'
+                    'y',
+                    'y',
+                    'x',
+                    'zz',
+                    'y',
+                    'x'
                 ],
                 true
             );
