@@ -18,7 +18,7 @@ class GrammarTest extends TestCase
      * @var CypherGrammar
      */
     private CypherGrammar $grammar;
-    /** @var Connection&MockObject  */
+    /** @var Connection&MockObject */
     private Connection $connection;
     private Builder $table;
 
@@ -278,19 +278,19 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WHERE Node.x = y RETURN * UNION MATCH (x:X) WHERE Node.y = z RETURN *',
-                [],
+                'MATCH (Node:Node) WHERE Node.x = $param0 RETURN * UNION ALL MATCH (X:X) WHERE X.y = $param1 RETURN * ORDER BY Node.x, X.y LIMIT 10 SKIP 5',
+                ['param0' => 'y', 'param1' => 'z'],
                 true
             );
 
-        $query = $this->table->where('x', 'y')->union(function (Builder $query) {
+        $this->table->where('x', 'y')->union(function (Builder $query) {
             $query->from('X')
                 ->where('y', 'z');
-        }, true);
-
-        $query->unionOrders = [];
-
-        $query->get();
+        }, true)->orderBy('x')
+            ->orderBy('X.y')
+            ->limit(10)
+            ->offset(5)
+            ->get();
     }
 
     public function testWhereNested(): void

@@ -212,7 +212,7 @@ final class DSLGrammar
     public function parameterize(array $values, ?DSLContext $context = null): array
     {
         $context ??= new DSLContext();
-        return array_map(fn ($x) => $this->parameter($x, $context), $values);
+        return array_map(fn($x) => $this->parameter($x, $context), $values);
     }
 
     /**
@@ -795,11 +795,12 @@ final class DSLGrammar
     /**
      * Compile the "order by" portions of the query.
      */
-    private function translateOrders(Builder $query, Query $dsl): void
+    private function translateOrders(Builder $query, Query $dsl, array $orders = null): void
     {
         $orderBy = new OrderByClause();
-        $columns = $this->wrapColumns($query, Arr::pluck($query->orders, 'column'));
-        $dirs = Arr::pluck($query->orders, 'direction');
+        $orders ??= $query->orders;
+        $columns = $this->wrapColumns($query, Arr::pluck($orders, 'column'));
+        $dirs = Arr::pluck($orders, 'direction');
         foreach ($columns as $i => $column) {
             $orderBy->addProperty($column, $dirs[$i] === 'asc' ? null : 'desc');
         }
@@ -829,17 +830,17 @@ final class DSLGrammar
     /**
      * Compile the "limit" portions of the query.
      */
-    private function translateLimit(Builder $query, Query $dsl): void
+    private function translateLimit(Builder $query, Query $dsl, int $limit = null): void
     {
-        $dsl->limit(Query::literal()::decimal((int)$query->limit));
+        $dsl->limit(Query::literal()::decimal($limit ?? (int)$query->limit));
     }
 
     /**
      * Compile the "offset" portions of the query.
      */
-    private function translateOffset(Builder $query, Query $dsl): void
+    private function translateOffset(Builder $query, Query $dsl, int $offset = null): void
     {
-        $dsl->limit(Query::literal()::decimal((int)$query->offset));
+        $dsl->skip(Query::literal()::decimal($offset ?? (int)$query->offset));
     }
 
     /**
@@ -851,34 +852,22 @@ final class DSLGrammar
 
         $query = $this->compileSelect($builder, $context);
         foreach ($unions as $union) {
-           $toUnionize = $this->compileSelect($union['query'], $context);
-           $query->union($toUnionize, (bool) ($union['all'] ?? false));
+            $toUnionize = $this->compileSelect($union['query'], $context);
+            $query->union($toUnionize, (bool)($union['all'] ?? false));
         }
 
         $builder->unions = $unions;
 
-        if (! empty($builder->unionOrders)) {
-            $orders = $builder->orders;
-            $builder->orders = $builder->unionOrders;
-            $this->translateOrders($builder, $query);
-
-            $builder->orders = $orders;
+        if (!empty($builder->unionOrders)) {
+            $this->translateOrders($builder, $query, $builder->unionOrders);
         }
 
         if (isset($builder->unionLimit)) {
-            $limit = $builder->limit;
-            $builder->limit = $builder->unionLimit;
-            $this->translateLimit($builder, $query);
-
-            $builder->limit = $limit;
+            $this->translateLimit($builder, $query, (int)$builder->unionLimit);
         }
 
         if (isset($builder->unionOffset)) {
-            $offset = $builder->offset;
-            $builder->offset = $builder->unionOffset;
-            $this->translateOffset($builder, $query);
-
-            $builder->offset = $offset;
+            $this->translateOffset($builder, $query, (int)$builder->unionOffset);
         }
 
         $this->storeBindingsInBuilder($context, $builder);
