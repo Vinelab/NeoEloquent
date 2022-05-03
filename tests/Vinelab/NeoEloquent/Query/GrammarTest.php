@@ -315,6 +315,19 @@ class GrammarTest extends TestCase
         }, 'or')->where('xx', 'zz')->get();
     }
 
+    public function testWhereRowValues(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WHERE [Node.x, Node.y, Node.y] = [$param0, $param1, $param2] RETURN *',
+                [0, 2, 3],
+                true
+            );
+
+        $this->table->whereRowValues(['x', 'y', 'y'], '=', [0, 2, 3])->get();
+    }
+
     public function testSimpleCrossJoin(): void
     {
         $this->connection->expects($this->once())

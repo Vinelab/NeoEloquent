@@ -203,9 +203,9 @@ final class DSLGrammar
      *
      * @return array<Variable|Alias>
      */
-    public function columnize(array $columns): array
+    public function columnize(array $columns, Builder $builder = null): array
     {
-        return array_map([$this, 'wrap'], $columns);
+        return array_map(fn ($x) => $this->wrap($x, false, $builder),  $columns);
     }
 
     /**
@@ -647,21 +647,12 @@ final class DSLGrammar
     /**
      * @param array $where
      */
-    private function whereRowValues(Builder $query, array $where): BooleanType
+    private function whereRowValues(Builder $builder, array $where, DSLContext $context): BooleanType
     {
-        $expressions = [];
-        foreach ($where['columns'] as $column) {
-            $expressions[] = $this->column($column);
-        }
-        $lhs = new ExpressionList($expressions);
+        $lhs = (new ExpressionList($this->columnize($where['columns'], $builder)))->toQuery();
+        $rhs = (new ExpressionList($this->parameterize($where['values'], $context)))->toQuery();
 
-        $expressions = [];
-        foreach ($where['values'] as $value) {
-            $expressions[] = $this->addParameter($query, $value);
-        }
-        $rhs = new ExpressionList($expressions);
-
-        return OperatorRepository::fromSymbol($where['operator'], $lhs, $rhs);
+        return OperatorRepository::fromSymbol($where['operator'], new RawExpression($lhs), new RawExpression($rhs), false);
     }
 
     /**
