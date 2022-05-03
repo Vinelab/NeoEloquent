@@ -345,7 +345,7 @@ final class DSLGrammar
         }
 
         $function = $query->aggregate['function'];
-        $tbr->addColumn(Query::function()::raw($function, $columns)->alias($function));
+        $tbr->addColumn(Query::function()::raw($function, $columns)->alias('aggregate'));
 
         $dsl->addClause($tbr);
     }
@@ -895,17 +895,7 @@ final class DSLGrammar
     {
         $dsl = Query::new();
 
-        $this->translateSelect($query, $dsl);
-
-        foreach ($dsl->clauses as $i => $clause) {
-            if ($clause instanceof MatchClause) {
-                $optional = new OptionalMatchClause();
-                foreach ($clause->getPatterns() as $pattern) {
-                    $optional->addPattern($pattern);
-                }
-                $dsl->clauses[$i] = $optional;
-            }
-        }
+        $this->translateMatch($query, $dsl, new DSLContext());
 
         if (count($dsl->clauses) && $dsl->clauses[count($dsl->clauses) - 1] instanceof ReturnClause) {
             unset($dsl->clauses[count($dsl->clauses) - 1]);

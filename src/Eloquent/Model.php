@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
@@ -20,6 +21,8 @@ use function is_string;
  */
 abstract class Model extends \Illuminate\Database\Eloquent\Model
 {
+    public $incrementing = false;
+
     public function newEloquentBuilder($query): Builder
     {
         return new Builder($query);

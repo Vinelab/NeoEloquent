@@ -341,6 +341,19 @@ class GrammarTest extends TestCase
         $this->table->join('NewTest', 'Node.id', '=', 'NewTest.test_id')->get();
     }
 
+    public function testExists(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WHERE Node.x < $param0 RETURN count(*) > 0 AS exists',
+                [3],
+                true
+            );
+
+        $this->table->where('x', '<', 3)->exists();
+    }
+
     public function testAggregate(): void
     {
         $this->connection->expects($this->once())

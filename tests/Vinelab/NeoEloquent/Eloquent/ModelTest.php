@@ -88,14 +88,13 @@ class ModelTest extends TestCase
     public function testAddLabels(): void
     {
         //create a new model object
-        $m = Labeled::create(['a' => 'b']);
+        $m = Labeled::query()->create(['a' => 'b']);
 
         //add the label
         $m->addLabels(['Superuniqelabel1']);
 
-        $this->assertEquals(1, $this->getConnection()->query()->count());
-        $this->assertEquals(1, $this->getConnection()->query()->from('SuperUniqueLabel')->count());
         $this->assertEquals(1, $this->getConnection()->query()->from('Labeled')->count());
+        $this->assertEquals(1, $this->getConnection()->query()->from('SuperUniqueLabel')->count());
     }
 
     public function testDropLabels(): void
