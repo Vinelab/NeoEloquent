@@ -14,14 +14,10 @@ use RuntimeException;
 use Vinelab\NeoEloquent\DSLContext;
 use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\OperatorRepository;
-use Vinelab\NeoEloquent\Query\Wheres\Where;
 use Vinelab\NeoEloquent\WhereContext;
 use WikibaseSolutions\CypherDSL\Alias;
 use WikibaseSolutions\CypherDSL\Assignment;
 use WikibaseSolutions\CypherDSL\Clauses\CallClause;
-use WikibaseSolutions\CypherDSL\Clauses\MatchClause;
-use WikibaseSolutions\CypherDSL\Clauses\MergeClause;
-use WikibaseSolutions\CypherDSL\Clauses\OptionalMatchClause;
 use WikibaseSolutions\CypherDSL\Clauses\OrderByClause;
 use WikibaseSolutions\CypherDSL\Clauses\ReturnClause;
 use WikibaseSolutions\CypherDSL\Clauses\SetClause;
@@ -39,7 +35,6 @@ use WikibaseSolutions\CypherDSL\Not;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Patterns\Node;
 use WikibaseSolutions\CypherDSL\Property;
-use WikibaseSolutions\CypherDSL\PropertyMap;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
 use WikibaseSolutions\CypherDSL\RawExpression;
@@ -47,14 +42,11 @@ use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\PropertyType;
 use WikibaseSolutions\CypherDSL\Variable;
-use function array_diff;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
-use function array_merge;
 use function array_shift;
 use function array_unshift;
-use function array_values;
 use function count;
 use function end;
 use function explode;
@@ -99,7 +91,7 @@ final class DSLGrammar
             'Column' => Closure::fromCallable([$this, 'whereColumn']),
             'Nested' => Closure::fromCallable([$this, 'whereNested']),
             'Exists' => Closure::fromCallable([$this, 'whereExists']),
-            'NotSub' => Closure::fromCallable([$this, 'whereNotExists']),
+            'NotExists' => Closure::fromCallable([$this, 'whereNotExists']),
             'RowValues' => Closure::fromCallable([$this, 'whereRowValues']),
             'JsonBoolean' => Closure::fromCallable([$this, 'whereJsonBoolean']),
             'JsonContains' => Closure::fromCallable([$this, 'whereJsonContains']),
@@ -611,21 +603,20 @@ final class DSLGrammar
         return [OperatorRepository::fromSymbol($where['operator'], $this->wrap($where['column'], false, $builder), $subresult->getVariable()), [new CallClause($sub)]];
     }
 
-    private function whereExists(WhereContext $context): BooleanType
+    private function whereExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
     {
         /** @var Alias $subresult */
         $subresult = null;
         // Calls can be added subsequently without a WITH in between. Since this is the only comparator in
         // the WHERE series that requires a preceding clause, we don't need to worry about WITH statements between
         // possible multiple whereSubs in the same query depth.
-        $context->getQuery()->call(function (Query $sub) use ($context, &$subresult) {
-            $select = $this->compileSelect($context->getWhere()['query']);
+        $query->call(function (Query $sub) use ($context, &$subresult, $where) {
+            $select = $this->compileSelect($where['query']);
 
-            $sub->with($context->getContext()->getVariables());
-            foreach ($select->getClauses() as $clause) {
-                if ($clause instanceof ReturnClause) {
-                    $collect = Query::function()::raw('collect', [$clause->getColumns()[0]]);
-                    $subresult = $context->getContext()->createSubResult($collect);
+            $sub->with($context->getVariables());
+            foreach ($select->getClauses() as $i => $clause) {
+                if ($clause instanceof ReturnClause && $i + 1 === count($select->getClauses())) {
+                    $subresult = $context->createSubResult($clause->getColumns()[0]);
 
                     $clause = new ReturnClause();
                     $clause->addColumn($subresult);
@@ -634,14 +625,12 @@ final class DSLGrammar
             }
         });
 
-        $where = $context->getWhere();
-
-        return $subresult->getVariable()->property('length')->equals($this->wrap($where['column']));
+        return Query::rawExpression('exists(' . $subresult->getVariable()->toQuery() . ')');
     }
 
-    private function whereNotExists(WhereContext $context): BooleanType
+    private function whereNotExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
     {
-        return new Not($this->whereExists($context));
+        return new Not($this->whereExists($builder, $where, $context, $query));
     }
 
     /**

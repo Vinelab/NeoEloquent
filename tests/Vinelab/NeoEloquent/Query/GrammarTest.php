@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -14,9 +13,7 @@ use Vinelab\NeoEloquent\Tests\TestCase;
 
 class GrammarTest extends TestCase
 {
-    /**
-     * @var CypherGrammar
-     */
+    /** @var CypherGrammar */
     private CypherGrammar $grammar;
     /** @var Connection&MockObject */
     private Connection $connection;
@@ -215,6 +212,24 @@ class GrammarTest extends TestCase
         $this->table->whereDay('x', 5)->get();
     }
 
+    public function testWhereExists(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) CALL { WITH Node MATCH (Y:Y) WHERE Node.x = Y.y RETURN * AS sub0 } WHERE Node.x = $param0 AND exists(sub0) RETURN *',
+                ['y'],
+                true
+            );
+
+        $this->table
+            ->where('x', 'y')
+            ->whereExists(static function (Builder $builder) {
+                $builder->from('Y')->whereColumn('Node.x', 'Y.y');
+            })
+            ->get();
+    }
+
     public function testWhereColumn(): void
     {
         $this->connection->expects($this->once())
@@ -372,7 +387,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) RETURN count(Node.views) AS count',
+                'MATCH (Node:Node) RETURN count(Node.views) AS aggregate',
                 [],
                 true
             );
@@ -385,7 +400,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) RETURN count(*) AS count',
+                'MATCH (Node:Node) RETURN count(*) AS aggregate',
                 [],
                 true
             );
@@ -398,7 +413,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node.views, Node.other WHERE Node.views IS NOT NULL OR Node.other IS NOT NULL RETURN count(*) AS count',
+                'MATCH (Node:Node) WITH Node.views, Node.other WHERE Node.views IS NOT NULL OR Node.other IS NOT NULL RETURN count(*) AS aggregate',
                 [],
                 true
             );
