@@ -369,6 +369,48 @@ class GrammarTest extends TestCase
         $this->table->join('NewTest', 'Node.id', '=', 'NewTest.test_id')->get();
     }
 
+    public function testLeftJoin(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN *',
+                [],
+                true
+            );
+
+        $this->table->leftJoin('NewTest', 'Node.id', '=', 'NewTest.test_id')->get();
+    }
+
+    public function testCombinedJoin(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest OPTIONAL MATCH (OtherTest:OtherTest) WHERE NewTest.id = OtherTest.id RETURN *',
+                [],
+                true
+            );
+
+        $this->table
+            ->leftJoin('NewTest', 'Node.id', '=', 'NewTest.test_id')
+            ->leftJoin('OtherTest', 'NewTest.id', '=', 'OtherTest.id')
+            ->get();
+    }
+
+    public function testRightJoin(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'OPTIONAL MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN *',
+                [],
+                true
+            );
+
+        $this->table->rightJoin('NewTest', 'Node.id', '=', 'NewTest.test_id')->get();
+    }
+
     public function testExists(): void
     {
         $this->connection->expects($this->once())

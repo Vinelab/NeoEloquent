@@ -14,7 +14,6 @@ use RuntimeException;
 use Vinelab\NeoEloquent\DSLContext;
 use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\OperatorRepository;
-use Vinelab\NeoEloquent\WhereContext;
 use WikibaseSolutions\CypherDSL\Alias;
 use WikibaseSolutions\CypherDSL\Assignment;
 use WikibaseSolutions\CypherDSL\Clauses\CallClause;
@@ -63,6 +62,8 @@ use function trim;
 
 /**
  * Grammar implementing the public Laravel Grammar API but returning Query Cypher Objects instead of strings.
+ *
+ * Todo: json, fulltext, joinSub, having, relationships, unionAggregate, Raw
  */
 final class DSLGrammar
 {
@@ -364,7 +365,22 @@ final class DSLGrammar
         $node = $this->wrapTable($query->from);
         $context->addVariable($node->getName());
 
-        $dsl->match($node);
+        // We need to check for right joins first
+        // A right join forces us to us OPTIONAL MATCH for the currently matched node
+        $containsRightJoin = false;
+        foreach ($query->joins ?? [] as $join) {
+            if ($join->type === 'right') {
+                $containsRightJoin = true;
+                break;
+            }
+        }
+
+        if ($containsRightJoin) {
+            $dsl->optionalMatch($node);
+        } else {
+            $dsl->match($node);
+        }
+
 
         /** @var JoinClause $join */
         foreach ($query->joins ?? [] as $join) {
@@ -374,8 +390,11 @@ final class DSLGrammar
             $context->addVariable($node->getName());
             if ($join->type === 'cross') {
                 $dsl->match($node);
-            } elseif ($join->type === 'inner') {
+            } elseif ($join->type === 'inner' || $join->type === 'right') {
                 $dsl->match($node);
+                $dsl->addClause($this->compileWheres($join, false, $dsl, $context));
+            } elseif ($join->type === 'left') {
+                $dsl->optionalMatch($node);
                 $dsl->addClause($this->compileWheres($join, false, $dsl, $context));
             }
         }
@@ -665,15 +684,6 @@ final class DSLGrammar
     }
 
     /**
-     * @param string $column
-     * @param string $value
-     */
-    private function compileJsonContains(string $column, string $value): string
-    {
-        throw new BadMethodCallException('This database engine does not support JSON contains operations.');
-    }
-
-    /**
      * @param mixed $binding
      */
     public function prepareBindingForJsonContains($binding): string
@@ -685,16 +695,6 @@ final class DSLGrammar
      * @param array $where
      */
     private function whereJsonLength(Builder $query, array $where): string
-    {
-        throw new BadMethodCallException('JSON operations are not supported at the moment');
-    }
-
-    /**
-     * @param string $column
-     * @param string $operator
-     * @param string $value
-     */
-    private function compileJsonLength(string $column, string $operator, string $value): string
     {
         throw new BadMethodCallException('JSON operations are not supported at the moment');
     }
@@ -792,20 +792,6 @@ final class DSLGrammar
         }
 
         $dsl->addClause($orderBy);
-    }
-
-    /**
-     * Compile the query orders to an array.
-     *
-     * @param Builder $query
-     * @param array $orders
-     * @return array
-     */
-    private function compileOrdersToArray(Builder $query, array $orders): array
-    {
-        return array_map(function ($order) {
-            return $order['sql'] ?? ($this->wrap($order['column']) . ' ' . $order['direction']);
-        }, $orders);
     }
 
     public function compileRandom(string $seed): FunctionCall
@@ -929,7 +915,12 @@ final class DSLGrammar
      */
     public function compileInsertGetId(Builder $query, array $values, string $sequence): Query
     {
-        throw new BadMethodCallException('Neo4j driver does not support last insert id functionality');
+        /**
+         * InsertGetId works in SQL because of this method: \Pdo::lastInsertId
+         *
+         * This behaviour simply cannot be emulated in Neo4j.
+         */
+        throw new BadMethodCallException('Neo4j does not support last insert id functionality');
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): Query
@@ -1000,7 +991,7 @@ final class DSLGrammar
 
         $query->columns = $original;
 
-        return $dsl->delete($this->getMatchedNode());
+        return $dsl->delete($this->wrapTable($query->from));
     }
 
     /**
@@ -1042,19 +1033,6 @@ final class DSLGrammar
     public function compileSavepointRollBack(string $name): string
     {
         throw new BadMethodCallException('Savepoints aren\'t supported in Neo4J');
-    }
-
-    /**
-     * Wrap the given JSON selector.
-     *
-     * @param string $value
-     * @return string
-     *
-     * @throws RuntimeException
-     */
-    private function wrapJsonSelector(string $value): string
-    {
-        throw new RuntimeException('This database engine does not support JSON operations.');
     }
 
     /**
@@ -1119,29 +1097,6 @@ final class DSLGrammar
             ->toArray();
     }
 
-    private function buildMergeExpression(array $uniqueBy, Node $node, Builder $query): RawExpression
-    {
-        $map = Query::map([]);
-        foreach ($uniqueBy as $column) {
-            $map->addProperty($column, new RawExpression('values.' . Node::escape($column)));
-        }
-        $label = new Label($node->getName(), [$query->from]);
-
-        return new RawExpression('(' . $label->toQuery() . ' ' . $map->toQuery() . ')');
-    }
-
-    private function buildSetClause(array $update, Node $node): SetClause
-    {
-        $setClause = new SetClause();
-        foreach ($update as $key) {
-            $assignment = $node->property($key)->assign(new RawExpression('values.' . Node::escape($key)));
-
-            $setClause->addAssignment($assignment);
-        }
-
-        return $setClause;
-    }
-
     public function getBitwiseOperators(): array
     {
         return OperatorRepository::bitwiseOperations();
@@ -1154,8 +1109,6 @@ final class DSLGrammar
 
     /**
      * @param list<string>|string $columns
-     *
-     * @return PropertyType
      */
     private function wrapColumns(Builder $query, $columns): array
     {
@@ -1167,9 +1120,6 @@ final class DSLGrammar
         return $tbr;
     }
 
-    /**
-     * @param PropertyType $columns
-     */
     private function buildWithClause(Builder $query, array $columns, Query $dsl): void
     {
         $with = new WithClause();
@@ -1185,11 +1135,6 @@ final class DSLGrammar
         $dsl->addClause($with);
     }
 
-    /**
-     * @param PropertyType $columns
-     * @param Query $dsl
-     * @return void
-     */
     private function addWhereNotNull(array $columns, Query $dsl): void
     {
         $expression = null;
@@ -1205,14 +1150,5 @@ final class DSLGrammar
         $where = new WhereClause();
         $where->setExpression($expression);
         $dsl->addClause($where);
-    }
-
-    /**
-     * @param DSLContext $context
-     * @param Builder $builder
-     * @return void
-     */
-    private function storeBindingsInBuilder(DSLContext $context, Builder $builder): void
-    {
     }
 }
