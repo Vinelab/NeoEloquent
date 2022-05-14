@@ -462,4 +462,20 @@ class GrammarTest extends TestCase
 
         $this->table->aggregate('count', ['views', 'other']);
     }
+
+    public function testHaving(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH Node.id AS id, collect(Node) AS groups WHERE id > $param0 UNWIND groups AS Node RETURN *',
+                [100],
+                true
+            );
+
+        $this->table
+            ->groupBy('id')
+            ->having('id', '>', 100)
+            ->get();
+    }
 }

@@ -25,10 +25,13 @@ use WikibaseSolutions\CypherDSL\Clauses\WithClause;
 use WikibaseSolutions\CypherDSL\ExpressionList;
 use WikibaseSolutions\CypherDSL\Functions\FunctionCall;
 use WikibaseSolutions\CypherDSL\Functions\RawFunction;
+use WikibaseSolutions\CypherDSL\GreaterThan;
+use WikibaseSolutions\CypherDSL\GreaterThanOrEqual;
 use WikibaseSolutions\CypherDSL\In;
 use WikibaseSolutions\CypherDSL\IsNotNull;
 use WikibaseSolutions\CypherDSL\IsNull;
 use WikibaseSolutions\CypherDSL\Label;
+use WikibaseSolutions\CypherDSL\LessThanOrEqual;
 use WikibaseSolutions\CypherDSL\Literals\Literal;
 use WikibaseSolutions\CypherDSL\Not;
 use WikibaseSolutions\CypherDSL\Parameter;
@@ -41,9 +44,11 @@ use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\PropertyType;
 use WikibaseSolutions\CypherDSL\Variable;
+use function array_filter;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
+use function array_merge;
 use function array_shift;
 use function array_unshift;
 use function count;
@@ -56,6 +61,7 @@ use function is_string;
 use function last;
 use function preg_split;
 use function reset;
+use function sprintf;
 use function stripos;
 use function strtolower;
 use function trim;
@@ -198,7 +204,7 @@ final class DSLGrammar
      */
     public function columnize(array $columns, Builder $builder = null): array
     {
-        return array_map(fn ($x) => $this->wrap($x, false, $builder),  $columns);
+        return array_map(fn($x) => $this->wrap($x, false, $builder), $columns);
     }
 
     /**
@@ -401,8 +407,6 @@ final class DSLGrammar
     }
 
     /**
-     * TODO - can HAVING and WHERE be treated as the same in Neo4J?
-     *
      * @param Builder $builder
      * @return WhereClause
      */
@@ -707,75 +711,90 @@ final class DSLGrammar
         throw new BadMethodCallException('Fulltext where operations are not supported at the moment');
     }
 
-    private function translateGroups(Builder $query, array $groups, Query $dsl): void
+    private function translateGroups(Builder $builder, Query $query, DSLContext $context): void
     {
-//        return 'group by '.$this->columnize($groups);
+        $groups = array_map(fn(string $x) => $this->wrap($x, false, $builder)->alias($x), $builder->groups ?? []);
+        if (count($groups)) {
+            $with = $context->getVariables();
+            $table = $this->wrapTable($builder->from);
+            $with = array_filter($with, static fn(Variable $v) => $v->getName() !== $table->getName()->getName());
+            $collect = Query::function()::raw('collect', [$table->getName()])->alias('groups');
+
+            $query->with([...$with, ...$groups, $collect]);
+        }
     }
 
     /**
      * Compile the "having" portions of the query.
      */
-    private function translateHavings(Builder $query, array $havings, Query $dsl): void
+    private function translateHavings(Builder $builder, Query $query, DSLContext $context): void
     {
-//        $sql = implode(' ', array_map([$this, 'compileHaving'], $havings));
-//
-//        return 'having '.$this->removeLeadingBoolean($sql);
-    }
+        /** @var BooleanType $expression */
+        $expression = null;
+        foreach ($builder->havings ?? [] as $i => $having) {
+            // If the having clause is "raw", we can just return the clause straight away
+            // without doing any more processing on it. Otherwise, we will compile the
+            // clause into SQL based on the components that make it up from builder.
+            if ($having['type'] === 'Raw') {
+                $dslWhere = new RawExpression($having['sql']);
+            } else if ($having['type'] === 'between') {
+                $dslWhere = $this->compileHavingBetween($having, $context);
+            } else {
+                $dslWhere = $this->compileBasicHaving($having, $context);
+            }
 
-    /**
-     * Compile a single having clause.
-     *
-     * @param array $having
-     * @return string
-     */
-    private function compileHaving(array $having): string
-    {
-        // If the having clause is "raw", we can just return the clause straight away
-        // without doing any more processing on it. Otherwise, we will compile the
-        // clause into SQL based on the components that make it up from builder.
-        if ($having['type'] === 'Raw') {
-            return $having['boolean'] . ' ' . $having['sql'];
+            if ($expression === null) {
+                $expression = $dslWhere;
+            } elseif (strtolower($having['boolean']) === 'and') {
+                $expression = $expression->and($dslWhere, (count($builder->wheres) - 1) === $i);
+            } else {
+                $expression = $expression->or($dslWhere, (count($builder->wheres) - 1) === $i);
+            }
         }
 
-        if ($having['type'] === 'between') {
-            return $this->compileHavingBetween($having);
+        $where = new WhereClause();
+        if ($expression !== null) {
+            $where->setExpression($expression);
+            $query->addClause($where);
         }
-
-        return $this->compileBasicHaving($having);
     }
 
     /**
      * Compile a basic having clause.
-     *
-     * @param array $having
-     * @return string
      */
-    private function compileBasicHaving(array $having): string
+    private function compileBasicHaving(array $having, DSLContext $context): BooleanType
     {
-        $column = $this->wrap($having['column']);
+        $column = new Variable($having['column']);
+        $parameter = $this->parameter($having['value'], $context);
 
-        $parameter = $this->parameter($having['value']);
+        if (in_array($having['operator'], ['&', '|', '^', '~', '<<', '>>', '>>>'])) {
+            return new RawFunction('apoc.bitwise.op', [
+                $column,
+                Query::literal($having['operator']),
+                $parameter
+            ]);
+        }
 
-        return $having['boolean'] . ' ' . $column . ' ' . $having['operator'] . ' ' . $parameter;
+        return OperatorRepository::fromSymbol($having['operator'], $column, $parameter, false);
     }
 
     /**
      * Compile a "between" having clause.
-     *
-     * @param array $having
-     * @return string
      */
-    private function compileHavingBetween(array $having): string
+    private function compileHavingBetween(array $having, DSLContext $context): BooleanType
     {
-        $between = $having['not'] ? 'not between' : 'between';
+        $min = reset($having['values']);
+        $max = end($having['values']);
 
-        $column = $this->wrap($having['column']);
+        $gte = new GreaterThanOrEqual(new Variable($having['column']), $context->addParameter($min));
+        $lte = new LessThanOrEqual(new Variable($having['column']), $context->addParameter($max));
+        $tbr = $gte->and($lte);
 
-        $min = $this->parameter(head($having['values']));
+        if ($having['not']) {
+            return new Not($tbr);
+        }
 
-        $max = $this->parameter(last($having['values']));
-
-        return $having['boolean'] . ' ' . $column . ' ' . $between . ' ' . $min . ' and ' . $max;
+        return $tbr;
     }
 
     /**
@@ -885,7 +904,7 @@ final class DSLGrammar
 
             $sets = [];
             foreach ($keys as $key => $value) {
-                $sets[] = $node->property($key)->assign(Query::parameter('param'.$i));
+                $sets[] = $node->property($key)->assign(Query::parameter('param' . $i));
             }
 
             $query->set($sets);
@@ -953,7 +972,7 @@ final class DSLGrammar
 
             $onCreate = new SetClause();
             foreach ($valueRow as $key => $value) {
-                $keyMap[$key] = Query::parameter('param'.$paramCount);
+                $keyMap[$key] = Query::parameter('param' . $paramCount);
                 $onCreate->addAssignment(new Assignment($node->getName()->property($key), $keyMap[$key]));
                 ++$paramCount;
             }
@@ -1054,9 +1073,13 @@ final class DSLGrammar
         $this->translateFrom($builder, $query, $context);
 
         $query->addClause($this->compileWheres($builder, false, $query, $context));
-        $this->translateHavings($builder, $builder->havings ?? [], $query);
 
-        $this->translateGroups($builder, $builder->groups ?? [], $query);
+        $this->translateGroups($builder, $query, $context);
+        $this->translateHavings($builder, $query, $context);
+
+        if (count($builder->havings ?? [])) {
+            $query->raw('UNWIND', 'groups AS ' . $this->wrapTable($builder->from)->getName()->getName());
+        }
     }
 
     private function decorateUpdateAndRemoveExpressions(array $values, Query $dsl, Node $node, DSLContext $context): void
