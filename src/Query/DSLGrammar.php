@@ -62,8 +62,11 @@ use function last;
 use function preg_split;
 use function reset;
 use function sprintf;
+use function str_ends_with;
+use function str_starts_with;
 use function stripos;
 use function strtolower;
+use function substr;
 use function trim;
 
 /**
@@ -105,6 +108,7 @@ final class DSLGrammar
             'JsonLength' => Closure::fromCallable([$this, 'whereJsonLength']),
             'FullText' => Closure::fromCallable([$this, 'whereFullText']),
             'Sub' => Closure::fromCallable([$this, 'whereSub']),
+            'Relationship' => Closure::fromCallable([$this, 'whereRelationship']),
         ];
     }
 
@@ -669,6 +673,27 @@ final class DSLGrammar
         $rhs = (new ExpressionList($this->parameterize($where['values'], $context)))->toQuery();
 
         return OperatorRepository::fromSymbol($where['operator'], new RawExpression($lhs), new RawExpression($rhs), false);
+    }
+
+    /**
+     * @param array $where
+     */
+    public function whereRelationship(Builder $query, array $where, DSLContext $context): BooleanType
+    {
+        ['target' => $target, 'relationship' => $relationship ] = $where;
+
+        $from = (new Node())->named($this->wrapTable($query->from)->getName()->getName());
+        $target = (new Node())->named($this->wrapTable($target)->getName()->getName());
+
+        if (str_ends_with($relationship, '>')) {
+            return new RawExpression($from->relationshipTo($target, substr($relationship, 0, -1))->toQuery());
+        }
+
+        if (str_starts_with($relationship, '<')) {
+            return new RawExpression($from->relationshipFrom($target, substr($relationship, 1))->toQuery());
+        }
+
+        return new RawExpression($from->relationshipUni($target, $relationship)->toQuery());
     }
 
     /**

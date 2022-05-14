@@ -3,24 +3,18 @@
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Builder;
-use Vinelab\NeoEloquent\Query\Expression;
-use Vinelab\NeoEloquent\Eloquent\Collection;
 
 abstract class Relation
 {
     /**
      * The Eloquent query builder instance.
-     *
-     * @var \Illuminate\Database\Eloquent\Builder
      */
-    protected $query;
+    protected Builder $query;
 
     /**
      * The parent model instance.
-     *
-     * @var \Illuminate\Database\Eloquent\Model
      */
     protected $parent;
 

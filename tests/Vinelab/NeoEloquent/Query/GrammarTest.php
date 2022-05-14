@@ -458,6 +458,19 @@ class GrammarTest extends TestCase
             ->get();
     }
 
+    public function testWhereRelationship(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WHERE (Node)-[:`HAS_OTHER_NODE`]->(OtherNode) RETURN *',
+                [],
+                true
+            );
+
+        $this->table->macroCall('whereRelationship', ['HAS_OTHER_NODE>', 'OtherNode'])->get();
+    }
+
     public function testRightJoin(): void
     {
         $this->connection->expects($this->once())

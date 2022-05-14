@@ -17,7 +17,7 @@ class User extends Model
 
     public function roles()
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany\Role', 'HAS_ROLE');
+        return $this->hasMany(Role::class, 'HAS_ROLE');
     }
 }
 
