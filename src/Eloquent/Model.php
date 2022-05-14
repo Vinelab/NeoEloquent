@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent\Eloquent;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use PhpParser\Node\Stmt\Label;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 
@@ -23,19 +24,12 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
 {
     public $incrementing = false;
 
-    public function newEloquentBuilder($query): Builder
-    {
-        return new Builder($query);
-    }
-
     /**
      * @return static
      */
     public function setLabel(string $label): self
     {
-        $this->table = $label;
-
-        return $this;
+        return $this->setTable($label);
     }
 
     /**
@@ -168,36 +162,5 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
         }
 
         return $created;
-    }
-
-    /**
-     * @param array|string $labels
-     */
-    public function addLabels($labels): bool
-    {
-        return $this->updateLabels($labels, 'add');
-    }
-
-    /**
-     * @param array|string $labels
-     */
-    public function dropLabels($labels): bool
-    {
-        return $this->updateLabels($labels, 'drop');
-    }
-
-    /**
-     * @param array|string $labels
-     */
-    public function updateLabels($labels, $operation = 'add'): bool
-    {
-        $labelChanges = [];
-        $labels = is_string($labels) ? [$labels] : $labels;
-
-        foreach ($labels as $label) {
-            $labelChanges[] = new LabelAction($label, $operation === 'add');
-        }
-
-        return $this->update($labelChanges);
     }
 }

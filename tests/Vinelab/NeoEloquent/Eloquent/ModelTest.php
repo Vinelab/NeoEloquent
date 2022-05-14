@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
-use Vinelab\NeoEloquent\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Model as NeoEloquent;
 use Vinelab\NeoEloquent\Query\Builder as BaseBuilder;
 use Vinelab\NeoEloquent\Tests\TestCase;
@@ -80,9 +80,6 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(Builder::class, (new Model())->newQueryWithoutScope('x'));
         $this->assertInstanceOf(Builder::class, (new Model())->newQueryWithoutScopes());
         $this->assertInstanceOf(Builder::class, (new Model())->newModelQuery());
-
-        $query = new BaseBuilder($this->getConnection());
-        $this->assertInstanceOf(Builder::class, (new Model())->newEloquentBuilder($query));
     }
 
     public function testAddLabels(): void
