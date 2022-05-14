@@ -3,13 +3,64 @@
 namespace Vinelab\NeoEloquent\Tests\Query;
 
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
 use Vinelab\NeoEloquent\DSLContext;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
+
+class FinalModel extends Model
+{
+    protected $guarded = [];
+
+    protected $connection = 'mock';
+}
+class OtherModel extends Model
+{
+    protected $guarded = [];
+
+    protected $connection = 'mock';
+
+    public function hasManyMainModels(): HasMany
+    {
+        return $this->hasMany(MainModel::class);
+    }
+}
+
+class MainModel extends Model
+{
+    protected $guarded = [];
+
+    protected $connection = 'mock';
+
+    public function hasOneExample(): HasOne
+    {
+        return $this->hasOne(OtherModel::class, 'main_id', 'id');
+    }
+
+    public function belongsToExample(): BelongsTo
+    {
+        return $this->belongsTo(OtherModel::class, 'main_id', 'id', 'hasManyMainModels');
+    }
+
+    public function hasManyExample(): HasMany
+    {
+        return $this->hasMany(OtherModel::class, 'main_id', 'id');
+    }
+
+    public function hasOneThroughExample(): HasOneThrough
+    {
+        return $this->hasOneThrough(OtherModel::class, FinalModel::class);
+    }
+}
 
 class GrammarTest extends TestCase
 {
@@ -18,6 +69,7 @@ class GrammarTest extends TestCase
     /** @var Connection&MockObject */
     private Connection $connection;
     private Builder $table;
+    private MainModel $model;
 
     public function setUp(): void
     {
@@ -25,8 +77,16 @@ class GrammarTest extends TestCase
         $this->grammar = new CypherGrammar();
         $this->table = DB::table('Node');
         $this->connection = $this->createMock(Connection::class);
+        $this->connection->method('setReadWriteType')->willReturn($this->connection);
+        $this->connection->method('query')->willReturn(new Builder($this->connection, new CypherGrammar(), new Processor()));
         $this->table->connection = $this->connection;
         $this->table->grammar = $this->grammar;
+
+        $this->model = new MainModel(['id' => 'a']);
+        Connection::resolverFor('mock', \Closure::fromCallable(function ($connection, string $database, string $prefix, array $config) {
+            return $this->connection;
+        }));
+        \config()->set('database.connections.mock', ['database' => 'a', 'prefix' => 'prefix', 'driver' => 'mock']);
     }
 
     public function tearDown(): void
@@ -348,7 +408,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) RETURN *',
+                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WITH Node, NewTest RETURN *',
                 [],
                 true
             );
@@ -361,7 +421,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN *',
+                'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest RETURN *',
                 [],
                 true
             );
@@ -374,7 +434,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN *',
+                'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest RETURN *',
                 [],
                 true
             );
@@ -387,7 +447,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest OPTIONAL MATCH (OtherTest:OtherTest) WHERE NewTest.id = OtherTest.id RETURN *',
+                'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest OPTIONAL MATCH (OtherTest:OtherTest) WHERE NewTest.id = OtherTest.id WITH Node, NewTest, OtherTest RETURN *',
                 [],
                 true
             );
@@ -403,7 +463,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'OPTIONAL MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` RETURN *',
+                'OPTIONAL MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest RETURN *',
                 [],
                 true
             );
@@ -463,6 +523,19 @@ class GrammarTest extends TestCase
         $this->table->aggregate('count', ['views', 'other']);
     }
 
+    public function testGrammar(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (Node:Node) WITH Node.views, Node.other WHERE Node.views IS NOT NULL OR Node.other IS NOT NULL RETURN count(*) AS aggregate',
+                [],
+                true
+            );
+
+        $this->table->aggregate('count', ['views', 'other']);
+    }
+
     public function testHaving(): void
     {
         $this->connection->expects($this->once())
@@ -477,5 +550,44 @@ class GrammarTest extends TestCase
             ->groupBy('id')
             ->having('id', '>', 100)
             ->get();
+    }
+
+    public function testHasOne(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                'MATCH (OtherModel:OtherModel) WHERE OtherModel.`main_id` = $param0 AND (OtherModel.`main_id` IS NOT NULL) RETURN * LIMIT 1',
+                ['a'],
+                true
+            );
+
+        $this->model->getRelationValue('hasOneExample');
+    }
+
+    public function testBelongsToOne(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('select')
+            ->with(
+                '',
+                ['a'],
+                true
+            );
+
+        $sql = $this->model->belongsToExample()->toSql();
+        $this->assertEquals('MATCH (OtherModel:OtherModel) WHERE OtherModel.`main_id` = $param0 AND (OtherModel.`main_id` IS NOT NULL) RETURN * LIMIT 1', $sql);
+    }
+
+    public function testHasMany(): void
+    {
+        $sql = $this->model->hasManyExample()->toSql();
+        $this->assertEquals('MATCH (OtherModel:OtherModel) WHERE OtherModel.`main_id` = $param0 AND (OtherModel.`main_id` IS NOT NULL) RETURN *', $sql);
+    }
+
+    public function testHasOneThrough(): void
+    {
+        $sql = $this->model->hasOneThroughExample()->toSql();
+        $this->assertEquals('MATCH (OtherModel:OtherModel) WITH OtherModel MATCH (FinalModel:FinalModel) WHERE FinalModel.id = OtherModel.`final_model_id` WITH OtherModel, FinalModel WHERE FinalModel.`main_model_id` = $param0 RETURN *', $sql);
     }
 }

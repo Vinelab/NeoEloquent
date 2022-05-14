@@ -16,6 +16,8 @@ class Labeled extends NeoEloquent
     protected $table = 'Labeled';
 
     protected $fillable = ['a'];
+
+    protected $primaryKey = 'a';
 }
 
 class Table extends NeoEloquent
@@ -63,6 +65,15 @@ class ModelTest extends TestCase
         $this->assertEquals('Padrouga', $label);
     }
 
+    public function testCreateAndFind(): void
+    {
+        $labeled = Labeled::query()->create(['a' => 'b']);
+
+        $find = Labeled::query()->find('b');
+
+        $this->assertEquals($labeled->getAttributes(), $find->getAttributes());
+    }
+
     public function testDifferentTypesOfLabelsAlwaysLandsAnArray(): void
     {
         $m = new Model();
@@ -80,31 +91,5 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(Builder::class, (new Model())->newQueryWithoutScope('x'));
         $this->assertInstanceOf(Builder::class, (new Model())->newQueryWithoutScopes());
         $this->assertInstanceOf(Builder::class, (new Model())->newModelQuery());
-    }
-
-    public function testAddLabels(): void
-    {
-        //create a new model object
-        $m = Labeled::query()->create(['a' => 'b']);
-
-        //add the label
-        $m->addLabels(['Superuniqelabel1']);
-
-        $this->assertEquals(1, $this->getConnection()->query()->from('Labeled')->count());
-        $this->assertEquals(1, $this->getConnection()->query()->from('SuperUniqueLabel')->count());
-    }
-
-    public function testDropLabels(): void
-    {
-        //create a new model object
-        $m = new Labeled();
-        $m->setLabel(['User', 'Fan', 'Superuniqelabel2']); //set some labels
-        $m->save();
-        //get the node id, we need it to verify if the label is actually added in graph
-        $id = $m->id;
-
-        //drop the label
-        $m->dropLabels(['Superuniqelabel2']);
-        $this->assertFalse(in_array('Superuniqelabel2', $this->getNodeLabels($id)));
     }
 }

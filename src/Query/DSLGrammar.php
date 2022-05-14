@@ -404,6 +404,10 @@ final class DSLGrammar
                 $dsl->addClause($this->compileWheres($join, false, $dsl, $context));
             }
         }
+
+        if (count($query->joins ?? [])) {
+            $dsl->with($context->getVariables());
+        }
     }
 
     /**
@@ -905,11 +909,10 @@ final class DSLGrammar
             $sets = [];
             foreach ($keys as $key => $value) {
                 $sets[] = $node->property($key)->assign(Query::parameter('param' . $i));
+                ++$i;
             }
 
             $query->set($sets);
-
-            ++$i;
         }
 
         return $query;

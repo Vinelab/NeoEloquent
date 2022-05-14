@@ -42,7 +42,7 @@ class CypherGrammar extends Grammar
 
     public function compileWheres(Builder $query): string
     {
-        return $this->dsl->compileWheres($query)->toQuery();
+        return $this->dsl->compileWheres($query, false, Query::new(), new DSLContext())->toQuery();
     }
 
     public function prepareBindingForJsonContains($binding): string

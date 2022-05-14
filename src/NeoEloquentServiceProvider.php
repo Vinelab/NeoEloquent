@@ -5,9 +5,7 @@ namespace Vinelab\NeoEloquent;
 
 use Closure;
 use Throwable;
-use Vinelab\NeoEloquent\Eloquent\NeoEloquentFactory;
 use Illuminate\Support\ServiceProvider;
-use Faker\Generator as FakerGenerator;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {
@@ -30,12 +28,6 @@ class NeoEloquentServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(NeoEloquentFactory::class, function ($app) {
-            return NeoEloquentFactory::construct(
-                $app->make(FakerGenerator::class), $this->app->databasePath('factories')
-            );
-        });
-
         if ($this->app->runningInConsole()) {
             $this->app->register(MigrationServiceProvider::class);
         }
