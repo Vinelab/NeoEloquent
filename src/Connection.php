@@ -14,20 +14,17 @@ use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
 use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Types\CypherMap;
 use LogicException;
-use Illuminate\Database\Query\Builder;
+use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 use function array_filter;
-use function array_key_exists;
 use function get_debug_type;
 use function is_bool;
-use function is_string;
 
 final class Connection extends \Illuminate\Database\Connection
 {
     private ?UnmanagedTransactionInterface $tsx = null;
     private array $committedCallbacks = [];
-    private bool $usesLegacyIds = false;
 
     public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
     {
@@ -46,13 +43,23 @@ final class Connection extends \Illuminate\Database\Connection
     /**
      * Begin a fluent query against a database table.
      *
-     * @param Closure|\Illuminate\Database\Query\Builder|string $label
+     * @param Closure|Builder|string $label
      * @param  string|null  $as
      */
-    public function node($label, ?string $as = null): Builder
+    public function node($label, ?string $as = null): Query\Builder
+    {
+        return $this->table($label, $as);
+    }
+
+    public function query(): Builder
+    {
+        return new Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
+    }
+
+    public function table($table, $as = null): Builder
     {
         /** @noinspection PhpIncompatibleReturnTypeInspection */
-        return $this->table($label, $as);
+        return parent::table($table, $as);
     }
 
     public function getSession(bool $readSession = false): TransactionInterface
@@ -151,16 +158,6 @@ final class Connection extends \Illuminate\Database\Connection
         });
     }
 
-    public function useLegacyIds(bool $usesLegacyIds = true): void
-    {
-        $this->usesLegacyIds = $usesLegacyIds;
-    }
-
-    public function isUsingLegacyIds(): bool
-    {
-        return $this->usesLegacyIds;
-    }
-
     /**
      * Prepare the query bindings for execution.
      *
@@ -253,14 +250,6 @@ final class Connection extends \Illuminate\Database\Connection
             $counters->nodesDeleted() +
             $counters->relationshipsCreated() +
             $counters->relationshipsDeleted();
-    }
-
-    /**
-     * Get a new query builder instance.
-     */
-    public function query(): Builder
-    {
-        return new Builder($this);
     }
 
     /**

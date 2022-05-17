@@ -76,8 +76,8 @@ class ConnectionTest extends TestCase
     public function testPreparingSimpleBindings(): void
     {
         $bindings = [
-            'username' => 'jd',
-            'name' => 'John Doe',
+            'param0' => 'jd',
+            'param1' => 'John Doe',
         ];
 
         $prepared = $this->getConnection('default')->prepareBindings($bindings);
@@ -95,8 +95,8 @@ class ConnectionTest extends TestCase
         $c = $this->getConnection('default');
 
         $expected = [
-            'username' => 'jd',
-            'email' => 'marie@curie.sci',
+            'param0' => 'jd',
+            'param1' => 'marie@curie.sci',
         ];
 
         $prepared = $c->prepareBindings($bindings);
@@ -113,15 +113,10 @@ class ConnectionTest extends TestCase
         /** @var Connection $c */
         $c = $this->getConnection('default');
 
-        $expected = ['idn' => 6];
+        $expected = ['param0' => 6];
 
-        $c->useLegacyIds(true);
         $prepared = $c->prepareBindings($bindings);
         $this->assertEquals($expected, $prepared);
-
-        $c->useLegacyIds(false);
-        $prepared = $c->prepareBindings($bindings);
-        $this->assertEquals($bindings, $prepared);
     }
 
     public function testPreparingWhereInBindings(): void
@@ -136,10 +131,10 @@ class ConnectionTest extends TestCase
         $c = $this->getConnection('default');
 
         $expected = [
-            'mc' => 'mc',
-            'ae' => 'ae',
-            'animals' => 'animals',
-            'mulkave' => 'mulkave',
+            'param0' => 'mc',
+            'param1' => 'ae',
+            'param2' => 'animals',
+            'param3' => 'mulkave',
         ];
 
         $prepared = $c->prepareBindings($bindings);
@@ -151,7 +146,7 @@ class ConnectionTest extends TestCase
     {
         $this->createUser();
 
-        $query = 'MATCH (n:`User`) WHERE n.username = $username RETURN * LIMIT 1';
+        $query = 'MATCH (n:`User`) WHERE n.username = $param0 RETURN * LIMIT 1';
 
         $bindings = ['username' => $this->user['username']];
 
@@ -173,48 +168,6 @@ class ConnectionTest extends TestCase
         $this->assertEquals($this->user, $results[0]['n']->getProperties()->toArray());
     }
 
-    /**
-     * @depends testSelectWithBindings
-     */
-    public function testSelectWithBindingsById(): void
-    {
-        $this->createUser();
-
-        /** @var Connection $c */
-        $c = $this->getConnection('default');
-        $c->useLegacyIds();
-
-        $c->enableQueryLog();
-
-        $query = 'MATCH (n:`User`) WHERE n.username = $username RETURN * LIMIT 1';
-
-        // Get the ID of the created record
-        $results = $c->select($query, ['username' => $this->user['username']]);
-
-        $id = $results[0]['n']->getId();
-
-        $bindings = [
-            'id' => $id,
-        ];
-
-
-        // Select the Node containing the User record by its id
-        $query = 'MATCH (n:`User`) WHERE id(n) = $idn RETURN * LIMIT 1';
-
-        $results = $c->select($query, $bindings);
-
-        $log = $c->getQueryLog();
-
-        $this->assertEquals($log[1]['query'], $query);
-        $this->assertEquals($log[1]['bindings'], $bindings);
-        $this->assertIsArray($results);
-        $this->assertIsArray($results[0]);
-
-        $selected = $results[0]['n']->getProperties()->toArray();
-
-        $this->assertEquals($this->user, $selected);
-    }
-
     public function testAffectingStatement(): void
     {
         $c = $this->getConnection('default');
@@ -224,20 +177,20 @@ class ConnectionTest extends TestCase
         $type = 'dev';
 
         // Now we update the type and set it to $type
-        $query = 'MATCH (n:`User`) WHERE n.username = $username '.
-                 'SET n.type = $type, n.updated_at = $updated_at '.
+        $query = 'MATCH (n:`User`) WHERE n.username = $param0 '.
+                 'SET n.type = $param1, n.updated_at = $param2 '.
                  'RETURN count(n)';
 
         $bindings = [
+            'username' => $this->user['username'],
             'type' => $type,
             'updated_at' => '2014-05-11 13:37:15',
-            'username' => $this->user['username'],
         ];
 
         $c->affectingStatement($query, $bindings);
 
         // Try to find the updated one and make sure it was updated successfully
-        $query = 'MATCH (n:User) WHERE n.username = $username RETURN n';
+        $query = 'MATCH (n:User) WHERE n.username = $param0 RETURN n';
 
         $results = $this->getConnection()->select($query, $bindings);
 
@@ -253,14 +206,14 @@ class ConnectionTest extends TestCase
         $type = 'dev';
 
         // Now we update the type and set it to $type
-        $query = 'MATCH (n:`User`) WHERE n.username = $username '.
-                 'SET n.type = $type, n.updated_at = $updated_at '.
+        $query = 'MATCH (n:`User`) WHERE n.username = $param0 '.
+                 'SET n.type = $param1, n.updated_at = $param2 '.
                  'RETURN count(n)';
 
         $bindings = [
+            'username' => $this->user['username'],
             'type' => $type,
             'updated_at' => '2014-05-11 13:37:15',
-            'username' => $this->user['username'],
         ];
 
         $result = $c->affectingStatement($query, $bindings);
