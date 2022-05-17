@@ -108,7 +108,7 @@ class CypherGrammar extends Grammar
      */
     public function compileTruncate(Builder $query): array
     {
-        return array_map([$this, 'getValue'], $this->dsl->compileTruncate($query));
+        return $this->dsl->compileTruncate($query);
     }
 
     /**

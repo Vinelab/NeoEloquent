@@ -1049,11 +1049,12 @@ final class DSLGrammar
      */
     public function compileTruncate(Builder $query): array
     {
+        $node = $this->wrapTable($query->from);
         $delete = Query::new()
-            ->match(Query::node($query->from))
-            ->delete(Query::node($query->from));
+            ->match($node)
+            ->delete($node->getName());
 
-        return [$delete];
+        return [$delete->toQuery() => []];
     }
 
     /**

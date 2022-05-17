@@ -5,32 +5,32 @@ namespace Vinelab\NeoEloquent\Tests\Functional\Aggregate;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 
 class AggregateTest extends TestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
-
-        $this->query = new Builder((new User())->getConnection(), new CypherGrammar());
-        $this->query->from = 'User';
+        User::query()->truncate();
     }
 
-    public function testCount()
+    public function testCount(): void
     {
-        User::create([]);
-        $this->assertEquals(1, $this->query->count());
-        User::create([]);
-        $this->assertEquals(2, $this->query->count());
-        User::create([]);
-        $this->assertEquals(3, $this->query->count());
+        User::query()->create([]);
+        $this->assertEquals(1, User::query()->count());
+        User::query()->create([]);
+        $this->assertEquals(2, User::query()->count());
+        User::query()->create([]);
+        $this->assertEquals(3, User::query()->count());
 
-        User::create(['logins' => 10]);
-        $this->assertEquals(1, $this->query->count('logins'));
+        User::query()->create(['logins' => 10]);
+        $this->assertEquals(1, User::query()->count('logins'));
 
-        User::create(['points' => 200]);
-        $this->assertEquals(1, $this->query->count('points'));
+        User::query()->create(['logins' => 10]);
+        $this->assertEquals(2, User::query()->count('logins'));
+
+        User::query()->create(['points' => 200]);
+        $this->assertEquals(1, User::query()->count('points'));
     }
 
     public function testCountWithQuery()
@@ -313,7 +313,5 @@ class AggregateTest extends TestCase
 
 class User extends Model
 {
-    protected $label = 'User';
-
     protected $fillable = ['logins', 'points', 'email'];
 }
