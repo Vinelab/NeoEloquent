@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use function class_basename;
+use function is_null;
 
 /**
  * @method Builder newQuery()
@@ -19,6 +20,16 @@ use function class_basename;
 abstract class Model extends \Illuminate\Database\Eloquent\Model
 {
     public $incrementing = false;
+
+    protected array $relationsToCreate = [];
+
+    protected static function booted()
+    {
+        parent::booted();
+        static::saved(static function (Model $model) {
+            $model->relations;
+        });
+    }
 
     /**
      * @return static
@@ -41,9 +52,18 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
         return $this->table ?? Str::studly(class_basename($this));
     }
 
-    public function hasMany($related, $foreignKey = null, $localKey = null)
+    public function belongsToRelation($related, $relation = null): BelongsTo
     {
+        // If no relation name was given, we will use this debug backtrace to extract
+        // the calling method's name and use that as the relationship name as most
+        // of the time this will be what we desire to use for the relationships.
+        if (is_null($relation)) {
+            $relation = $this->guessBelongsToRelation();
+        }
 
+        $instance = $this->newRelatedInstance($related);
+
+        return new BelongsTo($this->newQuery(), $instance, $relation);
     }
 
     public function nodeLabel(): string

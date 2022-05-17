@@ -20,7 +20,7 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
         if (static::$constraints) {
             $table = $this->related->getTable();
 
-            $this->whereRelation('<'.$this->relationName, $table);
+            $this->query->whereRelationship('<'.$this->relationName, $table);
         }
     }
 
@@ -36,5 +36,25 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
         $this->whereRelation('<'.$this->relationName, $table);
 
         parent::addEagerConstraints($models);
+    }
+
+    public function associate($model): Model
+    {
+        if ($model instanceof Model) {
+            $this->child->setRelation($this->relationName, $model);
+        } else {
+            $this->child->unsetRelation($this->relationName);
+        }
+
+        return $this->child;
+    }
+
+
+    /**=
+     * @return Model
+     */
+    public function dissociate(): Model
+    {
+        return $this->child->setRelation($this->relationName, null);
     }
 }

@@ -48,17 +48,6 @@ class BelongsToManyRelationTest extends TestCase
         parent::tearDown();
     }
 
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-
-        User::setConnectionResolver($resolver);
-        Role::setConnectionResolver($resolver);
-    }
-
     public function testSavingRelatedBelongsToMany()
     {
         $user = User::create(['uuid' => '11213', 'name' => 'Creepy Dude']);

@@ -492,17 +492,17 @@ final class DSLGrammar
     {
         $list = new ExpressionList(array_map(static fn($x) => Query::literal($x), $where['values']));
 
-        return new In($this->wrap($where['column']), $list);
+        return new In($this->wrap($where['column'], true, $query), $list);
     }
 
     private function whereNull(Builder $query, array $where): IsNull
     {
-        return new IsNull($this->wrap($where['column']));
+        return new IsNull($this->wrap($where['column'], true, $query));
     }
 
     private function whereNotNull(Builder $query, array $where): IsNotNull
     {
-        return new IsNotNull($this->wrap($where['column']));
+        return new IsNotNull($this->wrap($where['column'], true, $query));
     }
 
     private function whereBetween(Builder $query, array $where, DSLContext $context): BooleanType
@@ -1026,19 +1026,20 @@ final class DSLGrammar
     /**
      * Compile a delete statement into SQL.
      *
-     * @param Builder $query
+     * @param Builder $builder
      * @return Query
      */
-    public function compileDelete(Builder $query): Query
+    public function compileDelete(Builder $builder): Query
     {
-        $original = $query->columns;
-        $query->columns = null;
+        $original = $builder->columns;
+        $builder->columns = null;
+        $query = Query::new();
 
-        $dsl = $this->compileSelect($query);
+        $this->translateMatch($builder, $query, new DSLContext());
 
-        $query->columns = $original;
+        $builder->columns = $original;
 
-        return $dsl->delete($this->wrapTable($query->from));
+        return $query->delete($this->wrapTable($builder->from)->getName());
     }
 
     /**
