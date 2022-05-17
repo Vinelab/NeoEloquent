@@ -4,13 +4,9 @@ namespace Vinelab\NeoEloquent\Eloquent;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
-use PhpParser\Node\Stmt\Label;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
-
-use Vinelab\NeoEloquent\LabelAction;
 use function class_basename;
-use function is_string;
 
 /**
  * @method Builder newQuery()
@@ -43,6 +39,11 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
     public function getTable(): string
     {
         return $this->table ?? Str::studly(class_basename($this));
+    }
+
+    public function hasMany($related, $foreignKey = null, $localKey = null)
+    {
+
     }
 
     public function nodeLabel(): string

@@ -2,169 +2,137 @@
 
 namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\Concerns\CanBeOneOfMany;
+use Illuminate\Database\Eloquent\Relations\Concerns\ComparesRelatedModels;
+use Illuminate\Database\Eloquent\Relations\Concerns\SupportsDefaultModels;
+use Illuminate\Database\Query\JoinClause;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Collection;
-use Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut;
+use function is_null;
 
 class HasOne extends HasOneOrMany
 {
+    use ComparesRelatedModels, CanBeOneOfMany, SupportsDefaultModels;
+
+    /**
+     * Get the results of the relationship.
+     *
+     * @return Builder|\Illuminate\Database\Eloquent\Model|object|null
+     */
+    public function getResults()
+    {
+        if (is_null($this->getParentKey())) {
+            return $this->getDefaultFor($this->parent);
+        }
+
+        return $this->query->first() ?: $this->getDefaultFor($this->parent);
+    }
+
     /**
      * Initialize the relation on a set of models.
      *
-     * @param array  $models
-     * @param string $relation
-     *
+     * @param  array  $models
+     * @param  string  $relation
      * @return array
      */
-    public function initRelation(array $models, $relation)
+    public function initRelation(array $models, $relation): array
     {
         foreach ($models as $model) {
-            // In the case of fetching nested relations, we will get an array
-            // with the first key being the model we need, and the other being
-            // the related model so we'll just take the first model out of the array.
-            if (is_array($model)) {
-                $model = reset($model);
-            }
-
-            $model->setRelation($relation, null);
+            $model->setRelation($relation, $this->getDefaultFor($model));
         }
 
         return $models;
     }
 
     /**
-     * Set the base constraints on the relation query.
-     */
-    public function addConstraints()
-    {
-        if (static::$constraints) {
-            /*
-             * For has one relationships we need to actually query on the primary key
-             * of the parent model matching on the OUTGOING relationship by name.
-             *
-             * We are trying to achieve a Cypher that goes something like:
-             *
-             * MATCH (user:`User`), (user)-[:PHONE]->(phone:`Phone`)
-             * WHERE id(user) = 86234
-             * RETURN phone;
-             *
-             * (user:`User`) represents a matching statement where
-             * 'user' is the parent Node's placeholder and '`User`' is the parentLabel.
-             * All node placeholders must be lowercased letters and will be used
-             * throught the query to represent the actual Node.
-             *
-             * Resulting from:
-             * class User extends NeoEloquent {
-             *
-             *     public function phone()
-             *     {
-             *          return $this->hasOne('Phone', 'PHONE');
-             *     }
-             * }
-            */
-
-            // Get the parent node's placeholder.
-            $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
-            // Tell the query that we only need the related model returned.
-            $this->query->select($this->relation);
-            // Set the parent node's placeholder as the RETURN key.
-            $this->query->getQuery()->from = array($parentNode);
-            // Build the MATCH ()-[]->() Cypher clause.
-            $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
-            // Add WHERE clause over the parent node's matching key = value.
-            $this->query->where($this->localKey, '=', $this->parent->{$this->localKey});
-        }
-    }
-
-    /**
-     * Set the constraints for an eager load of the relation.
-     *
-     * @param array $models
-     */
-    public function addEagerConstraints(array $models)
-    {
-        /*
-         * We'll grab the primary key name of the related models since it could be set to
-         * a non-standard name and not "id". We will then construct the constraint for
-         * our eagerly loading query so it returns the proper models from execution.
-         */
-        parent::addEagerConstraints($models);
-
-        // Grab the parent node placeholder
-        $parentNode = $this->query->getQuery()->modelAsNode($this->parent->nodeLabel());
-
-        // $this->query->startModel = $this->parent;
-        // $this->query->endModel = $this->related;
-        // $this->query->relationshipName = $this->relation;
-
-        // Tell the builder to select both models of the relationship
-        $this->query->select($this->relation, $parentNode);
-
-        // Setup for their mutation so they don't breed weird stuff like... humans ?!
-        $this->query->addMutation($this->relation, $this->related);
-        $this->query->addMutation($parentNode, $this->parent);
-
-        // Set the parent node's placeholder as the RETURN key.
-        $this->query->getQuery()->from = array($parentNode);
-        // Build the MATCH ()-[]->() Cypher clause.
-        $this->query->matchOut($this->parent, $this->related, $this->relation, $this->type, $this->localKey, $this->parent->{$this->localKey});
-        // Add WHERE clause over the parent node's matching keys [values...].
-        $this->query->whereIn($this->localKey, $this->getKeys($models));
-
-    }
-
-    /**
-     * Get an instance of the EdgeIn relationship.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param array                               $attributes
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut
-     */
-    public function getEdge(Model $model = null, $attributes = array())
-    {
-        $model = (!is_null($model)) ? $model : $this->related;
-
-       // Indicate a unique relation since this only involves one other model.
-        $unique = true;
-
-        return new EdgeOut($this->query, $this->parent, $model, $this->type, $attributes, $unique);
-    }
-
-    /**
-     * Get the edge between the parent model and the given model or
-     * the related model determined by the relation function name.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     *
-     * @return \Vinelab\NeoEloquent\Eloquent\Edges\Edge[In,Out, etc.]
-     */
-    public function edge(Model $model = null)
-    {
-        return $this->getEdge($model)->current();
-    }
-
-    /**
      * Match the eagerly loaded results to their parents.
      *
-     * @param array                                    $models
-     * @param \Illuminate\Database\Eloquent\Collection $results
-     * @param string                                   $relation
-     *
+     * @param  array  $models
+     * @param  Collection  $results
+     * @param  string  $relation
      * @return array
      */
-    public function match(array $models, Collection $results, $relation)
+    public function match(array $models, Collection $results, $relation): array
     {
         return $this->matchOne($models, $results, $relation);
     }
 
     /**
-     * Get the results of the relationship.
+     * Add the constraints for an internal relationship existence query.
+     *
+     * Essentially, these queries compare on column names like "whereColumn".
+     *
+     * @param Builder $query
+     * @param Builder $parentQuery
+     * @param  array|mixed  $columns
+     * @return Builder
+     */
+    public function getRelationExistenceQuery(Builder $query, Builder $parentQuery, $columns = ['*']): Builder
+    {
+        if ($this->isOneOfMany()) {
+            $this->mergeOneOfManyJoinsTo($query);
+        }
+
+        return parent::getRelationExistenceQuery($query, $parentQuery, $columns);
+    }
+
+    /**
+     * Add constraints for inner join subselect for one of many relationships.
+     *
+     * @param Builder $query
+     * @param  string|null  $column
+     * @param  string|null  $aggregate
+     * @return void
+     */
+    public function addOneOfManySubQueryConstraints(Builder $query, $column = null, $aggregate = null): void
+    {
+        $query->addSelect($this->foreignKey);
+    }
+
+    /**
+     * Get the columns that should be selected by the one of many subquery.
+     *
+     * @return array|string
+     */
+    public function getOneOfManySubQuerySelectColumns()
+    {
+        return $this->foreignKey;
+    }
+
+    /**
+     * Add join query constraints for one of many relationships.
+     *
+     * @param  JoinClause $join
+     * @return void
+     */
+    public function addOneOfManyJoinSubQueryConstraints(JoinClause $join): void
+    {
+        $join->on($this->qualifySubSelectColumn($this->foreignKey), '=', $this->qualifyRelatedColumn($this->foreignKey));
+    }
+
+    /**
+     * Make a new related instance for the given model.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $parent
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function newRelatedInstanceFor(\Illuminate\Database\Eloquent\Model $parent): \Illuminate\Database\Eloquent\Model
+    {
+        return $this->related->newInstance()->setAttribute(
+            $this->getForeignKeyName(), $parent->{$this->localKey}
+        );
+    }
+
+    /**
+     * Get the value of the model's foreign key.
+     *
+     * @param Model $model
      *
      * @return mixed
      */
-    public function getResults()
+    protected function getRelatedKeyFrom(Model $model)
     {
-        return $this->query->first();
+        return $model->getAttribute($this->getForeignKeyName());
     }
 }

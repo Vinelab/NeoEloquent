@@ -2,18 +2,16 @@
 
 namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
+use GraphAware\Neo4j\Client\Formatter\Result;
+use GraphAware\Neo4j\Client\Formatter\Type\Node;
 use Laudis\Neo4j\Types\CypherList;
 use Laudis\Neo4j\Types\CypherMap;
-use Laudis\Neo4j\Types\Relationship;
 use Mockery as M;
-use GraphAware\Neo4j\Client\Formatter\Type\Node;
-use GraphAware\Neo4j\Client\Formatter\Result;
 use Neoxygen\NeoClient\Formatter;
-use PHPUnit\Framework\MockObject\MockBuilder;
 use stdClass;
-use Vinelab\NeoEloquent\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
+use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
@@ -318,7 +316,7 @@ class EloquentBuilderTest extends TestCase
         $builder->setModel($model);
         $builder->getQuery()->shouldReceive('foobar')->once()->andReturn('foo');
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Builder', $builder->foobar());
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Query\Builder', $builder->foobar());
 
         $builder = $this->getBuilder();
         $model = \Vinelab\NeoEloquent\Eloquent\Model::class;
@@ -353,7 +351,7 @@ class EloquentBuilderTest extends TestCase
     {
         $this->markTestIncomplete('Getting error: Static method Mockery_1_Vinelab_NeoEloquent_Eloquent_Model::resolveConnection() does not exist on this mock object');
 
-        $nestedQuery = m::mock('Vinelab\NeoEloquent\Eloquent\Builder');
+        $nestedQuery = m::mock('Vinelab\NeoEloquent\Query\Builder');
         $nestedRawQuery = $this->getMockQueryBuilder();
         $nestedQuery->shouldReceive('getQuery')->once()->andReturn($nestedRawQuery);
         $model = $this->getMockModel()->makePartial();

@@ -20,16 +20,6 @@ class NeoEloquentServiceProvider extends ServiceProvider
         };
 
         \Illuminate\Database\Connection::resolverFor('neo4j', Closure::fromCallable($resolver));
-
-        Builder::macro('whereRelationship', function (string $relationship, string $other): Builder {
-            $this->wheres[] = [
-                'type' => 'Relationship',
-                'relationship' => $relationship,
-                'target' => $other
-            ];
-
-            return $this;
-        });
     }
 
     /**

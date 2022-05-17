@@ -3,10 +3,10 @@
 namespace Vinelab\NeoEloquent\Tests\Eloquent\Relations;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Collection;
+use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class BelongsToTest extends TestCase
 {
@@ -90,7 +90,7 @@ class BelongsToTest extends TestCase
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('modelAsNode')->with(array('Stub'))->andReturn('parent');
 
-        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder');
+        $builder = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $builder->shouldReceive('getQuery')->times(4)->andReturn($query);
         $builder->shouldReceive('select')->once()->with('relation');
         $builder->shouldReceive('select')->once()->with('relation', 'parent');
@@ -126,7 +126,7 @@ class BelongsToTest extends TestCase
         $query = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $query->shouldReceive('modelAsNode')->with(array('Stub'))->andReturn('parent');
 
-        $builder = M::mock('Vinelab\NeoEloquent\Eloquent\Builder');
+        $builder = M::mock('Vinelab\NeoEloquent\Query\Builder');
         $builder->shouldReceive('getQuery')->twice()->andReturn($query);
         $builder->shouldReceive('select')->once()->with('relation');
 
