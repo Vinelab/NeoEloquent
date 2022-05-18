@@ -9,7 +9,7 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
 {
     public function __construct(Builder $query, Model $child, string $relationName)
     {
-        parent::__construct($query, $child, '', '', $relationName);
+        parent::__construct($query, $child, '', $child->getKeyName(), $relationName);
     }
 
     /**
@@ -18,13 +18,7 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
     public function addConstraints(): void
     {
         if (static::$constraints) {
-            $table = $this->parent->getTable();
-
-            $oldFrom = $this->query->from;
-            $this->query->from($table)
-                ->crossJoin($oldFrom);
-
-            $this->query->whereRelationship($this->relationName.'>', $oldFrom);
+            $this->basicConstraints();
         }
     }
 
@@ -35,12 +29,7 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function addEagerConstraints(array $models): void
     {
-        $table = $this->parent->getTable();
-
-        $this->query->crossJoin($table);
-        $this->whereRelation('<'.$this->relationName, $table);
-
-        parent::addEagerConstraints($models);
+        $this->basicConstraints();
     }
 
     public function associate($model): Model
@@ -66,5 +55,20 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
     public function getResults()
     {
         return $this->query->first() ?: $this->getDefaultFor($this->parent);
+    }
+
+    /**
+     * @return void
+     */
+    private function basicConstraints(): void
+    {
+        // We need to swap around the corresponding nodes, as the processor will otherwise load the wrong node into the models
+        $table = $this->parent->getTable();
+
+        $oldFrom = $this->query->from;
+        $this->query->from($table)
+            ->crossJoin($oldFrom);
+
+        $this->query->whereRelationship($this->relationName . '>', $oldFrom);
     }
 }

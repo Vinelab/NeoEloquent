@@ -12,6 +12,7 @@ class User extends Model
 {
     protected $table = 'Individual';
     protected $fillable = ['name', 'email'];
+    protected $primaryKey = 'name';
 
     public function location(): BelongsTo
     {
@@ -22,6 +23,7 @@ class User extends Model
 class Location extends Model
 {
     protected $table = 'Location';
+    protected $primaryKey = 'lat';
     protected $fillable = ['lat', 'long'];
 }
 
@@ -45,34 +47,36 @@ class BelongsToRelationTest extends TestCase
         $user->save();
 
         $fetched = User::query()->first();
-        $fetched->getRelationValue('location');
         $this->assertEquals($location->toArray(), $fetched->location->toArray());
     }
 
     public function testDynamicLoadingBelongsToFromFoundRecord(): void
     {
+        /** @var Location $location */
         $location = Location::query()->create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
+        /** @var User $user */
         $user = User::query()->create(['name' => 'Daughter', 'alias' => 'daughter']);
-        $relation = $location->user()->associate($user);
+        $user->location()->associate($location);
+        $user->save();
 
-        $found = Location::find($location->id);
+        $found = User::query()->find($user->getKey());
 
-        $this->assertEquals($user->toArray(), $found->user->toArray());
-        $this->assertTrue($relation->delete());
+        $this->assertEquals($location->toArray(), $found->location->toArray());
     }
 
     public function testEagerLoadingBelongsTo(): void
     {
+        /** @var Location $location */
         $location = Location::query()->create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
+        /** @var User $user */
         $user = User::query()->create(['name' => 'Daughter', 'alias' => 'daughter']);
-        $relation = $location->user()->associate($user);
+        $user->location()->associate($location);
+        $user->save();
 
-        $found = Location::with('user')->find($location->id);
-        $relations = $found->getRelations();
+        $relations = User::with('location')->find($user->getKey())->getRelations();
 
-        $this->assertArrayHasKey('user', $relations);
-        $this->assertEquals($user->toArray(), $relations['user']->toArray());
-        $this->assertTrue($relation->delete());
+        $this->assertArrayHasKey('location', $relations);
+        $this->assertEquals($location->toArray(), $relations['location']->toArray());
     }
 
     public function testAssociatingBelongingModel(): void

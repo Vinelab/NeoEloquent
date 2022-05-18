@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
+use Illuminate\Support\Arr;
 use function compact;
 
 class Builder extends \Illuminate\Database\Query\Builder
@@ -84,5 +85,15 @@ class Builder extends \Illuminate\Database\Query\Builder
         }
 
         return $this;
+    }
+
+    public function getBindings(): array
+    {
+        return Arr::flatten($this->bindings, 1);
+    }
+
+    public function addBinding($value, $type = 'where')
+    {
+        $this->bindings[$type][] = $value;
     }
 }

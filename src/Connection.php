@@ -103,8 +103,9 @@ final class Connection extends \Illuminate\Database\Connection
                 return [];
             }
 
+            $parameters = $this->prepareBindings($bindings);
             return $this->getSession($useReadPdo)
-                ->run($query, $this->prepareBindings($bindings))
+                ->run($query, $parameters)
                 ->map(static fn (CypherMap $map) => $map->toArray())
                 ->toArray();
         });
@@ -136,7 +137,8 @@ final class Connection extends \Illuminate\Database\Connection
                 return true;
             }
 
-            $result = $this->getSession()->run($query, $this->prepareBindings($bindings));
+            $parameters = $this->prepareBindings($bindings);
+            $result = $this->getSession()->run($query, $parameters);
             if ($result->getSummary()->getCounters()->containsUpdates()) {
                 $this->recordsHaveBeenModified();
             }
@@ -166,22 +168,10 @@ final class Connection extends \Illuminate\Database\Connection
      */
     public function prepareBindings(array $bindings): array
     {
-        $grammar = $this->getQueryGrammar();
         $tbr = [];
 
-        $bindings = array_values(array_filter($bindings, static fn ($x) => ! $x instanceof LabelAction));
-
         foreach ($bindings as $key => $value) {
-            // We need to transform all instances of DateTimeInterface into the actual
-            // date string. Each query grammar maintains its own date string format
-            // so we'll just ask the grammar for the format to get from the date.
-            if ($value instanceof DateTimeInterface) {
-                $bindings[$key] = $value->format($grammar->getDateFormat());
-            } elseif (is_bool($value)) {
-                $bindings[$key] = (int) $value;
-            }
-
-            $tbr['param'.$key] = $bindings[$key];
+            $tbr['param'.$key] = $value;
         }
 
         return $tbr;

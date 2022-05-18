@@ -26,15 +26,23 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
     {
         parent::booted();
         static::saved(static function (Model $model) {
-            $query = $model::query()->whereKey($model->getKey());
+            // Timestamps need to be temporarily disabled as we don't update the model, but the relationship and it
+            // messes with the parameter order
+            $timestamps = $model->timestamps;
+            $model->timestamps = false;
+            $query = $model->newQuery()->whereKey($model->getKey());
             $hasRelationsToUpdate = false;
 
+            $targetTimestamps = [];
             /**
              * @var  $type
              * @var Model $target
              */
             foreach ($model->getRelations() as $type => $target) {
                 $hasRelationsToUpdate = true;
+                $targetTimestamps[$type] = $target->timestamps;
+                $target->timestamps = false;
+
                 $target = $target::query()->whereKey($target->getKey())->toBase();
                 if (Str::startsWith($type, '<')) {
                     $query->addRelationship(Str::substr($type, 1), '<', $target);
@@ -45,6 +53,11 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
 
             if ($hasRelationsToUpdate) {
                 $query->update([]);
+            }
+
+            $model->timestamps = $timestamps;
+            foreach($targetTimestamps as $type => $target) {
+                $model->getRelations()[$type]->timestamps = $target;
             }
 
             return true;
