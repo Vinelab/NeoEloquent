@@ -6,8 +6,6 @@ use Laudis\Neo4j\Authentication\Authenticate;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Common\Uri;
 use Laudis\Neo4j\Databags\DriverConfiguration;
-use Laudis\Neo4j\Databags\SessionConfiguration;
-use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 use function array_key_exists;
 
 final class ConnectionFactory
@@ -24,9 +22,11 @@ final class ConnectionFactory
      */
     public function make(string $database, string $prefix, array $config): Connection
     {
+        $port = $config['port'] ?? null;
+        $port = is_null($port) ? $port : ((int) $port);
         $uri = $this->defaultUri->withScheme($config['scheme'] ?? '')
             ->withHost($config['host'] ?? '')
-            ->withPort($config['port'] ?? null);
+            ->withPort($port);
 
         if (array_key_exists('username', $config) && array_key_exists('password', $config)) {
             $auth = Authenticate::basic($config['username'], $config['password']);
