@@ -23,12 +23,12 @@ final class ConnectionFactory
     public function make(string $database, string $prefix, array $config): Connection
     {
         $port = $config['port'] ?? null;
-        $port = is_null($port) ? $port : ((int) $port);
+        $port = (is_null($port) || $port === '') ? null : ((int) $port);
         $uri = $this->defaultUri->withScheme($config['scheme'] ?? '')
             ->withHost($config['host'] ?? '')
             ->withPort($port);
 
-        if (array_key_exists('username', $config) && array_key_exists('password', $config)) {
+        if (($config['username'] ?? false) && ($config['password'] ?? false)) {
             $auth = Authenticate::basic($config['username'], $config['password']);
         } else {
             $auth = Authenticate::disabled();
