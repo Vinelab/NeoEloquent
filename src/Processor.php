@@ -11,9 +11,25 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
 {
     public function processSelect(Builder $query, $results)
     {
-        $tbr = parent::processSelect($query, $results);
+        $tbr = [];
+        $from = $query->from;
+        foreach ($results as $row) {
+            $processedRow =  [];
+            foreach ($row as $key => $value) {
+                if ($value instanceof HasPropertiesInterface) {
+                    if ($key === $from) {
+                        foreach ($value->getProperties() as $prop => $x) {
+                            $processedRow[$prop] = $x;
+                        }
+                    }
+                } else {
+                    $processedRow[$key] = $value;
+                }
+            }
+            $tbr[] = $processedRow;
+        }
 
-        return $this->processRecursive($tbr);
+        return $tbr;
     }
 
     public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
@@ -23,33 +39,5 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         $id = $query->getConnection()->getPdo()->lastInsertId($sequence);
 
         return is_numeric($id) ? (int) $id : $id;
-    }
-
-    /**
-     * @param mixed $x
-     *
-     * @return mixed
-     */
-    protected function processRecursive($x, int $depth = 0)
-    {
-        if ($x instanceof HasPropertiesInterface) {
-            $x = $x->getProperties()->toArray();
-        }
-
-        if (is_iterable($x)) {
-            $tbr = [];
-            foreach ($x as $key => $y) {
-                if ($depth === 1 && $y instanceof HasPropertiesInterface) {
-                    foreach ($y->getProperties() as $prop => $value) {
-                        $tbr[$prop] = $value;
-                    }
-                } else {
-                    $tbr[$key] = $this->processRecursive($y, $depth + 1);
-                }
-            }
-            $x = $tbr;
-        }
-
-        return $x;
     }
 }

@@ -10,19 +10,19 @@ use Carbon\Carbon;
 
 class User extends Model
 {
-    protected $label = 'Individual';
+    protected $table = 'Individual';
     protected $fillable = ['name', 'email'];
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsToRelation(Location::class, 'INHABITED_BY');
+    }
 }
 
 class Location extends Model
 {
-    protected $label = 'Location';
+    protected $table = 'Location';
     protected $fillable = ['lat', 'long'];
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsToRelation(User::class, 'LOCATED_AT');
-    }
 }
 
 class BelongsToRelationTest extends TestCase
@@ -38,13 +38,15 @@ class BelongsToRelationTest extends TestCase
     {
         /** @var Location $location */
         $location = Location::query()->create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
+        /** @var User $user */
         $user = User::query()->create(['name' => 'Daughter', 'alias' => 'daughter']);
-        $relation = $location->user()->associate($user);
-        $location->save();
+        $user->location()->associate($location);
 
-        $fetched = Location::query()->first();
-        $this->assertEquals($user->toArray(), $fetched->user->toArray());
-        $relation->delete();
+        $user->save();
+
+        $fetched = User::query()->first();
+        $fetched->getRelationValue('location');
+        $this->assertEquals($location->toArray(), $fetched->location->toArray());
     }
 
     public function testDynamicLoadingBelongsToFromFoundRecord(): void

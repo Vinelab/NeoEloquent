@@ -37,4 +37,9 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
 
         parent::addEagerConstraints($models);
     }
+
+    public function getResults()
+    {
+        return $this->get();
+    }
 }

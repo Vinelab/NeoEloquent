@@ -36,7 +36,7 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
             foreach ($model->getRelations() as $type => $target) {
                 $hasRelationsToUpdate = true;
                 $target = $target::query()->whereKey($target->getKey())->toBase();
-                if (str_starts_with('<', $type)) {
+                if (Str::startsWith($type, '<')) {
                     $query->addRelationship(Str::substr($type, 1), '<', $target);
                 } else {
                     $query->addRelationship(Str::substr($type, 0, Str::length($type) - 1), '>', $target);

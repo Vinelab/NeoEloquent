@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\Concerns\ComparesRelatedModels;
 use Illuminate\Database\Eloquent\Relations\Concerns\SupportsDefaultModels;
 use Illuminate\Database\Query\JoinClause;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use function is_null;
 
 class HasOne extends HasOneOrMany
 {
@@ -22,10 +21,6 @@ class HasOne extends HasOneOrMany
      */
     public function getResults()
     {
-        if (is_null($this->getParentKey())) {
-            return $this->getDefaultFor($this->parent);
-        }
-
         return $this->query->first() ?: $this->getDefaultFor($this->parent);
     }
 

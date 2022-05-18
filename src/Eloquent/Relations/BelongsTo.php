@@ -18,9 +18,13 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
     public function addConstraints(): void
     {
         if (static::$constraints) {
-            $table = $this->related->getTable();
+            $table = $this->parent->getTable();
 
-            $this->query->whereRelationship($this->relationName.'>', $table);
+            $oldFrom = $this->query->from;
+            $this->query->from($table)
+                ->crossJoin($oldFrom);
+
+            $this->query->whereRelationship($this->relationName.'>', $oldFrom);
         }
     }
 
@@ -31,8 +35,9 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function addEagerConstraints(array $models): void
     {
-        $table = $this->related->getTable();
+        $table = $this->parent->getTable();
 
+        $this->query->crossJoin($table);
         $this->whereRelation('<'.$this->relationName, $table);
 
         parent::addEagerConstraints($models);
@@ -41,9 +46,9 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
     public function associate($model): Model
     {
         if ($model instanceof Model) {
-            $this->related->setRelation($this->relationName.'>', $model);
+            $this->related->setRelation('<'.$this->relationName, $model);
         } else {
-            $this->related->unsetRelation($this->relationName.'>');
+            $this->related->unsetRelation('<'.$this->relationName);
         }
 
         return $this->child;
@@ -56,5 +61,10 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
     public function dissociate(): Model
     {
         return $this->child->setRelation($this->relationName.'>', null);
+    }
+
+    public function getResults()
+    {
+        return $this->query->first() ?: $this->getDefaultFor($this->parent);
     }
 }

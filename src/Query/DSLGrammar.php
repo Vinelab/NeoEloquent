@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Query;
 
 use BadMethodCallException;
 use Closure;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Grammar;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
@@ -26,7 +25,6 @@ use WikibaseSolutions\CypherDSL\Clauses\WithClause;
 use WikibaseSolutions\CypherDSL\ExpressionList;
 use WikibaseSolutions\CypherDSL\Functions\FunctionCall;
 use WikibaseSolutions\CypherDSL\Functions\RawFunction;
-use WikibaseSolutions\CypherDSL\GreaterThan;
 use WikibaseSolutions\CypherDSL\GreaterThanOrEqual;
 use WikibaseSolutions\CypherDSL\In;
 use WikibaseSolutions\CypherDSL\IsNotNull;
@@ -49,17 +47,14 @@ use function array_filter;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
-use function array_merge;
 use function array_shift;
 use function array_unshift;
 use function count;
 use function end;
 use function explode;
-use function head;
 use function in_array;
 use function is_array;
 use function is_string;
-use function last;
 use function preg_split;
 use function reset;
 use function sprintf;
@@ -981,11 +976,10 @@ final class DSLGrammar
         $query = Query::new();
 
         $context = new DSLContext();
-        $node = $this->wrapTable($builder->from);
 
         $this->translateMatch($builder, $query, $context);
 
-        $this->decorateUpdateAndRemoveExpressions($values, $query, $node, $context);
+        $this->decorateUpdateAndRemoveExpressions($values, $query, $builder, $context);
         $this->decorateRelationships($builder, $query, $context);
 
         return $query;
@@ -1114,31 +1108,16 @@ final class DSLGrammar
         }
     }
 
-    private function decorateUpdateAndRemoveExpressions(array $values, Query $dsl, Node $node, DSLContext $context): void
+    private function decorateUpdateAndRemoveExpressions(array $values, Query $query, Builder $builder, DSLContext $context): void
     {
         $expressions = [];
-        $removeExpressions = [];
 
         foreach ($values as $key => $value) {
-            if ($value instanceof LabelAction) {
-                $labelExpression = new Label($node->getName(), [$value->getLabel()]);
-
-                if ($value->setsLabel()) {
-                    $expressions[] = $labelExpression;
-                } else {
-                    $removeExpressions[] = $labelExpression;
-                }
-            } else {
-                $expressions[] = $node->property($key)->assign($context->addParameter($value));
-            }
+            $expressions[] = $this->wrap($key, true, $builder)->assign($context->addParameter($value));
         }
 
         if (count($expressions) > 0) {
-            $dsl->set($expressions);
-        }
-
-        if (count($removeExpressions) > 0) {
-            $dsl->remove($removeExpressions);
+            $query->set($expressions);
         }
     }
 
@@ -1152,9 +1131,9 @@ final class DSLGrammar
             } else {
                 $to = Query::node()->named($this->wrapTable($relationship['target'])->getName()->getName());
                 if ($relationship['direction'] === '<') {
-                    $query->merge($from->relationshipTo($to, $relationship['type']));
-                } else {
                     $query->merge($from->relationshipFrom($to, $relationship['type']));
+                } else {
+                    $query->merge($from->relationshipTo($to, $relationship['type']));
                 }
             }
         }
