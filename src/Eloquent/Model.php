@@ -8,6 +8,7 @@ use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use function class_basename;
 use function is_null;
+use function str_starts_with;
 
 /**
  * @method Builder newQuery()
@@ -21,13 +22,32 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
 {
     public $incrementing = false;
 
-    protected array $relationsToCreate = [];
-
-    protected static function booted()
+    protected static function booted(): void
     {
         parent::booted();
         static::saved(static function (Model $model) {
-            $model->relations;
+            $query = $model::query()->whereKey($model->getKey());
+            $hasRelationsToUpdate = false;
+
+            /**
+             * @var  $type
+             * @var Model $target
+             */
+            foreach ($model->getRelations() as $type => $target) {
+                $hasRelationsToUpdate = true;
+                $target = $target::query()->whereKey($target->getKey())->toBase();
+                if (str_starts_with('<', $type)) {
+                    $query->addRelationship(Str::substr($type, 1), '<', $target);
+                } else {
+                    $query->addRelationship(Str::substr($type, 0, Str::length($type) - 1), '>', $target);
+                }
+            }
+
+            if ($hasRelationsToUpdate) {
+                $query->update([]);
+            }
+
+            return true;
         });
     }
 

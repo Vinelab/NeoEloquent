@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent\Query;
 
 use BadMethodCallException;
 use Closure;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Grammar;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
@@ -975,18 +976,19 @@ final class DSLGrammar
         throw new BadMethodCallException('CompileInsertUsing not implemented yet');
     }
 
-    public function compileUpdate(Builder $query, array $values): Query
+    public function compileUpdate(Builder $builder, array $values): Query
     {
-        $dsl = Query::new();
+        $query = Query::new();
 
         $context = new DSLContext();
-        $node = $this->wrapTable($query->from);
+        $node = $this->wrapTable($builder->from);
 
-        $this->translateMatch($query, $dsl, $context);
+        $this->translateMatch($builder, $query, $context);
 
-        $this->decorateUpdateAndRemoveExpressions($values, $dsl, $node, $context);
+        $this->decorateUpdateAndRemoveExpressions($values, $query, $node, $context);
+        $this->decorateRelationships($builder, $query, $context);
 
-        return $dsl;
+        return $query;
     }
 
     public function compileUpsert(Builder $builder, array $values, array $uniqueBy, array $update): Query
@@ -1137,6 +1139,28 @@ final class DSLGrammar
 
         if (count($removeExpressions) > 0) {
             $dsl->remove($removeExpressions);
+        }
+    }
+
+    private function decorateRelationships(Builder $builder, Query $query, DSLContext $context): void
+    {
+        $toRemove = [];
+        $from = $this->wrapTable($builder->from)->getName();
+        foreach ($builder->relationships ?? [] as $relationship) {
+            if ($relationship['target'] === null) {
+                $toRemove[] = $relationship;
+            } else {
+                $to = Query::node()->named($this->wrapTable($relationship['target'])->getName()->getName());
+                if ($relationship['direction'] === '<') {
+                    $query->merge($from->relationshipTo($to, $relationship['type']));
+                } else {
+                    $query->merge($from->relationshipFrom($to, $relationship['type']));
+                }
+            }
+        }
+
+        if (count($toRemove) > 0) {
+            $query->remove($toRemove);
         }
     }
 

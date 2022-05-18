@@ -31,15 +31,12 @@ class BelongsToRelationTest extends TestCase
     {
         parent::setUp();
 
-        $users = User::all();
-        $users->each(function ($u) { $u->delete(); });
-
-        $locs = Location::all();
-        $locs->each(function ($l) { $l->delete(); });
+        (new Location())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
     }
 
     public function testDynamicLoadingBelongsTo(): void
     {
+        /** @var Location $location */
         $location = Location::query()->create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
         $user = User::query()->create(['name' => 'Daughter', 'alias' => 'daughter']);
         $relation = $location->user()->associate($user);

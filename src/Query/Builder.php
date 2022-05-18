@@ -3,9 +3,12 @@
 namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
+use function compact;
 
 class Builder extends \Illuminate\Database\Query\Builder
 {
+    public $relationships = [];
+
     /**
      * Adds an expression in the where clause to check for the existence of a relationship.
      *
@@ -48,6 +51,37 @@ class Builder extends \Illuminate\Database\Query\Builder
         $this->joins[] = $this->newJoinClause($this, 'cross', $target);
 
         $this->whereRelationship($relationship, $target);
+
+        return $this;
+    }
+
+    /**
+     * Adds a relationship if you run the update query.
+     *
+     * @param string $type The type of the relationship.
+     * @param string $direction The direction of the relationship. Can be either '<' or '>' for incoming and outgoing relationships respectively.
+     * @param \Illuminate\Database\Query\Builder|null $target The query to determine the find the target(s).
+     *
+     * @return $this
+     */
+    public function addRelationship(string $type, string $direction, ?\Illuminate\Database\Query\Builder $target): self
+    {
+        if ($target) {
+            $join = $this->newJoinClause($this, 'cross', $target->from);
+            $join->joins = $target->joins;
+            $join->wheres = $target->wheres;
+            $join->groups = $target->groups;
+            $join->havings = $target->havings;
+            $this->joins[] = $join;
+
+            $this->relationships[] = [
+                'type' => $type,
+                'direction' => $direction,
+                'target' => $target->from,
+            ];
+        } else {
+            $this->relationships[] = compact('type', 'direction', 'target');
+        }
 
         return $this;
     }
