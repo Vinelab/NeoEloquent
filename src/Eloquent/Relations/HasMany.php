@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Eloquent\Relations;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use function is_null;
 
 class HasMany extends HasOneOrMany
 {
@@ -15,9 +14,7 @@ class HasMany extends HasOneOrMany
      */
     public function getResults()
     {
-        return ! is_null($this->getParentKey())
-            ? $this->query->get()
-            : $this->related->newCollection();
+        return $this->query->get();
     }
 
     /**

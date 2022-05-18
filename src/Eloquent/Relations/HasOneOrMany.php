@@ -11,36 +11,35 @@ abstract class HasOneOrMany extends \Illuminate\Database\Eloquent\Relations\HasO
 
     public function __construct(Builder $query, Model $parent, string $relation)
     {
-        parent::__construct($query, $parent, '', '');
         $this->relation = $relation;
+        parent::__construct($query, $parent, '', '');
     }
 
-    /**
-     * Set the base constraints on the relation query.
-     *
-     * @return void
-     */
     public function addConstraints(): void
     {
         if (static::$constraints) {
-            $table = $this->related->getTable();
+            // We need to swap around the corresponding nodes, as the processor will otherwise load the wrong node into the models
+            $table = $this->parent->getTable();
 
-            $this->whereRelation($this->relation.'>', $table);
+            $oldFrom = $this->query->from;
+            $this->query->from($table)
+                ->crossJoin($oldFrom);
+
+            $this->query->whereRelationship('<'.$this->relation, $oldFrom);
         }
     }
 
-    /**
-     * Set the constraints for an eager load of the relation.
-     *
-     * @param  array  $models
-     * @return void
-     */
     public function addEagerConstraints(array $models): void
     {
         $table = $this->related->getTable();
 
-        $this->whereRelation($this->relation.'>', $table);
+        $this->query->whereRelationship($this->relation . '>', $table);
+    }
 
-        parent::addEagerConstraints($models);
+    public function save(\Illuminate\Database\Eloquent\Model $model)
+    {
+        $model->setRelation('<'.$this->relation, $this->related);
+
+        return $model->save() ? $model : false;
     }
 }

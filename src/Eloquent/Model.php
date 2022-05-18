@@ -5,6 +5,8 @@ namespace Vinelab\NeoEloquent\Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
+use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
+use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use function class_basename;
 use function is_null;
@@ -35,7 +37,6 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
 
             $targetTimestamps = [];
             /**
-             * @var  $type
              * @var Model $target
              */
             foreach ($model->getRelations() as $type => $target) {
@@ -87,9 +88,6 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
 
     public function belongsToRelation($related, $relation = null): BelongsTo
     {
-        // If no relation name was given, we will use this debug backtrace to extract
-        // the calling method's name and use that as the relationship name as most
-        // of the time this will be what we desire to use for the relationships.
         if (is_null($relation)) {
             $relation = $this->guessBelongsToRelation();
         }
@@ -97,6 +95,39 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
         $instance = $this->newRelatedInstance($related);
 
         return new BelongsTo($this->newQuery(), $instance, $relation);
+    }
+
+    public function belongsToManyRelation($related, $relation = null): BelongsToMany
+    {
+        if (is_null($relation)) {
+            $relation = $this->guessBelongsToRelation();
+        }
+
+        $instance = $this->newRelatedInstance($related);
+
+        return new BelongsToMany($this->newQuery(), $instance, $relation);
+    }
+
+    public function hasManyRelationship(string $related, string $relation = null): HasMany
+    {
+        if (is_null($relation)) {
+            $relation = $this->guessBelongsToRelation();
+        }
+
+        $instance = $this->newRelatedInstance($related);
+
+        return new HasMany($this->newQuery(), $instance, $relation);
+    }
+
+    public function hasOneRelationship(string $related, string $relation = null): HasOne
+    {
+        if (is_null($relation)) {
+            $relation = $this->guessBelongsToRelation();
+        }
+
+        $instance = $this->newRelatedInstance($related);
+
+        return new HasOne($this->newQuery(), $instance, $relation);
     }
 
     public function nodeLabel(): string

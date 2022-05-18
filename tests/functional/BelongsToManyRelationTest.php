@@ -3,62 +3,58 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
 
 use Mockery as M;
-use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
+use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
+use Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo\Location;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
 class User extends Model
 {
-    protected $label = 'Individual';
+    protected $table = 'Individual';
 
     protected $fillable = ['uuid', 'name'];
 
     protected $primaryKey = 'uuid';
 
-    public function roles()
-    {
-        return $this->hasMany(Role::class, 'HAS_ROLE');
-    }
+//    public function roles()
+//    {
+//        return $this->hasMany(Role::class, 'HAS_ROLE');
+//    }
 }
 
 class Role extends Model
 {
-    protected $label = 'Role';
+    protected $table = 'Role';
 
     protected $fillable = ['title'];
 
-    public function users()
+    protected $primaryKey = 'title';
+
+    public function users(): BelongsToMany
     {
-        return $this->belongsToMany('Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany\User', 'HAS_ROLE');
+        return $this->belongsToManyRelation(User::class, 'HAS_ROLE');
     }
 }
 
 class BelongsToManyRelationTest extends TestCase
 {
-    public function tearDown(): void
+    public function setUp(): void
     {
-        M::close();
+        parent::setUp();
 
-        $users = User::all();
-        $users->each(function ($u) { $u->delete(); });
-
-        $roles = Role::all();
-        $roles->each(function ($r) { $r->delete(); });
-
-        parent::tearDown();
+        (new Role())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
     }
 
-    public function testSavingRelatedBelongsToMany()
+    public function testSavingRelatedBelongsToMany(): void
     {
+        /** @var User $user */
         $user = User::create(['uuid' => '11213', 'name' => 'Creepy Dude']);
+        /** @var Role $role */
         $role = new Role(['title' => 'Master']);
-        $relation = $user->roles()->save($role);
+        $relation = $role->users()->save($user);
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-        $this->assertTrue($relation->exists());
-        $this->assertGreaterThanOrEqual(0, $relation->id);
-
-        $relation->delete();
+        $role->getRelation('users');
+        $this->assertGreaterThanOrEqual(0, $role->users);
     }
 
     public function testAttachingModelId()

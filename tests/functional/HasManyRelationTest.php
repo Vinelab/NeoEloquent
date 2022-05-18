@@ -2,87 +2,59 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasMany;
 
-use Mockery as M;
+use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
 class Book extends Model
 {
-    protected $label = 'Book';
+    protected $table = 'Book';
 
     protected $fillable = ['title', 'pages', 'release_date'];
 }
 
 class Author extends Model
 {
-    protected $label = 'Author';
+    protected $table = 'Author';
 
     protected $fillable = ['name'];
 
-    public function books()
+    public function books(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\Relations\HasMany\Book', 'WROTE');
+        return $this->hasManyRelationship(Book::class, 'WROTE');
     }
 }
 
 class HasManyRelationTest extends TestCase
 {
-    public function tearDown(): void
-    {
-        M::close();
-
-        parent::tearDown();
-    }
-
     public function setUp(): void
     {
         parent::setUp();
 
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-
-        Author::setConnectionResolver($resolver);
-        Book::setConnectionResolver($resolver);
+        (new Author())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
     }
 
-    public function testSavingSingleAndDynamicLoading()
+    public function testSavingSingleAndDynamicLoading(): void
     {
-        $author = Author::create(['name' => 'George R. R. Martin']);
+        /** @var Author $author */
+        $author = Author::query()->create(['name' => 'George R. R. Martin']);
         $got = new Book(['title' => 'A Game of Thrones', 'pages' => '704', 'release_date' => 'August 1996']);
         $cok = new Book(['title' => 'A Clash of Kings', 'pages' => '768', 'release_date' => 'February 1999']);
-        $writtenGot = $author->books()->save($got, ['ratings' => '123']);
-        $writtenCok = $author->books()->save($cok, ['chapters' => 70]);
-
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $writtenGot);
-        $this->assertTrue($writtenGot->exists());
-        $this->assertGreaterThanOrEqual(0, $writtenGot->id);
-        $this->assertNotNull($writtenGot->created_at);
-        $this->assertNotNull($writtenGot->updated_at);
-        $this->assertEquals($writtenGot->ratings, 123);
-
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $writtenCok);
-        $this->assertTrue($writtenCok->exists());
-        $this->assertGreaterThan(0, $writtenCok->id);
-        $this->assertNotNull($writtenCok->created_at);
-        $this->assertNotNull($writtenCok->updated_at);
-        $this->assertEquals($writtenCok->chapters, 70);
+        $author->books()->save($got);
+        $author->books()->save($cok);
 
         $books = $author->books;
 
         $expectedBooks = [
-            $got->title => $got->toArray(),
-            $cok->title => $cok->toArray(),
+            'A Game of Thrones' => $got->getAttributes(),
+            'A Clash of Kings' => $cok->getAttributes(),
         ];
 
         $this->assertCount(2, $books->toArray());
 
         foreach ($books as $book) {
-            $this->assertEquals($expectedBooks[$book->title], $book->toArray());
-            unset($expectedBooks[$book->title]);
+            $this->assertEquals($expectedBooks[$book->title], $book->getAttributes());
         }
-
-        $writtenGot->delete();
-        $writtenCok->delete();
     }
 
     public function testSavingManyAndDynamicLoading()

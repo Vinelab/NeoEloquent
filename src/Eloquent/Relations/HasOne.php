@@ -114,9 +114,7 @@ class HasOne extends HasOneOrMany
      */
     public function newRelatedInstanceFor(\Illuminate\Database\Eloquent\Model $parent): \Illuminate\Database\Eloquent\Model
     {
-        return $this->related->newInstance()->setAttribute(
-            $this->getForeignKeyName(), $parent->{$this->localKey}
-        );
+        return $this->related->newInstance();
     }
 
     /**
