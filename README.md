@@ -125,7 +125,7 @@ This documentation only explains how it uses Neo4J relations instead of foreign 
 
 ### One-To-One
 
-Please refer to https://laravel.com/docseloquent-relationships#one-to-one for a more in depth explanation of the relationship itself.
+Please refer to https://laravel.com/docs/eloquent-relationships#one-to-one for a more in depth explanation of the relationship itself.
 
 ```php
 class User extends NeoEloquent {
