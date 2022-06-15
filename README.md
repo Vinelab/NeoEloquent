@@ -494,6 +494,7 @@ This version is currently in alpha. In order for it to be released there are a f
 | One-to-one relationships       | yes                            |
 | One-to-many relationships      | yes                            |
 | Many-to-many relationships     | work in progress               |
+| Relationship preloading        | no                             |
 | Schema                         | no                             |
 | createWith                     | out-of-order                   |
 | label variables and methods    | under discussion               |
