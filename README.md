@@ -86,7 +86,7 @@ You can always extend from the basic Eloquent Model instead of a NeoEloquent mod
 class Article extends \Vinelab\NeoEloquent\Eloquent\Model {
 }
 ```
-
+    
 You can now use Laravel as normal. All database functionality can now be used interchangeably with other connections and drivers.
 
 ## Usage
@@ -423,10 +423,10 @@ DB::connection('neo4j')->insert(<<<'CYPHER'
 CREATE (a:Article {title: $title})
 CYPHER, ['title' => 'My awesome blog post']);
 
-DB::connection('mysql')->insert(<<<'CYPHER'
+DB::connection('mysql')->insert(<<<'SQL'
 INSERT INTO articles (title)
 VALUES (?); 
-CYPHER, ['My awesome blog post']);
+SQL, ['My awesome blog post']);
 ```
 
 _For Schema Builders / Migrations (Work in progress)_
