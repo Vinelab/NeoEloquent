@@ -9,7 +9,7 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
 {
     public function __construct(Builder $query, Model $parent, string $relationName)
     {
-        parent::__construct($query, $parent, '', '', '', $parent->getKeyName(), '', $relationName);
+        parent::__construct($query, $parent, $relationName, '', '', $parent->getKeyName(), '', $relationName);
     }
     /**
      * Set the base constraints on the relation query.

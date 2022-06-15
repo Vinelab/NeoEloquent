@@ -10,7 +10,6 @@ use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use function class_basename;
 use function is_null;
-use function str_starts_with;
 
 /**
  * @method Builder newQuery()

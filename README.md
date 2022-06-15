@@ -2,20 +2,34 @@
 
 # NeoEloquent
 
-Neo4j Graph Eloquent Driver for Laravel 5.
+Combine the world's most powerful graph database with the best web development framework available.
+
+_The Laravel ecosystem is massive. This library aims to achieve feature parity with the database drivers provided by default in the framework. Advantages of this include, but are not limited to:_
+
+- **Frictionless** migration between database paradigms
+- **Extreme performance gains** when working with relational data
+- **Increased functionality** (createWith, N-degree relations, Cypher, ...)
+- **Easy onboarding** (Only learn Cypher, the graph database query language when you hit the limits of the query builder)
+- **Worry free** configuration
+- **Optional migrations**. Migrations are only needed for indexes, constraints and moving data around. Neo4J itself is schemaless.
+- **Support for complex deployment** If you are using Neo4J aura, a cluster or a single instance, the driver will automatically connect to it.
+
+Please refer to the [roadmap](#roadmap) for a list of available features and to the [usage](#usage) section for a list of out-of-the-box features that are available from Laravel.
+
+> NOTE: you are looking at version 2.0. It is currently in alpha stage and contains drastic changes under the hood. Please refer to the [architecture](#architecture) to gain some more insight on what has changed, and why.
 
 ## Quick Reference
 
  - [Installation](#installation)
- - [Configuration](#configuration)
- - [Models](#models)
+ - [Getting Started](#getting-started)
+ - [Usage](#usage)
  - [Relationships](#relationships)
- - [Edges](#edges)
- - [Migration](#migration)
- - [Schema](#schema)
- - [Aggregates](#aggregates)
+ - [Diving Deeper](#diving-deeper)
  - [Only in Neo](#only-in-neo)
  - [Things To Avoid](#avoid)
+ - [Roadmap](#roadmap)
+ - [Architecture](#architecture)
+ - [Special thanks](#special-thanks)
 
 ## Installation
 
@@ -31,20 +45,17 @@ Or add the package to your `composer.json` and run `composer update`.
 }
 ```
 
-Add the service provider in `app/config/app.php`:
+The post install script will automatically add the service provider in `app/config/app.php`:
 
 ```php
-'Vinelab\NeoEloquent\NeoEloquentServiceProvider',
+Vinelab\NeoEloquent\NeoEloquentServiceProvider::class
 ```
 
-The service provider will register all the required classes for this package and will also alias
-the `Model` class to `NeoEloquent` so you can simply `extend NeoEloquent` in your models.
+## Getting started
 
-## Configuration
+### Configuration
 
-### Connection
-in `app/config/database.php` or in case of an environment-based configuration `app/config/[env]/database.php`
-make `neo4j` your default connection:
+If you plan on making Neo4J your main database you can make it your default connection:
 
 ```php
 'default' => 'neo4j',
@@ -56,692 +67,160 @@ Add the connection defaults:
 'connections' => [
     'neo4j' => [
         'driver' => 'neo4j',
-        'host'   => 'localhost',
-        'port'   => '7474',
-        'username' => null,
-        'password' => null
-    ]
+        'scheme' => env('DB_SCHEME', 'bolt'),
+        'host' => env('DB_HOST', 'localhost'),
+        'port' => env('DB_PORT', 7687),
+        'database' => env('DB_DATABASE', 'neo4j'),
+        'username' => env('DB_USERNAME'),
+        'password' => env('DB_PASSWORD')
+    ],
 ]
 ```
 
-### Migration Setup
+### Defining models
 
-If you're willing to have migrations:
-
-- create the folder `app/database/labels`
-- modify `composer.json` and add `app/database/labels` to the `classmap` array
-- run `composer dump-autoload`
-
-
-### Documentation
-
-## Models
-
-- [Node Labels](#namespaced-models)
-- [Soft Deleting](#soft-deleting)
+You can always extend from the basic Eloquent Model instead of a NeoEloquent model. The configured connection chooses the correct driver under the hood. But you will lose out of some quality of life methods and functionality, especially when defining relations.
 
 ```php
-class User extends NeoEloquent {}
-```
-
-As simple as it is, NeoEloquent will generate the default node label from the class name,
-in this case it will be `:User`. Read about [node labels here](http://docs.neo4j.org/chunked/stable/rest-api-node-labels.html)
-
-### Namespaced Models
-When you use namespaces with your models the label will consider the full namespace.
-
-```php
-namespace Vinelab\Cms;
-
-class Admin extends NeoEloquent { }
-```
-
-The generated label from that relationship will be `VinelabCmsAdmin`, this is necessary to make sure
-that labels do not clash in cases where we introduce another  `Admin` instance like
-`Vinelab\Blog\Admin` then things gets messy with `:Admin` in the database.
-
-### Custom Node Labels
-
-You may specify the label(s) you wish to be used instead of the default generated, they are also
-case sensitive so they will be stored as put here.
-
-```php
-class User extends NeoEloquent {
-
-    protected $label = 'User'; // or array('User', 'Fan')
-
-    protected $fillable = ['name', 'email'];
-}
-
-$user = User::create(['name' => 'Some Name', 'email' => 'some@email.com']);
-```
-
-NeoEloquent has a fallback support for the `$table` variable that will be used if found and there was no `$label` defined on the model.
-
-```php
-class User extends NeoEloquent {
-
-    protected $table = 'User';
-
+class Article extends \Vinelab\NeoEloquent\Eloquent\Model {
 }
 ```
 
-Do not worry about the labels formatting, You may specify them as `array('Label1', 'Label2')` or separate them by a column `:` and prepending them with a `:` is optional.
+You can now use Laravel as normal. All database functionality can now be used interchangeably with other connections and drivers.
 
-### Soft Deleting
+## Usage
 
-To enable soft deleting you'll need to `use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait`
-instead of `Illuminate\Database\Eloquent\SoftDeletingTrait` and just like Eloquent you'll need the `$dates` in your models as follows:
+For general usage, you can simpy refer to the laravel docs. Things only get a little different when working with [relationships](#relationships).
 
-```php
-use Vinelab\NeoEloquent\Eloquent\SoftDeletingTrait;
+We have compiled a list of all database-related features in Laravel, so you can refer to their docs from here:
 
-class User extends NeoEloquent {
+- [Certain validation rules](https://laravel.com/docs/validation#available-validation-rules)
+- [Broadcasting](https://laravel.com/docs/broadcasting)
+- [Route model binding](https://laravel.com/docs/routing#route-model-binding)
+- [Notifications](https://laravel.com/docs/notifications)
+- [Queues](https://laravel.com/docs/queues)
+- [Authentication](https://laravel.com/docs/authentication)
+- [Authorization](https://laravel.com/docs/authorization)
+- [Database](https://laravel.com/docs/database)
+- [Query builder](https://laravel.com/docs/queries)
+- [Pagination](https://laravel.com/docs/pagination)
+- [Migrations](https://laravel.com/docs/migrations)
+- [Seeding](https://laravel.com/docs/seeding)
+- [Eloquent](https://laravel.com/docs/eloquent)
+- All packages building on top of laravel!
 
-    use SoftDeletingTrait;
-
-    protected $dates = ['deleted_at'];
-
-}
-```
+Of course, all other laravel features will continue to work as well.
 
 ## Relationships
+
+Relationships work out of the box. Basic methods work with foreign key assumptions to maintain backwards compatibility. This means JOINS in disguise!
+
+All relationships provided by Eloquent have an equivalent in neo4j. They can be accessed by adding `Relationship` after the method name. (eg. `belongsTo` becomes `belongsToRelationship`)
 
 - [One-To-One](#one-to-one)
 - [One-To-Many](#one-to-many)
 - [Many-To-Many](#many-to-many)
-- [Polymorphic](#polymorphic)
 
-Let's go through some examples of relationships between Nodes.
+This documentation only explains how it uses Neo4J relations instead of foreign keys. We have placed links to the original relationship documentation where needed.
 
 ### One-To-One
+
+Please refer to https://laravel.com/docseloquent-relationships#one-to-one for a more in depth explanation of the relationship itself.
 
 ```php
 class User extends NeoEloquent {
 
     public function phone()
     {
-        return $this->hasOne('Phone');
+        return $this->hasOneRelationship('Phone', 'HAS_PHONE');
     }
 ```
-This represents an `OUTGOING` relationship direction from the `:User` node to a `:Phone`.
 
-##### Saving
-
-```php
-$phone = new Phone(['code' => 961, 'number' => '98765432'])
-$relation = $user->phone()->save($phone);
-```
-
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (user:`User`)
-WHERE id(user) = 1
-CREATE (user)-[:PHONE]->(phone:`Phone` {code: 961, number: '98765432', created_at: 7543788, updated_at: 7543788})
-RETURN phone;
-```
+This represents an `OUTGOING` relationship direction from the `:User` node to a `:Phone`. `(:User) - [:HAS_PHONE] -> (:Phone)`
 
 ##### Defining The Inverse Of This Relation
 
 ```php
-class Phone extends NeoEloquent {
+class Phone extends \Vinelab\NeoEloquent\Eloquent\Model {
 
     public function user()
     {
-        return $this->belongsTo('User');
+        return $this->belongsToRelation('User', 'HAS_PHONE');
     }
 }
 ```
 
 This represents an `INCOMING` relationship direction from
-the `:User` node to this `:Phone` node.
-
-##### Associating Models
-
-Due to the fact that we do not deal with **foreign keys**, in our case it is much
-more than just setting the foreign key attribute on the parent model. In Neo4j (and Graph in general) a relationship is an entity itself that can also have attributes of its own, hence the introduction of
-[**Edges**](#Edges)
-
-> *Note:* Associated models does not persist relations automatically when calling `associate()`.
-
-```php
-$account = Account::find(1986);
-
-// $relation will be Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
-$relation = $user->account()->associate($account);
-
-// Save the relation
-$relation->save();
-```
-
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (account:`Account`), (user:`User`)
-WHERE id(account) = 1986 AND id(user) = 9862
-MERGE (account)<-[rel_user_account:ACCOUNT]-(user)
-RETURN rel_user_account;
-```
+the `:User` node to this `:Phone` node. `(:Phone) <- [:HAS_PHONE] - (:USER)`
 
 ### One-To-Many
 
+Please refer to https://laravel.com/docs/eloquent-relationships#one-to-many for a more in-depth explanation of the relationship.
+
 ```php
-class User extends NeoEloquent {
+class User extends \Vinelab\NeoEloquent\Eloquent\Model {
 
     public function posts()
     {
-        return $this->hasMany('Post', 'POSTED');
+        return $this->hasManyRelation('Post', 'POSTED');
     }
 }
 ```
 
+> NOTE: The attentive reader might figure out that there is no difference between the relationships one-to-one and one-to-many in Neo4J. This is because the way foreign-keys are set up in sql. The distinction between one-to-one and one-to-many is purely application based in NeoEloquent.
+
 This represents an `OUTGOING` relationship direction
-from the `:User` node to the `:Post` node.
+from the `:User` node to the `:Post` node. `(:User) - [:POSTED] -> (:Post)`
+
+#### Defining The Inverse Of This Relation
 
 ```php
-$user = User::find(1);
-$post = new Post(['title' => 'The Title', 'body' => 'Hot Body']);
-$user->posts()->save($post);
-```
-
-Similar to `One-To-One` relationships the returned value from a `save()` statement is an
-`Edge[In|Out]`
-
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (user:`User`)
-WHERE id(user) = 1
-CREATE (user)-[rel_user_post:POSTED]->(post:`Post` {title: 'The Title', body: 'Hot Body', created_at: '15-05-2014', updated_at: '15-05-2014'})
-RETURN rel_user_post;
-```
-
-##### Defining The Inverse Of This Relation
-
-```php
-class Post extends NeoEloquent {
+class Post extends \Vinelab\NeoEloquent\Eloquent\Model {
 
     public function author()
     {
-        return $this->belongsTo('User', 'POSTED');
+        return $this->belongsToRelation('User', 'POSTED');
     }
 }
 ```
 
 This represents an `INCOMING` relationship direction from
-the `:User` node to this `:Post` node.
+the `:User` node to this `:Post` node. `(:Post) <- [:POSTED] - (:User)`
 
 ### Many-To-Many
 
+Please refer to https://laravel.com/docs/eloquent-relationships#many-to-many for a more in depth explanation of the relationship.
+
 ```php
-class User extends NeoEloquent {
+class User extends \Vinelab\NeoEloquent\Eloquent\Model {
 
     public function followers()
     {
-        return $this->belongsToMany('User', 'FOLLOWS');
+        return $this->belongsToManyRelation('User', 'FOLLOWS>');
     }
 }
 ```
+This represents an `Outgoing` relationship between a `:User` node and another `:User`. `(:User) - [:FOLLOWS] -> (:User)`
 
-This represents an `INCOMING` relationship between a `:User` node and another `:User`.
+Belongs to many uses a relationship as a table. In other words, the pivot table is a relationship in Neo4J. When you define properties on the pivot table, you define them on the relationship.
 
-```php
-$jd = User::find(1012);
-$mc = User::find(1013);
-```
+Since a relationship must always have a direction when creating it, you need to annotate the direction with an arrow like `<FOLLOWS` or `FOLLOWS>`.
 
-`$jd` follows `$mc`:
+### Polymorphic relationships
 
-```php
-$jd->followers()->save($mc);
-```
+Polymorphic relationships are completely superfluous in Neo4J. A relationship does not care about the label of the start or end node. Because of this, all morphing relationships can be reduced to their normal equivalent.
 
-Or using the `attach()` method:
+You can refer to the morphing relationships [here](https://laravel.com/docs/eloquent-relationships#many-to-many) and convert them to their non-morphing relationship equivalent based on the table below:
 
-```php
-$jd->followers()->attach($mc);
-// Or..
-$jd->followers()->attach(1013); // 1013 being the id of $mc ($mc->getKey())
-```
+| Morphing relationship | NeoEloquent equivalent |
+|-----------------------|------------------------|
+| morphTo               | belongsToRelation      |
+| morphOne              | hasOneRelation         |
+| morphTo               | belongsToRelation      |
+| morphMany             | hasManyRelation        |
+| morphToMany           | belongsToManyRelation  |
+| morphedByMany         | belongsToManyRelation  |
 
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (user:`User`), (followers:`User`)
-WHERE id(user) = 1012 AND id(followers) = 1013
-CREATE (followers)-[:FOLLOWS]->(user)
-RETURN rel_follows;
-```
-
-`$mc` follows `$jd` back:
-
-```php
-$mc->followers()->save($jd);
-```
-
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (user:`User`), (followers:`User`)
-WHERE id(user) = 1013 AND id(followers) = 1012
-CREATE (user)-[rel_user_followers:FOLLOWS]->(followers)
-RETURN rel_follows;
-```
-
-get the followers of `$jd`
-
-```php
-$followers = $jd->followers;
-```
-
-The Cypher performed by this statement will be as follows:
-
-```
-MATCH (user:`User`), (followers:`User`), (user)-[rel_user_followers:FOLLOWS]-(followers)
-WHERE id(user) = 1012
-RETURN rel_follows;
-```
-
-### Dynamic Properties
-
-```php
-class Phone extends NeoEloquent {
-
-    public function user()
-    {
-        return $this->belongsTo('User');
-    }
-
-}
-
-$phone = Phone::find(1006);
-$user = $phone->user;
-// or getting an attribute out of the related model
-$name = $phone->user->name;
-```
-
-### Polymorphic
-
-The concept behind Polymorphic relations is purely relational to the bone but when it comes
-to graph we are representing it as a [HyperEdge](http://docs.neo4j.org/chunked/stable/cypher-cookbook-hyperedges.html).
-
-Hyper edges involves three models, the **parent** model, **hyper** model and **related** model
-represented in the following figure:
-
-![HyperEdges](https://googledrive.com/host/0BznzZ2lBbT0cLW9YcjNldlJkcXc/HyperEdge.png "HyperEdges")
-
-Similarly in code this will be represented by three models `User` `Comment` and `Post`
-where a `User` with id 1 posts a `Post` and a `User` with id 6 `COMMENTED` a `Comment` `ON` that `Post`
-as follows:
-
-```php
-class User extends NeoEloquent {
-
-    public function comments($morph = null)
-    {
-        return $this->hyperMorph($morph, 'Comment', 'COMMENTED', 'ON');
-    }
-
-}
-```
-
-In order to keep things simple but still involving the three models we will have to pass the
-`$morph` which is any `commentable` model, in our case it's either a `Video` or a `Post` model.
-
-> **Note:** Make sure to have it defaulting to `null` so that we can Dynamicly or Eager load
-with `$user->comments` later on.
-
-Creating a `Comment` with the `create()` method.
-
-```php
-$user = User::find(6);
-$post = Post::find(2);
-
-$user->comments($post)->create(['text' => 'Totally agree!', 'likes' => 0, 'abuse' => 0]);
-```
-
-As usual we will have returned an Edge, but this time it's not directed it is an instance of
-`HyperEdge`, read more about [HyperEdges here](#hyperedge).
-
-Or you may save a Comment instance:
-
-```php
-$comment = new Comment(['text' => 'Magnificent', 'likes' => 0, 'abuse' => 0]);
-
-$user->comments($post)->save($comment);
-```
-
-Also all the functionalities found in a `BelongsToMany` relationship are supported like
-attaching models by Ids:
-
-```php
-$user->comments($post)->attach([$id, $otherId]);
-```
-
-Or detaching models:
-
-```php
-$user->comments($post)->detach($comment); // or $comment->id
-```
-
-Sync too:
-
-```php
-$user->comments($post)->sync([$id, $otherId, $someId]);
-```
-
-#### Retrieving Polymorphic Relations
-
-From our previous example we will use the `Video` model to retrieve their comments:
-
-```php
-class Video extends NeoEloquent {
-
-    public function comments()
-    {
-        return $this->morphMany('Comment', 'ON');
-    }
-
-}
-```
-
-##### Dynamicly Loading Morph Model
-
-```php
-$video = Video::find(3);
-$comments = $video->comments;
-```
-
-##### Eager Loading Morph Model
-
-```php
-$video = Video::with('comments')->find(3);
-foreach ($video->comments as $comment)
-{
-    //
-}
-```
-
-#### Retrieving The Inverse of a Polymorphic Relation
-
-```php
-class Comment extends NeoEloquent {
-
-    public function commentable()
-    {
-        return $this->morphTo();
-    }
-
-}
-```
-
-```php
-$postComment = Comment::find(7);
-$post = $comment->commentable;
-
-$videoComment = Comment::find(5);
-$video = $comment->commentable;
-
-// You can also eager load them
-Comment::with('commentable')->get();
-```
-
-You may also specify the type of morph you would like returned:
-
-```php
-class Comment extends NeoEloquent {
-
-    public function post()
-    {
-        return $this->morphTo('Post', 'ON');
-    }
-
-    public function video()
-    {
-        return $this->morphTo('Video', 'ON');
-    }
-
-}
-```
-
-#### Polymorphic Relations In Short
-
-To drill things down here's how our three models involved in a Polymorphic relationship connect:
-
-```php
-class User extends NeoEloquent {
-
-    public function comments($morph = null)
-    {
-        return $this->hyperMorph($morph, 'Comment', 'COMMENTED', 'ON');
-    }
-
-}
-```
-
-```php
-class Post extends NeoEloquent { // Video is the same as this one
-
-    public function comments()
-    {
-        return $this->morphMany('Comment', 'ON');
-    }
-
-}
-```
-
-```php
-class Comment extends NeoEloquent {
-
-    public function commentable()
-    {
-        return $this->morphTo();
-    }
-
-}
-
-```
-
-### Eager Loading
-
-```php
-class Book extends NeoEloquent {
-
-    public function author()
-    {
-        return $this->belongsTo('Author');
-    }
-}
-```
-
-Loading authors with their books with the least performance overhead possible.
-
-```php
-foreach (Book::with('author')->get() as $book)
-{
-    echo $book->author->name;
-}
-```
-
-Only two Cypher queries will be run in the loop above:
-
-```
-MATCH (book:`Book`) RETURN *;
-
-MATCH (book:`Book`), (book)<-[:WROTE]-(author:`Author`) WHERE id(book) IN [1, 2, 3, 4, 5, ...] RETURN book, author;
-```
-
-## Edges
-
-- [EdgeIn](#edgein)
-- [EdgeOut](#edgeout)
-- [HyperEdge](#hyperedge)
-- [Working with Edges](#working-with-edges)
-- [Edge Attributes](#edge-attributes)
-
-### Introduction
-
-Due to the fact that relationships in Graph are much different than other database types so
-we will have to handle them accordingly. Relationships have directions that can vary between
-**In** and **Out** respectively towards the parent node.
-
-Edges give you the ability to manipulate relationships properties the same way you do with models.
-
-```php
-$edge = $location->associate($user);
-$edge->last_visited = 'today';
-$edge->save(); // true
-```
-
-#### EdgeIn
-
-Represents an `INCOMING` direction relationship from the related model towards the parent model.
-
-```php
-class Location extends NeoEloquent {
-
-    public function user()
-    {
-        return $this->belongsTo('User', 'LOCATED_AT');
-    }
-
-}
-```
-
-To associate a `User` to a `Location`:
-
-```php
-$location = Location::find(1922);
-$user = User::find(3876);
-$relation = $location->associate($user);
-```
-
-which in Cypher land will map to `(:Location)<-[:LOCATED_AT]-(:User)` and `$relation`
-being an instance of `EdgeIn` representing an incoming relationship towards the parent.
-
-And you can still access the models from the edge:
-
-```php
-$relation = $location->associate($user);
-$location = $relation->parent();
-$user = $relation->related();
-```
-
-#### EdgeOut
-
-Represents an `OUTGOING` direction relationship from the parent model to the related model.
-
-```php
-class User extends NeoEloquent {
-
-    public function posts()
-    {
-        return $this->hasMany('Post', 'POSTED');
-    }
-
-}
-```
-
-To save an outgoing edge from `:User` to `:Post` it goes like:
-
-```php
-$post = new Post(['...']);
-$posted = $user->posts()->save($post);
-```
-
-Which in Cypher would be `(:User)-[:POSTED]->(:Post)` and `$posted` being the `EdgeOut` instance.
-
-And fetch the related models:
-
-```php
-$edge = $user->posts()->save($post);
-$user = $edge->parent();
-$post = $edge->related();
-```
-
-#### HyperEdge
-
-This edge comes as a result of a [Polymorphic Relation](#polymorphic) representing an edge involving
-two other edges **left** and **right** that can be accessed through the `left()` and `right()` methods.
-
-This edge is treated a bit different than the others since it is not a direct relationship
-between two models which means it has no specific direction.
-
-```php
-$edge = $user->comments($post)->attach($comment);
-// Access the left and right edges
-$left = $edge->left();
-$user = $left->parent();
-$comment = $left->related();
-
-$right = $edge->right();
-$comment = $right->parent();
-$post = $right->related();
-```
-
-### Working With Edges
-
-As stated earlier **Edges** are entities to Graph unlike *SQL* where they are a matter of a
-foreign key having the value of the parent model as an attribute on the belonging model or in
-*Documents* where they are either embeds or ids as references. So we developed them to be *light
-models* which means you can work with them as if you were working with an `Eloquent` instance - to a certain extent,
-except [HyperEdges](#hyperedges).
-
-```php
-// Create a new relationship
-$relation = $location->associate($user); // Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn
-
-// Save the relationship to the database
-$relation->save(); // true
-```
-
-In the case of a `HyperEdge` you can access all three models as follows:
-
-```php
-$edge    = $user->comments($post)->save($comment);
-$user    = $edge->parent();
-$comment = $edge->hyper();
-$post    = $edge->related();
-```
-
-#### Edge Attributes
-
-By default, edges will have the timestamps `created_at` and `updated_at` automatically set and updated **only if** timestamps are enabled by setting `$timestamps` to `true`
-on the parent model.
-
-```php
-$located_at = $location->associate($user);
-$located_at->since = 1966;
-$located_at->present = true;
-$located_at->save();
-
-// $created_at and $updated_at are Carbon\Carbon instances
-$created_at = $located_at->created_at;
-$updated_at = $located_at->updated_at;
-```
-
-##### Retrieve an Edge from a Relation
-
-The same way an association will create an `EdgeIn` relationship we can retrieve
-the edge between two models by calling the `edge($model)` method on the `belongsTo`
-relationship.
-
-```php
-$location = Location::find(1892);
-$edge = $location->user()->edge();
-```
-
-You may also specify the model at the other side of the edge.
-
-> Note: By default NeoEloquent will try to pefrorm the `$location->user` internally to figure
-out the related side of the edge based on the relation function name, in this case it's
-`user()`.
-
-```php
-$location = Location::find(1892);
-$edge = $location->user()->edge($location->user);
-```
 
 ## Only in Neo
 
@@ -879,223 +358,154 @@ WHERE id(tag) IN [1, 2]
 CREATE (post)-[:TAG]->(tag);
 ```
 
-
-## Migration
-For migrations to work please perform the following:
-
-- create the folder `app/database/labels`
-- modify `composer.json` and add `app/database/labels` to the `classmap` array
-
-Since Neo4j is a schema-less database you don't need to predefine types of properties for labels.
-However you will be able to perform [Indexing](http://neo4j.com/docs/stable/query-schema-index.html) and [Constraints](http://neo4j.com/docs/stable/query-constraints.html) using NeoEloquent's pain-less [Schema](#schema).
-
-#### Commands
-NeoEloquent introduces new commands under the `neo4j` namespace so you can still use Eloquent's migration commands side-by-side.
-
-Migration commands are the same as those of Eloquent, in the form of `neo4j:migrate[:command]`
-
-    neo4j:make:migration                 Create a new migration file
-    neo4j:migrate                        Run the database migrations
-    neo4j:migrate:reset                  Rollback all database migrations
-    neo4j:migrate:refresh                Reset and re-run all migrations
-    neo4j:migrate:rollback               Rollback the last database migration
-
-
-### Creating Migrations
-
-Like in Laravel you can create a new migration by using the `make` command with Artisan:
-
-    php artisan neo4j:migrate:make create_user_label
-
-Label migrations will be placed in `app/database/labels`
-
-You can add additional options to commands like:
-
-    php artisan neo4j:migrate:make foo --path=app/labels
-    php artisan neo4j:migrate:make create_user_label --create=User
-    php artisan neo4j:migrate:make create_user_label --label=User
-
-
-### Running Migrations
-
-##### Run All Outstanding Migrations
-
-    php artisan neo4j:migrate
-
-##### Run All Outstanding Migrations For A Path
-
-    php artisan neo4j:migrate --path=app/foo/labels
-
-##### Run All Outstanding Migrations For A Package
-
-    php artisan neo4j:migrate --package=vendor/package
-
->Note: If you receive a "class not found" error when running migrations, try running the `composer dump-autoload` command.
-
-#### Forcing Migrations In Production
-
-To force-run migrations on a production database you can use:
-
-    php artisan neo4j:migrate --force
-
-### Rolling Back Migrations
-
-##### Rollback The Last Migration Operation
-
-    php artisan neo4j:migrate:rollback
-
-##### Rollback all migrations
-
-    php artisan neo4j:migrate:reset
-
-##### Rollback all migrations and run them all again
-
-    php artisan neo4j:migrate:refresh
-
-    php artisan neo4j:migrate:refresh --seed
-
-## Schema
-NeoEloquent will alias the `Neo4jSchema` facade automatically for you to be used in manipulating labels.
-
-```php
-Neo4jSchema::label('User', function(Blueprint $label)
-{
-    $label->unique('uuid');
-});
-```
-
-If you decide to write Migration classes manually (not using the generator) make sure to have these `use` statements in place:
-
-- `use Vinelab\NeoEloquent\Schema\Blueprint;`
-- `use Vinelab\NeoEloquent\Migrations\Migration;`
-
-Currently Neo4j supports `UNIQUE` constraint and `INDEX` on properties. You can read more about them at
-
-<http://docs.neo4j.org/chunked/stable/graphdb-neo4j-schema.html>
-
-#### Schema Methods
-
-Command                           | Description
-------------                      | -------------
-`$label->unique('email')`           | Adding a unique constraint on a property
-`$label->dropUnique('email')`       | Dropping a unique constraint from property
-`$label->index('uuid')`           | Adding index on property
-`$label->dropIndex('uuid')`       | Dropping index from property
-
-### Droping Labels
-
-```php
-Neo4jSchema::drop('User');
-Neo4jSchema::dropIfExists('User');
-```
-
-### Renaming Labels
-
-```php
-Neo4jSchema::renameLabel($from, $to);
-```
-
-### Checking Label's Existence
-
-```php
-if (Neo4jSchema::hasLabel('User')) {
-
-} else {
-
-}
-```
-
-### Checking Relation's Existence
-
-```php
-if (Neo4jSchema::hasRelation('FRIEND_OF')) {
-
-} else {
-
-}
-```
-
-You can read more about migrations and schema on:
-
-<http://laravel.com/docs/schema>
-
-<http://laravel.com/docs/migrations>
-
-## Aggregates
-
-In addition to the Eloquent builder aggregates, NeoEloquent also has support for
-Neo4j specific aggregates like *percentile* and *standard deviation*, keeping the same
-function names for convenience.
-Check [the docs](http://docs.neo4j.org/chunked/stable/query-aggregation.html) for more.
-
-> `table()` represents the label of the model
-
-```
-$users = DB::table('User')->count();
-
-$distinct = DB::table('User')->countDistinct('points');
-
-$price = DB::table('Order')->max('price');
-
-$price = DB::table('Order')->min('price');
-
-$price = DB::table('Order')->avg('price');
-
-$total = DB::table('User')->sum('votes');
-
-$disc = DB::table('User')->percentileDisc('votes', 0.2);
-
-$cont = DB::table('User')->percentileCont('votes', 0.8);
-
-$deviation = DB::table('User')->stdev('sex');
-
-$population = DB::table('User')->stdevp('sex');
-
-$emails = DB::table('User')->collect('email');
-```
-
-## Changelog
-Check the [Releases](https://github.com/Vinelab/NeoEloquent/releases) for details.
-
 ## Avoid
 
-Here are some constraints and Graph-specific gotchas, a list of features that are either not supported or not recommended.
+Beware of these common pitfalls.
 
 ### JOINS :confounded:
 
-- They make no sense for Graph, plus Graph hates them!
-Which makes them unsupported on purpose. If migrating from an `SQL`-based app
-they will be your boogie monster.
+_You were so preoccupied with whether you could, you did not stop to consider if you should._
 
-### Pivot Tables in Many-To-Many Relationships
-This is not supported, instead we will be using [Edges](#edges) to work with relationships between models.
+Joins make no sense for Graph, we have relationships!
 
-### Nested Arrays and Objects
+They are available to achieve feature parity, but Neo4J will issue warnings if you do use them. Please refer to the [relationship](#relationships) section find better ways for defining relations.
 
-- Due to the limitations imposed by the objects map types that can be stored in a single,
-you can never have nested *arrays* or *objects* in a single model,
-make sure it's flat. *Example:*
+### Eloquent relationships
+
+If you are using the same methods found in the laravel documentation for defining relationships between models, you will be using the foreign-key assumptions, which are joins in disguise!
+
+All model relationship have a neo4j relationship equivalent, using neo4j relationships instead of joins. Please refer to [Relationships](#relationships) for more information.
+
+### Nested Arrays
+
+Nested arrays are not supported in Neo4J. If you ever find yourself creating them, you are probably confronting an anti-pattern:
 
 ```php
-// Don't
 User::create(['name' => 'Some Name', 'location' => ['lat' => 123, 'lng'=> -123 ] ]);
 ```
 
-Check out the [createWith()](#createwith) method on how you can achieve this in a Graph way.
+Check out the [createWith()](#createwith) method on how you can achieve this in a Graph way. The nested attributes should be encapsulated in another node.
 
-## Tests
+## Diving deeper
 
-- install a Neo4j instance and run it with the default configuration `localhost:7474`
-- make sure the database graph is empty to avoid conflicts
-- after running `composer install` there should be `/vendor/bin/phpunit`
-- run `./vendor/bin/phpunit` after making sure that the Neo4j instance is running
+### Juggling connections
 
-> Tests marked as incomplete means they are either known issues or non-supported features,
-check included messages for more info.
+If you are juggling multiple connections/databases you can always change the connections for any database related classes manually. Examples include, but are not limited to: Models, Query builders, Schema, Basic queries, etc.
 
-## Factories
- 
-  > You can use default Laravel `factory()` helper for NeoEloquent models too.
+_For Models_
+```php
+class Neo4JArticle extends \Vinelab\NeoEloquent\Eloquent\Model {
+    protected $connection = 'neo4j';
+}
 
- - define needed factories inside `database/factories/`(read more)[https://laravel.com/docs/5.6/database-testing#writing-factories];
- - use `factory()` in the same style as default Laravel `factory()`.
+class SqlArticle extends \Illuminate\Database\Eloquent\Model {
+    protected $connection = 'mysql';
+}
+```
+
+_For Query Builders and direct queries_
+
+```php
+use Illuminate\Support\Facades\DB;
+
+$neo4jArticle = DB::connection('neo4j')
+    ->table('Article')
+    ->where('x', 'y')
+    ->first();
+
+$sqlArticle = DB::connection('mysql')
+    ->table('articles')
+    ->where('x', 'y')
+    ->first();
+
+DB::connection('neo4j')->insert(<<<'CYPHER'
+CREATE (a:Article {title: $title})
+CYPHER, ['title' => 'My awesome blog post']);
+
+DB::connection('mysql')->insert(<<<'CYPHER'
+INSERT INTO articles (title)
+VALUES (?); 
+CYPHER, ['My awesome blog post']);
+```
+
+_For Schema Builders / Migrations (Work in progress)_
+```php
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+
+Schema::connection('neo4j')->create('Article', function (Blueprint $node) {
+    $node->increments('id');
+    $node->index('createdAt');
+    $node->index('updatedAt');
+    $node->index('title');
+});
+
+Schema::connection('neo4j')->create('Article', function (Blueprint $node) {
+    $node->increments('id');
+    $node->index('createdAt');
+    $node->index('updatedAt');
+    $node->index('title');
+});
+```
+
+### Tables, nodes and labels
+
+#### Why we use tables instead of nodes and labels
+
+In our never-ending quest of achieving feature-parity, we landed on the design decision to keep the word table in the initial stage of the library. This might be strange if you are a fellow graph-aficionado. Laravel is built with relational databases in mind, which only knows tables, while Neo4J only knows nodes and relationships. NeoEloquent treats relationship types and node labels as the equivalent of a table.
+
+If you are creating a new query or model, you will have to use the table word while in reality you are either defining a label or relationship type, depending on the context. Please refer to [architecture](#architecture) for a more in-depth explanation.
+
+The previous version used the word label, but that makes for some confusing instances in the rare case the label is actually a relationship type or when the end user is not aware of the label keyword and makes futile attempts when defining a table.
+
+Please join the label discussion [here](), which is scheduled for release 2.1.
+
+#### Implicit table naming
+
+If you are using NeoEloquent and have not explicitly defined a table, the table name will be guessed based on the class name. The table will be the studly-case of the class basename `$this->table ?? Str::studly(class_basename($this))`.
+
+## Roadmap
+
+This version is currently in alpha. In order for it to be released there are a few more fixes that need to happen. The overview can be found here:
+
+| Feature                        | Completed?                     |
+|--------------------------------|--------------------------------|
+| Automatic connection resolving | yes                            |
+| Transactions                   | yes                            |
+| Connection statement handling  | yes                            |
+| Selects                        | yes                            |
+| Columns                        | yes                            |
+| Wheres                         | almost all                     |
+| Nested wheres                  | yes                            |
+| Exists                         | yes                            |
+| Insert                         | all except pivot relationships |
+| Update                         | yes                            |
+| Delete                         | yes                            |
+| Union                          | yes                            |
+| Join                           | yes                            |
+| Limit                          | yes                            |
+| Offset                         | yes                            |
+| Orders                         | yes                            |
+| Having                         | testing                        |
+| Groups                         | testing                        |
+| Truncate                       | yes                            |
+| Aggregate                      | yes                            |
+| One-to-one relationships       | yes                            |
+| One-to-many relationships      | yes                            |
+| Many-to-many relationships     | no                             |
+| Schema                         | no                             |
+
+## Architecture
+
+TODO
+
+## Special Thanks
+
+This package is a huge undertaking built on top of the thriving Neo4J PHP ecosystem. Special thanks are in order:
+
+- [Michal Štefaňák](https://github.com/stefanak-michal), maintainer of the [bolt library](https://github.com/neo4j-php/Bolt), without whom it wouldn't even be possible to connect to Neo4J in the first place
+- [Marijn van Wezel](https://github.com/marijnvanwezel), maintainer of the [PHP cypher DSL](https://github.com/WikibaseSolutions/php-cypher-dsl), whose library provided useful abstractions making it possible to convert the SQL assumptions of Laravel to Cypher queries.
+- [Abed Halawi](https://github.com/Mulkave), maintainer and pioneer of the NeoEloquent library
+- [Ghlen Nagels](https://github.com/transistive), maintainer of the [driver and client](https://github.com/neo4j-php/neo4j-php-client)
+- [Neo4J](https://neo4j.com) for providing the resources and fertile soil to allow the community to grow. In particular to [Florent](https://github.com/fbiville) and [Michael](https://twitter.com/mesirii)
+
