@@ -12,7 +12,7 @@ _The Laravel ecosystem is massive. This library aims to achieve feature parity w
 - **Easy onboarding** (Only learn Cypher, the graph database query language when you hit the limits of the query builder)
 - **Worry free** configuration
 - **Optional migrations**. Migrations are only needed for indexes, constraints and moving data around. Neo4J itself is schemaless.
-- **Support for complex deployment** If you are using Neo4J aura, a cluster or a single instance, the driver will automatically connect to it.
+- **Support for complex deployments** If you are using Neo4J aura, a cluster or a single instance, the driver will automatically connect to it.
 
 Please refer to the [roadmap](#roadmap) for a list of available features and to the [usage](#usage) section for a list of out-of-the-box features that are available from Laravel.
 
@@ -167,7 +167,7 @@ class User extends \Vinelab\NeoEloquent\Eloquent\Model {
 }
 ```
 
-> NOTE: The attentive reader might figure out that there is no difference between the relationships one-to-one and one-to-many in Neo4J. This is because the way foreign-keys are set up in sql. The distinction between one-to-one and one-to-many is purely application based in NeoEloquent.
+> NOTE: The attentive reader might figure out that there is no difference between the relationships one-to-one and one-to-many in Neo4J. This is because the way foreign-keys are set up in sql. The distinction between one-to-one and one-to-many is purely application based in NeoEloquent. A one-to-one relation boils down to a one-to-many relationship with a result limit of 1. 
 
 This represents an `OUTGOING` relationship direction
 from the `:User` node to the `:Post` node. `(:User) - [:POSTED] -> (:Post)`
@@ -210,7 +210,7 @@ Since a relationship must always have a direction when creating it, you need to 
 
 Polymorphic relationships are completely superfluous in Neo4J. A relationship does not care about the label of the start or end node. Because of this, all morphing relationships can be reduced to their normal equivalent.
 
-You can refer to the morphing relationships [here](https://laravel.com/docs/eloquent-relationships#many-to-many) and convert them to their non-morphing relationship equivalent based on the table below:
+You can refer to the morphing relationships [here](https://laravel.com/docs/eloquent-relationships#polymorphic-relationships) and convert them to their non-morphing relationship equivalent based on the table below:
 
 | Morphing relationship | NeoEloquent equivalent |
 |-----------------------|------------------------|
@@ -492,12 +492,17 @@ This version is currently in alpha. In order for it to be released there are a f
 | Aggregate                      | yes                            |
 | One-to-one relationships       | yes                            |
 | One-to-many relationships      | yes                            |
-| Many-to-many relationships     | no                             |
+| Many-to-many relationships     | work in progress               |
 | Schema                         | no                             |
 
 ## Architecture
 
-TODO
+There are two main classes doing the heavy lifting:
+
+1. The `Connection` class, which delegates the queries and parameters to the underlying Neo4J driver.
+2. The `DSLGrammar` class, which converts the Query Builder to their respective Cypher DSL. The `CypherGrammar` class then converts the DSL to cypher strings.
+
+These two classes offer the deepest possible level of integration within the Laravel Framework. Other classes such as the relations, query and eloquent builder simply offer specific methods or constructors to help mitigate the few inconsistencies between SQL and Cypher that are impossible to solve otherwise.
 
 ## Special Thanks
 
