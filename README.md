@@ -494,6 +494,10 @@ This version is currently in alpha. In order for it to be released there are a f
 | One-to-many relationships      | yes                            |
 | Many-to-many relationships     | work in progress               |
 | Schema                         | no                             |
+| createWith                     | out-of-order                   |
+| label variables and methods    | under discussion               |
+| multiple labels                | under discussion               |
+| N-degree relationships         | under discussion               |
 
 ## Architecture
 
