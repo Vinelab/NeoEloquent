@@ -13,6 +13,7 @@ _The Laravel ecosystem is massive. This library aims to achieve feature parity w
 - **Worry free** configuration
 - **Optional migrations**. Migrations are only needed for indexes, constraints and moving data around. Neo4J itself is schemaless.
 - **Support for complex deployments** If you are using Neo4J aura, a cluster or a single instance, the driver will automatically connect to it.
+- **Built-in integration** with laravel packages
 
 Please refer to the [roadmap](#roadmap) for a list of available features and to the [usage](#usage) section for a list of out-of-the-box features that are available from Laravel.
 
