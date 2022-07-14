@@ -34,7 +34,7 @@ Or add the package to your `composer.json` and run `composer update`.
 Add the service provider in `app/config/app.php`:
 
 ```php
-'Vinelab\NeoEloquent\NeoEloquentServiceProvider',
+Vinelab\NeoEloquent\NeoEloquentServiceProvider::class,
 ```
 
 The service provider will register all the required classes for this package and will also alias
@@ -57,12 +57,14 @@ Add the connection defaults:
     'neo4j' => [
         'driver' => 'neo4j',
         'host'   => 'localhost',
-        'port'   => '7474',
-        'username' => null,
-        'password' => null
+        'port'   => 7687,
+        'username' => 'username',
+        'password' => 'password',
     ]
 ]
 ```
+
+> Remember to update your ENV variables (`.env`) in case you're using them.
 
 ### Migration Setup
 
@@ -81,6 +83,8 @@ If you're willing to have migrations:
 - [Soft Deleting](#soft-deleting)
 
 ```php
+use NeoEloquent;
+
 class User extends NeoEloquent {}
 ```
 
@@ -91,7 +95,9 @@ in this case it will be `:User`. Read about [node labels here](http://docs.neo4j
 When you use namespaces with your models the label will consider the full namespace.
 
 ```php
-namespace Vinelab\Cms;
+namespace App\Models;
+
+use NeoEloquent;
 
 class Admin extends NeoEloquent { }
 ```
@@ -106,6 +112,8 @@ You may specify the label(s) you wish to be used instead of the default generate
 case sensitive so they will be stored as put here.
 
 ```php
+use NeoEloquent;
+
 class User extends NeoEloquent {
 
     protected $label = 'User'; // or array('User', 'Fan')
@@ -119,6 +127,8 @@ $user = User::create(['name' => 'Some Name', 'email' => 'some@email.com']);
 NeoEloquent has a fallback support for the `$table` variable that will be used if found and there was no `$label` defined on the model.
 
 ```php
+use NeoEloquent;
+
 class User extends NeoEloquent {
 
     protected $table = 'User';
