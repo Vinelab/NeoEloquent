@@ -915,15 +915,15 @@ Migration commands are the same as those of Eloquent, in the form of `neo4j:migr
 
 Like in Laravel you can create a new migration by using the `make` command with Artisan:
 
-    php artisan neo4j:migrate:make create_user_label
+    php artisan neo4j:make:migration create_user_label
 
 Label migrations will be placed in `app/database/labels`
 
 You can add additional options to commands like:
 
-    php artisan neo4j:migrate:make foo --path=app/labels
-    php artisan neo4j:migrate:make create_user_label --create=User
-    php artisan neo4j:migrate:make create_user_label --label=User
+    php artisan neo4j:make:migration foo --path=app/labels
+    php artisan neo4j:make:migration create_user_label --create=User
+    php artisan neo4j:make:migration create_user_label --label=User
 
 
 ### Running Migrations
