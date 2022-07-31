@@ -29,26 +29,6 @@ class BaseCommand extends Command
             return $this->laravel['path.base'].'/'.$path;
         }
 
-        $package = $this->input->getOption('package');
-
-        // If the package is in the list of migration paths we received we will put
-        // the migrations in that path. Otherwise, we will assume the package is
-        // is in the package directories and will place them in that location.
-        if (!is_null($package)) {
-            return $this->packagePath.'/'.$package.'/src/'.self::LABELS_DIRECTORY;
-        }
-
-        $bench = $this->input->getOption('bench');
-
-        // Finally we will check for the workbench option, which is a shortcut into
-        // specifying the full path for a "workbench" project. Workbenches allow
-        // developers to develop packages along side a "standard" app install.
-        if (!is_null($bench)) {
-            $path = "/workbench/{$bench}/src/".self::LABELS_DIRECTORY;
-
-            return $this->laravel['path.base'].$path;
-        }
-
         return $this->laravel['path.database'].'/'.self::LABELS_DIRECTORY;
     }
 }

@@ -9,14 +9,15 @@ use Vinelab\NeoEloquent\Migrations\MigrationCreator;
 
 class MigrateMakeCommand extends BaseCommand
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected $name = 'neo4j:make:migration';
 
-    /**
-     * {@inheritDoc}
-     */
+    protected $signature = 'neo4j:make:migration {name : The name of the migration}
+        {--create= : The table to be created}
+        {--label= : The table to migrate}
+        {--path= : The location where the migration file should be created}
+        {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
+        {--fullpath : Output the full path of the migration}';
+
+
     protected $description = 'Create a new migration file';
 
     /**
@@ -49,19 +50,13 @@ class MigrateMakeCommand extends BaseCommand
         $this->composer = $composer;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function fire()
+    public function handle()
     {
-        // It's possible for the developer to specify the tables to modify in this
-        // schema operation. The developer may also specify if this label needs
-        // to be freshly created so we can create the appropriate migrations.
         $name = $this->input->getArgument('name');
 
         $label = $this->input->getOption('label');
 
-        $modify = $this->input->getOption('create');
+        $modify = $this->input->getOption('create') ?? false;
 
         if (!$label && is_string($modify)) {
             $label = $modify;
@@ -70,7 +65,7 @@ class MigrateMakeCommand extends BaseCommand
         // Now we are ready to write the migration out to disk. Once we've written
         // the migration out, we will dump-autoload for the entire framework to
         // make sure that the migrations are registered by the class loaders.
-        $this->writeMigration($name, $label);
+        $this->writeMigration($name, $label, $modify);
 
         $this->composer->dumpAutoloads();
     }
@@ -84,13 +79,29 @@ class MigrateMakeCommand extends BaseCommand
      *
      * @return string
      */
-    protected function writeMigration($name, $label)
+    protected function writeMigration(string $name, ?string $label, bool $modify)
     {
-        $path = $this->getMigrationPath();
+        $file = pathinfo($this->creator->create(
+            $name, $this->getMigrationPath(), $label, $modify
+        ), PATHINFO_FILENAME);
 
-        $file = pathinfo($this->creator->create($name, $path, $label), PATHINFO_FILENAME);
+        $this->components->info(sprintf('Created migration [%s].', $file));
+    }
 
-        $this->line("<info>Created Migration:</info> $file");
+    protected function getMigrationPath(): string
+    {
+        if (! is_null($targetPath = $this->input->getOption('path'))) {
+            return ! $this->usingRealPath()
+                ? $this->laravel->basePath().'/'.$targetPath
+                : $targetPath;
+        }
+
+        return parent::getMigrationPath();
+    }
+
+    protected function usingRealPath(): bool
+    {
+        return $this->input->hasOption('realpath') && $this->option('realpath');
     }
 
     /**
@@ -100,24 +111,6 @@ class MigrateMakeCommand extends BaseCommand
     {
         return array(
             array('name', InputArgument::REQUIRED, 'The name of the migration'),
-        );
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function getOptions()
-    {
-        return array(
-            array('bench', null, InputOption::VALUE_OPTIONAL, 'The workbench the migration belongs to.', null),
-
-            array('create', null, InputOption::VALUE_OPTIONAL, 'The label schema to be created.'),
-
-            array('package', null, InputOption::VALUE_OPTIONAL, 'The package the migration belongs to.', null),
-
-            array('path', null, InputOption::VALUE_OPTIONAL, 'Where to store the migration.', null),
-
-            array('label', null, InputOption::VALUE_OPTIONAL, 'The label to migrate.'),
         );
     }
 }
