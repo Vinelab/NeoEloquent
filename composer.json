@@ -21,13 +21,13 @@
     ],
     "require": {
         "php": ">=7.4",
-        "illuminate/container": "^8.0",
-        "illuminate/contracts": "^8.0",
-        "illuminate/database": "^8.0",
-        "illuminate/events": "^8.0",
-        "illuminate/support": "^8.0",
-        "illuminate/pagination": "^8.0",
-        "nesbot/carbon": "^2.0",
+        "illuminate/container": "^9.0",
+        "illuminate/contracts": "^9.0",
+        "illuminate/database": "^9.0",
+        "illuminate/events": "^9.0",
+        "illuminate/support": "^9.0",
+        "illuminate/pagination": "^9.0",
+        "nesbot/carbon": "^2.5",
         "laudis/neo4j-php-client": "^2.3.3"
     },
     "require-dev": {
