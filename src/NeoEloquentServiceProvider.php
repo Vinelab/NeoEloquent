@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent;
 
 
 use Closure;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\ServiceProvider;
 
 class NeoEloquentServiceProvider extends ServiceProvider
@@ -15,5 +16,9 @@ class NeoEloquentServiceProvider extends ServiceProvider
         };
 
         \Illuminate\Database\Connection::resolverFor('neo4j', Closure::fromCallable($resolver));
+
+        Builder::macro('percentileDisc', function (string $logins, $percentile) {
+            return $this->aggregate('percentileDisc', $logins, $percentile ?? 1.0);
+        });
     }
 }

@@ -334,11 +334,11 @@ final class DSLGrammar
         $tbr = new ReturnClause();
 
         $columns  = [];
-        $segments = $query->aggregate['columns'];
+        $segments = Arr::wrap($query->aggregate['columns']);
         if (count($segments) === 1 && trim($segments[0]) === '*') {
             $columns[] = Query::rawExpression('*');
         } else {
-            foreach (Arr::wrap($segments) as $column) {
+            foreach ($segments as $column) {
                 $columns[] = $this->wrap($column, false, $query);
             }
         }
