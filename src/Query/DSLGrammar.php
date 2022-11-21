@@ -43,6 +43,7 @@ use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\PropertyType;
 use WikibaseSolutions\CypherDSL\Variable;
+
 use function array_filter;
 use function array_key_exists;
 use function array_keys;
@@ -79,32 +80,32 @@ final class DSLGrammar
     public function __construct()
     {
         $this->wheres = [
-            'Raw' => Closure::fromCallable([$this, 'whereRaw']),
-            'Basic' => Closure::fromCallable([$this, 'whereBasic']),
-            'In' => Closure::fromCallable([$this, 'whereIn']),
-            'NotIn' => Closure::fromCallable([$this, 'whereNotIn']),
-            'InRaw' => Closure::fromCallable([$this, 'whereInRaw']),
-            'NotInRaw' => Closure::fromCallable([$this, 'whereNotInRaw']),
-            'Null' => Closure::fromCallable([$this, 'whereNull']),
-            'NotNull' => Closure::fromCallable([$this, 'whereNotNull']),
-            'Between' => Closure::fromCallable([$this, 'whereBetween']),
+            'Raw'            => Closure::fromCallable([$this, 'whereRaw']),
+            'Basic'          => Closure::fromCallable([$this, 'whereBasic']),
+            'In'             => Closure::fromCallable([$this, 'whereIn']),
+            'NotIn'          => Closure::fromCallable([$this, 'whereNotIn']),
+            'InRaw'          => Closure::fromCallable([$this, 'whereInRaw']),
+            'NotInRaw'       => Closure::fromCallable([$this, 'whereNotInRaw']),
+            'Null'           => Closure::fromCallable([$this, 'whereNull']),
+            'NotNull'        => Closure::fromCallable([$this, 'whereNotNull']),
+            'Between'        => Closure::fromCallable([$this, 'whereBetween']),
             'BetweenColumns' => Closure::fromCallable([$this, 'whereBetweenColumns']),
-            'Date' => Closure::fromCallable([$this, 'whereDate']),
-            'Time' => Closure::fromCallable([$this, 'whereTime']),
-            'Day' => Closure::fromCallable([$this, 'whereDay']),
-            'Month' => Closure::fromCallable([$this, 'whereMonth']),
-            'Year' => Closure::fromCallable([$this, 'whereYear']),
-            'Column' => Closure::fromCallable([$this, 'whereColumn']),
-            'Nested' => Closure::fromCallable([$this, 'whereNested']),
-            'Exists' => Closure::fromCallable([$this, 'whereExists']),
-            'NotExists' => Closure::fromCallable([$this, 'whereNotExists']),
-            'RowValues' => Closure::fromCallable([$this, 'whereRowValues']),
-            'JsonBoolean' => Closure::fromCallable([$this, 'whereJsonBoolean']),
-            'JsonContains' => Closure::fromCallable([$this, 'whereJsonContains']),
-            'JsonLength' => Closure::fromCallable([$this, 'whereJsonLength']),
-            'FullText' => Closure::fromCallable([$this, 'whereFullText']),
-            'Sub' => Closure::fromCallable([$this, 'whereSub']),
-            'Relationship' => Closure::fromCallable([$this, 'whereRelationship']),
+            'Date'           => Closure::fromCallable([$this, 'whereDate']),
+            'Time'           => Closure::fromCallable([$this, 'whereTime']),
+            'Day'            => Closure::fromCallable([$this, 'whereDay']),
+            'Month'          => Closure::fromCallable([$this, 'whereMonth']),
+            'Year'           => Closure::fromCallable([$this, 'whereYear']),
+            'Column'         => Closure::fromCallable([$this, 'whereColumn']),
+            'Nested'         => Closure::fromCallable([$this, 'whereNested']),
+            'Exists'         => Closure::fromCallable([$this, 'whereExists']),
+            'NotExists'      => Closure::fromCallable([$this, 'whereNotExists']),
+            'RowValues'      => Closure::fromCallable([$this, 'whereRowValues']),
+            'JsonBoolean'    => Closure::fromCallable([$this, 'whereJsonBoolean']),
+            'JsonContains'   => Closure::fromCallable([$this, 'whereJsonContains']),
+            'JsonLength'     => Closure::fromCallable([$this, 'whereJsonLength']),
+            'FullText'       => Closure::fromCallable([$this, 'whereFullText']),
+            'Sub'            => Closure::fromCallable([$this, 'whereSub']),
+            'Relationship'   => Closure::fromCallable([$this, 'whereRelationship']),
         ];
     }
 
@@ -118,6 +119,7 @@ final class DSLGrammar
 
     /**
      * @param Expression|QueryConvertable|string $table
+     *
      * @see Grammar::wrapTable
      */
     public function wrapTable($table): Node
@@ -133,7 +135,7 @@ final class DSLGrammar
             [$table, $alias] = $segments;
         }
 
-        return Query::node($this->tablePrefix . $table)->named($this->tablePrefix . ($alias ?? $table));
+        return Query::node($this->tablePrefix.$table)->named($this->tablePrefix.($alias ?? $table));
     }
 
     /**
@@ -217,6 +219,7 @@ final class DSLGrammar
     public function parameterize(array $values, ?DSLContext $context = null): array
     {
         $context ??= new DSLContext();
+
         return array_map(fn($x) => $this->parameter($x, $context), $values);
     }
 
@@ -238,6 +241,7 @@ final class DSLGrammar
      * Quote the given string literal.
      *
      * @param string|array $value
+     *
      * @return PropertyType[]
      */
     public function quoteString($value): array
@@ -281,6 +285,7 @@ final class DSLGrammar
      * Set the grammar's table prefix.
      *
      * @param string $prefix
+     *
      * @return self
      */
     public function setTablePrefix(string $prefix): self
@@ -328,7 +333,15 @@ final class DSLGrammar
     {
         $tbr = new ReturnClause();
 
-        $columns = $this->wrapColumns($query, $query->aggregate['columns']);
+        $columns  = [];
+        $segments = $query->aggregate['columns'];
+        if (count($segments) === 1 && trim($segments[0]) === '*') {
+            $columns[] = Query::rawExpression('*');
+        } else {
+            foreach (Arr::wrap($segments) as $column) {
+                $columns[] = $this->wrap($column, false, $query);
+            }
+        }
 
         // All the aggregating functions used by laravel and mysql allow combining multiple columns as parameters.
         // In reality, they are a shorthand to check against a combination with null in them.
@@ -344,6 +357,9 @@ final class DSLGrammar
         }
 
         $function = $query->aggregate['function'];
+        if ($columns !== ['*'] && $query->distinct) {
+            $columns = [Query::rawExpression('DISTINCT'), ...$columns];
+        }
         $tbr->addColumn(Query::function()::raw($function, $columns)->alias('aggregate'));
 
         $dsl->addClause($tbr);
@@ -412,14 +428,19 @@ final class DSLGrammar
 
     /**
      * @param Builder $builder
+     *
      * @return WhereClause
      */
-    public function compileWheres(Builder $builder, bool $surroundParentheses, Query $query, DSLContext $context): WhereClause
-    {
+    public function compileWheres(
+        Builder $builder,
+        bool $surroundParentheses,
+        Query $query,
+        DSLContext $context
+    ): WhereClause {
         /** @var BooleanType $expression */
         $expression = null;
         foreach ($builder->wheres as $i => $where) {
-            if (!array_key_exists($where['type'], $this->wheres)) {
+            if ( ! array_key_exists($where['type'], $this->wheres)) {
                 throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
             }
 
@@ -455,14 +476,14 @@ final class DSLGrammar
 
     private function whereBasic(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        $column = $this->wrap($where['column'], false, $query);
+        $column    = $this->wrap($where['column'], false, $query);
         $parameter = $this->parameter($where['value'], $context);
 
         if (in_array($where['operator'], ['&', '|', '^', '~', '<<', '>>', '>>>'])) {
             return new RawFunction('apoc.bitwise.op', [
                 $this->wrap($where['column']),
                 Query::literal($where['operator']),
-                $this->parameter($query, $where['value'])
+                $this->parameter($query, $where['value']),
             ]);
         }
 
@@ -507,7 +528,13 @@ final class DSLGrammar
         $max = Query::literal(end($where['values']));
 
         $tbr = $this->whereBasic($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min], $context)
-            ->and($this->whereBasic($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max], $context));
+                    ->and(
+                        $this->whereBasic(
+                            $query,
+                            ['column' => $where['column'], 'operator' => '<=', 'value' => $max],
+                            $context
+                        )
+                    );
 
         if ($where['not']) {
             return new Not($tbr);
@@ -522,7 +549,13 @@ final class DSLGrammar
         $max = end($where['values']);
 
         $tbr = $this->whereColumn($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min], $context)
-            ->and($this->whereColumn($query, ['column' => $where['column'], 'operator' => '<=', 'value' => $max], $context));
+                    ->and(
+                        $this->whereColumn(
+                            $query,
+                            ['column' => $where['column'], 'operator' => '<=', 'value' => $max],
+                            $context
+                        )
+                    );
 
         if ($where['not']) {
             return new Not($tbr);
@@ -533,7 +566,7 @@ final class DSLGrammar
 
     private function whereDate(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        $column = $this->wrap($where['column'], false, $query);
+        $column    = $this->wrap($where['column'], false, $query);
         $parameter = Query::function()::date($this->parameter($where['value'], $context));
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
@@ -541,7 +574,7 @@ final class DSLGrammar
 
     private function whereTime(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        $column = $this->wrap($where['column'], false, $query);
+        $column    = $this->wrap($where['column'], false, $query);
         $parameter = Query::function()::time($this->parameter($where['value'], $context));
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
@@ -549,7 +582,7 @@ final class DSLGrammar
 
     private function whereDay(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        $column = $this->wrap($where['column'], false, $query)->property('day');
+        $column    = $this->wrap($where['column'], false, $query)->property('day');
         $parameter = $this->parameter($where['value'], $context);
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
@@ -557,7 +590,7 @@ final class DSLGrammar
 
     private function whereMonth(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        $column = $this->wrap($where['column'], false, $query)->property('month');
+        $column    = $this->wrap($where['column'], false, $query)->property('month');
         $parameter = $this->parameter($where['value'], $context);
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
@@ -565,7 +598,7 @@ final class DSLGrammar
 
     private function whereYear(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        $column = $this->wrap($where['column'], false, $query)->property('year');
+        $column    = $this->wrap($where['column'], false, $query)->property('year');
         $parameter = $this->parameter($where['value'], $context);
 
         return OperatorRepository::fromSymbol($where['operator'], $column, $parameter, false);
@@ -584,9 +617,9 @@ final class DSLGrammar
         /** @var Builder $nestedQuery */
         $nestedQuery = $where['query'];
 
-        $sub = Query::new()->match($this->wrapTable($query->from));
+        $sub   = Query::new()->match($this->wrapTable($query->from));
         $calls = [];
-        $tbr = $this->compileWheres($nestedQuery, true, $sub, $context)->getExpression();
+        $tbr   = $this->compileWheres($nestedQuery, true, $sub, $context)->getExpression();
         foreach ($sub->getClauses() as $clause) {
             if ($clause instanceof CallClause) {
                 $calls[] = $clause;
@@ -608,7 +641,7 @@ final class DSLGrammar
         // the WHERE series that requires a preceding clause, we don't need to worry about WITH statements between
         // possible multiple whereSubs in the same query depth.
         $sub = Query::new();
-        if (!isset($where['query']->from)) {
+        if ( ! isset($where['query']->from)) {
             $where['query']->from = $builder->from;
         }
         $select = $this->compileSelect($where['query']);
@@ -627,7 +660,14 @@ final class DSLGrammar
             $sub->addClause($clause);
         }
 
-        return [OperatorRepository::fromSymbol($where['operator'], $this->wrap($where['column'], false, $builder), $subresult->getVariable()), [new CallClause($sub)]];
+        return [
+            OperatorRepository::fromSymbol(
+                $where['operator'],
+                $this->wrap($where['column'], false, $builder),
+                $subresult->getVariable()
+            ),
+            [new CallClause($sub)],
+        ];
     }
 
     private function whereExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
@@ -652,7 +692,7 @@ final class DSLGrammar
             }
         });
 
-        return Query::rawExpression('exists(' . $subresult->getVariable()->toQuery() . ')');
+        return Query::rawExpression('exists('.$subresult->getVariable()->toQuery().')');
     }
 
     private function whereNotExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
@@ -668,7 +708,12 @@ final class DSLGrammar
         $lhs = (new ExpressionList($this->columnize($where['columns'], $builder)))->toQuery();
         $rhs = (new ExpressionList($this->parameterize($where['values'], $context)))->toQuery();
 
-        return OperatorRepository::fromSymbol($where['operator'], new RawExpression($lhs), new RawExpression($rhs), false);
+        return OperatorRepository::fromSymbol(
+            $where['operator'],
+            new RawExpression($lhs),
+            new RawExpression($rhs),
+            false
+        );
     }
 
     /**
@@ -676,9 +721,9 @@ final class DSLGrammar
      */
     public function whereRelationship(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        ['target' => $target, 'relationship' => $relationship ] = $where;
+        ['target' => $target, 'relationship' => $relationship] = $where;
 
-        $from = (new Node())->named($this->wrapTable($query->from)->getName()->getName());
+        $from   = (new Node())->named($this->wrapTable($query->from)->getName()->getName());
         $target = (new Node())->named($this->wrapTable($target)->getName()->getName());
 
         if (str_ends_with($relationship, '>')) {
@@ -705,6 +750,7 @@ final class DSLGrammar
      *
      * @param Builder $query
      * @param array $where
+     *
      * @return string
      */
     private function whereJsonContains(Builder $query, array $where): string
@@ -740,9 +786,9 @@ final class DSLGrammar
     {
         $groups = array_map(fn(string $x) => $this->wrap($x, false, $builder)->alias($x), $builder->groups ?? []);
         if (count($groups)) {
-            $with = $context->getVariables();
-            $table = $this->wrapTable($builder->from);
-            $with = array_filter($with, static fn(Variable $v) => $v->getName() !== $table->getName()->getName());
+            $with    = $context->getVariables();
+            $table   = $this->wrapTable($builder->from);
+            $with    = array_filter($with, static fn(Variable $v) => $v->getName() !== $table->getName()->getName());
             $collect = Query::function()::raw('collect', [$table->getName()])->alias('groups');
 
             $query->with([...$with, ...$groups, $collect]);
@@ -762,7 +808,7 @@ final class DSLGrammar
             // clause into SQL based on the components that make it up from builder.
             if ($having['type'] === 'Raw') {
                 $dslWhere = new RawExpression($having['sql']);
-            } else if ($having['type'] === 'between') {
+            } elseif ($having['type'] === 'between') {
                 $dslWhere = $this->compileHavingBetween($having, $context);
             } else {
                 $dslWhere = $this->compileBasicHaving($having, $context);
@@ -789,14 +835,14 @@ final class DSLGrammar
      */
     private function compileBasicHaving(array $having, DSLContext $context): BooleanType
     {
-        $column = new Variable($having['column']);
+        $column    = new Variable($having['column']);
         $parameter = $this->parameter($having['value'], $context);
 
         if (in_array($having['operator'], ['&', '|', '^', '~', '<<', '>>', '>>>'])) {
             return new RawFunction('apoc.bitwise.op', [
                 $column,
                 Query::literal($having['operator']),
-                $parameter
+                $parameter,
             ]);
         }
 
@@ -828,9 +874,9 @@ final class DSLGrammar
     private function translateOrders(Builder $query, Query $dsl, array $orders = null): void
     {
         $orderBy = new OrderByClause();
-        $orders ??= $query->orders;
+        $orders  ??= $query->orders;
         $columns = $this->wrapColumns($query, Arr::pluck($orders, 'column'));
-        $dirs = Arr::pluck($orders, 'direction');
+        $dirs    = Arr::pluck($orders, 'direction');
         foreach ($columns as $i => $column) {
             $orderBy->addProperty($column, $dirs[$i] === 'asc' ? null : 'desc');
         }
@@ -874,7 +920,7 @@ final class DSLGrammar
 
         $builder->unions = $unions;
 
-        if (!empty($builder->unionOrders)) {
+        if ( ! empty($builder->unionOrders)) {
             $this->translateOrders($builder, $query, $builder->unionOrders);
         }
 
@@ -924,12 +970,12 @@ final class DSLGrammar
 
         $i = 0;
         foreach ($values as $rowNumber => $keys) {
-            $node = $this->wrapTable($builder->from)->named($builder->from . $rowNumber);
+            $node = $this->wrapTable($builder->from)->named($builder->from.$rowNumber);
             $query->create($node);
 
             $sets = [];
             foreach ($keys as $key => $value) {
-                $sets[] = $node->property($key)->assign(Query::parameter('param' . $i));
+                $sets[] = $node->property($key)->assign(Query::parameter('param'.$i));
                 ++$i;
             }
 
@@ -991,12 +1037,12 @@ final class DSLGrammar
 
         $paramCount = 0;
         foreach ($values as $i => $valueRow) {
-            $node = $this->wrapTable($builder->from)->named($builder->from . $i);
+            $node   = $this->wrapTable($builder->from)->named($builder->from.$i);
             $keyMap = [];
 
             $onCreate = new SetClause();
             foreach ($valueRow as $key => $value) {
-                $keyMap[$key] = Query::parameter('param' . $paramCount);
+                $keyMap[$key] = Query::parameter('param'.$paramCount);
                 $onCreate->addAssignment(new Assignment($node->getName()->property($key), $keyMap[$key]));
                 ++$paramCount;
             }
@@ -1006,7 +1052,7 @@ final class DSLGrammar
             }
 
             $onUpdate = null;
-            if (!empty($update)) {
+            if ( ! empty($update)) {
                 $onUpdate = new SetClause();
                 foreach ($update as $key) {
                     $onUpdate->addAssignment(new Assignment($node->getName()->property($key), $keyMap[$key]));
@@ -1023,13 +1069,14 @@ final class DSLGrammar
      * Compile a delete statement into SQL.
      *
      * @param Builder $builder
+     *
      * @return Query
      */
     public function compileDelete(Builder $builder): Query
     {
-        $original = $builder->columns;
+        $original         = $builder->columns;
         $builder->columns = null;
-        $query = Query::new();
+        $query            = Query::new();
 
         $this->translateMatch($builder, $query, new DSLContext());
 
@@ -1042,14 +1089,15 @@ final class DSLGrammar
      * Compile a truncate table statement into SQL.
      *
      * @param Builder $query
+     *
      * @return Query[]
      */
     public function compileTruncate(Builder $query): array
     {
-        $node = $this->wrapTable($query->from);
+        $node   = $this->wrapTable($query->from);
         $delete = Query::new()
-            ->match($node)
-            ->delete($node->getName());
+                       ->match($node)
+                       ->delete($node->getName());
 
         return [$delete->toQuery() => []];
     }
@@ -1058,6 +1106,7 @@ final class DSLGrammar
      * Prepare the bindings for a delete statement.
      *
      * @param array $bindings
+     *
      * @return array
      */
     public function prepareBindingsForDelete(array $bindings): array
@@ -1084,6 +1133,7 @@ final class DSLGrammar
      * Get the value of a raw expression.
      *
      * @param Expression $expression
+     *
      * @return mixed
      */
     public function getValue(Expression $expression)
@@ -1104,12 +1154,16 @@ final class DSLGrammar
         $this->translateHavings($builder, $query, $context);
 
         if (count($builder->havings ?? [])) {
-            $query->raw('UNWIND', 'groups AS ' . $this->wrapTable($builder->from)->getName()->getName());
+            $query->raw('UNWIND', 'groups AS '.$this->wrapTable($builder->from)->getName()->getName());
         }
     }
 
-    private function decorateUpdateAndRemoveExpressions(array $values, Query $query, Builder $builder, DSLContext $context): void
-    {
+    private function decorateUpdateAndRemoveExpressions(
+        array $values,
+        Query $query,
+        Builder $builder,
+        DSLContext $context
+    ): void {
         $expressions = [];
 
         foreach ($values as $key => $value) {
@@ -1124,7 +1178,7 @@ final class DSLGrammar
     private function decorateRelationships(Builder $builder, Query $query, DSLContext $context): void
     {
         $toRemove = [];
-        $from = $this->wrapTable($builder->from)->getName();
+        $from     = $this->wrapTable($builder->from)->getName();
         foreach ($builder->relationships ?? [] as $relationship) {
             if ($relationship['target'] === null) {
                 $toRemove[] = $relationship;
@@ -1146,11 +1200,11 @@ final class DSLGrammar
     private function valuesToKeys(array $values): array
     {
         return Collection::make($values)
-            ->map(static fn(array $value) => array_keys($value))
-            ->flatten()
-            ->filter(static fn($x) => is_string($x))
-            ->unique()
-            ->toArray();
+                         ->map(static fn(array $value) => array_keys($value))
+                         ->flatten()
+                         ->filter(static fn($x) => is_string($x))
+                         ->unique()
+                         ->toArray();
     }
 
     public function getBitwiseOperators(): array

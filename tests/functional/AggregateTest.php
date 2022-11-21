@@ -57,7 +57,10 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 4]);
         User::query()->create(['logins' => 4]);
 
-        $this->assertEquals(4, User::query()->distinct()->count('logins'));
+        $this->assertEquals(
+            4,
+            User::query()->distinct()->count('logins')
+        );
     }
 
     public function testCountDistinctWithQuery(): void
