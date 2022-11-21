@@ -92,11 +92,12 @@ class ConnectionTest extends TestCase
             'email' => 'marie@curie.sci',
         ];
 
+        /** @var Connection $c */
         $c = $this->getConnection('default');
 
         $expected = [
-            'param0' => 'jd',
-            'param1' => 'marie@curie.sci',
+            'username' => 'jd',
+            'email' => 'marie@curie.sci',
         ];
 
         $prepared = $c->prepareBindings($bindings);

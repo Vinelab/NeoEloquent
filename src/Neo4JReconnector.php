@@ -23,7 +23,7 @@ class Neo4JReconnector
 
     public function withReadConnection(bool $readConnection = true): self
     {
-        return new self($this->driver, $readConnection);
+        return new self($this->driver, $this->database, $readConnection);
     }
 
     public function __invoke(): SessionInterface
