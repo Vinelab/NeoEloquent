@@ -6,10 +6,10 @@ use DateTime;
 use Carbon\Carbon;
 use Laudis\Neo4j\Types\CypherList;
 use Mockery as M;
-use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Wiz extends Model
 {

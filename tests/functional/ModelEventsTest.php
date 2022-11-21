@@ -2,10 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Events;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\SoftDeletes;
 
 class ModelEventsTest extends TestCase
 {
@@ -100,7 +100,7 @@ class ModelEventsTest extends TestCase
 
 class User extends Model
 {
-    use SoftDeletes;
+    use \Illuminate\Database\Eloquent\SoftDeletes;
 
     protected $dates = ['deleted_at'];
 

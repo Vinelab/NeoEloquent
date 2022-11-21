@@ -22,10 +22,10 @@
     "require": {
         "php": "^7.4 || ^8.0",
         "nesbot/carbon": "^2.0",
-        "laudis/neo4j-php-client": "^2.4.2",
+        "laudis/neo4j-php-client": "^2.8.1",
         "psr/container": "^1.0",
         "illuminate/contracts": "^8.0",
-        "stefanak-michal/bolt": "^3.0",
+        "stefanak-michal/bolt": "^4.0",
         "wikibase-solutions/php-cypher-dsl": "dev-main"
     },
     "require-dev": {
