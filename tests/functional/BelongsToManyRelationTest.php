@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Mockery as M;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo\Location;
@@ -16,10 +17,10 @@ class User extends Model
 
     protected $primaryKey = 'uuid';
 
-//    public function roles()
-//    {
-//        return $this->hasMany(Role::class, 'HAS_ROLE');
-//    }
+    public function roles(): \Vinelab\NeoEloquent\Eloquent\Relations\HasMany
+    {
+        return $this->hasManyRelationship(Role::class, 'HAS_ROLE');
+    }
 }
 
 class Role extends Model
@@ -51,6 +52,7 @@ class BelongsToManyRelationTest extends TestCase
         $user = User::create(['uuid' => '11213', 'name' => 'Creepy Dude']);
         /** @var Role $role */
         $role = new Role(['title' => 'Master']);
+        $role->save();
         $relation = $role->users()->save($user);
 
         $role->getRelation('users');

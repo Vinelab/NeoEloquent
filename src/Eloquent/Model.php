@@ -8,9 +8,11 @@ use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
+use Vinelab\NeoEloquent\Exceptions\IllegalRelationshipDefinitionException;
+
 use function class_basename;
 use function is_null;
-
+use function preg_match;
 /**
  * @method Builder newQuery()
  * @method Builder newQueryForRestoration()
@@ -96,10 +98,10 @@ abstract class Model extends \Illuminate\Database\Eloquent\Model
         return new BelongsTo($this->newQuery(), $instance, $relation);
     }
 
-    public function belongsToManyRelation($related, $relation = null): BelongsToMany
+    public function belongsToManyRelation($related, $relation): BelongsToMany
     {
-        if (is_null($relation)) {
-            $relation = $this->guessBelongsToRelation();
+        if (!preg_match('/(^<\w+$)|(^\w+>$)/', $relation)) {
+            throw IllegalRelationshipDefinitionException::fromRelationship($relation, static::class, $relation);
         }
 
         $instance = $this->newRelatedInstance($related);
