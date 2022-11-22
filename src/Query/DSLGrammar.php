@@ -995,12 +995,7 @@ final class DSLGrammar
      */
     public function compileInsertGetId(Builder $query, array $values, string $sequence): Query
     {
-        /**
-         * InsertGetId works in SQL because of this method: \Pdo::lastInsertId
-         *
-         * This behaviour simply cannot be emulated in Neo4j.
-         */
-        throw new BadMethodCallException('Neo4j does not support last insert id functionality');
+        return $this->compileInsert($query, [$values]);
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): Query

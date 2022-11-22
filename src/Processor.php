@@ -36,8 +36,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
     {
         $query->getConnection()->insert($sql, $values);
 
-        $id = $query->getConnection()->getPdo()->lastInsertId($sequence);
-
-        return is_numeric($id) ? (int) $id : $id;
+        // There is no universal way to get the id until neo4j 5 is properly documented
+        return $values[$sequence] ?? null;
     }
 }

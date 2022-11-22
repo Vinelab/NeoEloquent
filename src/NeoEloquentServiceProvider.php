@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent;
 
 
 use Closure;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\ServiceProvider;
 use WikibaseSolutions\CypherDSL\Query;
@@ -23,6 +24,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
         $this->registerAggregate('stdev');
         $this->registerAggregate('stdevp');
         $this->registerCollect();
+
     }
 
     /**

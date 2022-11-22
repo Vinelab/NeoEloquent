@@ -2,12 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Mockery as M;
-use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
-use Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo\Location;
+use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
 
 class User extends Model
 {
@@ -17,9 +13,9 @@ class User extends Model
 
     protected $primaryKey = 'uuid';
 
-    public function roles(): \Vinelab\NeoEloquent\Eloquent\Relations\HasMany
+    public function roles()
     {
-        return $this->hasManyRelationship(Role::class, 'HAS_ROLE');
+        return $this->belongsToMany(Role::class);
     }
 }
 
@@ -31,9 +27,9 @@ class Role extends Model
 
     protected $primaryKey = 'title';
 
-    public function users(): BelongsToMany
+    public function users()
     {
-        return $this->belongsToManyRelation(User::class, 'HAS_ROLE');
+        return $this->belongsToMany(User::class, 'HAS_ROLE');
     }
 }
 
@@ -48,12 +44,10 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testSavingRelatedBelongsToMany(): void
     {
-        /** @var User $user */
         $user = User::create(['uuid' => '11213', 'name' => 'Creepy Dude']);
-        /** @var Role $role */
         $role = new Role(['title' => 'Master']);
         $role->save();
-        $relation = $role->users()->save($user);
+        $role->users()->save($user);
 
         $role->getRelation('users');
         $this->assertGreaterThanOrEqual(0, $role->users);
