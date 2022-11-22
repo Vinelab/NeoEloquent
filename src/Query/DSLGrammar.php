@@ -149,8 +149,12 @@ final class DSLGrammar
      */
     public function wrap($value, bool $prefixAlias = false, Builder $builder = null): AnyType
     {
+        if ($value instanceof AnyType) {
+            return $value;
+        }
+
         if ($this->isExpression($value)) {
-            $value = $this->getValue($value);
+            return $this->getValue($value);
         }
 
         if (stripos($value, ' as ') !== false) {
@@ -341,19 +345,6 @@ final class DSLGrammar
             foreach ($segments as $column) {
                 $columns[] = $this->wrap($column, false, $query);
             }
-        }
-
-        // All the aggregating functions used by laravel and mysql allow combining multiple columns as parameters.
-        // In reality, they are a shorthand to check against a combination with null in them.
-        // https://dba.stackexchange.com/questions/127564/how-to-use-count-with-multiple-columns
-        // While neo4j does not directly support multiple parameters for the aggregating functions
-        // provided in SQL, it does provide WITH and WHERE to achieve the same result.
-        if (count($columns) > 1) {
-            $this->buildWithClause($query, $columns, $dsl);
-
-            $this->addWhereNotNull($columns, $dsl);
-
-            $columns = [Query::rawExpression('*')];
         }
 
         $function = $query->aggregate['function'];

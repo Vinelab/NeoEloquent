@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Aggregate;
 
+use Illuminate\Support\Collection;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
@@ -168,12 +169,11 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 11, 'points' => 4]);
         User::query()->create(['logins' => 12, 'points' => 2]);
 
-//        $this->assertEquals(10, User::query()->aggregate('percentileDisc', 'logins'));
         $this->assertEquals(11, User::query()->percentileDisc('logins', 0.5));
         $this->assertEquals(12, User::query()->percentileDisc('logins', 1));
 
         $this->assertEquals(1, User::query()->percentileDisc('points'));
-        $this->assertEquals(2, User::query()->percentileDisc('points', 0.6));
+        $this->assertEquals(2, (Int)User::query()->percentileDisc('points', 0.6));
         $this->assertEquals(4, User::query()->percentileDisc('points', 0.9));
     }
 
@@ -183,14 +183,13 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 11, 'points' => 4]);
         User::query()->create(['logins' => 12, 'points' => 2]);
 
-        User::query()->where('points', '>', 1);
-        $this->assertEquals(11, User::query()->percentileDisc('logins'));
-        $this->assertEquals(11, User::query()->percentileDisc('logins', 0.5));
-        $this->assertEquals(12, User::query()->percentileDisc('logins', 1));
-
-        $this->assertEquals(2, User::query()->percentileDisc('points'));
-        $this->assertEquals(4, User::query()->percentileDisc('points', 0.6));
-        $this->assertEquals(4, User::query()->percentileDisc('points', 0.9));
+        $builder = User::query()->where('points', '>', 1);
+        $this->assertEquals(11, $builder->percentileDisc('logins'));
+        $this->assertEquals(11, $builder->percentileDisc('logins', 0.5));
+        $this->assertEquals(12, $builder->percentileDisc('logins', 1));
+        $this->assertEquals(2, $builder->percentileDisc('points'));
+        $this->assertEquals(4.0, $builder->percentileDisc('points', 0.6));
+        $this->assertEquals(4, $builder->percentileDisc('points', 0.9));
     }
 
     public function testPercentileCont(): void
@@ -214,14 +213,15 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 11, 'points' => 4]);
         User::query()->create(['logins' => 12, 'points' => 2]);
 
-        User::query()->where('points', '<', 4);
-        $this->assertEquals(10.4, User::query()->percentileCont('logins', 0.2));
-        $this->assertEquals(10.8, User::query()->percentileCont('logins', 0.4));
-        $this->assertEquals(11.8, User::query()->percentileCont('logins', 0.9));
+        $builder = User::query();
+        $builder->where('points', '<', 4);
+        $this->assertEquals(10.4, $builder->percentileCont('logins', 0.2));
+        $this->assertEquals(10.8, $builder->percentileCont('logins', 0.4));
+        $this->assertEquals(11.8, $builder->percentileCont('logins', 0.9));
 
-        $this->assertEquals(1.2999999999999998, User::query()->percentileCont('points', 0.3));
-        $this->assertEquals(1.6, User::query()->percentileCont('points', 0.6));
-        $this->assertEquals(1.8999999999999999, User::query()->percentileCont('points', 0.9));
+        $this->assertEquals(1.2999999999999998, $builder->percentileCont('points', 0.3));
+        $this->assertEquals(1.6, $builder->percentileCont('points', 0.6));
+        $this->assertEquals(1.8999999999999999, $builder->percentileCont('points', 0.9));
     }
 
     public function testStdev(): void
@@ -231,7 +231,7 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 55, 'points' => 2]);
 
         $this->assertEquals(11, User::query()->stdev('logins'));
-        $this->assertEquals(1.5275252316519, User::query()->stdev('points'));
+        $this->assertEqualsWithDelta(1.52, User::query()->stdev('points'), 0.01);
     }
 
     public function testStdevWithQuery(): void
@@ -240,9 +240,9 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 44, 'points' => 4]);
         User::query()->create(['logins' => 55, 'points' => 2]);
 
-        User::query()->where('points', '>', 1);
-        $this->assertEquals(7.778174593052, User::query()->stdev('logins'));
-        $this->assertEquals(1.4142135623731, User::query()->stdev('points'));
+        $query = User::query()->where('points', '>', 1);
+        $this->assertEqualsWithDelta(7.78, $query->stdev('logins'), 0.01);
+        $this->assertEqualsWithDelta(1.41, $query->stdev('points'), 0.01);
     }
 
     public function testStdevp(): void
@@ -251,8 +251,8 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 44, 'points' => 4]);
         User::query()->create(['logins' => 55, 'points' => 2]);
 
-        $this->assertEquals(8.981462390205, User::query()->stdevp('logins'));
-        $this->assertEquals(1.2472191289246, User::query()->stdevp('points'));
+        $this->assertEqualsWithDelta(8.98, User::query()->stdevp('logins'), 0.01);
+        $this->assertEqualsWithDelta(1.25, User::query()->stdevp('points'), 0.01);
     }
 
     public function testStdevpWithQuery(): void
@@ -261,9 +261,10 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 44, 'points' => 4]);
         User::query()->create(['logins' => 55, 'points' => 2]);
 
-        User::query()->where('points', '>', 1);
-        $this->assertEquals(5.5, User::query()->stdevp('logins'));
-        $this->assertEquals(1, User::query()->stdevp('points'));
+        $query = User::query();
+        $query->where('points', '>', 1);
+        $this->assertEqualsWithDelta(5.5, $query->stdevp('logins'), 0.01);
+        $this->assertEqualsWithDelta(1, $query->stdevp('points'), 0.01);
     }
 
     public function testCollect(): void
@@ -273,14 +274,14 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 55, 'points' => 2]);
 
         $logins = User::query()->collect('logins');
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $logins);
+        $this->assertInstanceOf(Collection::class, $logins);
         $this->assertCount(3, $logins);
         $this->assertContains(33, $logins);
         $this->assertContains(44, $logins);
         $this->assertContains(55, $logins);
 
         $points = User::query()->collect('points');
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $points);
+        $this->assertInstanceOf(Collection::class, $points);
         $this->assertCount(3, $points);
         $this->assertContains(1, $points);
         $this->assertContains(4, $points);
@@ -294,7 +295,7 @@ class AggregateTest extends TestCase
         User::query()->create(['logins' => 55, 'points' => 2]);
 
         $logins = User::query()->where('points', '>', 1)->collect('logins');
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $logins);
+        $this->assertInstanceOf(Collection::class, $logins);
 
         $this->assertCount(2, $logins);
         $this->assertContains(44, $logins);
