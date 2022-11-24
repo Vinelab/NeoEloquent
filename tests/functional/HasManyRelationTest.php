@@ -2,13 +2,19 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasMany;
 
-use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 
 class Book extends Model
 {
     protected $table = 'Book';
+
+    protected $primaryKey = 'title';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
 
     protected $fillable = ['title', 'pages', 'release_date'];
 }
@@ -19,9 +25,15 @@ class Author extends Model
 
     protected $fillable = ['name'];
 
+    public $incrementing = false;
+
+    protected $primaryKey = 'name';
+
+    protected $keyType = 'string';
+
     public function books(): HasMany
     {
-        return $this->hasManyRelationship(Book::class, 'WROTE');
+        return $this->hasMany(Book::class, 'WROTE');
     }
 }
 
@@ -36,13 +48,15 @@ class HasManyRelationTest extends TestCase
 
     public function testSavingSingleAndDynamicLoading(): void
     {
-        /** @var Author $author */
-        $author = Author::query()->create(['name' => 'George R. R. Martin']);
+        $author = Author::create(['name' => 'George R. R. Martin']);
+
         $got = new Book(['title' => 'A Game of Thrones', 'pages' => '704', 'release_date' => 'August 1996']);
         $cok = new Book(['title' => 'A Clash of Kings', 'pages' => '768', 'release_date' => 'February 1999']);
+
         $author->books()->save($got);
         $author->books()->save($cok);
 
+        $author = Author::first();
         $books = $author->books;
 
         $expectedBooks = [
@@ -85,19 +99,10 @@ class HasManyRelationTest extends TestCase
         ];
 
         $edges = $author->books()->saveMany($novel);
-        $this->assertCount(count($novel), $edges->toArray());
+        $this->assertCount(count($novel), $edges);
 
         $books = $author->books->toArray();
         $this->assertCount(count($novel), $books);
-
-        foreach ($edges as $key => $edge) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
-            $this->assertTrue($edge->exists());
-            $this->assertGreaterThanOrEqual(0, $edge->id);
-            $this->assertNotNull($edge->created_at);
-            $this->assertNotNull($edge->updated_at);
-            $edge->delete();
-        }
     }
 
     public function testCreatingSingleRelatedModels()
@@ -140,46 +145,6 @@ class HasManyRelationTest extends TestCase
         }
     }
 
-    public function testCreatingManyRelatedModels()
-    {
-        $author = Author::create(['name' => 'George R. R. Martin']);
-
-        $novel = [
-            [
-                'title' => 'A Game of Thrones',
-                'pages' => 704,
-                'release_date' => 'August 1996',
-            ],
-            [
-                'title' => 'A Clash of Kings',
-                'pages' => 768,
-                'release_date' => 'February 1999',
-            ],
-            [
-                'title' => 'A Storm of Swords',
-                'pages' => 992,
-                'release_date' => 'November 2000',
-            ],
-            [
-                'title' => 'A Feast for Crows',
-                'pages' => 753,
-                'release_date' => 'November 2005',
-            ],
-        ];
-
-        $edges = $author->books()->createMany($novel);
-
-        foreach ($edges as $edge) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
-            $this->assertTrue($edge->exists());
-            $this->assertGreaterThanOrEqual(0, $edge->id);
-            $this->assertNotNull($edge->created_at);
-            $this->assertNotNull($edge->updated_at);
-
-            $edge->delete();
-        }
-    }
-
     public function testEagerLoadingHasMany()
     {
         $author = Author::create(['name' => 'George R. R. Martin']);
@@ -208,21 +173,17 @@ class HasManyRelationTest extends TestCase
         ];
 
         $edges = $author->books()->saveMany($novel);
-        $this->assertCount(count($novel), $edges->toArray());
+        $this->assertCount(count($novel), $edges);
 
-        $author = Author::with('books')->find($author->id);
+        $author = Author::with('books')->find($author->getKey());
         $relations = $author->getRelations();
 
         $this->assertArrayHasKey('books', $relations);
-        $this->assertCount(count($novel), $relations['books']->toArray());
+        $this->assertCount(count($novel), $relations['books']);
 
         $booksIds = array_map(function ($book) { return $book->getKey(); }, $novel);
 
-        foreach ($relations['books'] as $key => $book) {
-            $this->assertTrue(in_array($book->getKey(), $booksIds));
-            $edge = $author->books()->edge($book);
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edge);
-        }
+        $this->assertEquals(['A Game of Thrones', 'A Clash of Kings', 'A Storm of Swords', 'A Feast for Crows'], $booksIds);
     }
 
     public function testSavingManyRelationsWithRelationProperties()
