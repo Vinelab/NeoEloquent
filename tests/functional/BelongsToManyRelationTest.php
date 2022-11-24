@@ -5,6 +5,9 @@ namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
+use function func_get_args;
+use function func_num_args;
+
 class User extends Model
 {
     protected $table = 'Individual';
@@ -26,6 +29,20 @@ class Role extends Model
     protected $fillable = ['title'];
 
     protected $primaryKey = 'title';
+
+
+
+    protected static function boot()
+    {
+        parent::boot();
+        $relations = self::relationsToArray();
+
+        self::saving(function () {
+
+            $args = func_get_args();
+            echo func_num_args();
+        });
+    }
 
     public function users()
     {
@@ -57,13 +74,9 @@ class BelongsToManyRelationTest extends TestCase
     {
         $user = User::create(['uuid' => '4622', 'name' => 'Creepy Dude']);
         $role = Role::create(['title' => 'Master']);
-        $relation = $user->roles()->attach($role->id);
+        $user->roles()->attach($role->id);
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-        $this->assertTrue($relation->exists());
-        $this->assertGreaterThan(0, $relation->id);
-
-        $relation->delete();
+        $this->assertCount(1, $user->roles);
     }
 
     public function testAttachingManyModelIds()

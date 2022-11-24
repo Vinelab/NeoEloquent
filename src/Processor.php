@@ -4,6 +4,8 @@ namespace Vinelab\NeoEloquent;
 
 use Illuminate\Database\Query\Builder;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
+use Laudis\Neo4j\Databags\SummarizedResult;
+
 use function is_iterable;
 use function is_numeric;
 
@@ -32,11 +34,14 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         return $tbr;
     }
 
+    /**
+     * @return mixed
+     */
     public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
     {
-        $query->getConnection()->insert($sql, $values);
+        /** @var SummarizedResult $result */
+        $result = $query->getConnection()->insert($sql, $values);
 
-        // There is no universal way to get the id until neo4j 5 is properly documented
-        return $values[$sequence] ?? null;
+        return $result->first()->get($sequence);
     }
 }

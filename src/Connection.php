@@ -11,6 +11,7 @@ use Illuminate\Database\QueryException;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
+use Laudis\Neo4j\Databags\SummarizedResult;
 use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Types\CypherMap;
 use LogicException;
@@ -117,17 +118,15 @@ final class Connection extends \Illuminate\Database\Connection
     }
 
     /**
-     * Execute an SQL statement and return the boolean result.
+     * Execute an SQL statement and return the result.
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @return bool
+     * @return mixed
      */
     public function statement($query, $bindings = []): bool
     {
-        $this->affectingStatement($query, $bindings);
-
-        return true;
+        return $this->affectingStatement($query, $bindings);
     }
 
     public function affectingStatement($query, $bindings = []): int
@@ -157,6 +156,29 @@ final class Connection extends \Illuminate\Database\Connection
             $this->getSession()->run($query);
 
             return true;
+        });
+    }
+
+    /**
+     * @param $query
+     * @param $bindings
+     *
+     * @return SummarizedResult
+     */
+    public function insert($query, $bindings = []): SummarizedResult
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) {
+            if ($this->pretending()) {
+                return true;
+            }
+
+            $parameters = $this->prepareBindings($bindings);
+            $result = $this->getSession()->run($query, $parameters);
+            if ($result->getSummary()->getCounters()->containsUpdates()) {
+                $this->recordsHaveBeenModified();
+            }
+
+            return $result;
         });
     }
 

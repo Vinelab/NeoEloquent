@@ -995,7 +995,15 @@ final class DSLGrammar
      */
     public function compileInsertGetId(Builder $query, array $values, string $sequence): Query
     {
-        return $this->compileInsert($query, [$values]);
+        // There is no insert get id method in Neo4j
+        // But you can just return the sequence property instead
+        return $this->compileInsert($query, [$values])
+            ->returning(
+                $this->wrapTable($query->from)
+                     ->named($query->from.'0')
+                     ->property($sequence)
+                     ->alias($sequence)
+            );
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): Query

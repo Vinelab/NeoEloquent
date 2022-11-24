@@ -3,20 +3,20 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsTo;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Mockery as M;
+use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Carbon\Carbon;
 
 class User extends Model
 {
     protected $table = 'Individual';
-    protected $fillable = ['name', 'email'];
+    protected $fillable = ['name', 'alias'];
     protected $primaryKey = 'name';
+    public $incrementing = false;
 
     public function location(): BelongsTo
     {
-        return $this->belongsToRelation(Location::class, 'INHABITED_BY');
+        return $this->belongsTo(Location::class, null, null, 'INHABITED_BY');
     }
 }
 
@@ -24,7 +24,7 @@ class Location extends Model
 {
     protected $table = 'Location';
     protected $primaryKey = 'lat';
-    protected $fillable = ['lat', 'long'];
+    protected $fillable = ['lat', 'long', 'country', 'city'];
 }
 
 class BelongsToRelationTest extends TestCase
@@ -38,15 +38,21 @@ class BelongsToRelationTest extends TestCase
 
     public function testDynamicLoadingBelongsTo(): void
     {
-        /** @var Location $location */
-        $location = Location::query()->create(['lat' => 89765, 'long' => -876521234, 'country' => 'The Netherlands', 'city' => 'Amsterdam']);
-        /** @var User $user */
-        $user = User::query()->create(['name' => 'Daughter', 'alias' => 'daughter']);
-        $user->location()->associate($location);
+        $location = Location::create([
+            'lat' => 89765,
+            'long' => -876521234,
+            'country' => 'The Netherlands',
+            'city' => 'Amsterdam'
+        ]);
+        $user = User::query()->create([
+            'name' => 'Daughter',
+            'alias' => 'daughter'
+        ]);
 
+        $user->location()->associate($location);
         $user->save();
 
-        $fetched = User::query()->first();
+        $fetched = User::first();
         $this->assertEquals($location->toArray(), $fetched->location->toArray());
     }
 
