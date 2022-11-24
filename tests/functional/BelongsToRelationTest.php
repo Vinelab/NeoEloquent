@@ -44,7 +44,7 @@ class BelongsToRelationTest extends TestCase
             'country' => 'The Netherlands',
             'city' => 'Amsterdam'
         ]);
-        $user = User::query()->create([
+        $user = User::create([
             'name' => 'Daughter',
             'alias' => 'daughter'
         ]);

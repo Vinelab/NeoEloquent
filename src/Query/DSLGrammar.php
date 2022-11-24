@@ -1013,14 +1013,22 @@ final class DSLGrammar
 
     public function compileUpdate(Builder $builder, array $values): Query
     {
-        $query = Query::new();
+        $setPart = Query::new();
 
+        // To respect the ordering assumption of SQL, we do the set part first so the
+        // paramater ordering is the same.
         $context = new DSLContext();
+
+        $this->decorateUpdateAndRemoveExpressions($values, $setPart, $builder, $context);
+        $this->decorateRelationships($builder, $setPart, $context);
+
+        $query = Query::new();
 
         $this->translateMatch($builder, $query, $context);
 
-        $this->decorateUpdateAndRemoveExpressions($values, $query, $builder, $context);
-        $this->decorateRelationships($builder, $query, $context);
+        foreach ($setPart->getClauses() as $clause) {
+            $query->addClause($clause);
+        }
 
         return $query;
     }
