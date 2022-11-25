@@ -4,18 +4,25 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use DateTime;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Laudis\Neo4j\Types\CypherList;
-use Mockery as M;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Wiz extends Model
 {
-    protected $label = ['Wiz', 'SOmet'];
+    protected $table = 'SOmet';
 
     protected $fillable = ['fiz', 'biz', 'triz'];
+
+    protected $primaryKey = 'fiz';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
+    public $timestamps = true;
 }
 
 class WizDel extends Model
@@ -24,9 +31,15 @@ class WizDel extends Model
 
     protected $dates = ['deleted_at'];
 
-    protected $label = ':Wiz';
+    protected $table = 'Wiz';
 
     protected $fillable = ['fiz', 'biz', 'triz'];
+
+    protected $primaryKey = 'fiz';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
 }
 
 class SimpleCRUDTest extends TestCase
@@ -35,26 +48,13 @@ class SimpleCRUDTest extends TestCase
     {
         parent::setUp();
 
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-        Wiz::setConnectionResolver($resolver);
-    }
-
-    public function tearDown(): void
-    {
-        M::close();
-
-        // Mama said, always clean up before you go. =D
-        $w = Wiz::all();
-        $w->each(function ($me) { $me->delete(); });
-
-        parent::tearDown();
+        (new Wiz())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
     }
 
     public function testFindingAndFailing()
     {
         $this->expectException(ModelNotFoundException::class);
-        Wiz::findOrFail(0);
+        Wiz::findOrFail('a');
     }
 
     /**
@@ -65,11 +65,12 @@ class SimpleCRUDTest extends TestCase
     public function testDoesntCrashOnNonIntIds()
     {
         $u = Wiz::create([]);
-        $id = (string) $u->id;
-        $found = Wiz::where('id', "$id")->first();
+        $id = $u->getKey();
+        $found = Wiz::where($u->getKeyName(), $id)->first();
+
         $this->assertEquals($found->toArray(), $u->toArray());
 
-        $foundAgain = Wiz::find("$id");
+        $foundAgain = Wiz::find($id);
         $this->assertEquals($foundAgain->toArray(), $u->toArray());
     }
 
@@ -79,20 +80,19 @@ class SimpleCRUDTest extends TestCase
 
         $this->assertTrue($w->save());
         $this->assertTrue($w->exists);
-        $this->assertIsInt($w->id);
-        $this->assertTrue($w->id > 0);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
+        $this->assertIsString($w->getKey());;
     }
 
     public function testCreatingRecordWithArrayProperties()
     {
-        $w = Wiz::create(['fiz' => ['not', '123', 'helping']]);
+        // TODO - document that it is impossible to determine if naked arrays are about batch inserts or property inserts. This means the only way to deal with this is with iterable objects.
+        $w = Wiz::create(['fiz' => new CypherList(['not', '123', 'helping'])]);
 
         $expected = [
             $w->getKeyName() => $w->getKey(),
             'fiz' => new CypherList(['not', '123', 'helping']),
-            'created_at' => $w->created_at->toDateTimeString(),
-            'updated_at' => $w->updated_at->toDateTimeString(),
+            'created_at' => $w->created_at->toJSON(),
+            'updated_at' => $w->updated_at->toJSON(),
         ];
 
         $fetched = Wiz::first();
@@ -108,9 +108,9 @@ class SimpleCRUDTest extends TestCase
 
         $this->assertTrue($w->save());
         $this->assertTrue($w->exists);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
+        $this->assertInstanceOf(Wiz::class, $w);
 
-        $w2 = Wiz::find($w->id);
+        $w2 = Wiz::find($w->getKey());
         $this->assertEquals($w->toArray(), $w2->toArray());
     }
 
@@ -123,7 +123,7 @@ class SimpleCRUDTest extends TestCase
         $w->save();
 
         $this->assertTrue($w->delete());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
+        $this->assertInstanceOf(Wiz::class, $w);
         $this->assertFalse($w->exists);
     }
 
@@ -347,7 +347,10 @@ class SimpleCRUDTest extends TestCase
 
         $this->assertNotNull($w->getKey());
 
-        $found = Wiz::where('fiz', '=', null)->where('biz', '=', false)->where('triz', '=', true)->first();
+        $found = Wiz::where('fiz', '=', null)
+                    ->where('biz', '=', false)
+                    ->where('triz', '=', true)
+                    ->first();
 
         $this->assertNull($found->fiz);
         $this->assertFalse($found->biz);

@@ -1126,7 +1126,7 @@ final class DSLGrammar
      */
     public function prepareBindingsForDelete(array $bindings): array
     {
-        return $this->valuesToKeys($bindings);
+        return Arr::flatten(Arr::except($bindings, 'select'));
     }
 
     public function supportsSavepoints(): bool
