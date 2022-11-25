@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 use function func_get_args;
@@ -16,7 +17,9 @@ class User extends Model
 
     protected $primaryKey = 'uuid';
 
-    public function roles()
+    protected $keyType = 'string';
+
+    public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class);
     }
@@ -30,9 +33,11 @@ class Role extends Model
 
     protected $primaryKey = 'title';
 
-    public function users()
+    protected $keyType = 'string';
+
+    public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'HAS_ROLE');
+        return $this->belongsToMany(User::class);
     }
 }
 
@@ -60,7 +65,7 @@ class BelongsToManyRelationTest extends TestCase
     {
         $user = User::create(['uuid' => '4622', 'name' => 'Creepy Dude']);
         $role = Role::create(['title' => 'Master']);
-        $user->roles()->attach($role->id);
+        $user->roles()->attach($role->getKey());
 
         $this->assertCount(1, $user->roles);
     }

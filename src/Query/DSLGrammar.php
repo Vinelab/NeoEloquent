@@ -170,7 +170,14 @@ final class DSLGrammar
     {
         [$table, $alias] = preg_split('/\s+as\s+/i', $value);
 
-        return Query::variable($table)->alias($alias);
+        [$table, $property] = explode('.', $table);
+
+        $variable = Query::variable($table);
+        if ($property) {
+            $variable = $variable->property($property);
+        }
+
+        return $variable->alias($alias);
     }
 
     /**
