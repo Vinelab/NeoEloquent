@@ -30,20 +30,6 @@ class Role extends Model
 
     protected $primaryKey = 'title';
 
-
-
-    protected static function boot()
-    {
-        parent::boot();
-        $relations = self::relationsToArray();
-
-        self::saving(function () {
-
-            $args = func_get_args();
-            echo func_num_args();
-        });
-    }
-
     public function users()
     {
         return $this->belongsToMany(User::class, 'HAS_ROLE');

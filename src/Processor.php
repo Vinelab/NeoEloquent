@@ -8,6 +8,8 @@ use Laudis\Neo4j\Databags\SummarizedResult;
 
 use function is_iterable;
 use function is_numeric;
+use function str_contains;
+use function str_replace;
 
 class Processor extends \Illuminate\Database\Query\Processors\Processor
 {
@@ -24,7 +26,8 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
                             $processedRow[$prop] = $x;
                         }
                     }
-                } else {
+                } elseif (str_contains($query->from . '.', $key) || !str_contains('.', $key)) {
+                    $key = str_replace($query->from . '.', '', $key);
                     $processedRow[$key] = $value;
                 }
             }

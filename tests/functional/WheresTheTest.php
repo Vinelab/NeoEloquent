@@ -10,30 +10,22 @@ use function usort;
 
 class User extends Model
 {
-    protected $label = 'Individual';
+    protected $table = 'Individual';
 
     protected $fillable = ['name', 'email', 'alias', 'calls'];
+
+    protected $primaryKey = 'name';
+
+    protected $keyType = 'string';
 }
 
 class WheresTheTest extends TestCase
 {
-    public function tearDown(): void
-    {
-        M::close();
-
-        $all = User::all();
-        $all->each(function ($u) { $u->delete(); });
-
-        parent::tearDown();
-    }
-
     public function setUp(): void
     {
         parent::setUp();
 
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-        User::setConnectionResolver($resolver);
+        (new User())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
 
         // Setup the data in the database
         $this->ab = User::create([
@@ -74,23 +66,23 @@ class WheresTheTest extends TestCase
 
     public function testWhereIdWithNoOperator()
     {
-        $u = User::where('id', $this->ab->id)->first();
+        $u = User::where('name', $this->ab->getKey())->first();
 
         $this->assertEquals($this->ab->toArray(), $u->toArray());
     }
 
     public function testWhereIdSelectingProperties()
     {
-        $u = User::where('id', $this->ab->id)->first(['id', 'name', 'email']);
+        $u = User::where('name', $this->ab->getKey())->first(['name', 'email']);
 
-        $this->assertEquals($this->ab->id, $u->id);
+        $this->assertEquals($this->ab->getKey(), $u->getKey());
         $this->assertEquals($this->ab->name, $u->name);
         $this->assertEquals($this->ab->email, $u->email);
     }
 
     public function testWhereIdWithEqualsOperator()
     {
-        $u = User::where('id', '=', $this->cd->id)->first();
+        $u = User::where('name', '=', $this->cd->getKey())->first();
 
         $this->assertEquals($this->cd->toArray(), $u->toArray());
     }
@@ -229,7 +221,7 @@ class WheresTheTest extends TestCase
          */
         $this->markTestIncomplete();
 
-        $u = User::whereBetween('id', [$this->ab->id, $this->ij->id])->get();
+        $u = User::whereBetween('name', [$this->ab->getKey(), $this->ij->getKey()])->get();
 
         $mwahaha = new Collection(array($this->ab,
                                                             $this->cd,
@@ -245,7 +237,7 @@ class WheresTheTest extends TestCase
         $buddies = User::where('name', 'Ey Bee')
             ->orWhere('alias', 'cd')
             ->orWhere('email', 'ef@alpha.bet')
-            ->orWhere('id', $this->gh->id)
+            ->orWhere('name', $this->gh->getKey())
             ->orWhere('calls', '>', 40)
             ->get();
 
@@ -261,7 +253,7 @@ class WheresTheTest extends TestCase
 
     public function testOrWhereIn()
     {
-        $all = User::whereIn('id', [$this->ab->id, $this->cd->id])
+        $all = User::whereIn('name', [$this->ab->getKey(), $this->cd->getKey()])
             ->orWhereIn('alias', ['ef', 'gh', 'ij'])->get();
 
         $padrougas = new Collection(array($this->ab,
@@ -270,15 +262,15 @@ class WheresTheTest extends TestCase
                                                             $this->gh,
                                                             $this->ij, ));
         $array = $all->toArray();
-        usort($array, static fn (array $x, array $y) => $x['id'] <=> $y['id']);
+        usort($array, static fn (array $x, array $y) => $x['name'] <=> $y['name']);
         $padrougasArray = $padrougas->toArray();
-        usort($padrougasArray, static fn (array $x, array $y) => $x['id'] <=> $y['id']);
+        usort($padrougasArray, static fn (array $x, array $y) => $x['name'] <=> $y['name']);
         $this->assertEquals($array, $padrougasArray);
     }
 
     public function testWhereNotFound()
     {
-        $u = User::where('id', '<', 1)->get();
+        $u = User::where('name', '<', 1)->get();
         $this->assertCount(0, $u);
 
         $u2 = User::where('glasses', 'always on')->first();
