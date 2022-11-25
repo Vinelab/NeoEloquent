@@ -2,13 +2,18 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Mockery as M;
+use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
 
 class Misfit extends Model
 {
-    protected $label = 'Misfit';
+    protected $table = 'Misfit';
+
+    public $incrementing = false;
+
+    protected $primaryKey = 'name';
+
+    protected $keyType = 'string';
 
     protected $fillable = ['name', 'alias'];
 
@@ -25,30 +30,18 @@ class Misfit extends Model
 
 class QueryScopesTest extends TestCase
 {
-    public function tearDown(): void
-    {
-        M::close();
-
-        $all = Misfit::all();
-        $all->each(function ($u) { $u->delete(); });
-
-        parent::tearDown();
-    }
-
     public function setUp(): void
     {
         parent::setUp();
 
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-        Misfit::setConnectionResolver($resolver);
+        (new Misfit())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
 
         $this->t = Misfit::create([
             'name' => 'Nikola Tesla',
             'alias' => 'tesla',
         ]);
 
-        $this->e = misfit::create([
+        $this->e = Misfit::create([
             'name' => 'Thomas Edison',
             'alias' => 'edison',
         ]);
