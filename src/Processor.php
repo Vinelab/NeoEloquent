@@ -8,6 +8,8 @@ use Laudis\Neo4j\Databags\SummarizedResult;
 
 use function is_iterable;
 use function is_numeric;
+use function is_object;
+use function method_exists;
 use function str_contains;
 use function str_replace;
 
@@ -23,12 +25,12 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
                 if ($value instanceof HasPropertiesInterface) {
                     if ($key === $from) {
                         foreach ($value->getProperties() as $prop => $x) {
-                            $processedRow[$prop] = $x;
+                            $processedRow[$prop] = $this->filterDateTime($x);
                         }
                     }
                 } elseif (str_contains($query->from . '.', $key) || !str_contains('.', $key)) {
                     $key = str_replace($query->from . '.', '', $key);
-                    $processedRow[$key] = $value;
+                    $processedRow[$key] = $this->filterDateTime($value);
                 }
             }
             $tbr[] = $processedRow;
@@ -46,5 +48,19 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         $result = $query->getConnection()->insert($sql, $values);
 
         return $result->first()->first()->getValue();
+    }
+
+    /**
+     * @param $x
+     *
+     * @return mixed
+     */
+    private function filterDateTime($x)
+    {
+        if (is_object($x) && method_exists($x, 'toDateTime')) {
+            return $x->toDateTime();
+        }
+
+        return $x;
     }
 }

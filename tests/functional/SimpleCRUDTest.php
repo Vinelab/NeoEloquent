@@ -338,20 +338,20 @@ class SimpleCRUDTest extends TestCase
     public function testCreatingNullAndBooleanValues()
     {
         $w = Wiz::create([
-            'fiz' => null,
-            'biz' => false,
+            'biz' => null,
+            'fiz' => false,
             'triz' => true,
         ]);
 
         $this->assertNotNull($w->getKey());
 
-        $found = Wiz::where('fiz', '=', null)
-                    ->where('biz', '=', false)
+        $found = Wiz::whereNull('biz')
+                    ->where('fiz', '=', false)
                     ->where('triz', '=', true)
                     ->first();
 
-        $this->assertNull($found->fiz);
-        $this->assertFalse($found->biz);
+        $this->assertNull($found->biz);
+        $this->assertFalse($found->fiz);
         $this->assertTrue($found->triz);
     }
 
@@ -380,11 +380,11 @@ class SimpleCRUDTest extends TestCase
         $dt = new DateTime();
         $w = Wiz::create(['fiz' => $now, 'biz' => $dt]);
 
-        $format = Wiz::getDateFormat();
+        $format = (new Wiz)->getDateFormat();
 
         $fetched = Wiz::first();
-        $this->assertEquals($now->format(Wiz::getDateFormat()), $fetched->fiz);
-        $this->assertEquals($now->format(Wiz::getDateFormat()), $fetched->biz);
+        $this->assertEquals($now->format($format), $fetched->fiz->format($format));
+        $this->assertEquals($now->format($format), $fetched->biz->format($format));
 
         $tomorrow = Carbon::now()->addDay();
         $after = Carbon::now()->addDays(2);
@@ -394,7 +394,7 @@ class SimpleCRUDTest extends TestCase
         $fetched->save();
 
         $updated = Wiz::first();
-        $this->assertEquals($tomorrow->format(Wiz::getDateFormat()), $updated->fiz);
-        $this->assertEquals($after->format(Wiz::getDateFormat()), $updated->biz);
+        $this->assertEquals($tomorrow->format($format), $updated->fiz->format($format));
+        $this->assertEquals($after->format($format), $updated->biz->format($format));
     }
 }
