@@ -29,7 +29,6 @@ use WikibaseSolutions\CypherDSL\GreaterThanOrEqual;
 use WikibaseSolutions\CypherDSL\In;
 use WikibaseSolutions\CypherDSL\IsNotNull;
 use WikibaseSolutions\CypherDSL\IsNull;
-use WikibaseSolutions\CypherDSL\Label;
 use WikibaseSolutions\CypherDSL\LessThanOrEqual;
 use WikibaseSolutions\CypherDSL\Literals\Literal;
 use WikibaseSolutions\CypherDSL\Not;
@@ -80,32 +79,32 @@ final class DSLGrammar
     public function __construct()
     {
         $this->wheres = [
-            'Raw'            => Closure::fromCallable([$this, 'whereRaw']),
-            'Basic'          => Closure::fromCallable([$this, 'whereBasic']),
-            'In'             => Closure::fromCallable([$this, 'whereIn']),
-            'NotIn'          => Closure::fromCallable([$this, 'whereNotIn']),
-            'InRaw'          => Closure::fromCallable([$this, 'whereInRaw']),
-            'NotInRaw'       => Closure::fromCallable([$this, 'whereNotInRaw']),
-            'Null'           => Closure::fromCallable([$this, 'whereNull']),
-            'NotNull'        => Closure::fromCallable([$this, 'whereNotNull']),
-            'Between'        => Closure::fromCallable([$this, 'whereBetween']),
-            'BetweenColumns' => Closure::fromCallable([$this, 'whereBetweenColumns']),
-            'Date'           => Closure::fromCallable([$this, 'whereDate']),
-            'Time'           => Closure::fromCallable([$this, 'whereTime']),
-            'Day'            => Closure::fromCallable([$this, 'whereDay']),
-            'Month'          => Closure::fromCallable([$this, 'whereMonth']),
-            'Year'           => Closure::fromCallable([$this, 'whereYear']),
-            'Column'         => Closure::fromCallable([$this, 'whereColumn']),
-            'Nested'         => Closure::fromCallable([$this, 'whereNested']),
-            'Exists'         => Closure::fromCallable([$this, 'whereExists']),
-            'NotExists'      => Closure::fromCallable([$this, 'whereNotExists']),
-            'RowValues'      => Closure::fromCallable([$this, 'whereRowValues']),
-            'JsonBoolean'    => Closure::fromCallable([$this, 'whereJsonBoolean']),
-            'JsonContains'   => Closure::fromCallable([$this, 'whereJsonContains']),
-            'JsonLength'     => Closure::fromCallable([$this, 'whereJsonLength']),
-            'FullText'       => Closure::fromCallable([$this, 'whereFullText']),
-            'Sub'            => Closure::fromCallable([$this, 'whereSub']),
-            'Relationship'   => Closure::fromCallable([$this, 'whereRelationship']),
+            'raw'            => Closure::fromCallable([$this, 'whereRaw']),
+            'basic'          => Closure::fromCallable([$this, 'whereBasic']),
+            'in'             => Closure::fromCallable([$this, 'whereIn']),
+            'notin'          => Closure::fromCallable([$this, 'whereNotIn']),
+            'inraw'          => Closure::fromCallable([$this, 'whereInRaw']),
+            'notinraw'       => Closure::fromCallable([$this, 'whereNotInRaw']),
+            'null'           => Closure::fromCallable([$this, 'whereNull']),
+            'notnull'        => Closure::fromCallable([$this, 'whereNotNull']),
+            'between'        => Closure::fromCallable([$this, 'whereBetween']),
+            'betweencolumns' => Closure::fromCallable([$this, 'whereBetweenColumns']),
+            'date'           => Closure::fromCallable([$this, 'whereDate']),
+            'time'           => Closure::fromCallable([$this, 'whereTime']),
+            'day'            => Closure::fromCallable([$this, 'whereDay']),
+            'month'          => Closure::fromCallable([$this, 'whereMonth']),
+            'year'           => Closure::fromCallable([$this, 'whereYear']),
+            'column'         => Closure::fromCallable([$this, 'whereColumn']),
+            'nested'         => Closure::fromCallable([$this, 'whereNested']),
+            'exists'         => Closure::fromCallable([$this, 'whereExists']),
+            'notexists'      => Closure::fromCallable([$this, 'whereNotExists']),
+            'rowvalues'      => Closure::fromCallable([$this, 'whereRowValues']),
+            'jsonboolean'    => Closure::fromCallable([$this, 'whereJsonBoolean']),
+            'jsoncontains'   => Closure::fromCallable([$this, 'whereJsonContains']),
+            'jsonlength'     => Closure::fromCallable([$this, 'whereJsonLength']),
+            'fulltext'       => Closure::fromCallable([$this, 'whereFullText']),
+            'sub'            => Closure::fromCallable([$this, 'whereSub']),
+            'relationship'   => Closure::fromCallable([$this, 'whereRelationship'])
         ];
     }
 
@@ -431,6 +430,7 @@ final class DSLGrammar
         /** @var BooleanType $expression */
         $expression = null;
         foreach ($builder->wheres as $i => $where) {
+            $where['type'] = strtolower($where['type']);
             if ( ! array_key_exists($where['type'], $this->wheres)) {
                 throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
             }
@@ -468,13 +468,15 @@ final class DSLGrammar
     private function whereBasic(Builder $query, array $where, DSLContext $context): BooleanType
     {
         $column    = $this->wrap($where['column'], false, $query);
-        $parameter = $this->parameter($where['value'], $context);
+        $value     = $where['value'];
+        $parameter = $value instanceof AnyType ? $value : $this->parameter($value, $context);
 
         if (in_array($where['operator'], ['&', '|', '^', '~', '<<', '>>', '>>>'])) {
+
             return new RawFunction('apoc.bitwise.op', [
                 $this->wrap($where['column']),
                 Query::literal($where['operator']),
-                $this->parameter($query, $where['value']),
+                $parameter,
             ]);
         }
 
@@ -515,17 +517,28 @@ final class DSLGrammar
 
     private function whereBetween(Builder $query, array $where, DSLContext $context): BooleanType
     {
-        $min = Query::literal(reset($where['values']));
-        $max = Query::literal(end($where['values']));
+        $parameter = $this->parameter($where['values'], $context);
 
-        $tbr = $this->whereBasic($query, ['column' => $where['column'], 'operator' => '>=', 'value' => $min], $context)
-                    ->and(
-                        $this->whereBasic(
-                            $query,
-                            ['column' => $where['column'], 'operator' => '<=', 'value' => $max],
-                            $context
-                        )
-                    );
+        $tbr = $this
+            ->whereBasic(
+                $query,
+                [
+                    'column' => $where['column'],
+                    'operator' => '>=',
+                    'value' => Query::rawExpression($parameter->toQuery() . '[0]'),
+                ],
+                $context
+            )->and(
+                $this->whereBasic(
+                    $query,
+                    [
+                        'column' => $where['column'],
+                        'operator' => '<=',
+                        'value' => Query::rawExpression($parameter->toQuery() . '[1]'),
+                    ],
+                    $context
+                )
+            );
 
         if ($where['not']) {
             return new Not($tbr);

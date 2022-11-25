@@ -232,12 +232,9 @@ class WheresTheTest extends TestCase
 
         $mwahaha = [
             $this->ab->toArray(),
-            $this->cd->toArray(),
-            $this->ef->toArray(),
-            $this->gh->toArray(),
             $this->ij->toArray(),
         ];
-        $this->assertCount(5, $u);
+        $this->assertCount(2, $u);
         $this->assertEquals($mwahaha, $u->toArray());
     }
 
