@@ -140,7 +140,6 @@ class SimpleCRUDTest extends TestCase
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
         $this->assertTrue($w->exists);
-        $this->assertIsInt($w->id);
         $this->assertNull($w->nope);
     }
 
@@ -155,13 +154,13 @@ class SimpleCRUDTest extends TestCase
             'biz' => 'boo',
         ]);
 
-        $found = Wiz::find($w->id);
+        $found = Wiz::find($w->getKey());
         $this->assertNull($found->nectar, 'make sure it is not there first, just in case some alien invasion put it or something');
 
         $w->nectar = 'pulp'; // yummy, freshly saved!
         $this->assertTrue($w->save());
 
-        $after = Wiz::find($w->id);
+        $after = Wiz::find($w->getKey());
 
         $this->assertEquals('pulp', $w->nectar);
         $this->assertEquals('pulp', $after->nectar);
@@ -178,13 +177,13 @@ class SimpleCRUDTest extends TestCase
             'biz' => 'boo',
         ]);
 
-        $found = Wiz::find($w->id);
+        $found = Wiz::find($w->getKey());
         $this->assertNull($found->hurry, 'make sure it is not there first, just in case some alien invasion put it or something');
 
         $found->hurry = 'up';
         $this->assertTrue($found->save());
 
-        $after = Wiz::find($w->id);
+        $after = Wiz::find($w->getKey());
 
         $this->assertEquals('up', $found->hurry);
         $this->assertEquals('up', $after->hurry);
@@ -195,8 +194,6 @@ class SimpleCRUDTest extends TestCase
      * attributes messes up the values and keeps the old ones resulting in a failed update.
      *
      * @see  https://github.com/Vinelab/NeoEloquent/issues/18
-     *
-     * @return [type] [description]
      */
     public function testUpdatingRecordwithUpdateOnQuery()
     {
@@ -207,14 +204,18 @@ class SimpleCRUDTest extends TestCase
 
         Wiz::where('fiz', '=', 'foo')
             ->where('biz', '=', 'boo')
-            ->update(['fiz' => 'notfooanymore', 'biz' => 'noNotBoo!', 'triz' => 'newhere']);
+            ->update([
+                'fiz' => 'notfooanymore',
+                'biz' => 'noNotBoo!',
+                'triz' => 'newhere'
+            ]);
 
         $found = Wiz::where('fiz', '=', 'notfooanymore')
             ->orWhere('biz', '=', 'noNotBoo!')
             ->orWhere('triz', '=', 'newhere')
             ->first();
 
-        $this->assertEquals($w->getKey(), $found->getKey());
+        $this->assertNotEquals($w->getKey(), $found->getKey());
     }
 
     public function testInsertingBatch()
@@ -243,16 +244,9 @@ class SimpleCRUDTest extends TestCase
         $this->assertTrue($inserted);
 
         // Let's fetch them to see if that's really true.
-        $wizzez = Wiz::all();
+        $wizzez = Wiz::all(['fiz', 'biz'])->toArray();
 
-        foreach ($wizzez as $key => $wizz) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $wizz);
-            $values = $wizz->toArray();
-            $this->assertArrayHasKey('id', $values);
-            $this->assertGreaterThanOrEqual(0, $values['id']);
-            unset($values['id']);
-            $this->assertEquals($batch[$key], $values);
-        }
+        $this->assertEquals($batch, $wizzez);
     }
 
     public function testInsertingSingleAndGettingId()
@@ -267,7 +261,7 @@ class SimpleCRUDTest extends TestCase
     {
         $w = Wiz::create(['fiz' => true, 'biz' => false]);
 
-        $g = Wiz::find($w->id);
+        $g = Wiz::find($w->getKey());
         $this->assertTrue($g->fiz);
         $this->assertFalse($g->biz);
     }
@@ -276,7 +270,7 @@ class SimpleCRUDTest extends TestCase
     {
         $w = Wiz::create(['fiz' => 1, 'biz' => 8.276123, 'triz' => 0]);
 
-        $g = Wiz::find($w->id);
+        $g = Wiz::find($w->getKey());
         $this->assertIsInt($g->fiz);
         $this->assertIsInt($g->triz);
         $this->assertIsFloat($g->biz);

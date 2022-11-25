@@ -92,6 +92,17 @@ class Builder extends \Illuminate\Database\Query\Builder
         return Arr::flatten($this->bindings, 1);
     }
 
+    public function insert(array $values): bool
+    {
+        $res = parent::insert($values);
+        if (is_bool($res)) {
+            return $res;
+        }
+
+        // The result might be a summarized result as the connection insert get id hack requires it.
+        return true;
+    }
+
     public function addBinding($value, $type = 'where')
     {
         $this->bindings[$type][] = $value;
