@@ -187,18 +187,14 @@ final class DSLGrammar
      */
     private function wrapSegments(array $segments, ?Builder $query = null): AnyType
     {
-        if (count($segments) === 1) {
-            if (trim($segments[0]) === '*') {
-                return Query::rawExpression('*');
-            }
-
-            if ($query !== null) {
-                array_unshift($segments, $query->from);
-            }
+        if (in_array('*', $segments)) {
+            return Query::rawExpression('*');
         }
+
         if ($query !== null && count($segments) === 1) {
             array_unshift($segments, $query->from);
         }
+
         $variable = $this->wrapTable(array_shift($segments));
         foreach ($segments as $segment) {
             $variable = $variable->property($segment);

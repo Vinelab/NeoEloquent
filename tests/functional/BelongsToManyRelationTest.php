@@ -54,11 +54,11 @@ class BelongsToManyRelationTest extends TestCase
     {
         $user = User::create(['uuid' => '11213', 'name' => 'Creepy Dude']);
         $role = new Role(['title' => 'Master']);
-        $role->save();
-        $role->users()->save($user);
 
-        $role->getRelation('users');
-        $this->assertGreaterThanOrEqual(0, $role->users);
+        $user->roles()->save($role);
+
+        $this->assertCount(1, $user->roles);
+        $this->assertCount(1, $role->users);
     }
 
     public function testAttachingModelId()
@@ -72,22 +72,15 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testAttachingManyModelIds()
     {
-        $user = User::create(['uuid' => '64753', 'name' => 'Creepy Dude']);
+        $user   = User::create(['uuid' => '64753', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin = Role::create(['title' => 'Admin']);
+        $admin  = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
-        $relations = $user->roles()->attach([$master->id, $admin->id, $editor->id]);
+        $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
-        $this->assertCount(3, $relations->all());
-
-        $relations->each(function ($relation) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-            $this->assertTrue($relation->exists());
-            $this->assertGreaterThanOrEqual(0, $relation->id);
-
-            $relation->delete();
-        });
+        $this->assertCount(3, $user->roles);
+        $this->assertEquals(['Master', 'Admin', 'Editor'], $user->roles->pluck('title')->toArray());
     }
 
     public function testAttachingModelInstance()
@@ -98,12 +91,12 @@ class BelongsToManyRelationTest extends TestCase
         $relation = $user->roles()->attach($role);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertTrue($relation->exists());
-        $this->assertGreaterThanOrEqual(0, $relation->id);
+        $this->assertGreaterThanOrEqual(0, $relation->getKey());
 
         $retrieved = $user->roles()->edge($role);
         $this->assertEquals($retrieved->toArray(), $relation->toArray());
 
-        $user->roles()->detach($role->id);
+        $user->roles()->detach($role->getKey());
         $this->assertNull($user->roles()->edge($role));
     }
 
@@ -121,7 +114,7 @@ class BelongsToManyRelationTest extends TestCase
         $relations->each(function ($relation) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
             $this->assertTrue($relation->exists());
-            $this->assertGreaterThan(0, $relation->id);
+            $this->assertGreaterThan(0, $relation->getKey());
 
             $relation->delete();
         });
@@ -138,18 +131,18 @@ class BelongsToManyRelationTest extends TestCase
     {
         $user = User::create(['uuid' => '34525', 'name' => 'Creepy Dude']);
         $role = Role::create(['title' => 'Master']);
-        $relation = $user->roles()->attach($role->id);
+        $relation = $user->roles()->attach($role->getKey());
 
         $edgeOut = $user->roles()->edge($role);
 
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edgeOut);
         $this->assertTrue($edgeOut->exists());
-        $this->assertGreaterThan(0, $edgeOut->id);
+        $this->assertGreaterThan(0, $edgeOut->getKey());
 
         $edgeIn = $role->users()->edge($user);
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $edgeIn);
         $this->assertTrue($edgeIn->exists());
-        $this->assertGreaterThan(0, $edgeIn->id);
+        $this->assertGreaterThan(0, $edgeIn->getKey());
 
         $relation->delete();
     }
@@ -159,15 +152,15 @@ class BelongsToManyRelationTest extends TestCase
         $user = User::create(['uuid' => '943543', 'name' => 'Creepy Dude']);
         $role = Role::create(['title' => 'Master']);
 
-        $relation = $user->roles()->attach($role->id);
+        $relation = $user->roles()->attach($role->getKey());
         $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
         $this->assertTrue($relation->exists());
-        $this->assertGreaterThan(0, $relation->id);
+        $this->assertGreaterThan(0, $relation->getKey());
 
         $retrieved = $user->roles()->edge($role);
         $this->assertEquals($retrieved->toArray(), $relation->toArray());
 
-        $user->roles()->detach($role->id);
+        $user->roles()->detach($role->getKey());
         $this->assertNull($user->roles()->edge($role));
     }
 
@@ -178,7 +171,7 @@ class BelongsToManyRelationTest extends TestCase
         $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
-        $relations = $user->roles()->attach([$master->id, $admin->id, $editor->id]);
+        $relations = $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
         $this->assertCount(3, $relations->all());
 
@@ -186,7 +179,7 @@ class BelongsToManyRelationTest extends TestCase
         $relations->each(function ($relation) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
             $this->assertTrue($relation->exists());
-            $this->assertGreaterThanOrEqual(0, $relation->id);
+            $this->assertGreaterThanOrEqual(0, $relation->getKey());
         });
 
         // Try retrieving them before detaching
@@ -228,17 +221,17 @@ class BelongsToManyRelationTest extends TestCase
         $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
-        $relation = $user->roles()->attach($master->id);
+        $relation = $user->roles()->attach($master->getKey());
 
-        $user->roles()->sync([$master->id, $admin->id, $editor->id]);
+        $user->roles()->sync([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
         $edges = $user->roles()->edges();
 
         $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
 
-        $this->assertTrue(in_array($admin->id, $edgesIds));
-        $this->assertTrue(in_array($editor->id, $edgesIds));
-        $this->assertTrue(in_array($master->id, $edgesIds));
+        $this->assertTrue(in_array($admin->getKey(), $edgesIds));
+        $this->assertTrue(in_array($editor->getKey(), $edgesIds));
+        $this->assertTrue(in_array($master->getKey(), $edgesIds));
 
         foreach ($edges as $edge) {
             $edge->delete();
@@ -252,26 +245,26 @@ class BelongsToManyRelationTest extends TestCase
         $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
-        $relation = $user->roles()->attach($master->id);
+        $relation = $user->roles()->attach($master->getKey());
 
         $user->roles()->sync([
-            $master->id => ['type' => 'Master'],
-            $admin->id => ['type' => 'Admin'],
-            $editor->id => ['type' => 'Editor'],
+            $master->getKey() => ['type' => 'Master'],
+            $admin->getKey() => ['type' => 'Admin'],
+            $editor->getKey() => ['type' => 'Editor'],
         ]);
 
         $edges = $user->roles()->edges();
 
         $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
 
-        // count the times that $master->id exists, it it were more than 1 then the relationship hasn't been updated,
+        // count the times that $master->getKey() exists, it it were more than 1 then the relationship hasn't been updated,
         // instead it was duplicated
-        $count = array_count_values((array) $master->id);
+        $count = array_count_values((array) $master->getKey());
 
-        $this->assertEquals(1, $count[$master->id]);
-        $this->assertTrue(in_array($admin->id, $edgesIds));
-        $this->assertTrue(in_array($editor->id, $edgesIds));
-        $this->assertTrue(in_array($master->id, $edgesIds));
+        $this->assertEquals(1, $count[$master->getKey()]);
+        $this->assertTrue(in_array($admin->getKey(), $edgesIds));
+        $this->assertTrue(in_array($editor->getKey(), $edgesIds));
+        $this->assertTrue(in_array($master->getKey(), $edgesIds));
 
         $expectedEdgesTypes = array('Editor', 'Admin', 'Master');
 
@@ -296,7 +289,7 @@ class BelongsToManyRelationTest extends TestCase
         foreach ($user->roles as $role) {
             $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany\Role', $role);
             $this->assertTrue($role->exists);
-            $this->assertGreaterThan(0, $role->id);
+            $this->assertGreaterThan(0, $role->getKey());
         }
 
         $user->roles()->edges()->each(function ($edge) { $edge->delete(); });
