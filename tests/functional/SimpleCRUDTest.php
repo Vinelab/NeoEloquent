@@ -268,9 +268,12 @@ class SimpleCRUDTest extends TestCase
 
     public function testNumericValuesPreserveDataTypes()
     {
-        $w = Wiz::create(['fiz' => 1, 'biz' => 8.276123, 'triz' => 0]);
+        $wiz = new Wiz();
+        $wiz->setKeyType('int');
 
-        $g = Wiz::find($w->getKey());
+        $w = $wiz->create(['fiz' => 1, 'biz' => 8.276123, 'triz' => 0]);
+
+        $g = $wiz->find($w->getKey());
         $this->assertIsInt($g->fiz);
         $this->assertIsInt($g->triz);
         $this->assertIsFloat($g->biz);
