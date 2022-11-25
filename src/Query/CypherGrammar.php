@@ -9,7 +9,10 @@ use Vinelab\NeoEloquent\DSLContext;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
+
+use function array_key_exists;
 use function array_map;
+use function debug_backtrace;
 use function implode;
 
 class CypherGrammar extends Grammar
@@ -75,6 +78,15 @@ class CypherGrammar extends Grammar
 
     public function compileInsertGetId(Builder $query, $values, $sequence): string
     {
+        // Very dirty hack as the model query builder does not propagate the sequence by default. There is no other way to access the key name then to backtrace it or introducing breaking api changes in the Model object.
+        if ($sequence === null) {
+            foreach (debug_backtrace() as $step) {
+                if (array_key_exists('object', $step) && $step['object'] instanceof \Illuminate\Database\Eloquent\Builder) {
+                    $sequence = $step['object']->getModel()->getKeyName();
+                }
+            }
+        }
+
         return $this->dsl->compileInsertGetId($query, $values ?? [], $sequence ?? '')->toQuery();
     }
 

@@ -104,7 +104,7 @@ final class DSLGrammar
             'jsonlength'     => Closure::fromCallable([$this, 'whereJsonLength']),
             'fulltext'       => Closure::fromCallable([$this, 'whereFullText']),
             'sub'            => Closure::fromCallable([$this, 'whereSub']),
-            'relationship'   => Closure::fromCallable([$this, 'whereRelationship'])
+            'relationship'   => Closure::fromCallable([$this, 'whereRelationship']),
         ];
     }
 
@@ -472,7 +472,6 @@ final class DSLGrammar
         $parameter = $value instanceof AnyType ? $value : $this->parameter($value, $context);
 
         if (in_array($where['operator'], ['&', '|', '^', '~', '<<', '>>', '>>>'])) {
-
             return new RawFunction('apoc.bitwise.op', [
                 $this->wrap($where['column']),
                 Query::literal($where['operator']),
@@ -523,18 +522,18 @@ final class DSLGrammar
             ->whereBasic(
                 $query,
                 [
-                    'column' => $where['column'],
+                    'column'   => $where['column'],
                     'operator' => '>=',
-                    'value' => Query::rawExpression($parameter->toQuery() . '[0]'),
+                    'value'    => Query::rawExpression($parameter->toQuery().'[0]'),
                 ],
                 $context
             )->and(
                 $this->whereBasic(
                     $query,
                     [
-                        'column' => $where['column'],
+                        'column'   => $where['column'],
                         'operator' => '<=',
-                        'value' => Query::rawExpression($parameter->toQuery() . '[1]'),
+                        'value'    => Query::rawExpression($parameter->toQuery().'[1]'),
                     ],
                     $context
                 )
@@ -1010,13 +1009,13 @@ final class DSLGrammar
     {
         // There is no insert get id method in Neo4j
         // But you can just return the sequence property instead
+        $id = $this->wrapTable($query->from)
+                   ->named($query->from.'0')
+                   ->property($sequence)
+                   ->alias($sequence);
+
         return $this->compileInsert($query, [$values])
-            ->returning(
-                $this->wrapTable($query->from)
-                     ->named($query->from.'0')
-                     ->property($sequence)
-                     ->alias($sequence)
-            );
+                    ->returning($id);
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): Query

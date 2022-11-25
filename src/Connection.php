@@ -18,9 +18,7 @@ use LogicException;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
-use function array_filter;
 use function get_debug_type;
-use function is_bool;
 
 final class Connection extends \Illuminate\Database\Connection
 {

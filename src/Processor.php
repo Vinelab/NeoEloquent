@@ -45,6 +45,6 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         /** @var SummarizedResult $result */
         $result = $query->getConnection()->insert($sql, $values);
 
-        return $result->first()->get($sequence);
+        return $result->first()->first()->getValue();
     }
 }

@@ -24,7 +24,6 @@ class NeoEloquentServiceProvider extends ServiceProvider
         $this->registerAggregate('stdev');
         $this->registerAggregate('stdevp');
         $this->registerCollect();
-
     }
 
     /**

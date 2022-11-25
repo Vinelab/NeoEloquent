@@ -251,10 +251,9 @@ class SimpleCRUDTest extends TestCase
 
     public function testInsertingSingleAndGettingId()
     {
-        $id = Wiz::insertGetId(['foo' => 'fiz', 'boo' => 'biz']);
+        $id = Wiz::insertGetId(['foo' => 'fiz', 'boo' => 'biz', 'fiz' => 'boo']);
 
-        $this->assertIsInt($id);
-        $this->assertGreaterThan(0, $id, 'message');
+        $this->assertEquals('boo', $id);
     }
 
     public function testSavingBooleanValuesStayBoolean()

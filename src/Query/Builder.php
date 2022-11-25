@@ -3,6 +3,9 @@
 namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
+use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Grammars\Grammar;
+use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Support\Arr;
 use function compact;
 
