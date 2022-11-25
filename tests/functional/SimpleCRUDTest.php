@@ -281,25 +281,25 @@ class SimpleCRUDTest extends TestCase
 
     public function testSoftDeletingModel()
     {
-        $w = WizDel::create([]);
+        WizDel::create(['fiz' => 'buz']);
 
         $g = WizDel::all()->first();
         $g->delete();
-        $this->assertFalse($g->exists);
+        $this->assertFalse($g->exists());
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
     }
 
     public function testRestoringSoftDeletedModel()
     {
-        $w = WizDel::create([]);
+        WizDel::create(['fiz' => 'buz']);
 
         $g = WizDel::first();
         $g->delete();
 
-        $this->assertFalse($g->exists);
+        $this->assertFalse($g->exists());
         $this->assertInstanceOf('Carbon\Carbon', $g->deleted_at);
 
-        $h = WizDel::onlyTrashed()->where('id', $g->getKey())->first();
+        $h = WizDel::onlyTrashed()->where('fiz', $g->getKey())->first();
         $this->assertInstanceOf('Carbon\Carbon', $h->deleted_at);
         $this->assertTrue($h->restore());
         $this->assertNull($h->deleted_at);
@@ -332,6 +332,7 @@ class SimpleCRUDTest extends TestCase
         ]);
 
         $this->assertEquals($w->toArray(), $found->toArray());
+        $this->assertEquals(1, Wiz::count());
     }
 
     public function testCreatingNullAndBooleanValues()
