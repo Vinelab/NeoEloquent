@@ -483,7 +483,7 @@ final class DSLGrammar
 
     private function whereIn(Builder $query, array $where, DSLContext $context): In
     {
-        return new In($this->wrap($where['column']), $this->parameter($where['values'], $context));
+        return new In($this->wrap($where['column'], false, $query), $this->parameter($where['values'], $context));
     }
 
     private function whereNotIn(Builder $query, array $where, DSLContext $context): Not

@@ -2,10 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Mockery as M;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+
 use function usort;
 
 class User extends Model
@@ -21,6 +20,12 @@ class User extends Model
 
 class WheresTheTest extends TestCase
 {
+    private User $ab;
+    private User $cd;
+    private User $ef;
+    private User $gh;
+    private User $ij;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -29,35 +34,35 @@ class WheresTheTest extends TestCase
 
         // Setup the data in the database
         $this->ab = User::create([
-            'name' => 'Ey Bee',
+            'name'  => 'Ey Bee',
             'alias' => 'ab',
             'email' => 'ab@alpha.bet',
             'calls' => 10,
         ]);
 
         $this->cd = User::create([
-            'name' => 'See Dee',
+            'name'  => 'See Dee',
             'alias' => 'cd',
             'email' => 'cd@alpha.bet',
             'calls' => 20,
         ]);
 
         $this->ef = User::create([
-            'name' => 'Eee Eff',
+            'name'  => 'Eee Eff',
             'alias' => 'ef',
             'email' => 'ef@alpha.bet',
             'calls' => 30,
         ]);
 
         $this->gh = User::create([
-            'name' => 'Gee Aych',
+            'name'  => 'Gee Aych',
             'alias' => 'gh',
             'email' => 'gh@alpha.bet',
             'calls' => 40,
         ]);
 
         $this->ij = User::create([
-            'name' => 'Eye Jay',
+            'name'  => 'Eye Jay',
             'alias' => 'ij',
             'email' => 'ij@alpha.bet',
             'calls' => 50,
@@ -109,18 +114,19 @@ class WheresTheTest extends TestCase
         $others = User::where('calls', '>', 10)->get();
         $this->assertCount(4, $others);
 
-        $brothers = new Collection(array(
-                                                            $this->cd,
-                                                            $this->ef,
-                                                            $this->gh,
-                                                            $this->ij, ));
-        $this->assertEquals($others->toArray(), $brothers->toArray());
+        $brothers = [
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+            $this->gh->toArray(),
+            $this->ij->toArray(),
+        ];
+        $this->assertEquals($brothers, $others->toArray());
 
         $lastTwo = User::where('calls', '>=', 40)->get();
         $this->assertCount(2, $lastTwo);
 
-        $mothers = new Collection(array($this->gh, $this->ij));
-        $this->assertEquals($lastTwo->toArray(), $mothers->toArray());
+        $mothers = [$this->gh->toArray(), $this->ij->toArray()];
+        $this->assertEquals($mothers, $lastTwo->toArray());
 
         $none = User::where('calls', '>', 9000)->get();
         $this->assertCount(0, $none);
@@ -137,10 +143,12 @@ class WheresTheTest extends TestCase
         $three = User::where('calls', '<=', 30)->get();
         $this->assertCount(3, $three);
 
-        $cocoa = new Collection(array($this->ab,
-                                                            $this->cd,
-                                                            $this->ef, ));
-        $this->assertEquals($cocoa->toArray(), $three->toArray());
+        $cocoa = [
+            $this->ab->toArray(),
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+        ];
+        $this->assertEquals($cocoa, $three->toArray());
 
         $below = User::where('calls', '<', -100)->get();
         $this->assertCount(0, $below);
@@ -153,40 +161,45 @@ class WheresTheTest extends TestCase
     {
         $notab = User::where('alias', '<>', 'ab')->get();
 
-        $dudes = new Collection(array(
-                                                            $this->cd,
-                                                            $this->ef,
-                                                            $this->gh,
-                                                            $this->ij, ));
+        $dudes = [
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+            $this->gh->toArray(),
+            $this->ij->toArray(),
+        ];
 
         $this->assertCount(4, $notab);
-        $this->assertEquals($notab->toArray(), $dudes->toArray());
+        $this->assertEquals($dudes, $notab->toArray());
     }
 
     public function testWhereIn()
     {
         $alpha = User::whereIn('alias', ['ab', 'cd', 'ef', 'gh', 'ij'])->get();
 
-        $crocodile = new Collection(array($this->ab,
-                                                            $this->cd,
-                                                            $this->ef,
-                                                            $this->gh,
-                                                            $this->ij, ));
+        $crocodile = [
+            $this->ab->toArray(),
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+            $this->gh->toArray(),
+            $this->ij->toArray(),
+        ];
 
-        $this->assertEquals($alpha->toArray(), $crocodile->toArray());
+        $this->assertEquals($crocodile, $alpha->toArray());
     }
 
     public function testWhereNotNull()
     {
         $alpha = User::whereNotNull('alias')->get();
 
-        $crocodile = new Collection(array($this->ab,
-                                                            $this->cd,
-                                                            $this->ef,
-                                                            $this->gh,
-                                                            $this->ij, ));
+        $crocodile = [
+            $this->ab->toArray(),
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+            $this->gh->toArray(),
+            $this->ij->toArray(),
+        ];
 
-        $this->assertEquals($alpha->toArray(), $crocodile->toArray());
+        $this->assertEquals($alpha->toArray(), $crocodile);
     }
 
     public function testWhereNull()
@@ -206,65 +219,65 @@ class WheresTheTest extends TestCase
          * WHERE actor NOT IN coactors
          * RETURN actor
          */
-        $u = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->get();
-        $still = new Collection(array($this->gh, $this->ij));
-        $rest = [$this->gh->toArray(), $this->ij->toArray()];
+        $u     = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->get();
+        $still = [$this->gh->toArray(), $this->ij->toArray()];
 
         $this->assertCount(2, $u);
-        $this->assertEquals($rest, $still->toArray());
+        $this->assertEquals($still, $u->toArray());
     }
 
     public function testWhereBetween()
     {
-        /*
-         * There is no WHERE BETWEEN
-         */
-        $this->markTestIncomplete();
-
         $u = User::whereBetween('name', [$this->ab->getKey(), $this->ij->getKey()])->get();
 
-        $mwahaha = new Collection(array($this->ab,
-                                                            $this->cd,
-                                                            $this->ef,
-                                                            $this->gh,
-                                                            $this->ij, ));
+        $mwahaha = [
+            $this->ab->toArray(),
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+            $this->gh->toArray(),
+            $this->ij->toArray(),
+        ];
         $this->assertCount(5, $u);
-        $this->assertEquals($buddies->toArray(), $mwahaha->toArray());
+        $this->assertEquals($mwahaha, $u->toArray());
     }
 
     public function testOrWhere()
     {
         $buddies = User::where('name', 'Ey Bee')
-            ->orWhere('alias', 'cd')
-            ->orWhere('email', 'ef@alpha.bet')
-            ->orWhere('name', $this->gh->getKey())
-            ->orWhere('calls', '>', 40)
-            ->get();
+                       ->orWhere('alias', 'cd')
+                       ->orWhere('email', 'ef@alpha.bet')
+                       ->orWhere('name', $this->gh->getKey())
+                       ->orWhere('calls', '>', 40)
+                       ->get();
 
         $this->assertCount(5, $buddies);
-        $bigBrothers = new Collection(array($this->ab,
-                                                            $this->cd,
-                                                            $this->ef,
-                                                            $this->gh,
-                                                            $this->ij, ));
+        $bigBrothers = [
+            $this->ab->toArray(),
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+            $this->gh->toArray(),
+            $this->ij->toArray(),
+        ];
 
-        $this->assertEquals($buddies->toArray(), $bigBrothers->toArray());
+        $this->assertEquals($bigBrothers, $buddies->toArray());
     }
 
     public function testOrWhereIn()
     {
         $all = User::whereIn('name', [$this->ab->getKey(), $this->cd->getKey()])
-            ->orWhereIn('alias', ['ef', 'gh', 'ij'])->get();
+                   ->orWhereIn('alias', ['ef', 'gh', 'ij'])->get();
 
-        $padrougas = new Collection(array($this->ab,
-                                                            $this->cd,
-                                                            $this->ef,
-                                                            $this->gh,
-                                                            $this->ij, ));
-        $array = $all->toArray();
-        usort($array, static fn (array $x, array $y) => $x['name'] <=> $y['name']);
+        $padrougas = new Collection(array(
+            $this->ab,
+            $this->cd,
+            $this->ef,
+            $this->gh,
+            $this->ij,
+        ));
+        $array     = $all->toArray();
+        usort($array, static fn(array $x, array $y) => $x['name'] <=> $y['name']);
         $padrougasArray = $padrougas->toArray();
-        usort($padrougasArray, static fn (array $x, array $y) => $x['name'] <=> $y['name']);
+        usort($padrougasArray, static fn(array $x, array $y) => $x['name'] <=> $y['name']);
         $this->assertEquals($array, $padrougasArray);
     }
 
