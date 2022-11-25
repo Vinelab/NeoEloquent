@@ -262,20 +262,24 @@ class WheresTheTest extends TestCase
     public function testOrWhereIn()
     {
         $all = User::whereIn('name', [$this->ab->getKey(), $this->cd->getKey()])
-                   ->orWhereIn('alias', ['ef', 'gh', 'ij'])->get();
+                   ->orWhereIn('alias', ['ef', 'gh', 'ij'])
+                   ->get();
 
-        $padrougas = new Collection(array(
-            $this->ab,
-            $this->cd,
-            $this->ef,
-            $this->gh,
-            $this->ij,
-        ));
-        $array     = $all->toArray();
+        $padrougas = [
+            $this->ab->toArray(),
+            $this->cd->toArray(),
+            $this->ef->toArray(),
+            $this->gh->toArray(),
+            $this->ij->toArray(),
+        ];
+
+        $array = $all->toArray();
         usort($array, static fn(array $x, array $y) => $x['name'] <=> $y['name']);
-        $padrougasArray = $padrougas->toArray();
+
+        $padrougasArray = $padrougas;
         usort($padrougasArray, static fn(array $x, array $y) => $x['name'] <=> $y['name']);
-        $this->assertEquals($array, $padrougasArray);
+
+        $this->assertEquals($padrougasArray, $array);
     }
 
     public function testWhereNotFound()
@@ -307,13 +311,11 @@ class WheresTheTest extends TestCase
      */
     public function testWhereWithIn()
     {
-        $ab = User::where('alias', 'IN', ['ab'])->first();
+        $ab = User::whereIn('alias', ['ab'])->first();
 
         $this->assertEquals($this->ab->toArray(), $ab->toArray());
 
-        $users = User::where('alias', 'IN', ['cd', 'ef'])->get();
-
-        $l = (new User())->getConnection()->getQueryLog();
+        $users = User::whereIn('alias', ['cd', 'ef'])->get();
 
         $this->assertEquals($this->cd->toArray(), $users[0]->toArray());
         $this->assertEquals($this->ef->toArray(), $users[1]->toArray());
