@@ -259,8 +259,9 @@ class SimpleCRUDTest extends TestCase
     public function testSavingBooleanValuesStayBoolean()
     {
         $w = Wiz::create(['fiz' => true, 'biz' => false]);
+        $w->setKeyType('bool');
 
-        $g = Wiz::find($w->getKey());
+        $g = $w->find($w->getKey());
         $this->assertTrue($g->fiz);
         $this->assertFalse($g->biz);
     }

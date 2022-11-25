@@ -4,10 +4,23 @@ namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use InvalidArgumentException;
+
+use function array_key_exists;
+use function array_map;
+use function array_merge;
+use function array_values;
 use function compact;
+use function func_num_args;
+use function is_array;
+use function is_bool;
+use function is_null;
+use function is_string;
 
 class Builder extends \Illuminate\Database\Query\Builder
 {
@@ -104,10 +117,5 @@ class Builder extends \Illuminate\Database\Query\Builder
 
         // The result might be a summarized result as the connection insert get id hack requires it.
         return true;
-    }
-
-    public function addBinding($value, $type = 'where')
-    {
-        $this->bindings[$type][] = $value;
     }
 }
