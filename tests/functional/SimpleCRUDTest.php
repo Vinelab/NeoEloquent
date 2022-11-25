@@ -378,7 +378,7 @@ class SimpleCRUDTest extends TestCase
     {
         $now = Carbon::now();
         $dt = new DateTime();
-        $w = Wiz::create(['fiz' => $now, 'biz' => $dt]);
+        Wiz::create(['fiz' => $now, 'biz' => $dt]);
 
         $format = (new Wiz)->getDateFormat();
 
