@@ -80,15 +80,15 @@ class HasOneRelationTest extends TestCase
     public function testSavingMultipleRelationsKeepsOnlyTheLastOne()
     {
         $user = User::create(['name' => 'Tests', 'email' => 'B']);
-        $profile = Profile::create(['guid' => uniqid(), 'service' => 'twitter']);
+        $profile = new Profile(['guid' => uniqid(), 'service' => 'twitter']);
 
-        $relation = $user->profile()->save($profile);
-        $this->assertTrue($relation->save());
+        $user->profile()->save($profile);
+        $user->refresh();
+        $cv = new Profile(['guid' => uniqid(), 'service' => 'linkedin']);
+        $user->profile()->update([$user->profile()->getForeignKeyName() => null]);
 
-        $cv = Profile::create(['guid' => uniqid(), 'service' => 'linkedin']);
-        $linkedin = $user->profile()->save($cv);
-        $this->assertTrue($linkedin->save());
-
-        $this->assertEquals('linkedin', User::find('B')->profile->service);
+        $user->profile()->save($cv);
+        $user->refresh();
+        $this->assertEquals('linkedin', $user->profile->service);
     }
 }
