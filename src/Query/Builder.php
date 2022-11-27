@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Query;
 
 use Closure;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
@@ -106,6 +107,21 @@ class Builder extends \Illuminate\Database\Query\Builder
     public function getBindings(): array
     {
         return Arr::flatten($this->bindings, 1);
+    }
+
+    public function addBinding($value, $type = 'where'): Builder
+    {
+        if (! array_key_exists($type, $this->bindings)) {
+            throw new InvalidArgumentException("Invalid binding type: {$type}.");
+        }
+
+        if (is_array($value)) {
+            $this->bindings[$type][] = array_map([$this, 'castBinding'], $value);
+        } else {
+            $this->bindings[$type][] = $this->castBinding($value);
+        }
+
+        return $this;
     }
 
     public function insert(array $values): bool

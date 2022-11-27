@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
@@ -88,63 +89,10 @@ class BelongsToManyRelationTest extends TestCase
         $user = User::create(['uuid' => '19583', 'name' => 'Creepy Dude']);
         $role = Role::create(['title' => 'Master']);
 
-        $relation = $user->roles()->attach($role);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-        $this->assertTrue($relation->exists());
-        $this->assertGreaterThanOrEqual(0, $relation->getKey());
+        $user->roles()->attach($role);
 
-        $retrieved = $user->roles()->edge($role);
-        $this->assertEquals($retrieved->toArray(), $relation->toArray());
-
-        $user->roles()->detach($role->getKey());
-        $this->assertNull($user->roles()->edge($role));
-    }
-
-    public function testAttachingManyModelInstances()
-    {
-        $user = User::create(['uuid' => '5346', 'name' => 'Creepy Dude']);
-        $master = new Role(['title' => 'Master']);
-        $admin = new Role(['title' => 'Admin']);
-        $editor = new Role(['title' => 'Editor']);
-
-        $relations = $user->roles()->attach([$master, $admin, $editor]);
-
-        $this->assertCount(3, $relations->all());
-
-        $relations->each(function ($relation) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-            $this->assertTrue($relation->exists());
-            $this->assertGreaterThan(0, $relation->getKey());
-
-            $relation->delete();
-        });
-    }
-
-    public function testAttachingNonExistingModelId()
-    {
-        $user = User::create(['uuid' => '3242', 'name' => 'Creepy Dude']);
-        $this->expectException(ModelNotFoundException::class);
-        $user->roles()->attach(10);
-    }
-
-    public function testFindingBothEdges()
-    {
-        $user = User::create(['uuid' => '34525', 'name' => 'Creepy Dude']);
-        $role = Role::create(['title' => 'Master']);
-        $relation = $user->roles()->attach($role->getKey());
-
-        $edgeOut = $user->roles()->edge($role);
-
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $edgeOut);
-        $this->assertTrue($edgeOut->exists());
-        $this->assertGreaterThan(0, $edgeOut->getKey());
-
-        $edgeIn = $role->users()->edge($user);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeIn', $edgeIn);
-        $this->assertTrue($edgeIn->exists());
-        $this->assertGreaterThan(0, $edgeIn->getKey());
-
-        $relation->delete();
+        $this->assertTrue($user->roles->first()->is($role));
+        $this->assertTrue($role->users->first()->is($user));
     }
 
     public function testDetachingModelById()
@@ -152,16 +100,15 @@ class BelongsToManyRelationTest extends TestCase
         $user = User::create(['uuid' => '943543', 'name' => 'Creepy Dude']);
         $role = Role::create(['title' => 'Master']);
 
-        $relation = $user->roles()->attach($role->getKey());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $relation);
-        $this->assertTrue($relation->exists());
-        $this->assertGreaterThan(0, $relation->getKey());
+        $user->roles()->attach($role->getKey());
+        $user = User::find($user->getKey());
 
-        $retrieved = $user->roles()->edge($role);
-        $this->assertEquals($retrieved->toArray(), $relation->toArray());
+        $this->assertCount(1, $user->roles);
 
         $user->roles()->detach($role->getKey());
-        $this->assertNull($user->roles()->edge($role));
+        $user = User::find($user->getKey());
+
+        $this->assertCount(0, $user->roles);
     }
 
     public function testDetachingManyModelIds()

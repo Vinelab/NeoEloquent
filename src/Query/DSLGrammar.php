@@ -54,6 +54,7 @@ use function end;
 use function explode;
 use function in_array;
 use function is_array;
+use function is_iterable;
 use function is_string;
 use function preg_split;
 use function reset;
@@ -615,6 +616,8 @@ final class DSLGrammar
         $x = $this->wrap($where['first'], false, $query);
         $y = $this->wrap($where['second'], false, $query);
 
+        $context->addParameter([]);
+
         return OperatorRepository::fromSymbol($where['operator'], $x, $y, false);
     }
 
@@ -1128,7 +1131,7 @@ final class DSLGrammar
      */
     public function prepareBindingsForDelete(array $bindings): array
     {
-        return Arr::flatten(Arr::except($bindings, 'select'));
+        return Arr::flatten(Arr::except($bindings, 'select'), 1);
     }
 
     public function supportsSavepoints(): bool
