@@ -3,6 +3,10 @@
 namespace Vinelab\NeoEloquent\Tests\Functional\QueryingRelations;
 
 use DateTime;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Mockery as M;
 use Carbon\Carbon;
 use Vinelab\NeoEloquent\Tests\TestCase;
@@ -10,12 +14,6 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 
 class QueryingRelationsTest extends TestCase
 {
-    public function tearDown(): void
-    {
-        M::close();
-
-        parent::tearDown();
-    }
 
     public function testQueryingHasCount()
     {
@@ -822,145 +820,167 @@ class QueryingRelationsTest extends TestCase
 
 class User extends Model
 {
-    protected $label = 'User';
-
+    protected $table = 'User';
     protected $fillable = ['name', 'dob'];
+    protected $primaryKey = 'name';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
-    public function roles()
+    public function roles(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', 'PERMITTED');
+        return $this->hasMany(Role::class);
     }
 
-    public function account()
+    public function account(): HasOne
     {
-        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Account', 'ACCOUNT');
+        return $this->hasOne(Account::class);
     }
 
-    public function colleagues()
+    public function colleagues(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'COLLEAGUE_OF');
+        return $this->hasMany(User::class);
     }
 
-    public function organization()
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Organization', 'MEMBER_OF');
+        return $this->belongsTo(Organization::class);
     }
 }
 
 class Account extends Model
 {
-    protected $label = 'Account';
-
+    protected $table = 'Account';
     protected $fillable = ['guid'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'guid';
 
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'ACCOUNT');
+        return $this->belongsTo(User::class);
     }
 }
 
 class Organization extends Model
 {
-    protected $label = 'Organization';
-
+    protected $table = 'Organization';
     protected $fillable = ['name'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'name';
 
-    public function members()
+    public function members(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'MEMBER_OF');
+        return $this->hasMany(User::class);
     }
 }
 
 class Role extends Model
 {
-    protected $label = 'Role';
-
+    protected $table = 'Role';
     protected $fillable = ['title', 'alias'];
+    protected $primaryKey = 'alias';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
-    public function users()
+    public function users(): BelongsToMany
     {
-        return $this->belongsToMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', 'PERMITTED');
+        return $this->belongsToMany(User::class);
     }
 
-    public function permissions()
+    public function permissions(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Permission', 'ALLOWS');
+        return $this->hasMany(Permission::class);
     }
 }
 
 class Permission extends Model
 {
-    protected $label = 'Permission';
-
+    protected $table = 'Permission';
     protected $fillable = ['title', 'alias'];
+    protected $primaryKey = 'title';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
-    public function roles()
+    public function roles(): BelongsToMany
     {
-        return $this->belongsToMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Role', 'ALLOWS');
+        return $this->belongsToMany(Role::class);
     }
 }
 
 class Post extends Model
 {
-    protected $label = 'Post';
-
+    protected $table = 'Post';
     protected $fillable = ['title', 'body', 'summary'];
+    protected $primaryKey = 'title';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
-    public function photos()
+
+    public function photos(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', 'PHOTO');
+        return $this->hasMany(HasMany::class);
     }
 
-    public function cover()
+    public function cover(): HasOne
     {
-        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Photo', 'COVER');
+        return $this->hasOne(Photo::class);
     }
 
-    public function videos()
+    public function videos(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Video', 'VIDEO');
+        return $this->hasMany(Video::class);
     }
 
-    public function comments()
+    public function comments(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Comment', 'COMMENT');
+        return $this->hasMany(Comment::class);
     }
 
-    public function tags()
+    public function tags(): HasMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Tag', 'TAG');
+        return $this->hasMany(Tag::class);
     }
 }
 
 class Tag extends Model
 {
-    protected $label = 'Tag';
+    protected $table = 'Tag';
 
     protected $fillable = ['title'];
+    protected $primaryKey = 'title';
+    public $incrementing = false;
+    protected $keyType = 'string';
 }
 
 class Photo extends Model
 {
-    protected $label = 'Photo';
-
+    protected $table = 'Photo';
     protected $fillable = ['url', 'caption', 'metadata'];
+    protected $primaryKey = 'url';
+    public $incrementing = false;
+    protected $keyType = 'string';
 }
 
 class Video extends Model
 {
-    protected $label = 'Video';
-
+    protected $table = 'Video';
     protected $fillable = ['title', 'description', 'stream_url', 'thumbnail'];
+    protected $primaryKey = 'title';
+    public $incrementing = false;
+    protected $keyType = 'string';
 }
 
 class Comment extends Model
 {
-    protected $label = 'Comment';
-
+    protected $table = 'Comment';
     protected $fillable = ['text'];
+    protected $primaryKey = 'text';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
-    public function post()
+    public function post(): BelongsTo
     {
-        return $this->belongsTo('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\Post', 'COMMENT');
+        return $this->belongsTo(Post::class);
     }
 }
