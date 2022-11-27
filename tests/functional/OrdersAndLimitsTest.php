@@ -2,28 +2,11 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Mockery as M;
+use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
 
 class OrdersAndLimitsTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-        Click::setConnectionResolver($resolver);
-    }
-
-    public function tearDown(): void
-    {
-        M::close();
-
-        parent::tearDown();
-    }
-
     public function testFetchingOrderedRecords()
     {
         $c1 = Click::create(['num' => 1]);
@@ -32,7 +15,7 @@ class OrdersAndLimitsTest extends TestCase
 
         $clicks = Click::orderBy('num', 'desc')->get();
 
-        $this->assertEquals(3, count($clicks));
+        $this->assertCount(3, $clicks);
 
         $this->assertEquals($c3->toArray(), $clicks[0]->toArray());
         $this->assertEquals($c2->toArray(), $clicks[1]->toArray());
@@ -64,7 +47,13 @@ class OrdersAndLimitsTest extends TestCase
 
 class Click extends Model
 {
-    protected $label = 'Click';
+    protected $table = 'Click';
 
     protected $fillable = ['num'];
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
+    protected $primaryKey = 'num';
 }
