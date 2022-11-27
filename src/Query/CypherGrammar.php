@@ -38,9 +38,21 @@ class CypherGrammar extends Grammar
         'offset', // SKIP
     ];
 
+    private ?DSLContext $context = null;
+
+    public function latestBoundParameters(): array
+    {
+        if ($this->context === null) {
+            return [];
+        }
+
+        return $this->context->getParameters();
+    }
+
     public function compileSelect(Builder $query): string
     {
-        return $this->dsl->compileSelect($query)->toQuery();
+        $this->context = new DSLContext();
+        return $this->dsl->compileSelect($query, $this->context)->toQuery();
     }
 
     public function compileWheres(Builder $query): string

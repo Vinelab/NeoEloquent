@@ -19,6 +19,7 @@ use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 use function get_debug_type;
+use function is_infinite;
 
 final class Connection extends \Illuminate\Database\Connection
 {
@@ -191,7 +192,11 @@ final class Connection extends \Illuminate\Database\Connection
         $tbr = [];
 
         foreach ($bindings as $key => $value) {
-            $tbr['param'.$key] = $value;
+            if (is_int($key)) {
+                $tbr['param'.$key] = $value;
+            } else {
+                $tbr[$key] = $value;
+            }
         }
 
         return $tbr;

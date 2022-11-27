@@ -22,6 +22,7 @@ use function is_array;
 use function is_bool;
 use function is_null;
 use function is_string;
+use function method_exists;
 
 class Builder extends \Illuminate\Database\Query\Builder
 {
@@ -118,6 +119,18 @@ class Builder extends \Illuminate\Database\Query\Builder
         $this->bindings[$type][] = $this->castBinding($value);
 
         return $this;
+    }
+
+    protected function runSelect(): array
+    {
+        $query = $this->toSql();
+        if (method_exists($this->grammar, 'latestBoundParameters')) {
+            $bindings = $this->grammar->latestBoundParameters();
+        } else {
+            $bindings = $this->getBindings();
+        }
+
+        return $this->connection->select($query, $bindings, ! $this->useWritePdo);
     }
 
     public function insert(array $values): bool
