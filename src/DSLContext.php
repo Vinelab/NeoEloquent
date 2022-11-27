@@ -8,6 +8,8 @@ use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Variable;
 
+use function array_merge;
+
 class DSLContext
 {
     /** @var array<string, mixed> */
@@ -33,6 +35,8 @@ class DSLContext
         $subresult = new Alias($type, new Variable('sub'.$this->subResultCounter));
 
         ++$this->subResultCounter;
+
+        $this->withStack[] = $subresult->getVariable();
 
         return $subresult;
     }
@@ -60,6 +64,11 @@ class DSLContext
     public function getVariables(): array
     {
         return $this->withStack;
+    }
+
+    public function mergeParameters(DSLContext $context): void
+    {
+        $this->parameters = array_merge($this->parameters, $context->parameters);
     }
 
     /**

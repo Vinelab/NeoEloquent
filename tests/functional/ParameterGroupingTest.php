@@ -2,45 +2,49 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\ParameterGrouping;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Mockery as M;
+use Ramsey\Uuid\Uuid;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class User extends Model
 {
-    protected $label = 'User';
+    protected $table = 'User';
     protected $fillable = ['name'];
+    protected $primaryKey = 'name';
+    protected $keyType = 'string';
 
-    public function facebookAccount()
+    public function facebookAccount(): HasOne
     {
-        return $this->hasOne('Vinelab\NeoEloquent\Tests\Functional\ParameterGrouping\FacebookAccount', 'HAS_FACEBOOK_ACCOUNT');
+        return $this->hasOne(FacebookAccount::class);
     }
 }
 
 class FacebookAccount extends Model
 {
-    protected $label = 'SocialAccount';
+    protected $table = 'SocialAccount';
     protected $fillable = ['gender', 'age', 'interest'];
+    public $incrementing = false;
+    protected $primaryKey = 'id';
+    protected $keyType = 'string';
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::saving(function (Model $m) {
+            $m->id = Uuid::getFactory()->uuid4()->toString();
+        });
+    }
 }
 
 class ParameterGroupingTest extends TestCase
 {
-    public function tearDown(): void
-    {
-        M::close();
-
-        parent::tearDown();
-    }
-
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-
-        User::setConnectionResolver($resolver);
-        FacebookAccount::setConnectionResolver($resolver);
+        (new FacebookAccount())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
     }
 
     public function testNestedWhereClause()

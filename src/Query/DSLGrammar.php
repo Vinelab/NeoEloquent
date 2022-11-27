@@ -688,13 +688,21 @@ final class DSLGrammar
         // Calls can be added subsequently without a WITH in between. Since this is the only comparator in
         // the WHERE series that requires a preceding clause, we don't need to worry about WITH statements between
         // possible multiple whereSubs in the same query depth.
-        $query->call(function (Query $sub) use ($context, &$subresult, $where) {
-            $select = $this->compileSelect($where['query']);
-
+        $query->call(function (Query $sub) use ($context, &$subresult, $where, $builder) {
             $sub->with($context->getVariables());
+
+            // Because this is a sub query we can only keep track of the parameters which count upwards regardless of the query depth.
+            $subContext = clone $context;
+            $select = $this->compileSelect($where['query'], $subContext);
+            $context->mergeParameters($subContext);
+
             foreach ($select->getClauses() as $i => $clause) {
                 if ($clause instanceof ReturnClause && $i + 1 === count($select->getClauses())) {
-                    $subresult = $context->createSubResult($clause->getColumns()[0]);
+                    $columns = $clause->getColumns();
+                    if ($columns[0]->toQuery() === '*') {
+                        $columns = [$this->wrapTable($builder->from)->getVariable()];
+                    }
+                    $subresult = $context->createSubResult($columns[0]);
 
                     $clause = new ReturnClause();
                     $clause->addColumn($subresult);
@@ -703,7 +711,9 @@ final class DSLGrammar
             }
         });
 
-        return Query::rawExpression('exists('.$subresult->getVariable()->toQuery().')');
+        $query->with($context->getVariables());
+
+        return $this->whereNotNull($builder, ['column' => $subresult->getVariable()]);
     }
 
     private function whereNotExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
