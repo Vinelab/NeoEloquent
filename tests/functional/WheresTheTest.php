@@ -148,7 +148,7 @@ class WheresTheTest extends TestCase
             $this->cd->toArray(),
             $this->ef->toArray(),
         ];
-        $this->assertEquals($cocoa, $three->toArray());
+        $this->assertEquals($cocoa, $three->sortBy('alias')->toArray());
 
         $below = User::where('calls', '<', -100)->get();
         $this->assertCount(0, $below);
@@ -176,30 +176,30 @@ class WheresTheTest extends TestCase
     {
         $alpha = User::whereIn('alias', ['ab', 'cd', 'ef', 'gh', 'ij'])->get();
 
-        $crocodile = [
+        $crocodile = collect([
             $this->ab->toArray(),
             $this->cd->toArray(),
             $this->ef->toArray(),
             $this->gh->toArray(),
             $this->ij->toArray(),
-        ];
+        ])->sortBy('alias')->toArray();
 
-        $this->assertEquals($crocodile, $alpha->toArray());
+        $this->assertEquals($crocodile, $alpha->sortBy('alias')->toArray());
     }
 
     public function testWhereNotNull()
     {
         $alpha = User::whereNotNull('alias')->get();
 
-        $crocodile = [
+        $crocodile = collect([
             $this->ab->toArray(),
             $this->cd->toArray(),
             $this->ef->toArray(),
             $this->gh->toArray(),
             $this->ij->toArray(),
-        ];
+        ])->sortBy('alias')->toArray();
 
-        $this->assertEquals($alpha->toArray(), $crocodile);
+        $this->assertEquals($crocodile, $alpha->sortBy('alias')->toArray());
     }
 
     public function testWhereNull()
@@ -298,7 +298,11 @@ class WheresTheTest extends TestCase
      */
     public function testWhereMultipleValuesForSameColumn()
     {
-        $u = User::where('alias', '=', 'ab')->orWhere('alias', '=', 'cd')->get();
+        $u = User::where('alias', '=', 'ab')
+                 ->orWhere('alias', '=', 'cd')
+                 ->orderBy('alias')
+                 ->get();
+
         $this->assertCount(2, $u);
         $this->assertEquals('ab', $u[0]->alias);
         $this->assertEquals('cd', $u[1]->alias);
