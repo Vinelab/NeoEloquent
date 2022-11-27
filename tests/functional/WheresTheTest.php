@@ -159,7 +159,7 @@ class WheresTheTest extends TestCase
 
     public function testWhereDifferentThanOperator()
     {
-        $notab = User::where('alias', '<>', 'ab')->get();
+        $notab = User::where('alias', '<>', 'ab')->orderBy('alias')->get();
 
         $dudes = [
             $this->cd->toArray(),

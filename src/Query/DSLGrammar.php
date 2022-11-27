@@ -47,8 +47,10 @@ use function array_filter;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
+use function array_merge;
 use function array_shift;
 use function array_unshift;
+use function array_values;
 use function count;
 use function end;
 use function explode;
@@ -1132,6 +1134,15 @@ final class DSLGrammar
     public function prepareBindingsForDelete(array $bindings): array
     {
         return Arr::flatten(Arr::except($bindings, 'select'), 1);
+    }
+
+    public function prepareBindingsForUpdate(array $bindings, array $values): array
+    {
+        $cleanBindings = Arr::except($bindings, ['select', 'join']);
+
+        return array_values(
+            array_merge($bindings['join'], $values, Arr::flatten($cleanBindings, 1))
+        );
     }
 
     public function supportsSavepoints(): bool

@@ -115,11 +115,7 @@ class Builder extends \Illuminate\Database\Query\Builder
             throw new InvalidArgumentException("Invalid binding type: {$type}.");
         }
 
-        if (is_array($value)) {
-            $this->bindings[$type][] = array_map([$this, 'castBinding'], $value);
-        } else {
-            $this->bindings[$type][] = $this->castBinding($value);
-        }
+        $this->bindings[$type][] = $this->castBinding($value);
 
         return $this;
     }

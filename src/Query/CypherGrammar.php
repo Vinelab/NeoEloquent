@@ -105,6 +105,11 @@ class CypherGrammar extends Grammar
         return $this->dsl->compileUpsert($query, $values, $uniqueBy, $update)->toQuery();
     }
 
+    public function prepareBindingsForUpdate(array $bindings, array $values)
+    {
+        return $this->dsl->prepareBindingsForUpdate($bindings, $values);
+    }
+
     public function compileDelete(Builder $query): string
     {
         return $this->dsl->compileDelete($query)->toQuery();
