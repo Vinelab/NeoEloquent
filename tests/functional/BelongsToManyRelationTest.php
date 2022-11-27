@@ -191,25 +191,6 @@ class BelongsToManyRelationTest extends TestCase
         $this->assertEquals(['Admin' => 'Admin', 'Editor' => 'Editor', 'Master' => 'Master'], $edges);
     }
 
-    public function testDynamicLoadingBelongsToManyRelatedModels()
-    {
-        $user   = User::create(['uuid' => '67887', 'name' => 'Creepy Dude']);
-        $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
-
-        $user->roles()->attach([$master, $admin]);
-
-        foreach ($user->roles as $role) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany\Role', $role);
-            $this->assertTrue($role->exists);
-            $this->assertGreaterThan(0, $role->getKey());
-        }
-
-        $user->roles()->edges()->each(function ($edge) {
-            $edge->delete();
-        });
-    }
-
     public function testEagerLoadingBelongsToMany()
     {
         $user   = User::create(['uuid' => '44352', 'name' => 'Creepy Dude']);
@@ -217,18 +198,13 @@ class BelongsToManyRelationTest extends TestCase
         $admin  = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
-        $edges = $user->roles()->attach([$master, $admin, $editor]);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Collection', $edges);
+        $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
         $creep     = User::with('roles')->find($user->getKey());
         $relations = $creep->getRelations();
 
         $this->assertArrayHasKey('roles', $relations);
         $this->assertCount(3, $relations['roles']);
-
-        $edges->each(function ($relation) {
-            $relation->delete();
-        });
     }
 
     /**
@@ -243,23 +219,22 @@ class BelongsToManyRelationTest extends TestCase
         $admin  = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
-        $edges = $user->roles()->attach([$master, $admin, $editor]);
+        $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
         $fetched = User::find($user->getKey());
-        $this->assertEquals(3, count($user->roles), 'relations created successfully');
+        $this->assertCount(3, $user->roles, 'relations created successfully');
 
-        $deleted = $fetched->roles()->delete();
+        $deleted = $fetched->roles()->detach();
         $this->assertTrue((bool)$deleted);
 
         $again = User::find($user->getKey());
-        $this->assertEquals(0, count($again->roles));
+        $this->assertCount(0, $again->roles);
 
-        // roles should've been deleted too.
         $masterDeleted = Role::where('title', 'Master')->first();
-        $this->assertNull($masterDeleted);
+        $this->assertNotNull($masterDeleted);
 
         $adminDeleted = Role::where('title', 'Admin')->first();
-        $this->assertNull($adminDeleted);
+        $this->assertNotNull($adminDeleted);
 
         $editorDeleted = Role::where('title', 'Edmin')->first();
         $this->assertNull($editorDeleted);
@@ -277,53 +252,16 @@ class BelongsToManyRelationTest extends TestCase
         $admin  = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
-        $edges = $user->roles()->attach([$master, $admin, $editor]);
+        $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
         $fetched = User::find($user->getKey());
-        $this->assertEquals(3, count($user->roles), 'relations created successfully');
+        $this->assertCount(3, $user->roles, 'relations created successfully');
 
-        $deleted = $fetched->roles()->delete(true);
+        $deleted = $fetched->roles()->detach();
         $this->assertTrue((bool)$deleted);
 
         $again = User::find($user->getKey());
-        $this->assertEquals(0, count($again->roles));
-
-        // roles should've been deleted too.
-        $masterDeleted = Role::find($master->getKey());
-        $this->assertEquals($master->toArray(), $masterDeleted->toArray());
-
-        $adminDeleted = Role::find($admin->getKey());
-        $this->assertEquals($admin->toArray(), $adminDeleted->toArray());
-
-        $editorDeleted = Role::find($editor->getKey());
-        $this->assertEquals($editor->toArray(), $editorDeleted->toArray());
-    }
-
-    /**
-     * Regression for issue #120.
-     *
-     * @see https://github.com/Vinelab/NeoEloquent/issues/120
-     */
-    public function testDeletingModelBelongsToManyWithWhereHasRelation()
-    {
-        $user   = User::create(['uuid' => '54556', 'name' => 'Creepy Dude']);
-        $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
-        $editor = Role::create(['title' => 'Editor']);
-
-        $edges = $user->roles()->attach([$master, $admin, $editor]);
-
-        $fetched = User::find($user->getKey());
-        $this->assertEquals(3, count($user->roles), 'relations created successfully');
-
-        $deleted = $fetched->whereHas('roles', function ($q) {
-            $q->where('title', 'Master');
-        })->delete();
-
-        $this->assertTrue((bool)$deleted);
-
-        $again = User::find($user->getKey());
-        $this->assertNull($again);
+        $this->assertCount(0, $again->roles);
 
         // roles should've been deleted too.
         $masterDeleted = Role::find($master->getKey());
