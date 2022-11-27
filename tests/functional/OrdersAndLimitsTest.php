@@ -7,6 +7,13 @@ use Vinelab\NeoEloquent\Tests\TestCase;
 
 class OrdersAndLimitsTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        (new Click())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
+    }
+
     public function testFetchingOrderedRecords()
     {
         $c1 = Click::create(['num' => 1]);
@@ -35,13 +42,13 @@ class OrdersAndLimitsTest extends TestCase
         $c3 = Click::create(['num' => 3]);
 
         $click = Click::orderBy('num', 'desc')->take(1)->get();
-        $this->assertEquals(1, count($click));
-        $this->assertEquals($c3->toArray(), $click[0]->toArray());
+        $this->assertCount(1, $click);
+        $this->assertEquals($c3->num, $click[0]->num);
 
         $another = Click::orderBy('num', 'asc')->take(2)->get();
-        $this->assertEquals(2, count($another));
-        $this->assertEquals($c1->toArray(), $another[0]->toArray());
-        $this->assertEquals($c2->toArray(), $another[1]->toArray());
+        $this->assertCount(2, $another);
+        $this->assertEquals($c1->num, $another[0]->num);
+        $this->assertEquals($c2->num, $another[1]->num);
     }
 }
 

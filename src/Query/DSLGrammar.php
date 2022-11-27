@@ -898,7 +898,7 @@ final class DSLGrammar
         $columns = $this->wrapColumns($query, Arr::pluck($orders, 'column'));
         $dirs    = Arr::pluck($orders, 'direction');
         foreach ($columns as $i => $column) {
-            $orderBy->addProperty($column, $dirs[$i] === 'asc' ? null : 'desc');
+            $orderBy->addProperty($column, $dirs[$i] === 'asc' ? 'asc' : 'desc');
         }
 
         $dsl->addClause($orderBy);
