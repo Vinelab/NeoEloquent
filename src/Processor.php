@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent;
 
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Arr;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
 use Laudis\Neo4j\Databags\SummarizedResult;
 
@@ -21,6 +22,10 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         $from = $query->from;
         foreach ($results as $row) {
             $processedRow =  [];
+            $foundNode = collect($row)->filter(static function ($value, $key) use ($from) {
+                return $key === $from && $value instanceof  HasPropertiesInterface;
+            })->isNotEmpty();
+
             foreach ($row as $key => $value) {
                 if ($value instanceof HasPropertiesInterface) {
                     if ($key === $from) {
@@ -28,7 +33,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
                             $processedRow[$prop] = $this->filterDateTime($x);
                         }
                     }
-                } elseif (str_contains($query->from . '.', $key) || !str_contains('.', $key)) {
+                } elseif (str_contains($query->from . '.', $key) || (!str_contains('.', $key) && !$foundNode)) {
                     $key = str_replace($query->from . '.', '', $key);
                     $processedRow[$key] = $this->filterDateTime($value);
                 }
