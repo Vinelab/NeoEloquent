@@ -4,9 +4,11 @@ namespace Vinelab\NeoEloquent;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
 use Laudis\Neo4j\Databags\SummarizedResult;
 
+use function in_array;
 use function is_iterable;
 use function is_numeric;
 use function is_object;
@@ -18,12 +20,12 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
 {
     public function processSelect(Builder $query, $results)
     {
-        $tbr = [];
+        $tbr  = [];
         $from = $query->from;
         foreach ($results as $row) {
-            $processedRow =  [];
-            $foundNode = collect($row)->filter(static function ($value, $key) use ($from) {
-                return $key === $from && $value instanceof  HasPropertiesInterface;
+            $processedRow = [];
+            $foundNode    = collect($row)->filter(static function ($value, $key) use ($from) {
+                return $key === $from && $value instanceof HasPropertiesInterface;
             })->isNotEmpty();
 
             foreach ($row as $key => $value) {
@@ -33,8 +35,12 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
                             $processedRow[$prop] = $this->filterDateTime($x);
                         }
                     }
-                } elseif (str_contains($query->from . '.', $key) || (!str_contains('.', $key) && !$foundNode)) {
-                    $key = str_replace($query->from . '.', '', $key);
+                } elseif (
+                    str_contains($query->from.'.', $key) ||
+                    ( ! str_contains('.', $key) && ! $foundNode) ||
+                    Str::startsWith($key, 'pivot_')
+                ) {
+                    $key                = str_replace($query->from.'.', '', $key);
                     $processedRow[$key] = $this->filterDateTime($value);
                 }
             }
