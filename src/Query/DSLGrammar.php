@@ -10,6 +10,7 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Mockery\Matcher\Any;
 use RuntimeException;
 use Vinelab\NeoEloquent\DSLContext;
 use Vinelab\NeoEloquent\LabelAction;
@@ -100,6 +101,7 @@ final class DSLGrammar
             'nested'         => Closure::fromCallable([$this, 'whereNested']),
             'exists'         => Closure::fromCallable([$this, 'whereExists']),
             'notexists'      => Closure::fromCallable([$this, 'whereNotExists']),
+            'count'      => Closure::fromCallable([$this, 'whereCount']),
             'rowvalues'      => Closure::fromCallable([$this, 'whereRowValues']),
             'jsonboolean'    => Closure::fromCallable([$this, 'whereJsonBoolean']),
             'jsoncontains'   => Closure::fromCallable([$this, 'whereJsonContains']),
@@ -155,7 +157,12 @@ final class DSLGrammar
         }
 
         if ($this->isExpression($value)) {
-            return $this->getValue($value);
+            $value = $this->getValue($value);
+            if ($value instanceof AnyType) {
+                return $value;
+            }
+
+            return new RawExpression($value);
         }
 
         if (stripos($value, ' as ') !== false) {
@@ -682,6 +689,24 @@ final class DSLGrammar
 
     private function whereExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
     {
+        $where['value'] = 1;
+        $where['operator'] = '>=';
+        $where['query']->columns = [new Expression('count(*)')];
+
+        return $this->whereCount($builder, $where, $context, $query);
+    }
+
+    private function whereNotExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
+    {
+        $where['value'] = 0;
+        $where['operator'] = '=';
+        $where['query']->columns = [new Expression('count(*)')];
+
+        return $this->whereCount($builder, $where, $context, $query);
+    }
+
+    private function whereCount(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
+    {
         /** @var Alias $subresult */
         $subresult = null;
         // Calls can be added subsequently without a WITH in between. Since this is the only comparator in
@@ -698,9 +723,6 @@ final class DSLGrammar
             foreach ($select->getClauses() as $i => $clause) {
                 if ($clause instanceof ReturnClause && $i + 1 === count($select->getClauses())) {
                     $columns = $clause->getColumns();
-                    if ($columns[0]->toQuery() === '*') {
-                        $columns = [$this->wrapTable($builder->from)->getVariable()];
-                    }
                     $subresult = $context->createSubResult($columns[0]);
 
                     $clause = new ReturnClause();
@@ -712,12 +734,9 @@ final class DSLGrammar
 
         $query->with($context->getVariables());
 
-        return $this->whereNotNull($builder, ['column' => $subresult->getVariable()]);
-    }
+        $where['column'] = $subresult->getVariable();
 
-    private function whereNotExists(Builder $builder, array $where, DSLContext $context, Query $query): BooleanType
-    {
-        return new Not($this->whereExists($builder, $where, $context, $query));
+        return $this->whereBasic($builder, $where, $context);
     }
 
     /**

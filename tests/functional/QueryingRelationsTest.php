@@ -14,13 +14,18 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 
 class QueryingRelationsTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        (new Post())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
+    }
 
     public function testQueryingHasCount()
     {
-        $postNoComment = Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
+        Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
         $postWithComment = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
         $postWithTwoComments = Post::create(['title' => 'I got two']);
-        $postWithTenComments = Post::create(['tite' => 'Up yours posts, got 10 here']);
+        $postWithTenComments = Post::create(['title' => 'Up yours posts, got 10 here']);
 
         $comment = new Comment(['text' => 'food']);
         $postWithComment->comments()->save($comment);
@@ -35,24 +40,24 @@ class QueryingRelationsTest extends TestCase
         }
 
         $allPosts = Post::get();
-        $this->assertEquals(4, count($allPosts));
+        $this->assertCount(4, $allPosts);
 
         $posts = Post::has('comments')->get();
-        $this->assertEquals(3, count($posts));
+        $this->assertCount(3, $posts);
         $expectedHasComments = [$postWithComment->id, $postWithTwoComments->id, $postWithTenComments->id];
         foreach ($posts as $key => $post) {
             $this->assertTrue(in_array($post->id, $expectedHasComments));
         }
 
         $postsWithMoreThanOneComment = Post::has('comments', '>=', 2)->get();
-        $this->assertEquals(2, count($postsWithMoreThanOneComment));
+        $this->assertCount(2, $postsWithMoreThanOneComment);
         $expectedWithMoreThanOne = [$postWithTwoComments->id, $postWithTenComments->id];
         foreach ($postsWithMoreThanOneComment as $post) {
             $this->assertTrue(in_array($post->id, $expectedWithMoreThanOne));
         }
 
         $postWithTen = Post::has('comments', '=', 10)->get();
-        $this->assertEquals(1, count($postWithTen));
+        $this->assertCount(1, $postWithTen);
         $this->assertEquals($postWithTenComments->toArray(), $postWithTen->first()->toArray());
     }
 
