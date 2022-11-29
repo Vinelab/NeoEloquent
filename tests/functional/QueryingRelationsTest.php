@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
@@ -941,16 +942,15 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
-    public function tags(): HasMany
+    public function tags(): MorphToMany
     {
-        return $this->hasMany(Tag::class);
+        return $this->morphToMany(Tag::class, 'taggable');
     }
 }
 
 class Tag extends Model
 {
     protected $table = 'Tag';
-
     protected $fillable = ['title'];
     protected $primaryKey = 'title';
     public $incrementing = false;
@@ -973,6 +973,11 @@ class Video extends Model
     protected $primaryKey = 'title';
     public $incrementing = false;
     protected $keyType = 'string';
+
+    public function tags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
 }
 
 class Comment extends Model

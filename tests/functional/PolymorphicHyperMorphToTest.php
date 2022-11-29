@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -21,8 +22,8 @@ class PolymorphicHyperMorphToTest extends TestCase
     public function testCreatingUserCommentOnPostAndVideo()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentAuthor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentAuthor = User::create(['name' => 'I Comment On Videos']);
+        User::create(['name' => 'I Comment On Posts']);
+        User::create(['name' => 'I Comment On Videos']);
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
@@ -51,8 +52,8 @@ class PolymorphicHyperMorphToTest extends TestCase
     public function testSavingUserCommentOnPostAndVideo()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
+        User::create(['name' => 'I Comment On Posts']);
+        User::create(['name' => 'I Comment On Videos']);
 
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
@@ -61,160 +62,47 @@ class PolymorphicHyperMorphToTest extends TestCase
         $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost = new Comment(['title' => 'Another Place', 'body' => 'To Go..']);
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Comment on post and video
-        $postComment = $postCommentor->comments($post)->save($commentOnPost);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $postComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->right());
-        $this->assertTrue($postComment->exists());
+        $commentOnPost = new Comment(['text' => 'Another Place', 'body' => 'To Go..']);
+        $commentOnVideo = new Comment(['text' => 'When We Meet', 'url' => 'http://some.url']);
+        $post->comments()->save($commentOnPost);
+        $video->comments()->save($commentOnVideo);
 
-        $videoComment = $videoCommentor->comments($video)->save($commentOnVideo);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $videoComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->right());
-        $this->assertTrue($videoComment->exists());
+        $post->refresh();
+        $video->refresh();
 
-        $this->assertNotEquals($postComment, $videoComment);
-    }
-
-    public function testAttachingById()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        $commentOnPost = Comment::create(['text' => 'Another Place']);
-        $commentOnVideo = Comment::create(['text' => 'When We Meet']);
-        // Comment on post and video
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost->id);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $postComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->right());
-        $this->assertTrue($postComment->exists());
-
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo->id);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $videoComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->right());
-        $this->assertTrue($videoComment->exists());
-
-        $this->assertNotEquals($postComment, $videoComment);
+        $this->assertFalse($post->comments->first()->is($video->comments->first()));
     }
 
     public function testAttachingManyIds()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
+        User::create(['name' => 'I Comment On Posts']);
+        User::create(['name' => 'I Comment On Videos']);
 
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post = $user->posts->first();
+        $post  = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost = Comment::create(['text' => 'Another Place']);
-        $anotherCommentOnPost = Comment::create(['text' => 'Here and there']);
-        $commentOnVideo = Comment::create(['text' => 'When We Meet']);
+        $commentOnPost         = Comment::create(['text' => 'Another Place']);
+        $anotherCommentOnPost  = Comment::create(['text' => 'Here and there']);
+        $commentOnVideo        = Comment::create(['text' => 'When We Meet']);
         $anotherCommentOnVideo = Comment::create(['text' => 'That is good']);
 
-        // Comment on post and video
-        $postComments = $postCommentor->comments($post)->attach([$commentOnPost->id, $anotherCommentOnPost->id]);
-        foreach ($postComments as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
+        $video->comments()->saveMany([$commentOnPost, $anotherCommentOnPost]);
+
+        foreach ($video->comments as $comment) {
+            $this->assertInstanceOf(Comment::class, $comment);
             $this->assertTrue($comment->exists());
         }
 
-        $videoComments = $videoCommentor->comments($video)->attach([$commentOnVideo->id, $anotherCommentOnVideo->id]);
-        foreach ($videoComments as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
+        $post->comments()->saveMany([$commentOnVideo, $anotherCommentOnVideo]);
+        foreach ($post->comments as $comment) {
+            $this->assertInstanceOf(Comment::class, $comment);
             $this->assertTrue($comment->exists());
         }
-
-        $this->assertNotEquals($postComments, $videoComments);
-    }
-
-    public function testAttachingModelInstance()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Comment on post and video
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $commentOnVideo = Comment::create(['text' => 'Balalaika Sings']);
-
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $postComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->right());
-        $this->assertTrue($postComment->exists());
-
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $videoComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->right());
-        $this->assertTrue($videoComment->exists());
-
-        $this->assertNotEquals($postComment, $videoComment);
-    }
-
-    public function testAttachingManyModelInstances()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        $commentOnPost = Comment::create(['text' => 'Another Place']);
-        $anotherCommentOnPost = Comment::create(['text' => 'Here and there']);
-        $commentOnVideo = Comment::create(['text' => 'When We Meet']);
-        $anotherCommentOnVideo = Comment::create(['text' => 'That is good']);
-
-        // Comment on post and video
-        $postComments = $postCommentor->comments($post)->attach([$commentOnPost, $anotherCommentOnPost]);
-        foreach ($postComments as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
-            $this->assertTrue($comment->exists());
-        }
-
-        $videoComments = $videoCommentor->comments($video)->attach([$commentOnVideo, $anotherCommentOnVideo]);
-        foreach ($videoComments as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $comment);
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->left());
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $comment->right());
-            $this->assertTrue($comment->exists());
-        }
-
-        $this->assertNotEquals($postComments, $videoComments);
     }
 
     public function testAttachingNonExistingModelIds()
@@ -224,408 +112,38 @@ class PolymorphicHyperMorphToTest extends TestCase
         $post = $user->posts()->first();
 
         $this->expectException(ModelNotFoundException::class);
-        $user->comments($post)->attach(9999999999);
+        $post->comments()->findOrFail(9999999999);
     }
 
-    public function testDetachingModelById()
+    public function testManyToManyMorphing(): void
     {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Comment on post and video
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $commentOnVideo = Comment::create(['text' => 'Balalaika Sings']);
-
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $postComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->right());
-        $this->assertTrue($postComment->exists());
-
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $videoComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->right());
-        $this->assertTrue($videoComment->exists());
-
-        $this->assertNotEquals($postComment, $videoComment);
-
-        $edges = $postCommentor->comments($post)->edges();
-        $this->assertNotEmpty($edges);
-
-        $this->assertTrue($postCommentor->comments($post)->detach($commentOnPost));
-
-        $edges = $postCommentor->comments($post)->edges();
-        $this->assertEmpty($edges);
-    }
-
-    public function testSyncingModelIds()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Comment on post and video
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $anotherCommentOnPost = Comment::create(['text' => 'Balalaika Sings']);
-
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $user->comments($post)->sync([$anotherCommentOnPost->id]);
-
-        $edges = $user->comments($post)->edges();
-
-        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
-        $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
-        $this->assertFalse(in_array($commentOnPost->id, $edgesIds));
-
-        foreach ($edges as $edge) {
-            $edge->delete();
-        }
-    }
-
-    public function testSyncingUpdatesModels()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Comment on post and video
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $anotherCommentOnPost = Comment::create(['text' => 'Balalaika Sings']);
-
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $user->comments($post)->sync([$commentOnPost->id, $anotherCommentOnPost->id]);
-
-        $edges = $user->comments($post)->edges();
-
-        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
-        $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
-        $this->assertTrue(in_array($commentOnPost->id, $edgesIds));
-
-        foreach ($edges as $edge) {
-            $edge->delete();
-        }
-    }
-
-    public function testSyncingWithAttributes()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Comment on post and video
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $anotherCommentOnPost = Comment::create(['text' => 'Balalaika Sings']);
-
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $user->comments($post)->sync([
-            $commentOnPost->id => ['feeling' => 'happy'],
-            $anotherCommentOnPost->id => ['feeling' => 'sad'],
-        ]);
-
-        $edges = $user->comments($post)->edges();
-
-        $edgesIds = array_map(function ($edge) { return $edge->getRelated()->getKey(); }, $edges->toArray());
-        $this->assertTrue(in_array($anotherCommentOnPost->id, $edgesIds));
-        $this->assertTrue(in_array($commentOnPost->id, $edgesIds));
-
-        $expectedEdgesTypes = ['sad', 'happy'];
-
-        foreach ($edges as $key => $edge) {
-            $attributes = $edge->toArray();
-            $this->assertArrayHasKey('feeling', $attributes);
-            $this->assertTrue(in_array($edge->feeling, $expectedEdgesTypes));
-            $index = array_search($edge->feeling, $expectedEdgesTypes);
-            unset($expectedEdgesTypes[$index]);
-            $edge->delete();
-        }
-    }
-
-    public function testDynamicLoadingMorphedModel()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $post = Post::find($post->id);
-        foreach ($post->comments as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
-            $this->assertTrue($comment->exists);
-            $this->assertGreaterThanOrEqual(0, $comment->id);
-            $this->assertEquals($commentOnPost->toArray(), $comment->toArray());
-        }
-
-        $video = Video::find($video->id);
-        foreach ($video->comments as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
-            $this->assertTrue($comment->exists);
-            $this->assertGreaterThanOrEqual(0, $comment->id);
-            $this->assertEquals($commentOnVideo->toArray(), $comment->toArray());
-        }
-    }
-
-    public function testEagerLoadingMorphedModel()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $post = Post::with('comments')->find($post->id);
-        $postRelations = $post->getRelations();
-        $this->assertArrayHasKey('comments', $postRelations);
-        $this->assertCount(1, $postRelations['comments']);
-        foreach ($postRelations['comments'] as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
-            $this->assertTrue($comment->exists);
-            $this->assertGreaterThanOrEqual(0, $comment->id);
-            $this->assertEquals($commentOnPost->toArray(), $comment->toArray());
-        }
-
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $video = Video::with('comments')->find($video->id);
-        $videoRelations = $video->getRelations();
-        $this->assertArrayHasKey('comments', $videoRelations);
-        $this->assertCount(1, $videoRelations['comments']);
-        foreach ($videoRelations['comments'] as $comment) {
-            $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', $comment);
-            $this->assertTrue($comment->exists);
-            $this->assertGreaterThanOrEqual(0, $comment->id);
-            $this->assertEquals($commentOnVideo->toArray(), $comment->toArray());
-        }
-    }
-
-    public function testDynamicLoadingMorphingModels()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $comments = $postCommentor->comments;
-        $this->assertEquals($commentOnPost->toArray(), $comments->first()->toArray());
-
-        $comments = $videoCommentor->comments;
-        $this->assertEquals($commentOnVideo->toArray(), $comments->first()->toArray());
-    }
-
-    public function testEagerLoadingMorphingModels()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Attach and assert the comment on Post
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $userMorph = User::with('comments')->find($postCommentor->id);
-        $userRelations = $userMorph->getRelations();
-        $this->assertArrayHasKey('comments', $userRelations);
-        $this->assertCount(1, $userRelations['comments']);
-        $this->assertEquals($commentOnPost->toArray(), $userRelations['comments']->first()->toArray());
-
-        // Attach and assert the comment on Video
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $vUserMorph = User::with('comments')->find($videoCommentor->id);
-        $vUserRelations = $vUserMorph->getRelations();
-        $this->assertArrayHasKey('comments', $vUserRelations);
-        $this->assertCount(1, $userRelations['comments']);
-        $this->assertEquals($commentOnVideo->toArray(), $vUserRelations['comments']->first()->toArray());
-    }
-
-    public function testDynamicLoadingMorphedByModel()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $postMorph = $commentOnPost->post;
-        $this->assertTrue($postMorph->exists);
-        $this->assertGreaterThanOrEqual(0, $postMorph->id);
-        $this->assertEquals($post->toArray(), $postMorph->toArray());
-
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $videoMorph = $commentOnVideo->video;
-        $this->assertTrue($videoMorph->exists);
-        $this->assertGreaterThanOrEqual(0, $videoMorph->id);
-        $this->assertEquals($video->toArray(), $videoMorph->toArray());
-    }
-
-    public function testEagerLoadingMorphedByModel()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Check the post of this comment
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $morphedComment = Comment::with('post')->find($commentOnPost->id);
-        $morphedCommentRelations = $morphedComment->getRelations();
-        $this->assertArrayHasKey('post', $morphedCommentRelations);
-        $this->assertEquals($post->toArray(), $morphedCommentRelations['post']->toArray());
-
-        // Check the video of this comment
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $vMorphedComment = Comment::with('video')->find($commentOnVideo->id);
-        $vMorphedCommentRelations = $vMorphedComment->getRelations();
-        $this->assertArrayHasKey('video', $vMorphedCommentRelations);
-        $this->assertEquals($video->toArray(), $vMorphedCommentRelations['video']->toArray());
-    }
-
-    public function testDynamicLoadingMorphToModel()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Check the post of this comment
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $commentablePost = $commentOnPost->commentable;
-
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Post', $commentablePost);
-        $this->assertEquals($post->toArray(), $commentablePost->toArray());
-
-        // Check the video of this comment
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $commentableVideo = $commentOnVideo->commentable;
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Video', $commentableVideo);
-        $this->assertEquals($video->toArray(), $commentableVideo->toArray());
-    }
-
-    public function testEagerLoadingMorphToModel()
-    {
-        $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
-        // create the user's post and video
-        $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
-        $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        // Grab them back
-        $post = $user->posts->first();
-        $video = $user->videos->first();
-
-        // Check the post of this comment
-        $commentOnPost = Comment::create(['text' => 'Please soooooon!']);
-        $postComment = $postCommentor->comments($post)->attach($commentOnPost);
-
-        $morphedPostComment = Comment::with('commentable')->find($commentOnPost->id);
-        $morphedCommentRelations = $morphedPostComment->getRelations();
-
-        $this->assertArrayHasKey('commentable', $morphedCommentRelations);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Post', $morphedCommentRelations['commentable']);
-        $this->assertEquals($post->toArray(), $morphedCommentRelations['commentable']->toArray());
-
-        // // Check the video of this comment
-        $commentOnVideo = new Comment(['title' => 'When We Meet', 'url' => 'http://some.url']);
-        $videoComment = $videoCommentor->comments($video)->attach($commentOnVideo);
-
-        $morphedVideoComment = Comment::with('commentable')->find($commentOnVideo->id);
-        $morphedVideoCommentRelations = $morphedVideoComment->getRelations();
-
-        $this->assertArrayHasKey('commentable', $morphedVideoCommentRelations);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Video', $morphedVideoCommentRelations['commentable']);
-        $this->assertEquals($video->toArray(), $morphedVideoCommentRelations['commentable']->toArray());
+        $tagX = Tag::create(['title' => 'tag x']);
+        $tagY = Tag::create(['title' => 'tag y']);
+        $tagZ = Tag::create(['title' => 'tag z']);
+
+        $postX = Post::create(['title' => 'a', 'body' => 'abc']);
+        $postY = Post::create(['title' => 'b', 'body' => 'def']);
+        $postZ = Post::create(['title' => 'c', 'body' => 'ghi']);
+
+        $videoX = Video::create(['title' => 'ab']);
+        $videoY = Video::create(['title' => 'cd']);
+        $videoZ = Video::create(['title' => 'ef']);
+
+        $tagX->posts()->sync([$postX->getKey(), $postY->getKey(), $postZ->getKey()]);
+        $tagY->posts()->sync([$postY->getKey(), $postZ->getKey()]);
+        $tagZ->posts()->sync([$postZ->getKey()]);
+
+        $tagX->videos()->sync([$videoX->getKey(), $videoY->getKey(), $videoZ->getKey()]);
+        $tagY->videos()->sync([$videoX->getKey(), $videoY->getKey()]);
+        $tagZ->videos()->sync([$videoX->getKey()]);
+
+        $this->assertEquals([$postX->getKey(), $postY->getKey(), $postZ->getKey()], $tagX->posts->pluck($postX->getKeyName())->toArray());
+        $this->assertEquals([$postY->getKey(), $postZ->getKey()], $tagY->posts->pluck($postX->getKeyName())->toArray());
+        $this->assertEquals([$postZ->getKey()], $tagZ->posts->pluck($postX->getKeyName())->toArray());
+
+        $this->assertEquals([$videoX->getKey(), $videoY->getKey(), $videoZ->getKey()], $tagX->videos->pluck($videoX->getKeyName())->toArray());
+        $this->assertEquals([$videoX->getKey(), $videoY->getKey()], $tagY->videos->pluck($videoX->getKeyName())->toArray());
+        $this->assertEquals([$videoX->getKey()], $tagZ->videos->pluck($videoX->getKeyName())->toArray());
     }
 }
 
@@ -665,6 +183,12 @@ class Post extends Model
     {
         return $this->morphTo();
     }
+
+
+    public function tags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
 }
 
 class Video extends Model
@@ -683,6 +207,30 @@ class Video extends Model
     public function videoable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function tags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
+}
+
+class Tag extends Model
+{
+    protected $table = 'Tag';
+    protected $fillable = ['title'];
+    protected $primaryKey = 'title';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    public function posts(): MorphToMany
+    {
+        return $this->morphedByMany(Post::class, 'taggable');
+    }
+
+    public function videos(): MorphToMany
+    {
+        return $this->morphedByMany(Video::class, 'taggable');
     }
 }
 
