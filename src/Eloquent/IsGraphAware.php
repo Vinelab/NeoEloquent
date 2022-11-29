@@ -2,7 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
 use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
@@ -10,18 +10,10 @@ use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Exceptions\IllegalRelationshipDefinitionException;
 
-use function class_basename;
-use function is_null;
-use function preg_match;
 /**
- * @method Builder newQuery()
- * @method Builder newQueryForRestoration()
- * @method Builder newQueryWithoutRelationships()
- * @method Builder newQueryWithoutScope()
- * @method Builder newQueryWithoutScopes()
- * @method Builder newModelQuery()
+ * @mixin Model
  */
-abstract class Model extends \Illuminate\Database\Eloquent\Model
+trait IsGraphAware
 {
     public $incrementing = false;
 

@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Tests\Eloquent;
 
 use Illuminate\Database\Eloquent\Builder;
 use Vinelab\NeoEloquent\Eloquent\Model as NeoEloquent;
-use Vinelab\NeoEloquent\Query\Builder as BaseBuilder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class Model extends NeoEloquent
