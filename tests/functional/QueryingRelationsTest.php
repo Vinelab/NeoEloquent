@@ -120,28 +120,20 @@ class QueryingRelationsTest extends TestCase
 
         // check admins
         $admins = User::whereHas('roles', function ($q) { $q->where('alias', 'admin'); })->get();
-        $this->assertEquals(2, count($admins));
-        $expectedAdmins = [$mrAdmin, $anotherAdmin];
-        $expectedAdmins = array_map(function ($admin) {
-            return $admin->toArray();
-        }, $expectedAdmins);
-        foreach ($admins as $key => $admin) {
-            $this->assertContains($admin->toArray()['id'], array_map(static fn(array $admin) => $admin['id'], $expectedAdmins));
-        }
+        $this->assertCount(2, $admins);
+        $expectedAdmins = [$mrAdmin->getKey(), $anotherAdmin->getKey()];
+        $this->assertEqualsCanonicalizing($expectedAdmins, $admins->pluck($mrAdmin->getKeyName())->toArray());
+
         // check editors
         $editors = User::whereHas('roles', function ($q) { $q->where('alias', 'editor'); })->get();
-        $this->assertEquals(1, count($editors));
+        $this->assertCount(1, $editors);
         $this->assertEquals($mrsEditor->toArray(), $editors->first()->toArray());
+
         // check managers
-        $expectedManagers = [$mrsManager, $anotherManager];
+        $expectedManagers = [$mrsManager->getKey(), $anotherManager->getKey()];
         $managers = User::whereHas('roles', function ($q) { $q->where('alias', 'manager'); })->get();
-        $this->assertEquals(2, count($managers));
-        $expectedManagers = array_map(function ($manager) {
-            return $manager->toArray();
-        }, $expectedManagers);
-        foreach ($managers as $key => $manager) {
-            $this->assertContains($manager->toArray()['id'], array_map(static fn(array $manager) => $manager['id'], $expectedManagers));
-        }
+        $this->assertCount(2, $managers);
+        $this->assertEqualsCanonicalizing($expectedManagers, $managers->pluck($anotherManager->getKeyName())->toArray());
     }
 
     public function testQueryingWhereHasById()
@@ -831,9 +823,9 @@ class User extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
-    public function roles(): HasMany
+    public function roles(): BelongsToMany
     {
-        return $this->hasMany(Role::class);
+        return $this->belongsToMany(Role::class);
     }
 
     public function account(): HasOne
