@@ -5,7 +5,7 @@ namespace Vinelab\NeoEloquent\Tests\Functional\ParameterGrouping;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Mockery as M;
 use Ramsey\Uuid\Uuid;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Tests\TestCase;
 

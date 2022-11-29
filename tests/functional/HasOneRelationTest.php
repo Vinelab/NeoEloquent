@@ -4,7 +4,7 @@ namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasOne;
 
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 
 class User extends Model
 {

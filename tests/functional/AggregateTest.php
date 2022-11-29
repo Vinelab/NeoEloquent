@@ -4,7 +4,7 @@ namespace Vinelab\NeoEloquent\Tests\Functional\Aggregate;
 
 use Illuminate\Support\Collection;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 
 class AggregateTest extends TestCase
 {

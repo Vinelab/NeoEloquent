@@ -228,7 +228,7 @@ class WheresTheTest extends TestCase
 
     public function testWhereBetween()
     {
-        $u = User::whereBetween('name', [$this->ab->getKey(), $this->ij->getKey()])->get();
+        $u = User::whereBetween('name', [$this->ab->getKey(), $this->ij->getKey()])->orderBy('name')->get();
 
         $mwahaha = [
             $this->ab->toArray(),
