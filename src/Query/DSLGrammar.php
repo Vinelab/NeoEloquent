@@ -78,6 +78,8 @@ final class DSLGrammar
     private string $tablePrefix = '';
     /** @var array<string, callable(Builder, array, Query, DSLContext): array{0: AnyType, 1: list<CallClause>} */
     private array $wheres;
+    /** @var array<string, callable(Builder, array, Query, DSLContext): array{0: AnyType, 1: list<CallClause>} */
+    private array $delayedWheres;
 
     public function __construct()
     {
@@ -99,9 +101,6 @@ final class DSLGrammar
             'year'           => Closure::fromCallable([$this, 'whereYear']),
             'column'         => Closure::fromCallable([$this, 'whereColumn']),
             'nested'         => Closure::fromCallable([$this, 'whereNested']),
-            'exists'         => Closure::fromCallable([$this, 'whereExists']),
-            'notexists'      => Closure::fromCallable([$this, 'whereNotExists']),
-            'count'      => Closure::fromCallable([$this, 'whereCount']),
             'rowvalues'      => Closure::fromCallable([$this, 'whereRowValues']),
             'jsonboolean'    => Closure::fromCallable([$this, 'whereJsonBoolean']),
             'jsoncontains'   => Closure::fromCallable([$this, 'whereJsonContains']),
@@ -109,8 +108,19 @@ final class DSLGrammar
             'fulltext'       => Closure::fromCallable([$this, 'whereFullText']),
             'sub'            => Closure::fromCallable([$this, 'whereSub']),
             'relationship'   => Closure::fromCallable([$this, 'whereRelationship']),
+//            'exists'         => Closure::fromCallable([$this, 'whereExistsBefore']),
+//            'notexists'      => Closure::fromCallable([$this, 'whereNotExistsBefore']),
+//            'count'          => Closure::fromCallable([$this, 'whereCountBefore']),
+        ];
+
+        $this->delayedWheres = [
+            'exists'         => Closure::fromCallable([$this, 'whereExists']),
+            'notexists'      => Closure::fromCallable([$this, 'whereNotExists']),
+            'count'          => Closure::fromCallable([$this, 'whereCount']),
         ];
     }
+
+
 
     /**
      * @param array $values
@@ -443,11 +453,65 @@ final class DSLGrammar
         $expression = null;
         foreach ($builder->wheres as $i => $where) {
             $where['type'] = strtolower($where['type']);
+
+            if (array_key_exists($where['type'], $this->delayedWheres)) {
+                continue;
+            }
+
             if ( ! array_key_exists($where['type'], $this->wheres)) {
                 throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
             }
 
             $dslWhere = $this->wheres[$where['type']]($builder, $where, $context, $query);
+            if (is_array($dslWhere)) {
+                [$dslWhere, $calls] = $dslWhere;
+                foreach ($calls as $call) {
+                    $query->addClause($call);
+                }
+            }
+
+            if ($expression === null) {
+                $expression = $dslWhere;
+            } elseif (strtolower($where['boolean']) === 'and') {
+                $expression = $expression->and($dslWhere, (count($builder->wheres) - 1) === $i && $surroundParentheses);
+            } else {
+                $expression = $expression->or($dslWhere, (count($builder->wheres) - 1) === $i && $surroundParentheses);
+            }
+        }
+
+        $where = new WhereClause();
+        if ($expression !== null) {
+            $where->setExpression($expression);
+        }
+
+        return $where;
+    }
+
+    /**
+     * @param Builder $builder
+     *
+     * @return WhereClause
+     */
+    public function compileDelayedWheres(
+        Builder $builder,
+        bool $surroundParentheses,
+        Query $query,
+        DSLContext $context
+    ): WhereClause {
+        /** @var BooleanType $expression */
+        $expression = null;
+        foreach ($builder->wheres as $i => $where) {
+            $where['type'] = strtolower($where['type']);
+
+            if (array_key_exists($where['type'], $this->wheres)) {
+                continue;
+            }
+
+            if (! array_key_exists($where['type'], $this->delayedWheres)) {
+                throw new RuntimeException(sprintf('Cannot find where operation named: "%s"', $where['type']));
+            }
+
+            $dslWhere = $this->delayedWheres[$where['type']]($builder, $where, $context, $query);
             if (is_array($dslWhere)) {
                 [$dslWhere, $calls] = $dslWhere;
                 foreach ($calls as $call) {
@@ -1208,6 +1272,7 @@ final class DSLGrammar
         $this->translateFrom($builder, $query, $context);
 
         $query->addClause($this->compileWheres($builder, false, $query, $context));
+        $query->addClause($this->compileDelayedWheres($builder, false, $query, $context));
 
         $this->translateGroups($builder, $query, $context);
         $this->translateHavings($builder, $query, $context);

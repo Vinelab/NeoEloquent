@@ -4,10 +4,6 @@ namespace Vinelab\NeoEloquent\Eloquent;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo;
-use Vinelab\NeoEloquent\Eloquent\Relations\BelongsToMany;
-use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
-use Vinelab\NeoEloquent\Eloquent\Relations\HasOne;
 use Vinelab\NeoEloquent\Exceptions\IllegalRelationshipDefinitionException;
 
 /**
@@ -15,11 +11,10 @@ use Vinelab\NeoEloquent\Exceptions\IllegalRelationshipDefinitionException;
  */
 trait IsGraphAware
 {
-    public $incrementing = false;
+    public bool $incrementing = false;
 
-    protected static function booted(): void
+    public static function bootIsGraphAware(): void
     {
-        parent::booted();
         static::saved(static function (Model $model) {
             // Timestamps need to be temporarily disabled as we don't update the model, but the relationship and it
             // messes with the parameter order
