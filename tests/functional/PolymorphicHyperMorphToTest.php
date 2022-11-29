@@ -2,59 +2,50 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo;
 
-use Mockery as M;
-use Vinelab\NeoEloquent\Exceptions\ModelNotFoundException;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 
 class PolymorphicHyperMorphToTest extends TestCase
 {
-    public function tearDown(): void
-    {
-        M::close();
-
-        parent::tearDown();
-    }
-
     public function setUp(): void
     {
         parent::setUp();
 
-        $resolver = M::mock('Illuminate\Database\ConnectionResolverInterface');
-        $resolver->shouldReceive('connection')->andReturn($this->getConnectionWithConfig('default'));
-
-        User::setConnectionResolver($resolver);
-        Post::setConnectionResolver($resolver);
-        Video::setConnectionResolver($resolver);
-        Comment::setConnectionResolver($resolver);
+        (new User())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
     }
 
     public function testCreatingUserCommentOnPostAndVideo()
     {
         $user = User::create(['name' => 'Hmm...']);
-        $postCommentor = User::create(['name' => 'I Comment On Posts']);
-        $videoCommentor = User::create(['name' => 'I Comment On Videos']);
+        $postCommentAuthor = User::create(['name' => 'I Comment On Posts']);
+        $videoCommentAuthor = User::create(['name' => 'I Comment On Videos']);
         // create the user's post and video
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
+
         $post = $user->posts->first();
         $video = $user->videos->first();
 
-        // Comment on post and video
-        $postComment = $postCommentor->comments($post)->create(['text' => 'Please soooooon!']);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $postComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $postComment->right());
-        $this->assertTrue($postComment->exists());
+        $this->assertInstanceOf(Post::class, $post);
+        $this->assertInstanceOf(Video::class, $video);
+        $this->assertEquals('Another Place', $post->getKey());
+        $this->assertEquals('When We Meet', $video->getKey());
 
-        $videoComment = $videoCommentor->comments($video)->create(['text' => 'Haha, hilarious shit!']);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\HyperEdge', $videoComment);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->left());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Eloquent\Edges\EdgeOut', $videoComment->right());
-        $this->assertTrue($videoComment->exists());
+        $post->comments()->create(['text' => 'a']);
+        $video->comments()->create(['text' => 'b']);
 
-        $this->assertNotEquals($postComment, $videoComment);
+        $postComment = $post->comments->first();
+        $videoComment = $video->comments->first();
+
+        $this->assertInstanceOf(Comment::class, $postComment);
+        $this->assertInstanceOf(Comment::class, $videoComment);
+        $this->assertEquals('a', $postComment->getKey());
+        $this->assertEquals('b', $videoComment->getKey());
     }
 
     public function testSavingUserCommentOnPostAndVideo()
@@ -640,68 +631,81 @@ class PolymorphicHyperMorphToTest extends TestCase
 
 class User extends Model
 {
-    protected $label = 'User';
-
+    protected $table = 'User';
     protected $fillable = ['name'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'name';
 
-    public function comments($model = null)
+    public function posts(): MorphToMany
     {
-        return $this->hyperMorph($model, 'Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', 'COMMENTED', 'ON');
+        return $this->morphToMany(Post::class, 'postable');
     }
 
-    public function posts()
+    public function videos(): MorphToMany
     {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Post', 'POSTED');
-    }
-
-    public function videos()
-    {
-        return $this->hasMany('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Video', 'UPLOADED');
+        return $this->morphToMany(Video::class, 'videoable');
     }
 }
 
 class Post extends Model
 {
-    protected $label = 'Post';
-
+    protected $table = 'Post';
     protected $fillable = ['title', 'body'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'title';
 
-    public function comments()
+    public function comments(): MorphMany
     {
-        return $this->morphMany('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', 'ON');
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    public function postable(): MorphTo
+    {
+        return $this->morphTo();
     }
 }
 
 class Video extends Model
 {
-    protected $label = 'Video';
-
+    protected $table = 'Video';
     protected $fillable = ['title', 'url'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'title';
 
-    public function comments()
+    public function comments(): MorphMany
     {
-        return $this->morphMany('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Comment', 'ON');
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    public function videoable(): MorphTo
+    {
+        return $this->morphTo();
     }
 }
 
 class Comment extends Model
 {
-    protected $label = 'Comment';
-
+    protected $table = 'Comment';
     protected $fillable = ['text'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'text';
 
-    public function commentable()
+    public function commentable(): MorphTo
     {
         return $this->morphTo();
     }
 
-    public function post()
+    public function post(): MorphOne
     {
-        return $this->morphTo('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Post', 'ON');
+        return $this->morphOne(Post::class, 'postable');
     }
 
-    public function video()
+    public function video(): MorphOne
     {
-        return $this->morphTo('Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo\Video', 'ON');
+        return $this->morphOne(Video::class, 'videoable');
     }
 }
