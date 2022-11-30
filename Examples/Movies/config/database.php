@@ -2,7 +2,7 @@
 
 use Vinelab\NeoEloquent\Connection;
 use Illuminate\Database\Capsule\Manager as Capsule;
-use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Schema\CypherGrammar;
 
 $connection = [
     'driver' => 'neo4j',

@@ -5,9 +5,9 @@ namespace Vinelab\NeoEloquent;
 use BadMethodCallException;
 use Bolt\error\ConnectException;
 use Closure;
-use DateTimeInterface;
 use Generator;
 use Illuminate\Database\QueryException;
+use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
@@ -18,8 +18,9 @@ use LogicException;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
+
 use function get_debug_type;
-use function is_infinite;
+use function is_null;
 
 final class Connection extends \Illuminate\Database\Connection
 {
@@ -30,7 +31,7 @@ final class Connection extends \Illuminate\Database\Connection
     {
         if ($pdo instanceof Neo4JReconnector) {
             $readPdo = Closure::fromCallable($pdo->withReadConnection());
-            $pdo = Closure::fromCallable($pdo);
+            $pdo     = Closure::fromCallable($pdo);
         } else {
             $readPdo = $pdo;
         }
@@ -40,11 +41,20 @@ final class Connection extends \Illuminate\Database\Connection
         $this->setReadPdo($readPdo);
     }
 
+    public function getSchemaBuilder(): SchemaBuilder
+    {
+        if ($this->schemaGrammar === null) {
+            $this->useDefaultSchemaGrammar();
+        }
+
+        return new SchemaBuilder($this);
+    }
+
     /**
      * Begin a fluent query against a database table.
      *
      * @param Closure|Builder|string $label
-     * @param  string|null  $as
+     * @param string|null $as
      */
     public function node($label, ?string $as = null): Query\Builder
     {
@@ -74,7 +84,7 @@ final class Connection extends \Illuminate\Database\Connection
             $session = $this->getPdo();
         }
 
-        if (!$session instanceof SessionInterface) {
+        if ( ! $session instanceof SessionInterface) {
             $msg = 'Reconnectors or PDO\'s must return "%s", Got "%s"';
             throw new LogicException(sprintf($msg, SessionInterface::class, get_debug_type($session)));
         }
@@ -90,10 +100,9 @@ final class Connection extends \Illuminate\Database\Connection
             }
 
             yield from $this->getSession($useReadPdo)
-                ->run($query, $this->prepareBindings($bindings))
-                ->map(static fn (CypherMap $map) => $map->toArray());
+                            ->run($query, $this->prepareBindings($bindings))
+                            ->map(static fn(CypherMap $map) => $map->toArray());
         });
-
     }
 
     public function select($query, $bindings = [], $useReadPdo = true): array
@@ -104,10 +113,11 @@ final class Connection extends \Illuminate\Database\Connection
             }
 
             $parameters = $this->prepareBindings($bindings);
+
             return $this->getSession($useReadPdo)
-                ->run($query, $parameters)
-                ->map(static fn (CypherMap $map) => $map->toArray())
-                ->toArray();
+                        ->run($query, $parameters)
+                        ->map(static fn(CypherMap $map) => $map->toArray())
+                        ->toArray();
         });
     }
 
@@ -119,8 +129,9 @@ final class Connection extends \Illuminate\Database\Connection
     /**
      * Execute an SQL statement and return the result.
      *
-     * @param  string  $query
-     * @param  array  $bindings
+     * @param string $query
+     * @param array $bindings
+     *
      * @return mixed
      */
     public function statement($query, $bindings = []): bool
@@ -136,7 +147,7 @@ final class Connection extends \Illuminate\Database\Connection
             }
 
             $parameters = $this->prepareBindings($bindings);
-            $result = $this->getSession()->run($query, $parameters);
+            $result     = $this->getSession()->run($query, $parameters);
             if ($result->getSummary()->getCounters()->containsUpdates()) {
                 $this->recordsHaveBeenModified();
             }
@@ -172,7 +183,7 @@ final class Connection extends \Illuminate\Database\Connection
             }
 
             $parameters = $this->prepareBindings($bindings);
-            $result = $this->getSession()->run($query, $parameters);
+            $result     = $this->getSession()->run($query, $parameters);
             if ($result->getSummary()->getCounters()->containsUpdates()) {
                 $this->recordsHaveBeenModified();
             }
@@ -184,7 +195,8 @@ final class Connection extends \Illuminate\Database\Connection
     /**
      * Prepare the query bindings for execution.
      *
-     * @param  array  $bindings
+     * @param array $bindings
+     *
      * @return array
      */
     public function prepareBindings(array $bindings): array
@@ -245,7 +257,7 @@ final class Connection extends \Illuminate\Database\Connection
     /**
      * Execute the callback after a transaction commits.
      *
-     * @param  callable $callback
+     * @param callable $callback
      */
     public function afterCommit($callback): void
     {
@@ -254,17 +266,18 @@ final class Connection extends \Illuminate\Database\Connection
 
     /**
      * @param SummaryCounters $counters
+     *
      * @return int
      */
     private function summarizeCounters(SummaryCounters $counters): int
     {
         return $counters->propertiesSet() +
-            $counters->labelsAdded() +
-            $counters->labelsRemoved() +
-            $counters->nodesCreated() +
-            $counters->nodesDeleted() +
-            $counters->relationshipsCreated() +
-            $counters->relationshipsDeleted();
+               $counters->labelsAdded() +
+               $counters->labelsRemoved() +
+               $counters->nodesCreated() +
+               $counters->nodesDeleted() +
+               $counters->relationshipsCreated() +
+               $counters->relationshipsDeleted();
     }
 
     /**
@@ -278,16 +291,16 @@ final class Connection extends \Illuminate\Database\Connection
     /**
      * Get the default schema grammar instance.
      */
-    protected function getDefaultSchemaGrammar(): Grammar
+    protected function getDefaultSchemaGrammar(): Schema\CypherGrammar
     {
-        return new Grammar();
+        return new Schema\CypherGrammar();
     }
 
     /**
      * Bind values to their parameters in the given statement.
      *
-     * @param  mixed $statement
-     * @param  mixed  $bindings
+     * @param mixed $statement
+     * @param mixed $bindings
      */
     public function bindValues($statement, $bindings): void
     {
@@ -317,8 +330,8 @@ final class Connection extends \Illuminate\Database\Connection
     /**
      * Get a Doctrine Schema Column instance.
      *
-     * @param  string  $table
-     * @param  string  $column
+     * @param string $table
+     * @param string $column
      */
     public function getDoctrineColumn($table, $column): void
     {
