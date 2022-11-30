@@ -895,4 +895,9 @@ trait FollowsGraphConventions
 
         return $this;
     }
+
+    public function getTable(): string
+    {
+        return $this->table ?? Str::studly(class_basename($this));
+    }
 }
