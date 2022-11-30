@@ -1,18 +1,15 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Functional\Aggregate;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
 
 class AggregateTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        User::query()->truncate();
-    }
+    use RefreshDatabase;
 
     public function testCount(): void
     {
@@ -301,9 +298,4 @@ class AggregateTest extends TestCase
         $this->assertContains(44, $logins);
         $this->assertContains(55, $logins);
     }
-}
-
-class User extends Model
-{
-    protected $fillable = ['logins', 'points', 'email'];
 }

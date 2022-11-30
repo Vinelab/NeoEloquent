@@ -2,17 +2,13 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Database\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\Fixtures\Click;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class OrdersAndLimitsTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        (new Click())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
+    use RefreshDatabase;
 
     public function testFetchingOrderedRecords()
     {
@@ -50,17 +46,4 @@ class OrdersAndLimitsTest extends TestCase
         $this->assertEquals($c1->num, $another[0]->num);
         $this->assertEquals($c2->num, $another[1]->num);
     }
-}
-
-class Click extends Model
-{
-    protected $table = 'Click';
-
-    protected $fillable = ['num'];
-
-    protected $keyType = 'string';
-
-    public $incrementing = false;
-
-    protected $primaryKey = 'num';
 }

@@ -1,50 +1,15 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasMany;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vinelab\NeoEloquent\Tests\Fixtures\Author;
+use Vinelab\NeoEloquent\Tests\Fixtures\Book;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Eloquent\Model;
-
-class Book extends Model
-{
-    protected $table = 'Book';
-
-    protected $primaryKey = 'title';
-
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
-    protected $fillable = ['title', 'pages', 'release_date'];
-}
-
-class Author extends Model
-{
-    protected $table = 'Author';
-
-    protected $fillable = ['name'];
-
-    public $incrementing = false;
-
-    protected $primaryKey = 'name';
-
-    protected $keyType = 'string';
-
-    public function books(): HasMany
-    {
-        return $this->hasMany(Book::class, 'WROTE');
-    }
-}
 
 class HasManyRelationTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        (new Author())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
+    use RefreshDatabase;
 
     public function testSavingSingleAndDynamicLoading(): void
     {

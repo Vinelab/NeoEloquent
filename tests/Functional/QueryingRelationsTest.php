@@ -1,24 +1,19 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Functional\QueryingRelations;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use DateTime;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vinelab\NeoEloquent\Tests\Fixtures\Comment;
+use Vinelab\NeoEloquent\Tests\Fixtures\Post;
+use Vinelab\NeoEloquent\Tests\Fixtures\Role;
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class QueryingRelationsTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        (new Post())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
+    use RefreshDatabase;
 
     public function testQueryingHasCount()
     {
@@ -70,15 +65,15 @@ class QueryingRelationsTest extends TestCase
         // user with a role that has only one permission
         $user       = User::create(['name' => 'cappuccino']);
         $role       = Role::create(['alias' => 'pikachu']);
-        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $permission = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
         $role->permissions()->save($permission);
         $user->roles()->save($role);
 
         // user with a role that has 2 permissions
         $userWithTwo   = User::create(['name' => 'frappe']);
         $roleWithTwo   = Role::create(['alias' => 'pikachuu']);
-        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
-        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $permissionOne = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
 
@@ -171,7 +166,7 @@ class QueryingRelationsTest extends TestCase
     {
         $user    = User::create(['name' => 'cappuccino']);
         $role    = Role::create(['alias' => 'pikachu']);
-        $account = Account::create(['guid' => uniqid()]);
+        $account = \Vinelab\NeoEloquent\Tests\Fixtures\Account::create(['guid' => uniqid()]);
 
         $user->roles()->save($role);
         $user->account()->save($account);
@@ -192,15 +187,15 @@ class QueryingRelationsTest extends TestCase
         // user with a role that has only one permission
         $user       = User::create(['name' => 'cappuccino']);
         $role       = Role::create(['alias' => 'pikachu']);
-        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $permission = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
         $role->permissions()->save($permission);
         $user->roles()->save($role);
 
         // user with a role that has 2 permissions
         $userWithTwo   = User::create(['name' => 'cappuccino0']);
         $roleWithTwo   = Role::create(['alias' => 'pikachuU']);
-        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
-        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $permissionOne = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
 
@@ -239,176 +234,5 @@ class QueryingRelationsTest extends TestCase
             $yesterday->format($andrew->getDateFormat()),
             $colleagues[1]->dob->format($andrew->getDateFormat())
         );
-    }
-}
-
-class User extends Model
-{
-    protected $table = 'User';
-    protected $fillable = ['name', 'dob'];
-    protected $primaryKey = 'name';
-    protected $keyType = 'string';
-    public $incrementing = false;
-
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class);
-    }
-
-    public function account(): HasOne
-    {
-        return $this->hasOne(Account::class);
-    }
-
-    public function colleagues(): HasMany
-    {
-        return $this->hasMany(User::class);
-    }
-
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class);
-    }
-}
-
-class Account extends Model
-{
-    protected $table = 'Account';
-    protected $fillable = ['guid'];
-    public $incrementing = false;
-    protected $keyType = 'string';
-    protected $primaryKey = 'guid';
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-}
-
-class Organization extends Model
-{
-    protected $table = 'Organization';
-    protected $fillable = ['name'];
-    public $incrementing = false;
-    protected $keyType = 'string';
-    protected $primaryKey = 'name';
-
-    public function members(): HasMany
-    {
-        return $this->hasMany(User::class);
-    }
-}
-
-class Role extends Model
-{
-    protected $table = 'Role';
-    protected $fillable = ['title', 'alias'];
-    protected $primaryKey = 'alias';
-    protected $keyType = 'string';
-    public $incrementing = false;
-
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class);
-    }
-
-    public function permissions(): HasMany
-    {
-        return $this->hasMany(Permission::class);
-    }
-}
-
-class Permission extends Model
-{
-    protected $table = 'Permission';
-    protected $fillable = ['title', 'alias'];
-    protected $primaryKey = 'title';
-    protected $keyType = 'string';
-    public $incrementing = false;
-
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class);
-    }
-}
-
-class Post extends Model
-{
-    protected $table = 'Post';
-    protected $fillable = ['title', 'body', 'summary'];
-    protected $primaryKey = 'title';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
-
-    public function photos(): HasMany
-    {
-        return $this->hasMany(HasMany::class);
-    }
-
-    public function cover(): HasOne
-    {
-        return $this->hasOne(Photo::class);
-    }
-
-    public function videos(): HasMany
-    {
-        return $this->hasMany(Video::class);
-    }
-
-    public function comments(): HasMany
-    {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
-    }
-}
-
-class Tag extends Model
-{
-    protected $table = 'Tag';
-    protected $fillable = ['title'];
-    protected $primaryKey = 'title';
-    public $incrementing = false;
-    protected $keyType = 'string';
-}
-
-class Photo extends Model
-{
-    protected $table = 'Photo';
-    protected $fillable = ['url', 'caption', 'metadata'];
-    protected $primaryKey = 'url';
-    public $incrementing = false;
-    protected $keyType = 'string';
-}
-
-class Video extends Model
-{
-    protected $table = 'Video';
-    protected $fillable = ['title', 'description', 'stream_url', 'thumbnail'];
-    protected $primaryKey = 'title';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
-    }
-}
-
-class Comment extends Model
-{
-    protected $table = 'Comment';
-    protected $fillable = ['text'];
-    protected $primaryKey = 'text';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
-    public function post(): BelongsTo
-    {
-        return $this->belongsTo(Post::class);
     }
 }

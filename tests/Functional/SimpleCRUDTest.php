@@ -4,52 +4,16 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use DateTime;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laudis\Neo4j\Types\CypherList;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Eloquent\SoftDeletes;
-
-class Wiz extends Model
-{
-    protected $table = 'SOmet';
-
-    protected $fillable = ['fiz', 'biz', 'triz'];
-
-    protected $primaryKey = 'fiz';
-
-    protected $keyType = 'string';
-
-    public $incrementing = false;
-
-    public $timestamps = true;
-}
-
-class WizDel extends Model
-{
-    use SoftDeletes;
-
-    protected $dates = ['deleted_at'];
-
-    protected $table = 'Wiz';
-
-    protected $fillable = ['fiz', 'biz', 'triz'];
-
-    protected $primaryKey = 'fiz';
-
-    protected $keyType = 'string';
-
-    public $incrementing = false;
-}
+use Vinelab\NeoEloquent\Tests\Fixtures\Wiz;
+use Vinelab\NeoEloquent\Tests\Fixtures\WizDel;
 
 class SimpleCRUDTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        (new Wiz())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
+    use RefreshDatabase;
 
     public function testFindingAndFailing()
     {
@@ -80,7 +44,7 @@ class SimpleCRUDTest extends TestCase
 
         $this->assertTrue($w->save());
         $this->assertTrue($w->exists);
-        $this->assertIsString($w->getKey());;
+        $this->assertIsString($w->getKey());
     }
 
     public function testCreatingRecordWithArrayProperties()
@@ -138,7 +102,7 @@ class SimpleCRUDTest extends TestCase
             'nope' => 'nope',
         ]);
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Fixtures\Wiz', $w);
         $this->assertTrue($w->exists);
         $this->assertNull($w->nope);
     }
@@ -211,9 +175,9 @@ class SimpleCRUDTest extends TestCase
             ]);
 
         $found = Wiz::where('fiz', '=', 'notfooanymore')
-            ->orWhere('biz', '=', 'noNotBoo!')
-            ->orWhere('triz', '=', 'newhere')
-            ->first();
+                    ->orWhere('biz', '=', 'noNotBoo!')
+                    ->orWhere('triz', '=', 'newhere')
+                    ->first();
 
         $this->assertNotEquals($w->getKey(), $found->getKey());
     }
@@ -323,7 +287,7 @@ class SimpleCRUDTest extends TestCase
             'triz' => 'troo',
         ]);
 
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\Wiz', $w);
+        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Fixtures\Wiz', $w);
 
         $found = Wiz::firstOrCreate([
             'fiz' => 'foo',

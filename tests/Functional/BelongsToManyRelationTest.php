@@ -1,51 +1,15 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Functional\Relations\BelongsToMany;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vinelab\NeoEloquent\Tests\Fixtures\Role;
 use Vinelab\NeoEloquent\Tests\TestCase;
-
-class User extends Model
-{
-    protected $table = 'Individual';
-
-    protected $fillable = ['uuid', 'name'];
-
-    protected $primaryKey = 'uuid';
-
-    protected $keyType = 'string';
-
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class);
-    }
-}
-
-class Role extends Model
-{
-    protected $table = 'Role';
-
-    protected $fillable = ['title'];
-
-    protected $primaryKey = 'title';
-
-    protected $keyType = 'string';
-
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class);
-    }
-}
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
 
 class BelongsToManyRelationTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        (new Role())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
+    use RefreshDatabase;
 
     public function testSavingRelatedBelongsToMany(): void
     {

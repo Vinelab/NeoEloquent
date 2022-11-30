@@ -1,43 +1,15 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HasOne;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vinelab\NeoEloquent\Tests\Fixtures\Profile;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Eloquent\Model;
-
-class User extends Model
-{
-    protected $table = 'Individual';
-    protected $fillable = ['name', 'email'];
-
-    // Todo - add this to gotchas in documentation
-    protected $primaryKey = 'email';
-    protected $keyType = 'string';
-
-    public function profile(): HasOne
-    {
-        return $this->hasOne(Profile::class);
-    }
-}
-
-class Profile extends Model
-{
-    protected $table = 'Profile';
-    protected $fillable = ['guid', 'service'];
-
-    protected $primaryKey = 'guid';
-    protected $keyType = 'string';
-}
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
 
 class HasOneRelationTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        (new Profile())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
+    use RefreshDatabase;
 
     public function testDynamicLoadingHasOne()
     {

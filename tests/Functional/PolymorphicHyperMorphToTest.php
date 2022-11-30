@@ -1,23 +1,19 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Functional\Relations\HyperMorphTo;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vinelab\NeoEloquent\Tests\Fixtures\Comment;
+use Vinelab\NeoEloquent\Tests\Fixtures\Post;
+use Vinelab\NeoEloquent\Tests\Fixtures\Tag;
+use Vinelab\NeoEloquent\Tests\Fixtures\Video;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
 
 class PolymorphicHyperMorphToTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        (new User())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
+    use RefreshDatabase;
 
     public function testCreatingUserCommentOnPostAndVideo()
     {
@@ -144,116 +140,5 @@ class PolymorphicHyperMorphToTest extends TestCase
         $this->assertEquals([$videoX->getKey(), $videoY->getKey(), $videoZ->getKey()], $tagX->videos->pluck($videoX->getKeyName())->toArray());
         $this->assertEquals([$videoX->getKey(), $videoY->getKey()], $tagY->videos->pluck($videoX->getKeyName())->toArray());
         $this->assertEquals([$videoX->getKey()], $tagZ->videos->pluck($videoX->getKeyName())->toArray());
-    }
-}
-
-class User extends Model
-{
-    protected $table = 'User';
-    protected $fillable = ['name'];
-    public $incrementing = false;
-    protected $keyType = 'string';
-    protected $primaryKey = 'name';
-
-    public function posts(): MorphToMany
-    {
-        return $this->morphToMany(Post::class, 'postable');
-    }
-
-    public function videos(): MorphToMany
-    {
-        return $this->morphToMany(Video::class, 'videoable');
-    }
-}
-
-class Post extends Model
-{
-    protected $table = 'Post';
-    protected $fillable = ['title', 'body'];
-    public $incrementing = false;
-    protected $keyType = 'string';
-    protected $primaryKey = 'title';
-
-    public function comments(): MorphMany
-    {
-        return $this->morphMany(Comment::class, 'commentable');
-    }
-
-    public function postable(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
-    }
-}
-
-class Video extends Model
-{
-    protected $table = 'Video';
-    protected $fillable = ['title', 'url'];
-    public $incrementing = false;
-    protected $keyType = 'string';
-    protected $primaryKey = 'title';
-
-    public function comments(): MorphMany
-    {
-        return $this->morphMany(Comment::class, 'commentable');
-    }
-
-    public function videoable(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
-    }
-}
-
-class Tag extends Model
-{
-    protected $table = 'Tag';
-    protected $fillable = ['title'];
-    protected $primaryKey = 'title';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
-    public function posts(): MorphToMany
-    {
-        return $this->morphedByMany(Post::class, 'taggable');
-    }
-
-    public function videos(): MorphToMany
-    {
-        return $this->morphedByMany(Video::class, 'taggable');
-    }
-}
-
-class Comment extends Model
-{
-    protected $table = 'Comment';
-    protected $fillable = ['text'];
-    public $incrementing = false;
-    protected $keyType = 'string';
-    protected $primaryKey = 'text';
-
-    public function commentable(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    public function post(): MorphOne
-    {
-        return $this->morphOne(Post::class, 'postable');
-    }
-
-    public function video(): MorphOne
-    {
-        return $this->morphOne(Video::class, 'videoable');
     }
 }

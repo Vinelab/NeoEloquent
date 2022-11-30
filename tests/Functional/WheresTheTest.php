@@ -2,35 +2,26 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Illuminate\Database\Eloquent\Model;
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
 
 use function usort;
 
-class User extends Model
-{
-    protected $table = 'Individual';
-
-    protected $fillable = ['name', 'email', 'alias', 'calls'];
-
-    protected $primaryKey = 'name';
-
-    protected $keyType = 'string';
-}
-
 class WheresTheTest extends TestCase
 {
+    use RefreshDatabase;
+
     private User $ab;
     private User $cd;
     private User $ef;
     private User $gh;
+
     private User $ij;
 
     public function setUp(): void
     {
         parent::setUp();
-
-        (new User())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
 
         // Setup the data in the database
         $this->ab = User::create([

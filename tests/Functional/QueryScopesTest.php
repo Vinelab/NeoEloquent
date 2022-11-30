@@ -2,39 +2,17 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\TestCase;
-
-class Misfit extends Model
-{
-    protected $table = 'Misfit';
-
-    public $incrementing = false;
-
-    protected $primaryKey = 'name';
-
-    protected $keyType = 'string';
-
-    protected $fillable = ['name', 'alias'];
-
-    public function scopeKingOfScience($query)
-    {
-        return $query->where('alias', 'tesla');
-    }
-
-    public function scopeStupidDickhead($query)
-    {
-        return $query->where('alias', 'edison');
-    }
-}
+use Vinelab\NeoEloquent\Tests\Fixtures\Misfit;
 
 class QueryScopesTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function setUp(): void
     {
         parent::setUp();
-
-        (new Misfit())->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
 
         $this->t = Misfit::create([
             'name' => 'Nikola Tesla',
