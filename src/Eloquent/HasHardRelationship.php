@@ -13,6 +13,7 @@ use function class_basename;
  */
 trait HasHardRelationship
 {
+    protected bool $enableHardRelationships = false;
     protected ?string $relationshipName = null;
 
     public function getRelationshipName(): string
@@ -27,8 +28,29 @@ trait HasHardRelationship
 
     public function withRelationshipName(string $name): self
     {
+        $this->enableHardRelationships();
+
         $this->relationshipName = $name;
 
         return $this;
+    }
+
+    public function enableHardRelationships(): self
+    {
+        $this->enableHardRelationships = true;
+
+        return $this;
+    }
+
+    public function disableHardRelationships(): self
+    {
+        $this->enableHardRelationships = false;
+
+        return $this;
+    }
+
+    public function hasHardRelationshipsEnabled(): bool
+    {
+        return $this->enableHardRelationships;
     }
 }
