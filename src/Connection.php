@@ -7,6 +7,7 @@ use Generator;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Arr;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
@@ -27,9 +28,35 @@ final class Connection implements ConnectionInterface
         private SessionInterface $readSession,
         private SessionInterface $session,
         private string           $database,
-        private string           $tablePrefix = '',
+        private string           $tablePrefix,
+        private array            $config
     )
     {
+    }
+
+    public function getConfig(string $option = null): ?string
+    {
+        return Arr::get($this->config, $option);
+    }
+
+    /**
+     * Get the database connection name.
+     *
+     * @return string|null
+     */
+    public function getName(): ?string
+    {
+        return $this->getConfig('name');
+    }
+
+    /**
+     * Get the PDO driver name.
+     *
+     * @return string
+     */
+    public function getDriverName(): string
+    {
+        return $this->getConfig('driver');
     }
 
     public function getSession(bool $read = false): SessionInterface

@@ -43,7 +43,8 @@ final class ConnectionFactory
             $driver->createSession($config->withAccessMode(AccessMode::READ())),
             $driver->createSession(),
             $database,
-            $prefix
+            $prefix,
+            $config
         );
     }
 }
