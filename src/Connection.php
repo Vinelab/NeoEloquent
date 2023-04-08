@@ -7,6 +7,7 @@ use Generator;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Illuminate\Support\Arr;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
@@ -37,6 +38,46 @@ final class Connection implements ConnectionInterface
     public function getConfig(string $option = null): ?string
     {
         return Arr::get($this->config, $option);
+    }
+
+    /**
+     * For completion with Illuminate Connection
+     *
+     * @see \Illuminate\Database\Connection::useDefaultQueryGrammar()
+     */
+    public function useDefaultQueryGrammar(): void
+    {
+        // There is only one grammar implementation right now.
+    }
+
+    /**
+     * For completion with Illuminate Connection
+     *
+     * @see \Illuminate\Database\Connection::useDefaultSchemaGrammar()
+     */
+    public function useDefaultSchemaGrammar(): void
+    {
+        // There is only one grammar implementation right now.
+    }
+
+    /**
+     * For completion with Illuminate Connection
+     *
+     * @see \Illuminate\Database\Connection::useDefaultPostProcessor()
+     */
+    public function useDefaultPostProcessor(): void
+    {
+        // There is only one post processor implementation right now.
+    }
+
+    /**
+     * Get a schema builder instance for the connection.
+     *
+     * @return SchemaBuilder
+     */
+    public function getSchemaBuilder(): SchemaBuilder
+    {
+        return new SchemaBuilder($this);
     }
 
     /**
