@@ -2,128 +2,93 @@
 
 namespace Vinelab\NeoEloquent;
 
-use BadMethodCallException;
-use Bolt\error\ConnectException;
 use Closure;
 use Generator;
+use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Database\QueryException;
-use Vinelab\NeoEloquent\Schema\Builder as SchemaBuilder;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
-use Laudis\Neo4j\Databags\SummarizedResult;
 use Laudis\Neo4j\Databags\SummaryCounters;
+use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
-use LogicException;
+use Throwable;
 use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
-use Vinelab\NeoEloquent\Schema\Grammars\Grammar;
 
-use function get_debug_type;
-use function is_null;
-
-final class Connection extends \Illuminate\Database\Connection
+final class Connection implements ConnectionInterface
 {
-    private ?UnmanagedTransactionInterface $tsx = null;
-    private array $committedCallbacks = [];
+    /** @var array<UnmanagedTransactionInterface> */
+    private array $transactions = [];
+    private bool $pretending = false;
 
-    public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
+    public function __construct(
+        private SessionInterface $readSession,
+        private SessionInterface $session,
+        private string           $database,
+        private string           $tablePrefix = '',
+    )
     {
-        if ($pdo instanceof Neo4JReconnector) {
-            $readPdo = Closure::fromCallable($pdo->withReadConnection());
-            $pdo     = Closure::fromCallable($pdo);
-        } else {
-            $readPdo = $pdo;
-        }
-        parent::__construct($pdo, $database, $tablePrefix, $config);
-
-        $this->setPdo($pdo);
-        $this->setReadPdo($readPdo);
     }
 
-    public function getSchemaBuilder(): SchemaBuilder
+    public function getSession(bool $read = false): SessionInterface
     {
-        if ($this->schemaGrammar === null) {
-            $this->useDefaultSchemaGrammar();
+        if ($read) {
+            return $this->readSession;
         }
 
-        return new SchemaBuilder($this);
+        return $this->session;
     }
 
-    /**
-     * Begin a fluent query against a database table.
-     *
-     * @param Closure|Builder|string $label
-     * @param string|null $as
-     */
-    public function node($label, ?string $as = null): Query\Builder
+    public function getRunner(bool $read = false): TransactionInterface
     {
-        return $this->table($label, $as);
-    }
+        if (count($this->transactions)) {
+            return \Arr::last($this->transactions);
+        }
 
-    public function query(): Builder
-    {
-        return new Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
+        return $this->getSession($read);
     }
 
     public function table($table, $as = null): Builder
     {
-        /** @noinspection PhpIncompatibleReturnTypeInspection */
-        return parent::table($table, $as);
+        $grammar = new CypherGrammar();
+        $grammar->setTablePrefix($this->tablePrefix);
+
+        $builder = new Builder($this, $grammar, new Processor());
+
+        return $builder->from($table, $as);
     }
 
-    public function getSession(bool $readSession = false): TransactionInterface
+    private function run(string $query, array $bindings, Closure $callback): mixed
     {
-        if ($this->tsx) {
-            return $this->tsx;
+        try {
+            $result = $callback($query, $bindings);
+        } catch (Throwable $e) {
+            throw new QueryException(
+                'CYPHER', $query, $this->prepareBindings($bindings), $e
+            );
         }
 
-        if ($readSession) {
-            $session = $this->getReadPdo();
-        } else {
-            $session = $this->getPdo();
-        }
-
-        if ( ! $session instanceof SessionInterface) {
-            $msg = 'Reconnectors or PDO\'s must return "%s", Got "%s"';
-            throw new LogicException(sprintf($msg, SessionInterface::class, get_debug_type($session)));
-        }
-
-        return $session;
+        return $result;
     }
 
     public function cursor($query, $bindings = [], $useReadPdo = true): Generator
     {
         return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
-            if ($this->pretending()) {
+            if ($this->pretending) {
                 return;
             }
 
-            yield from $this->getSession($useReadPdo)
-                            ->run($query, $this->prepareBindings($bindings))
-                            ->map(static fn(CypherMap $map) => $map->toArray());
+            yield from $this->getRunner($useReadPdo)
+                ->run($query, $this->prepareBindings($bindings))
+                ->map(static fn(CypherMap $map) => $map->toArray());
         });
     }
 
     public function select($query, $bindings = [], $useReadPdo = true): array
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
-            if ($this->pretending()) {
-                return [];
-            }
-
-            $parameters = $this->prepareBindings($bindings);
-
-            return $this->getSession($useReadPdo)
-                        ->run($query, $parameters)
-                        ->map(static fn(CypherMap $map) => $map->toArray())
-                        ->toArray();
-        });
-    }
-
-    protected function getDefaultPostProcessor(): Processor
-    {
-        return new Processor();
+        return iterator_to_array($this->cursor($query, $bindings, $useReadPdo));
     }
 
     /**
@@ -136,21 +101,18 @@ final class Connection extends \Illuminate\Database\Connection
      */
     public function statement($query, $bindings = []): bool
     {
-        return $this->affectingStatement($query, $bindings);
+        return (bool)$this->affectingStatement($query, $bindings);
     }
 
     public function affectingStatement($query, $bindings = []): int
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
-            if ($this->pretending()) {
+            if ($this->pretending) {
                 return true;
             }
 
             $parameters = $this->prepareBindings($bindings);
-            $result     = $this->getSession()->run($query, $parameters);
-            if ($result->getSummary()->getCounters()->containsUpdates()) {
-                $this->recordsHaveBeenModified();
-            }
+            $result = $this->getRunner()->run($query, $parameters);
 
             return $this->summarizeCounters($result->getSummary()->getCounters());
         });
@@ -159,37 +121,19 @@ final class Connection extends \Illuminate\Database\Connection
     public function unprepared($query): bool
     {
         return $this->run($query, [], function ($query) {
-            if ($this->pretending()) {
-                return 0;
+            if ($this->pretending) {
+                return false;
             }
 
-            $this->getSession()->run($query);
+            $this->getRunner()->run($query);
 
             return true;
         });
     }
 
-    /**
-     * @param $query
-     * @param $bindings
-     *
-     * @return SummarizedResult
-     */
-    public function insert($query, $bindings = []): SummarizedResult
+    public function insert($query, $bindings = []): bool
     {
-        return $this->run($query, $bindings, function ($query, $bindings) {
-            if ($this->pretending()) {
-                return true;
-            }
-
-            $parameters = $this->prepareBindings($bindings);
-            $result     = $this->getSession()->run($query, $parameters);
-            if ($result->getSummary()->getCounters()->containsUpdates()) {
-                $this->recordsHaveBeenModified();
-            }
-
-            return $result;
-        });
+        return $this->affectingStatement($query, $bindings);
     }
 
     /**
@@ -205,7 +149,7 @@ final class Connection extends \Illuminate\Database\Connection
 
         foreach ($bindings as $key => $value) {
             if (is_int($key)) {
-                $tbr['param'.$key] = $value;
+                $tbr['param' . $key] = $value;
             } else {
                 $tbr[$key] = $value;
             }
@@ -216,52 +160,27 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function beginTransaction(): void
     {
-        $session = $this->getSession();
-        if ($session instanceof SessionInterface) {
-            $this->tsx = $session->beginTransaction();
-        }
-
-        $this->fireConnectionEvent('beganTransaction');
+        $this->transactions[] = $this->getSession()->beginTransaction();
     }
 
     public function commit(): void
     {
-        if ($this->tsx !== null) {
-            $this->tsx->commit();
-            $this->tsx = null;
+        $this->popTransaction()?->commit();
+    }
 
-            foreach ($this->committedCallbacks as $callback) {
-                $callback($this);
-            }
-        }
-
-        $this->fireConnectionEvent('committed');
+    private function popTransaction(): ?UnmanagedTransactionInterface
+    {
+        return count($this->transactions) ? array_pop($this->transactions) : null;
     }
 
     public function rollBack($toLevel = null): void
     {
-        if ($this->tsx !== null) {
-            $this->tsx->rollback();
-            $this->tsx = null;
-        }
-
-        $this->fireConnectionEvent('rollingBack');
+        $this->popTransaction()?->rollback();
     }
 
     public function transactionLevel(): int
     {
-        return $this->tsx === null ? 0 : 1;
-    }
-
-
-    /**
-     * Execute the callback after a transaction commits.
-     *
-     * @param callable $callback
-     */
-    public function afterCommit($callback): void
-    {
-        $this->committedCallbacks[] = $callback;
+        return count($this->transactions);
     }
 
     /**
@@ -272,93 +191,70 @@ final class Connection extends \Illuminate\Database\Connection
     private function summarizeCounters(SummaryCounters $counters): int
     {
         return $counters->propertiesSet() +
-               $counters->labelsAdded() +
-               $counters->labelsRemoved() +
-               $counters->nodesCreated() +
-               $counters->nodesDeleted() +
-               $counters->relationshipsCreated() +
-               $counters->relationshipsDeleted();
+            $counters->labelsAdded() +
+            $counters->labelsRemoved() +
+            $counters->nodesCreated() +
+            $counters->nodesDeleted() +
+            $counters->relationshipsCreated() +
+            $counters->relationshipsDeleted();
     }
 
-    /**
-     * Get the default query grammar instance.
-     */
-    protected function getDefaultQueryGrammar(): CypherGrammar
+    public function raw($value): Expression
     {
-        return new CypherGrammar();
+        return new Expression($value);
     }
 
-    /**
-     * Get the default schema grammar instance.
-     */
-    protected function getDefaultSchemaGrammar(): Schema\CypherGrammar
+    public function selectOne($query, $bindings = [], $useReadPdo = true)
     {
-        return new Schema\CypherGrammar();
+        return $this->cursor($query, $bindings, $useReadPdo)->current();
     }
 
-    /**
-     * Bind values to their parameters in the given statement.
-     *
-     * @param mixed $statement
-     * @param mixed $bindings
-     */
-    public function bindValues($statement, $bindings): void
+    public function update($query, $bindings = []): int
     {
-        return;
+        return $this->affectingStatement($query, $bindings);
     }
 
-    protected function handleQueryException(QueryException $e, $query, $bindings, Closure $callback)
+    public function delete($query, $bindings = []): int
     {
-        if ($e->getPrevious() instanceof ConnectException) {
-            throw $e;
+        return $this->affectingStatement($query, $bindings);
+    }
+
+    public function transaction(Closure $callback, $attempts = 1)
+    {
+        for ($currentAttempt = 1; $currentAttempt <= $attempts; $currentAttempt++) {
+            $this->beginTransaction();
+
+            try {
+                $callbackResult = $callback($this);
+            }
+
+            catch (Neo4jException $e) {
+                if ($e->getClassification() === 'Transaction') {
+                    continue;
+                } else {
+                    throw $e;
+                }
+            }
+
+            $this->commit();
+
+            return $callbackResult;
         }
-
-        return $this->runQueryCallback($query, $bindings, $callback);
     }
 
-    /**
-     * Is Doctrine available?
-     *
-     * @return bool
-     */
-    public function isDoctrineAvailable(): bool
+    public function pretend(Closure $callback): array
     {
-        // Doctrine is not available for neo4j
-        return false;
+        $this->pretending = true;
+
+        $callback($this);
+
+        $this->pretending = false;
+
+        return [];
     }
 
-    /**
-     * Get a Doctrine Schema Column instance.
-     *
-     * @param string $table
-     * @param string $column
-     */
-    public function getDoctrineColumn($table, $column): void
+    public function getDatabaseName(): string
     {
-        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
-    }
-
-    /**
-     * Get the Doctrine DBAL schema manager for the connection.
-     */
-    public function getDoctrineSchemaManager(): void
-    {
-        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
-    }
-
-    /**
-     * Get the Doctrine DBAL database connection instance.
-     */
-    public function getDoctrineConnection(): void
-    {
-        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
-    }
-
-    /**
-     * Register a custom Doctrine mapping type.
-     */
-    public function registerDoctrineType(string $class, string $name, string $type): void
-    {
-        throw new BadMethodCallException('Doctrine is not available for Neo4J connections');
+        return $this->database;
     }
 }

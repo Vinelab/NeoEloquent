@@ -17,7 +17,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
             return $this->app->get(ConnectionFactory::class)->make($database, $prefix, $config);
         };
 
-        \Illuminate\Database\Connection::resolverFor('neo4j', Closure::fromCallable($resolver));
+        \Illuminate\Database\Connection::resolverFor('neo4j', $resolver(...));
 
         $this->registerPercentile('percentileDisc');
         $this->registerPercentile('percentileCont');

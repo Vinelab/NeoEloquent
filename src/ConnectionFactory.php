@@ -6,6 +6,8 @@ use Laudis\Neo4j\Authentication\Authenticate;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Common\Uri;
 use Laudis\Neo4j\Databags\DriverConfiguration;
+use Laudis\Neo4j\Databags\SessionConfiguration;
+use Laudis\Neo4j\Enum\AccessMode;
 use function array_key_exists;
 
 final class ConnectionFactory
@@ -34,11 +36,14 @@ final class ConnectionFactory
             $auth = Authenticate::disabled();
         }
 
+        $driver = Driver::create($uri, DriverConfiguration::default(), $auth);
+        $config = SessionConfiguration::default()
+            ->withDatabase($database);
         return new Connection(
-            new Neo4JReconnector(Driver::create($uri, DriverConfiguration::default(), $auth), $database),
+            $driver->createSession($config->withAccessMode(AccessMode::READ())),
+            $driver->createSession(),
             $database,
-            $prefix,
-            $config
+            $prefix
         );
     }
 }

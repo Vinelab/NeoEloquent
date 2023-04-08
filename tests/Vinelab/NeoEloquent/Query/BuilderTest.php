@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use function array_values;
 
 class BuilderTest extends TestCase
 {

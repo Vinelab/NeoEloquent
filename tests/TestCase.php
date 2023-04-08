@@ -37,7 +37,7 @@ class TestCase extends BaseTestCase
                 'database' => env('NEO4J_DATABASE', 'neo4j'),
                 'port' => env('NEO4J_PORT', 7687),
                 'username' => env('NEO4J_USER', 'neo4j'),
-                'password' => env('NEO4J_PASSWORD', 'test'),
+                'password' => env('NEO4J_PASSWORD', 'testtest'),
             ],
             'neo4j' => [
                 'driver' => 'neo4j',
@@ -45,7 +45,7 @@ class TestCase extends BaseTestCase
                 'database' => env('NEO4J_DATABASE', 'neo4j'),
                 'port' => env('NEO4J_PORT', 7687),
                 'username' => env('NEO4J_USER', 'neo4j'),
-                'password' => env('NEO4J_PASSWORD', 'test'),
+                'password' => env('NEO4J_PASSWORD', 'testtest'),
             ]
         ]);
         $config->set('database.connections', $connections);

@@ -7,8 +7,9 @@ use Laudis\Neo4j\Contracts\DriverInterface;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
+use Vinelab\NeoEloquent\Contracts\SessionFactoryInterface;
 
-class Neo4JReconnector
+class SessionFactory implements SessionFactoryInterface
 {
     private DriverInterface $driver;
     private bool $readConnection;

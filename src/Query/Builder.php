@@ -34,7 +34,7 @@ class Builder extends \Illuminate\Database\Query\Builder
     /**
      * Adds an expression in the where clause to check for the existence of a relationship.
      *
-     * The relationship may contain the type, as well as a direction. Examples include:
+     * The relationship ma y contain the type, as well as a direction. Examples include:
      *  - <MY_TYPE  For a relationship with type "MY_TYPE" pointing from the other to the target node.
      *  - MY_TYPE>  For a relationship with type "MY_TYPE" pointing from the target node to the current one.
      *  - MY_TYPE   For a relationship with type "MY_TYPE" in any direction between the current and target node.
