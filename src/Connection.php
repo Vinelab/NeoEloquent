@@ -1,103 +1,61 @@
-<?php
+<?php /** @noinspection PhpUndefinedNamespaceInspection */
+
+/** @noinspection PhpUndefinedClassInspection */
 
 namespace Vinelab\NeoEloquent;
 
+use Arr;
+use BadMethodCallException;
 use Closure;
+use Doctrine\DBAL\Types\Type;
 use Generator;
-use Illuminate\Database\ConnectionInterface;
-use Illuminate\Database\Query\Expression;
+use Illuminate\Database\Events\StatementPrepared;
+use Illuminate\Database\LostConnectionException;
+use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\QueryException;
-use Illuminate\Database\Schema\Builder as SchemaBuilder;
-use Illuminate\Support\Arr;
+use Illuminate\Database\Schema;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
+use Laudis\Neo4j\Databags\Statement;
 use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
 use Throwable;
-use Vinelab\NeoEloquent\Query\Builder;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 
-final class Connection implements ConnectionInterface
+final class Connection extends \Illuminate\Database\Connection
 {
-    /** @var array<UnmanagedTransactionInterface> */
-    private array $transactions = [];
-    private bool $pretending = false;
+    /** @var list<UnmanagedTransactionInterface> */
+    private array $activeTransactions = [];
 
     public function __construct(
-        private SessionInterface $readSession,
-        private SessionInterface $session,
-        private string           $database,
-        private string           $tablePrefix,
-        private array            $config
+        private readonly SessionInterface $readSession,
+        private readonly SessionInterface $session,
+        string           $database,
+        string           $tablePrefix,
+        array            $config
     )
     {
+        parent::__construct(static fn () => null, $database, $tablePrefix, $config);
+        $this->postProcessor = new Processor();
+        $this->schemaGrammar = new Schema\Grammars\MySqlGrammar();
     }
 
-    public function getConfig(string $option = null): ?string
+    protected function getDefaultQueryGrammar(): CypherGrammar
     {
-        return Arr::get($this->config, $option);
+        return new CypherGrammar();
     }
 
-    /**
-     * For completion with Illuminate Connection
-     *
-     * @see \Illuminate\Database\Connection::useDefaultQueryGrammar()
-     */
-    public function useDefaultQueryGrammar(): void
+
+    protected function getDefaultSchemaGrammar(): Schema\Grammars\MySqlGrammar
     {
-        // There is only one grammar implementation right now.
+        return new Schema\Grammars\MySqlGrammar();
     }
 
-    /**
-     * For completion with Illuminate Connection
-     *
-     * @see \Illuminate\Database\Connection::useDefaultSchemaGrammar()
-     */
-    public function useDefaultSchemaGrammar(): void
+    protected function getDefaultPostProcessor(): Processor
     {
-        // There is only one grammar implementation right now.
-    }
-
-    /**
-     * For completion with Illuminate Connection
-     *
-     * @see \Illuminate\Database\Connection::useDefaultPostProcessor()
-     */
-    public function useDefaultPostProcessor(): void
-    {
-        // There is only one post processor implementation right now.
-    }
-
-    /**
-     * Get a schema builder instance for the connection.
-     *
-     * @return SchemaBuilder
-     */
-    public function getSchemaBuilder(): SchemaBuilder
-    {
-        return new SchemaBuilder($this);
-    }
-
-    /**
-     * Get the database connection name.
-     *
-     * @return string|null
-     */
-    public function getName(): ?string
-    {
-        return $this->getConfig('name');
-    }
-
-    /**
-     * Get the PDO driver name.
-     *
-     * @return string
-     */
-    public function getDriverName(): string
-    {
-        return $this->getConfig('driver');
+        return new Processor();
     }
 
     public function getSession(bool $read = false): SessionInterface
@@ -111,25 +69,23 @@ final class Connection implements ConnectionInterface
 
     public function getRunner(bool $read = false): TransactionInterface
     {
-        if (count($this->transactions)) {
-            return \Arr::last($this->transactions);
+        if (count($this->activeTransactions)) {
+            return Arr::last($this->activeTransactions);
         }
 
         return $this->getSession($read);
     }
 
-    public function table($table, $as = null): Builder
+    protected function run($query, $bindings, Closure $callback): mixed
     {
-        $grammar = new CypherGrammar();
-        $grammar->setTablePrefix($this->tablePrefix);
+        foreach ($this->beforeExecutingCallbacks as $beforeExecutingCallback) {
+            $beforeExecutingCallback($query, $bindings, $this);
+        }
 
-        $builder = new Builder($this, $grammar, new Processor());
+        $this->reconnectIfMissingConnection();
 
-        return $builder->from($table, $as);
-    }
+        $start = microtime(true);
 
-    private function run(string $query, array $bindings, Closure $callback): mixed
-    {
         try {
             $result = $callback($query, $bindings);
         } catch (Throwable $e) {
@@ -138,7 +94,14 @@ final class Connection implements ConnectionInterface
             );
         }
 
+        $this->logQuery($query, $bindings, $this->getElapsedTime($start));
+
         return $result;
+    }
+
+    public function scalar($query, $bindings = [], $useReadPdo = true)
+    {
+        return $this->selectOne($query, $bindings, $useReadPdo)?->first()->getValue();
     }
 
     public function cursor($query, $bindings = [], $useReadPdo = true): Generator
@@ -147,6 +110,9 @@ final class Connection implements ConnectionInterface
             if ($this->pretending) {
                 return;
             }
+
+            /** @noinspection PhpParamsInspection */
+            $this->event(new StatementPrepared($this, new Statement($query, $bindings)));
 
             yield from $this->getRunner($useReadPdo)
                 ->run($query, $this->prepareBindings($bindings))
@@ -159,17 +125,18 @@ final class Connection implements ConnectionInterface
         return iterator_to_array($this->cursor($query, $bindings, $useReadPdo));
     }
 
-    /**
-     * Execute an SQL statement and return the result.
-     *
-     * @param string $query
-     * @param array $bindings
-     *
-     * @return mixed
-     */
     public function statement($query, $bindings = []): bool
     {
         return (bool)$this->affectingStatement($query, $bindings);
+    }
+
+    public function selectResultSets($query, $bindings = [], $useReadPdo = true): array
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+            return [
+                $this->select($query, $bindings, $useReadPdo),
+            ];
+        });
     }
 
     public function affectingStatement($query, $bindings = []): int
@@ -190,10 +157,13 @@ final class Connection implements ConnectionInterface
     {
         return $this->run($query, [], function ($query) {
             if ($this->pretending) {
-                return false;
+                return true;
             }
 
-            $this->getRunner()->run($query);
+            $result = $this->getRunner()->run($query);
+            $change = $this->summarizeCounters($result->getSummary()->getCounters()) > 0;
+
+            $this->recordsHaveBeenModified($change);
 
             return true;
         });
@@ -229,26 +199,46 @@ final class Connection implements ConnectionInterface
     public function beginTransaction(): void
     {
         $this->transactions[] = $this->getSession()->beginTransaction();
+
+        $this->transactionsManager?->begin(
+            $this->getName(), $this->transactions
+        );
+
+        $this->fireConnectionEvent('beganTransaction');
     }
 
     public function commit(): void
     {
+        $this->fireConnectionEvent('committing');
+
         $this->popTransaction()?->commit();
+
+        if ($this->afterCommitCallbacksShouldBeExecuted()) {
+            $this->transactionsManager?->commit($this->getName());
+        }
+
+        $this->fireConnectionEvent('committed');
     }
 
     private function popTransaction(): ?UnmanagedTransactionInterface
     {
-        return count($this->transactions) ? array_pop($this->transactions) : null;
+        return count($this->activeTransactions) ? array_pop($this->activeTransactions) : null;
     }
 
     public function rollBack($toLevel = null): void
     {
+        if (count($this->activeTransactions) === 0) {
+            return;
+        }
+
         $this->popTransaction()?->rollback();
+
+        $this->fireConnectionEvent('rollingBack');
     }
 
     public function transactionLevel(): int
     {
-        return count($this->transactions);
+        return count($this->activeTransactions);
     }
 
     /**
@@ -267,27 +257,12 @@ final class Connection implements ConnectionInterface
             $counters->relationshipsDeleted();
     }
 
-    public function raw($value): Expression
-    {
-        return new Expression($value);
-    }
-
     public function selectOne($query, $bindings = [], $useReadPdo = true)
     {
         return $this->cursor($query, $bindings, $useReadPdo)->current();
     }
 
-    public function update($query, $bindings = []): int
-    {
-        return $this->affectingStatement($query, $bindings);
-    }
-
-    public function delete($query, $bindings = []): int
-    {
-        return $this->affectingStatement($query, $bindings);
-    }
-
-    public function transaction(Closure $callback, $attempts = 1)
+    public function transaction(Closure $callback, $attempts = 1): mixed
     {
         for ($currentAttempt = 1; $currentAttempt <= $attempts; $currentAttempt++) {
             $this->beginTransaction();
@@ -308,21 +283,53 @@ final class Connection implements ConnectionInterface
 
             return $callbackResult;
         }
+
+        return null;
+    }
+    public function bindValues($statement, $bindings)
+    {
+
+    }
+    public function reconnect()
+    {
+        throw new LostConnectionException('Lost connection and no reconnector available.');
     }
 
-    public function pretend(Closure $callback): array
+    public function reconnectIfMissingConnection(): void
     {
-        $this->pretending = true;
-
-        $callback($this);
-
-        $this->pretending = false;
-
-        return [];
     }
 
-    public function getDatabaseName(): string
+    public function disconnect(): void
     {
-        return $this->database;
+    }
+
+    public function isDoctrineAvailable(): bool
+    {
+        return false;
+    }
+
+    public function usingNativeSchemaOperations(): bool
+    {
+        return true;
+    }
+
+    public function getDoctrineColumn($table, $column)
+    {
+        throw new BadMethodCallException('Cannot use doctrine on graph databases');
+    }
+
+    public function getDoctrineSchemaManager()
+    {
+        throw new BadMethodCallException('Cannot use doctrine on graph databases');
+    }
+
+    public function getDoctrineConnection()
+    {
+        throw new BadMethodCallException('Cannot use doctrine on graph databases');
+    }
+
+    public function registerDoctrineType(Type|string $class, string $name, string $type): void
+    {
+        throw new BadMethodCallException('Cannot use doctrine on graph databases');
     }
 }
