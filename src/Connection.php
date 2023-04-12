@@ -277,9 +277,13 @@ final class Connection extends \Illuminate\Database\Connection
             $counters->relationshipsDeleted();
     }
 
-    public function selectOne($query, $bindings = [], $useReadPdo = true): array
+    public function selectOne($query, $bindings = [], $useReadPdo = true): array|null
     {
-        return $this->cursor($query, $bindings, $useReadPdo)->current();
+        foreach ($this->cursor($query, $bindings, $useReadPdo) as $result) {
+            return $result;
+        }
+
+        return null;
     }
 
     public function transaction(Closure $callback, $attempts = 1): mixed

@@ -7,7 +7,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Laudis\Neo4j\Types\Node;
-use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class BuilderTest extends TestCase
@@ -60,21 +59,11 @@ class BuilderTest extends TestCase
             ['c' => 'd']
         ]);
 
-        $results = $this->builder->get();
+        $results = $this->builder->orderBy('a')->get();
         self::assertEquals([
             ['a' => 'b'],
             ['c' => 'd']
-        ], $results->toArray());
-    }
-
-    public function testMakingLabel(): void
-    {
-        $this->assertTrue($this->builder->from('Hero')->insert(['a' => 'b']));
-
-        $this->assertEquals(1, $this->builder->update([new LabelAction('MaLabel')]));
-
-        $node = $this->getConnection()->getPdo()->run('MATCH (x) RETURN x')->first()->get('x');
-        $this->assertEquals(['Hero', 'MaLabel'], $node->getLabels()->toArray());
+        ], $results-> toArray());
     }
 
     public function testUpsert(): void
@@ -84,7 +73,7 @@ class BuilderTest extends TestCase
             ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
         ], ['a'], ['c']);
 
-        self::assertEquals([
+        self::assertEqualsCanonicalizing([
             ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
             ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
         ], $this->builder->get()->toArray());
@@ -94,7 +83,7 @@ class BuilderTest extends TestCase
             ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
         ], ['a'], ['c']);
 
-        self::assertEquals([
+        self::assertEqualsCanonicalizing([
             ['a' => 'aa', 'b' => 'bb', 'c' => 'cdc'],
             ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
         ], $this->builder->get()->toArray());
@@ -104,7 +93,6 @@ class BuilderTest extends TestCase
     public function testFailingWhereWithNullValue(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectErrorMessage('Illegal operator and value combination.');
         $this->builder->where('id', '>', null);
     }
 

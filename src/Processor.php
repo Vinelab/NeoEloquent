@@ -22,7 +22,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
     {
         $tbr  = [];
         $from = $query->from;
-        foreach ($results as $row) {
+        foreach (($results ?? []) as $row) {
             $processedRow = [];
             $foundNode    = collect($row)->filter(static function ($value, $key) use ($from) {
                 return $key === $from && $value instanceof HasPropertiesInterface;

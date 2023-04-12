@@ -176,7 +176,11 @@ final class DSLGrammar
     {
         [$table, $alias] = preg_split('/\s+as\s+/i', $value);
 
-        [$table, $property] = explode('.', $table);
+        if (str_contains($table, '.')) {
+            [$table, $property] = explode('.', $table);
+        } else {
+            $property = null;
+        }
 
         $variable = Query::variable($table);
         if ($property) {
@@ -694,7 +698,7 @@ final class DSLGrammar
         if ( ! isset($where['query']->from)) {
             $where['query']->from = $builder->from;
         }
-        $select = $this->compileSelect($where['query']);
+        $select = $this->compileSelect($where['query'], $context);
 
         $sub->with($context->getVariables());
         foreach ($select->getClauses() as $clause) {

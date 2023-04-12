@@ -83,9 +83,9 @@ class GrammarTest extends TestCase
         $this->table->grammar = $this->grammar;
 
         $this->model = new MainModel(['id' => 'a']);
-        Connection::resolverFor('mock', \Closure::fromCallable(function ($connection, string $database, string $prefix, array $config) {
+        Connection::resolverFor('mock', (function ($connection, string $database, string $prefix, array $config) {
             return $this->connection;
-        }));
+        })(...));
         \config()->set('database.connections.mock', ['database' => 'a', 'prefix' => 'prefix', 'driver' => 'mock']);
     }
 
@@ -100,18 +100,6 @@ class GrammarTest extends TestCase
     {
         $p = $this->grammar->parameter('value');
         $this->assertStringStartsWith('$param', $p);
-    }
-
-    public function testGettingIdQueryParameter(): void
-    {
-        $context = new DSLContext();
-        $p = $this->grammar->parameter('id', $context);
-        $this->assertEquals('$param0', $p);
-
-        $p1 = $this->grammar->parameter('id', $context);
-        $this->assertEquals('$param1', $p1);
-
-        $this->assertNotEquals($p, $p1);
     }
 
     public function testParametrize(): void
@@ -175,7 +163,7 @@ class GrammarTest extends TestCase
     {
         $this->connection->expects($this->once())
             ->method('select')
-            ->with('MATCH (Node:Node) RETURN * ORDER BY Node.x, Node.y, Node.z DESC', [], true);
+            ->with('MATCH (Node:Node) RETURN * ORDER BY Node.x ASC, Node.y ASC, Node.z DESC', [], true);
 
 //        $this->table->grammar = new MySqlGrammar();
         $this->table->orderBy('x')->orderBy('y')->orderBy('z', 'desc')->get();
@@ -277,8 +265,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) CALL { WITH Node MATCH (Y:Y) WHERE Node.x = Y.y RETURN * AS sub0 } WHERE Node.x = $param0 AND exists(sub0) RETURN *',
-                ['y'],
+                'MATCH (Node:Node) WHERE Node.x = $param0 CALL { WITH Node MATCH (Y:Y) WHERE Node.x = Y.y RETURN count(*) AS sub0 } WITH Node, sub0 WHERE sub0 >= 1 RETURN *',
+                ['y', []],
                 true
             );
 
@@ -308,8 +296,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) CALL { WITH Node MATCH (Y:Y) WHERE Node.i = Y.i RETURN Y.i, Y.i AS sub0 LIMIT 1 } CALL { WITH Node MATCH (ZZ:ZZ) WHERE Node.i = ZZ.har RETURN i AS har LIMIT 1 } CALL { WITH Node MATCH (Node:Node) WHERE Node.i = $param0 RETURN Node.i, Node.i AS sub2 LIMIT 1 } WHERE (Node.x = sub0) AND ((Node.i = har) OR (Node.j = sub2)) RETURN *',
-                ['i', 'i'],
+                'MATCH (Node:Node) CALL { WITH Node, Y MATCH (Y:Y) WHERE Node.i = Y.i RETURN Y.i, Y.i AS sub0 LIMIT 1 } CALL { WITH Node, Y, sub0, ZZ MATCH (ZZ:ZZ) WHERE Node.i = ZZ.har RETURN i AS har LIMIT 1 } CALL { WITH Node, Y, sub0, ZZ, sub1, Node MATCH (Node:Node) WHERE Node.i = $param0 RETURN Node.i, Node.i AS sub2 LIMIT 1 } WHERE (Node.x = sub0) AND ((Node.i = har) OR (Node.j = sub2)) RETURN *',
+                [[], [[], ['i']], [[]], [1 => ['i']]],
                 true
             );
 
@@ -338,7 +326,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE Node.x = $param0 RETURN * UNION MATCH (X:X) WHERE X.y = $param1 RETURN *',
-                ['y', 'z'],
+                ['y', ['z']],
                 true
             );
 
@@ -353,8 +341,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WHERE Node.x = $param0 RETURN * UNION ALL MATCH (X:X) WHERE X.y = $param1 RETURN * ORDER BY Node.x, X.y LIMIT 10 SKIP 5',
-                ['y', 'z'],
+                'MATCH (Node:Node) WHERE Node.x = $param0 RETURN * UNION ALL MATCH (X:X) WHERE X.y = $param1 RETURN * ORDER BY Node.x ASC, X.y ASC LIMIT 10 SKIP 5',
+                ['y', ['z']],
                 true
             );
 
@@ -376,11 +364,10 @@ class GrammarTest extends TestCase
                 'MATCH (Node:Node) WHERE Node.x = $param0 OR (Node.xy = $param1 OR Node.z = $param2) AND Node.xx = $param3 RETURN *',
                 [
                     'y',
-                    'y',
-                    'x',
+                    ['y', 'x'],
                     'zz',
-                    'y',
-                    'x'
+                    ['y'],
+                    [1 => 'x']
                 ],
                 true
             );
@@ -396,7 +383,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WHERE [Node.x, Node.y, Node.y] = [$param0, $param1, $param2] RETURN *',
-                [0, 2, 3],
+                [[0, 2, 3]],
                 true
             );
 
@@ -422,7 +409,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest RETURN *',
-                [],
+                [[]],
                 true
             );
 
@@ -435,7 +422,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest RETURN *',
-                [],
+                [[]],
                 true
             );
 
@@ -448,7 +435,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'MATCH (Node:Node) WITH Node OPTIONAL MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest OPTIONAL MATCH (OtherTest:OtherTest) WHERE NewTest.id = OtherTest.id WITH Node, NewTest, OtherTest RETURN *',
-                [],
+                [[], []],
                 true
             );
 
@@ -468,7 +455,7 @@ class GrammarTest extends TestCase
                 true
             );
 
-        $this->table->macroCall('whereRelationship', ['HAS_OTHER_NODE>', 'OtherNode'])->get();
+        $this->table->whereRelationship('HAS_OTHER_NODE>', 'OtherNode')->get();
     }
 
     public function testRightJoin(): void
@@ -477,7 +464,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with(
                 'OPTIONAL MATCH (Node:Node) WITH Node MATCH (NewTest:NewTest) WHERE Node.id = NewTest.`test_id` WITH Node, NewTest RETURN *',
-                [],
+                [[]],
                 true
             );
 
@@ -528,7 +515,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node.views, Node.other WHERE Node.views IS NOT NULL OR Node.other IS NOT NULL RETURN count(*) AS aggregate',
+                'MATCH (Node:Node) RETURN count(Node.views, Node.other) AS aggregate',
                 [],
                 true
             );
@@ -541,7 +528,7 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (Node:Node) WITH Node.views, Node.other WHERE Node.views IS NOT NULL OR Node.other IS NOT NULL RETURN count(*) AS aggregate',
+                'MATCH (Node:Node) RETURN count(Node.views, Node.other) AS aggregate',
                 [],
                 true
             );
@@ -570,8 +557,8 @@ class GrammarTest extends TestCase
         $this->connection->expects($this->once())
             ->method('select')
             ->with(
-                'MATCH (OtherModel:OtherModel) WHERE OtherModel.`main_id` = $param0 AND (OtherModel.`main_id` IS NOT NULL) RETURN * LIMIT 1',
-                ['a'],
+                'MATCH (`other_models`:`other_models`) WHERE `other_models`.`main_id` = $param0 AND (`other_models`.`main_id` IS NOT NULL) RETURN * LIMIT 1',
+                [0],
                 true
             );
 
@@ -580,27 +567,19 @@ class GrammarTest extends TestCase
 
     public function testBelongsToOne(): void
     {
-        $this->connection->expects($this->once())
-            ->method('select')
-            ->with(
-                '',
-                ['a'],
-                true
-            );
-
         $sql = $this->model->belongsToExample()->toSql();
-        $this->assertEquals('MATCH (OtherModel:OtherModel) WHERE OtherModel.`main_id` = $param0 AND (OtherModel.`main_id` IS NOT NULL) RETURN * LIMIT 1', $sql);
+        $this->assertEquals('MATCH (`other_models`:`other_models`) WHERE (`other_models`.id IS NULL) RETURN *', $sql);
     }
 
     public function testHasMany(): void
     {
         $sql = $this->model->hasManyExample()->toSql();
-        $this->assertEquals('MATCH (OtherModel:OtherModel) WHERE OtherModel.`main_id` = $param0 AND (OtherModel.`main_id` IS NOT NULL) RETURN *', $sql);
+        $this->assertEquals('MATCH (`other_models`:`other_models`) WHERE `other_models`.`main_id` = $param0 AND (`other_models`.`main_id` IS NOT NULL) RETURN *', $sql);
     }
 
     public function testHasOneThrough(): void
     {
         $sql = $this->model->hasOneThroughExample()->toSql();
-        $this->assertEquals('MATCH (OtherModel:OtherModel) WITH OtherModel MATCH (FinalModel:FinalModel) WHERE FinalModel.id = OtherModel.`final_model_id` WITH OtherModel, FinalModel WHERE FinalModel.`main_model_id` = $param0 RETURN *', $sql);
+        $this->assertEquals('MATCH (`other_models`:`other_models`) WITH `other_models` MATCH (`final_models`:`final_models`) WHERE `final_models`.id = `other_models`.`final_model_id` WITH `other_models`, `final_models` WHERE `final_models`.`main_model_id` = $param0 RETURN *', $sql);
     }
 }

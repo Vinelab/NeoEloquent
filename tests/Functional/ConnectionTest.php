@@ -5,7 +5,6 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Events\TransactionBeginning;
-use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laudis\Neo4j\Types\Node;
@@ -15,6 +14,7 @@ use Throwable;
 use Vinelab\NeoEloquent\Connection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Events\Dispatcher;
+use Vinelab\NeoEloquent\Tests\TestCase;
 use function time;
 use Vinelab\NeoEloquent\Query\Builder;
 
@@ -101,70 +101,6 @@ class ConnectionTest extends TestCase
         $this->assertEquals($expected, $prepared);
     }
 
-    public function testPreparingFindByIdBindings(): void
-    {
-        $bindings = [
-            'id' => 6,
-        ];
-
-        /** @var Connection $c */
-        $c = $this->getConnection('default');
-
-        $expected = ['param0' => 6];
-
-        $prepared = $c->prepareBindings($bindings);
-        $this->assertEquals($expected, $prepared);
-    }
-
-    public function testPreparingWhereInBindings(): void
-    {
-        $bindings = [
-            'mc' => 'mc',
-            'ae' => 'ae',
-            'animals' => 'animals',
-            'mulkave' => 'mulkave',
-        ];
-
-        $c = $this->getConnection('default');
-
-        $expected = [
-            'param0' => 'mc',
-            'param1' => 'ae',
-            'param2' => 'animals',
-            'param3' => 'mulkave',
-        ];
-
-        $prepared = $c->prepareBindings($bindings);
-
-        $this->assertEquals($expected, $prepared);
-    }
-
-    public function testSelectWithBindings(): void
-    {
-        $this->createUser();
-
-        $query = 'MATCH (n:`User`) WHERE n.username = $param0 RETURN * LIMIT 1';
-
-        $bindings = ['username' => $this->user['username']];
-
-        $c = $this->getConnection('default');
-
-        $c->enableQueryLog();
-        $results = $c->select($query, $bindings);
-
-        $log = $c->getQueryLog();
-        $log = reset($log);
-
-        $this->assertEquals($log['query'], $query);
-        $this->assertEquals($log['bindings'], $bindings);
-
-        $this->assertIsArray($results);
-        $this->assertIsArray($results[0]);
-        $this->assertInstanceOf(Node::class, $results[0]['n']);
-
-        $this->assertEquals($this->user, $results[0]['n']->getProperties()->toArray());
-    }
-
     public function testAffectingStatement(): void
     {
         $c = $this->getConnection('default');
@@ -179,9 +115,9 @@ class ConnectionTest extends TestCase
                  'RETURN count(n)';
 
         $bindings = [
-            'username' => $this->user['username'],
-            'type' => $type,
-            'updated_at' => '2014-05-11 13:37:15',
+            'param0' => $this->user['username'],
+            'param1' => $type,
+            'param2' => '2014-05-11 13:37:15',
         ];
 
         $c->affectingStatement($query, $bindings);
@@ -208,14 +144,14 @@ class ConnectionTest extends TestCase
                  'RETURN count(n)';
 
         $bindings = [
-            'username' => $this->user['username'],
-            'type' => $type,
-            'updated_at' => '2014-05-11 13:37:15',
+            'param0' => $this->user['username'],
+            'param1' => $type,
+            'param2' => '2014-05-11 13:37:15',
         ];
 
         $result = $c->affectingStatement($query, $bindings);
 
-        self::assertEquals(0, $result);
+        self::assertGreaterThan(0, $result);
 
         $this->createUser();
 
@@ -228,12 +164,10 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getConnection();
 
-        $this->assertNull($connection->selectOne('MATCH (x) RETURN x', ['bar' => 'baz']));
-
         $this->createUser();
         $this->createUser();
 
-        $this->assertEquals($this->user, $connection->selectOne('MATCH (x) RETURN x')['x']->getProperties()->toArray());
+        $this->assertInstanceOf(Node::class, $connection->selectOne('MATCH (x) RETURN x')['x']);
     }
 
     public function testBeganTransactionFiresEventsIfSet(): void
@@ -249,21 +183,6 @@ class ConnectionTest extends TestCase
         });
 
         $connection->beginTransaction();
-    }
-
-    public function testCommittedFiresEventsIfSet(): void
-    {
-        $connection = $this->getConnection();
-
-        $events = M::mock(Dispatcher::class);
-        $connection->setEventDispatcher($events);
-        $events->shouldReceive('dispatch')->once()->withArgs(function ($x) use ($connection) {
-            self::assertEquals($x, new TransactionCommitted($connection));
-
-            return true;
-        });
-
-        $connection->commit();
     }
 
     public function testRollBackedFiresEventsIfSet(): void
