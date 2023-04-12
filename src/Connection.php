@@ -15,7 +15,6 @@ use Illuminate\Database\Events\StatementPrepared;
 use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\QueryException;
-use Illuminate\Database\Schema;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
@@ -26,6 +25,7 @@ use Laudis\Neo4j\Types\CypherMap;
 use Throwable;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Builder;
+use Vinelab\NeoEloquent\Schema\CypherGrammar as SchemaGrammar;
 
 final class Connection extends \Illuminate\Database\Connection
 {
@@ -47,9 +47,9 @@ final class Connection extends \Illuminate\Database\Connection
         return new CypherGrammar();
     }
 
-    protected function getDefaultSchemaGrammar(): Schema\CypherGrammar
+    protected function getDefaultSchemaGrammar(): SchemaGrammar
     {
-        return new \Vinelab\NeoEloquent\Schema\CypherGrammar();
+        return new SchemaGrammar();
     }
 
     public function query(): Query\Builder
