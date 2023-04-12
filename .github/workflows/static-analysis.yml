@@ -1,0 +1,28 @@
+name: Static Analysis
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  php-cs-fixer:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache Composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+      - uses: php-actions/composer@v6
+        with:
+          progress: yes
+          php_version: 8.0
+          version: 2
+      - name: "Laravel Pint"
+        run: vendor/bin/pint --test
