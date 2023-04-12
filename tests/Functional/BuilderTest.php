@@ -1,24 +1,22 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Query;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use BadMethodCallException;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Arr;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Laudis\Neo4j\Types\Node;
 use Vinelab\NeoEloquent\LabelAction;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class BuilderTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function setUp(): void
     {
         parent::setUp();
-
-        /** @noinspection PhpUndefinedMethodInspection */
-        $this->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-
         $this->builder = new Builder($this->getConnection());
     }
 
@@ -47,8 +45,12 @@ class BuilderTest extends TestCase
             'id' => 69
         ];
 
-        $this->expectException(BadMethodCallException::class);
-        $this->builder->insertGetId($values);
+        $hero = $this->builder->insertGetId($values);
+        $this->assertInstanceOf(Node::class, $hero);
+        $this->assertEquals(123, $hero->getProperty('length'));
+        $this->assertEquals(343, $hero->getProperty('height'));
+        $this->assertEquals('Strong Fart Noises', $hero->getProperty('power'));
+        $this->assertEquals(69, $hero->getProperty('id'));
     }
 
     public function testBatchInsert(): void

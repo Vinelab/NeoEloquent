@@ -1,36 +1,32 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laudis\Neo4j\Types\Node;
 use Mockery as M;
 use RuntimeException;
 use Throwable;
 use Vinelab\NeoEloquent\Connection;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Events\Dispatcher;
 use function time;
 use Vinelab\NeoEloquent\Query\Builder;
 
 class ConnectionTest extends TestCase
 {
+    use RefreshDatabase;
+
     private array $user = [
         'name' => 'A',
         'email' => 'ABC@efg.com',
         'username' => 'H I'
     ];
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        /** @noinspection PhpUndefinedMethodInspection */
-        $this->getConnection()->getPdo()->run('MATCH (x) DETACH DELETE x');
-    }
 
     public function testRegisteredConnectionResolver(): void
     {

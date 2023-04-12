@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Tests\Query;
+namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
 use Vinelab\NeoEloquent\DSLContext;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 

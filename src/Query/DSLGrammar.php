@@ -1079,9 +1079,12 @@ final class DSLGrammar
         // There is no insert get id method in Neo4j
         // But you can just return the sequence property instead
         $id = $this->wrapTable($query->from)
-                   ->named($query->from.'0')
-                   ->property($sequence)
-                   ->alias($sequence);
+                   ->named($query->from.'0');
+
+        if ($sequence !== '') {
+            $id = $id->property($sequence)
+                ->alias($sequence);
+        }
 
         return $this->compileInsert($query, [$values], $context)
                     ->returning($id);
