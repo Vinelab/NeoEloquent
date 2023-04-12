@@ -7,9 +7,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\Fixtures\Comment;
 use Vinelab\NeoEloquent\Tests\Fixtures\Post;
 use Vinelab\NeoEloquent\Tests\Fixtures\Tag;
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\Fixtures\Video;
 use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Tests\Fixtures\User;
 
 class PolymorphicHyperMorphToTest extends TestCase
 {
@@ -79,12 +79,12 @@ class PolymorphicHyperMorphToTest extends TestCase
         $user->posts()->create(['title' => 'Another Place', 'body' => 'To Go..']);
         $user->videos()->create(['title' => 'When We Meet', 'url' => 'http://some.url']);
         // Grab them back
-        $post  = $user->posts->first();
+        $post = $user->posts->first();
         $video = $user->videos->first();
 
-        $commentOnPost         = Comment::create(['text' => 'Another Place']);
-        $anotherCommentOnPost  = Comment::create(['text' => 'Here and there']);
-        $commentOnVideo        = Comment::create(['text' => 'When We Meet']);
+        $commentOnPost = Comment::create(['text' => 'Another Place']);
+        $anotherCommentOnPost = Comment::create(['text' => 'Here and there']);
+        $commentOnVideo = Comment::create(['text' => 'When We Meet']);
         $anotherCommentOnVideo = Comment::create(['text' => 'That is good']);
 
         $video->comments()->saveMany([$commentOnPost, $anotherCommentOnPost]);

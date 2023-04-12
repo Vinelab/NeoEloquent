@@ -2,27 +2,24 @@
 
 namespace Vinelab\NeoEloquent\Schema;
 
-use BadMethodCallException;
-use Illuminate\Database\Connection;
-use Illuminate\Database\Schema\Grammars\Grammar;
-use RuntimeException;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Fluent;
-use Vinelab\NeoEloquent\DSLContext;
-use Vinelab\NeoEloquent\ManagesDSLContext;
-use WikibaseSolutions\CypherDSL\Parameter;
-use WikibaseSolutions\CypherDSL\Query;
 use function addslashes;
 use function array_merge;
 use function array_values;
+use BadMethodCallException;
 use function collect;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Grammars\Grammar;
+use Illuminate\Support\Fluent;
 use function implode;
 use function in_array;
 use function is_int;
 use function is_null;
+use RuntimeException;
 use function sprintf;
 use function str_replace;
 use function trim;
+use WikibaseSolutions\CypherDSL\Query;
 
 class CypherGrammar extends Grammar
 {
@@ -38,8 +35,6 @@ class CypherGrammar extends Grammar
 
     /**
      * Compile the query to determine the list of tables.
-     *
-     * @return string
      */
     public function compileTableExists(): string
     {
@@ -53,8 +48,6 @@ class CypherGrammar extends Grammar
 
     /**
      * Compile the query to determine the list of columns.
-     *
-     * @return string
      */
     public function compileColumnListing(): string
     {
@@ -69,9 +62,6 @@ CYPHER;
     /**
      * Compile a create table command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
-     * @param Connection  $connection
      *
      * @return array
      */
@@ -100,10 +90,9 @@ CYPHER;
     /**
      * Create the main create table clause.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
-     * @param Connection  $connection
-     *
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
+     * @param  Connection  $connection
      * @return array
      */
     protected function compileCreateTable($blueprint, $command, $connection)
@@ -119,9 +108,6 @@ CYPHER;
      * Append the character set specifications to a command.
      *
      * @param  string  $sql
-     * @param Connection $connection
-     * @param Blueprint $blueprint
-     *
      * @return string
      */
     protected function compileCreateEncoding($sql, Connection $connection, Blueprint $blueprint)
@@ -151,9 +137,6 @@ CYPHER;
      * Append the engine specifications to a command.
      *
      * @param  string  $sql
-     * @param Connection  $connection
-     * @param Blueprint $blueprint
-     *
      * @return string
      */
     protected function compileCreateEngine($sql, Connection $connection, Blueprint $blueprint)
@@ -170,8 +153,6 @@ CYPHER;
     /**
      * Compile an add column command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent  $command
      *
      * @return array
      */
@@ -188,7 +169,6 @@ CYPHER;
     /**
      * Compile the auto-incrementing column starting values.
      *
-     * @param Blueprint $blueprint
      *
      * @return array
      */
@@ -202,8 +182,6 @@ CYPHER;
     /**
      * Compile a primary key command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -217,8 +195,6 @@ CYPHER;
     /**
      * Compile a unique key command.
      *
-     * @param Blueprint $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -230,8 +206,6 @@ CYPHER;
     /**
      * Compile a plain index key command.
      *
-     * @param Blueprint $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -243,8 +217,6 @@ CYPHER;
     /**
      * Compile a fulltext index key command.
      *
-     * @param Blueprint $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -256,8 +228,6 @@ CYPHER;
     /**
      * Compile a spatial index key command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -269,10 +239,7 @@ CYPHER;
     /**
      * Compile an index creation command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      * @param  string  $type
-     *
      * @return string
      */
     protected function compileKey(Blueprint $blueprint, Fluent $command, $type)
@@ -289,8 +256,6 @@ CYPHER;
     /**
      * Compile a drop table command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -302,8 +267,6 @@ CYPHER;
     /**
      * Compile a drop table (if exists) command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -315,8 +278,6 @@ CYPHER;
     /**
      * Compile a drop column command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -330,8 +291,6 @@ CYPHER;
     /**
      * Compile a drop primary key command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -343,8 +302,6 @@ CYPHER;
     /**
      * Compile a drop unique key command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -358,8 +315,6 @@ CYPHER;
     /**
      * Compile a drop index command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -373,8 +328,6 @@ CYPHER;
     /**
      * Compile a drop fulltext index command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -386,8 +339,6 @@ CYPHER;
     /**
      * Compile a drop spatial index command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -399,8 +350,6 @@ CYPHER;
     /**
      * Compile a drop foreign key command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -414,8 +363,6 @@ CYPHER;
     /**
      * Compile a rename table command.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -429,8 +376,6 @@ CYPHER;
     /**
      * Compile a rename index command.
      *
-     * @param Blueprint $blueprint
-     * @param  Fluent  $command
      *
      * @return string
      */
@@ -508,7 +453,6 @@ CYPHER;
     /**
      * Create the column definition for a char type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeChar(Fluent $column)
@@ -519,7 +463,6 @@ CYPHER;
     /**
      * Create the column definition for a string type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeString(Fluent $column)
@@ -530,7 +473,6 @@ CYPHER;
     /**
      * Create the column definition for a tiny text type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeTinyText(Fluent $column)
@@ -541,7 +483,6 @@ CYPHER;
     /**
      * Create the column definition for a text type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeText(Fluent $column)
@@ -552,7 +493,6 @@ CYPHER;
     /**
      * Create the column definition for a medium text type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeMediumText(Fluent $column)
@@ -563,7 +503,6 @@ CYPHER;
     /**
      * Create the column definition for a long text type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeLongText(Fluent $column)
@@ -574,7 +513,6 @@ CYPHER;
     /**
      * Create the column definition for a big integer type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeBigInteger(Fluent $column)
@@ -585,7 +523,6 @@ CYPHER;
     /**
      * Create the column definition for an integer type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeInteger(Fluent $column)
@@ -596,7 +533,6 @@ CYPHER;
     /**
      * Create the column definition for a medium integer type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeMediumInteger(Fluent $column)
@@ -607,7 +543,6 @@ CYPHER;
     /**
      * Create the column definition for a tiny integer type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeTinyInteger(Fluent $column)
@@ -618,7 +553,6 @@ CYPHER;
     /**
      * Create the column definition for a small integer type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeSmallInteger(Fluent $column)
@@ -629,7 +563,6 @@ CYPHER;
     /**
      * Create the column definition for a float type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeFloat(Fluent $column)
@@ -640,7 +573,6 @@ CYPHER;
     /**
      * Create the column definition for a double type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeDouble(Fluent $column)
@@ -655,7 +587,6 @@ CYPHER;
     /**
      * Create the column definition for a decimal type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeDecimal(Fluent $column)
@@ -666,7 +597,6 @@ CYPHER;
     /**
      * Create the column definition for a boolean type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeBoolean(Fluent $column)
@@ -677,7 +607,6 @@ CYPHER;
     /**
      * Create the column definition for an enumeration type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeEnum(Fluent $column)
@@ -688,7 +617,6 @@ CYPHER;
     /**
      * Create the column definition for a set enumeration type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeSet(Fluent $column)
@@ -699,7 +627,6 @@ CYPHER;
     /**
      * Create the column definition for a json type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeJson(Fluent $column)
@@ -710,7 +637,6 @@ CYPHER;
     /**
      * Create the column definition for a jsonb type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeJsonb(Fluent $column)
@@ -721,7 +647,6 @@ CYPHER;
     /**
      * Create the column definition for a date type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeDate(Fluent $column)
@@ -732,7 +657,6 @@ CYPHER;
     /**
      * Create the column definition for a date-time type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeDateTime(Fluent $column)
@@ -749,7 +673,6 @@ CYPHER;
     /**
      * Create the column definition for a date-time (with time zone) type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeDateTimeTz(Fluent $column)
@@ -760,7 +683,6 @@ CYPHER;
     /**
      * Create the column definition for a time type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeTime(Fluent $column)
@@ -771,7 +693,6 @@ CYPHER;
     /**
      * Create the column definition for a time (with time zone) type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimeTz(Fluent $column)
@@ -782,7 +703,6 @@ CYPHER;
     /**
      * Create the column definition for a timestamp type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimestamp(Fluent $column)
@@ -799,7 +719,6 @@ CYPHER;
     /**
      * Create the column definition for a timestamp (with time zone) type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimestampTz(Fluent $column)
@@ -810,7 +729,6 @@ CYPHER;
     /**
      * Create the column definition for a year type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeYear(Fluent $column)
@@ -821,7 +739,6 @@ CYPHER;
     /**
      * Create the column definition for a binary type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeBinary(Fluent $column)
@@ -832,7 +749,6 @@ CYPHER;
     /**
      * Create the column definition for a uuid type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeUuid(Fluent $column)
@@ -843,7 +759,6 @@ CYPHER;
     /**
      * Create the column definition for an IP address type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeIpAddress(Fluent $column)
@@ -854,7 +769,6 @@ CYPHER;
     /**
      * Create the column definition for a MAC address type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     protected function typeMacAddress(Fluent $column)
@@ -865,7 +779,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial Geometry type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typeGeometry(Fluent $column)
@@ -876,7 +789,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial Point type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typePoint(Fluent $column)
@@ -887,7 +799,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial LineString type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typeLineString(Fluent $column)
@@ -898,7 +809,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial Polygon type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typePolygon(Fluent $column)
@@ -909,7 +819,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial GeometryCollection type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typeGeometryCollection(Fluent $column)
@@ -920,7 +829,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial MultiPoint type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typeMultiPoint(Fluent $column)
@@ -931,7 +839,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial MultiLineString type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typeMultiLineString(Fluent $column)
@@ -942,7 +849,6 @@ CYPHER;
     /**
      * Create the column definition for a spatial MultiPolygon type.
      *
-     * @param  Fluent  $column
      * @return string
      */
     public function typeMultiPolygon(Fluent $column)
@@ -953,7 +859,6 @@ CYPHER;
     /**
      * Create the column definition for a generated, computed column type.
      *
-     * @param  Fluent  $column
      * @return void
      *
      * @throws RuntimeException
@@ -966,8 +871,6 @@ CYPHER;
     /**
      * Get the SQL for a generated virtual column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -981,8 +884,6 @@ CYPHER;
     /**
      * Get the SQL for a generated stored column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -996,8 +897,6 @@ CYPHER;
     /**
      * Get the SQL for an unsigned column modifier.
      *
-     * @param Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1011,8 +910,6 @@ CYPHER;
     /**
      * Get the SQL for a character set column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1026,8 +923,6 @@ CYPHER;
     /**
      * Get the SQL for a collation column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1041,8 +936,6 @@ CYPHER;
     /**
      * Get the SQL for a nullable column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1060,8 +953,6 @@ CYPHER;
     /**
      * Get the SQL for an invisible column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1075,8 +966,6 @@ CYPHER;
     /**
      * Get the SQL for a default column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1090,8 +979,6 @@ CYPHER;
     /**
      * Get the SQL for an auto-increment column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1105,8 +992,6 @@ CYPHER;
     /**
      * Get the SQL for a "first" column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1120,8 +1005,6 @@ CYPHER;
     /**
      * Get the SQL for an "after" column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1135,8 +1018,6 @@ CYPHER;
     /**
      * Get the SQL for a "comment" column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $column
      *
      * @return string|null
      */
@@ -1150,8 +1031,6 @@ CYPHER;
     /**
      * Get the SQL for a SRID column modifier.
      *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent $column
      *
      * @return string|null
      */

@@ -3,14 +3,11 @@
 namespace Vinelab\NeoEloquent;
 
 use Vinelab\NeoEloquent\Query\CypherGrammar;
-use WikibaseSolutions\CypherDSL\Parameter;
 
 trait ManagesDSLContext
 {
     /**
-     * @param callable(DSLContext): string $compilation
-     *
-     * @return string
+     * @param  callable(DSLContext): string  $compilation
      */
     protected function witCachedParams(callable $compilation): string
     {

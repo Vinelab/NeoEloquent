@@ -8,9 +8,13 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Tag extends Model
 {
     protected $table = 'Tag';
+
     protected $fillable = ['title'];
+
     protected $primaryKey = 'title';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     public function posts(): MorphToMany

@@ -8,9 +8,13 @@ use Ramsey\Uuid\Uuid;
 class FacebookAccount extends Model
 {
     protected $table = 'SocialAccount';
+
     protected $fillable = ['gender', 'age', 'interest'];
+
     public $incrementing = false;
+
     protected $primaryKey = 'id';
+
     protected $keyType = 'string';
 
     protected static function boot()

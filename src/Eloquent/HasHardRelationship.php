@@ -2,11 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
-use Illuminate\Database\Eloquent\Relations\Relation;
-
-use Illuminate\Support\Str;
-
 use function class_basename;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Str;
 
 /**
  * @mixin Relation
@@ -14,6 +12,7 @@ use function class_basename;
 trait HasHardRelationship
 {
     protected bool $enableHardRelationships = false;
+
     protected ?string $relationshipName = null;
 
     public function getRelationshipName(): string

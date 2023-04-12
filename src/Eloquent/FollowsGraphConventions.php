@@ -2,11 +2,10 @@
 
 namespace Vinelab\NeoEloquent\Eloquent;
 
+use function class_basename;
 use Illuminate\Database\Eloquent\Concerns\HasRelationships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-
-use function class_basename;
 use function implode;
 use function sort;
 use function strtolower;
@@ -28,8 +27,7 @@ trait FollowsGraphConventions
      * Get the joining table name for a many-to-many relation.
      *
      * @param  string  $related
-     * @param Model|null  $instance
-     * @return string
+     * @param  Model|null  $instance
      */
     public function joiningTable($related, $instance = null): string
     {
@@ -37,7 +35,7 @@ trait FollowsGraphConventions
         // sorted alphabetically and concatenated with an underscore, so we can
         // just sort the models and join them together to get the table name.
         $segments = [
-            $instance ? $instance->joiningTableSegment(): Str::studly(class_basename($related)),
+            $instance ? $instance->joiningTableSegment() : Str::studly(class_basename($related)),
             $this->joiningTableSegment(),
         ];
 
@@ -51,8 +49,6 @@ trait FollowsGraphConventions
 
     /**
      * Get this model's half of the intermediate table name for belongsToMany relationships.
-     *
-     * @return string
      */
     public function joiningTableSegment(): string
     {
@@ -65,7 +61,6 @@ trait FollowsGraphConventions
      * @param  string  $name
      * @param  string  $type
      * @param  string  $id
-     * @return array
      */
     protected function getMorphs($name, $type, $id): array
     {

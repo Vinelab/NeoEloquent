@@ -2,10 +2,10 @@
 
 namespace Vinelab\NeoEloquent;
 
+use function array_key_exists;
 use WikibaseSolutions\CypherDSL\Addition;
 use WikibaseSolutions\CypherDSL\AndOperator;
 use WikibaseSolutions\CypherDSL\Assignment;
-use WikibaseSolutions\CypherDSL\BinaryOperator;
 use WikibaseSolutions\CypherDSL\Contains;
 use WikibaseSolutions\CypherDSL\Division;
 use WikibaseSolutions\CypherDSL\EndsWith;
@@ -29,7 +29,6 @@ use WikibaseSolutions\CypherDSL\Subtraction;
 use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
 use WikibaseSolutions\CypherDSL\XorOperator;
-use function array_key_exists;
 
 final class OperatorRepository
 {
@@ -71,10 +70,8 @@ final class OperatorRepository
     }
 
     /**
-     * @param string $symbol
-     * @param mixed $lhs
-     * @param mixed $rhs
-     *
+     * @param  mixed  $lhs
+     * @param  mixed  $rhs
      * @return BooleanType
      */
     public static function fromSymbol(string $symbol, $lhs = null, $rhs = null, $insertParenthesis = true): AnyType

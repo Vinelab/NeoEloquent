@@ -2,9 +2,6 @@
 
 namespace Vinelab\NeoEloquent;
 
-
-use Closure;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\ServiceProvider;
 use WikibaseSolutions\CypherDSL\Query;
@@ -26,9 +23,6 @@ class NeoEloquentServiceProvider extends ServiceProvider
         $this->registerCollect();
     }
 
-    /**
-     * @return void
-     */
     private function registerPercentile(string $function): void
     {
         $macro = function (string $logins, $percentile = null) use ($function) {
@@ -41,9 +35,6 @@ class NeoEloquentServiceProvider extends ServiceProvider
         \Illuminate\Database\Eloquent\Builder::macro($function, $macro);
     }
 
-    /**
-     * @return void
-     */
     private function registerAggregate(string $function): void
     {
         $macro = function (string $logins) use ($function) {

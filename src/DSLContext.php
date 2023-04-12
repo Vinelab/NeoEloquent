@@ -2,28 +2,29 @@
 
 namespace Vinelab\NeoEloquent;
 
+use function array_merge;
 use WikibaseSolutions\CypherDSL\Alias;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\Types\AnyType;
 use WikibaseSolutions\CypherDSL\Variable;
 
-use function array_merge;
-
 class DSLContext
 {
     /** @var array<string, mixed> */
     private array $parameters = [];
+
     /** @var list<Variable> */
     private array $withStack = [];
+
     private int $subResultCounter = 0;
 
     /**
-     * @param mixed $value
+     * @param  mixed  $value
      */
     public function addParameter($value): Parameter
     {
-        $param = Query::parameter('param' . count($this->parameters));
+        $param = Query::parameter('param'.count($this->parameters));
 
         $this->parameters[$param->getName()] = $value;
 
@@ -34,7 +35,7 @@ class DSLContext
     {
         $subresult = new Alias($type, new Variable('sub'.$this->subResultCounter));
 
-        ++$this->subResultCounter;
+        $this->subResultCounter++;
 
         $this->withStack[] = $subresult->getVariable();
 
@@ -43,7 +44,7 @@ class DSLContext
 
     public function addSubResult(Alias $alias): Alias
     {
-        ++$this->subResultCounter;
+        $this->subResultCounter++;
 
         return $alias;
     }

@@ -4,8 +4,8 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\Fixtures\Role;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class BelongsToManyRelationTest extends TestCase
 {
@@ -33,9 +33,9 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testAttachingManyModelIds()
     {
-        $user   = User::create(['uuid' => '64753', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '64753', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
@@ -73,9 +73,9 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testDetachingManyModelIds()
     {
-        $user   = User::create(['uuid' => '8363', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '8363', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
@@ -90,9 +90,9 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testSyncingModelIds()
     {
-        $user   = User::create(['uuid' => '25467', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '25467', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach($master->getKey());
@@ -108,15 +108,14 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testSyncingUpdatesModels()
     {
-        $user   = User::create(['uuid' => '14285', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '14285', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach($master->getKey());
         $user = User::find($user->getKey());
         $this->assertCount(1, $user->roles);
-
 
         $user->roles()->sync([$master->getKey(), $admin->getKey(), $editor->getKey()]);
         $user = User::find($user->getKey());
@@ -131,16 +130,16 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testSyncingWithAttributes()
     {
-        $user   = User::create(['uuid' => '83532', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '83532', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach($master->getKey());
 
         $user->roles()->sync([
             $master->getKey() => ['type' => 'Master'],
-            $admin->getKey()  => ['type' => 'Admin'],
+            $admin->getKey() => ['type' => 'Admin'],
             $editor->getKey() => ['type' => 'Editor'],
         ]);
 
@@ -157,14 +156,14 @@ class BelongsToManyRelationTest extends TestCase
 
     public function testEagerLoadingBelongsToMany()
     {
-        $user   = User::create(['uuid' => '44352', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '44352', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
-        $creep     = User::with('roles')->find($user->getKey());
+        $creep = User::with('roles')->find($user->getKey());
         $relations = $creep->getRelations();
 
         $this->assertArrayHasKey('roles', $relations);
@@ -178,9 +177,9 @@ class BelongsToManyRelationTest extends TestCase
      */
     public function testDeletingBelongsToManyRelation()
     {
-        $user   = User::create(['uuid' => '34113', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '34113', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
@@ -189,7 +188,7 @@ class BelongsToManyRelationTest extends TestCase
         $this->assertCount(3, $user->roles, 'relations created successfully');
 
         $deleted = $fetched->roles()->detach();
-        $this->assertTrue((bool)$deleted);
+        $this->assertTrue((bool) $deleted);
 
         $again = User::find($user->getKey());
         $this->assertCount(0, $again->roles);
@@ -211,9 +210,9 @@ class BelongsToManyRelationTest extends TestCase
      */
     public function testDeletingBelongsToManyRelationKeepingEndModels()
     {
-        $user   = User::create(['uuid' => '84633', 'name' => 'Creepy Dude']);
+        $user = User::create(['uuid' => '84633', 'name' => 'Creepy Dude']);
         $master = Role::create(['title' => 'Master']);
-        $admin  = Role::create(['title' => 'Admin']);
+        $admin = Role::create(['title' => 'Admin']);
         $editor = Role::create(['title' => 'Editor']);
 
         $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
@@ -222,7 +221,7 @@ class BelongsToManyRelationTest extends TestCase
         $this->assertCount(3, $user->roles, 'relations created successfully');
 
         $deleted = $fetched->roles()->detach();
-        $this->assertTrue((bool)$deleted);
+        $this->assertTrue((bool) $deleted);
 
         $again = User::find($user->getKey());
         $this->assertCount(0, $again->roles);

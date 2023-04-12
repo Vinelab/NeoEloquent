@@ -10,9 +10,13 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Video extends Model
 {
     protected $table = 'Video';
+
     protected $fillable = ['title', 'url'];
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $primaryKey = 'title';
 
     public function comments(): MorphMany

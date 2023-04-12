@@ -12,9 +12,13 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Post extends Model
 {
     protected $table = 'Post';
+
     protected $fillable = ['title', 'body'];
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $primaryKey = 'title';
 
     public function comments(): MorphMany
@@ -31,7 +35,6 @@ class Post extends Model
     {
         return $this->morphToMany(Tag::class, 'taggable');
     }
-
 
     public function photos(): HasMany
     {

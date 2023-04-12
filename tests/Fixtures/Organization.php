@@ -8,9 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Organization extends Model
 {
     protected $table = 'Organization';
+
     protected $fillable = ['name'];
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $primaryKey = 'name';
 
     public function members(): HasMany

@@ -4,8 +4,8 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class AggregateTest extends TestCase
 {
@@ -93,7 +93,7 @@ class AggregateTest extends TestCase
 
         $count = User::query()->where('points', '<', 4)->max('logins');
         $this->assertEquals(11, $count);
-        $this->assertEquals(2,User::query()->where('points', '<', 4)->max('points'));
+        $this->assertEquals(2, User::query()->where('points', '<', 4)->max('points'));
     }
 
     public function testMin(): void
@@ -170,7 +170,7 @@ class AggregateTest extends TestCase
         $this->assertEquals(12, User::query()->percentileDisc('logins', 1));
 
         $this->assertEquals(1, User::query()->percentileDisc('points'));
-        $this->assertEquals(2, (Int)User::query()->percentileDisc('points', 0.6));
+        $this->assertEquals(2, (int) User::query()->percentileDisc('points', 0.6));
         $this->assertEquals(4, User::query()->percentileDisc('points', 0.9));
     }
 

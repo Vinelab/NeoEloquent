@@ -34,7 +34,8 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0.19",
-        "orchestra/testbench": "^8.1.1"
+        "orchestra/testbench": "^8.1.1",
+        "laravel/pint": "^1.8"
     },
     "repositories": [
         {

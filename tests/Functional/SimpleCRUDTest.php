@@ -2,14 +2,14 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use DateTime;
 use Carbon\Carbon;
+use DateTime;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laudis\Neo4j\Types\CypherList;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Tests\Fixtures\Wiz;
 use Vinelab\NeoEloquent\Tests\Fixtures\WizDel;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class SimpleCRUDTest extends TestCase
 {
@@ -171,7 +171,7 @@ class SimpleCRUDTest extends TestCase
             ->update([
                 'fiz' => 'notfooanymore',
                 'biz' => 'noNotBoo!',
-                'triz' => 'newhere'
+                'triz' => 'newhere',
             ]);
 
         $found = Wiz::where('fiz', '=', 'notfooanymore')

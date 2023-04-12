@@ -3,6 +3,7 @@
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -13,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
 use Vinelab\NeoEloquent\DSLContext;
-use Illuminate\Database\Eloquent\Model;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
@@ -64,11 +64,13 @@ class MainModel extends Model
 
 class GrammarTest extends TestCase
 {
-    /** @var CypherGrammar */
     private CypherGrammar $grammar;
+
     /** @var Connection&MockObject */
     private Connection $connection;
+
     private Builder $table;
+
     private MainModel $model;
 
     public function setUp(): void
@@ -367,7 +369,7 @@ class GrammarTest extends TestCase
                     ['y', 'x'],
                     'zz',
                     ['y'],
-                    [1 => 'x']
+                    [1 => 'x'],
                 ],
                 true
             );

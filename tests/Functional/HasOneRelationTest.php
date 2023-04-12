@@ -4,8 +4,8 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\Fixtures\Profile;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class HasOneRelationTest extends TestCase
 {

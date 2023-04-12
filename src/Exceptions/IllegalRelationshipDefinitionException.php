@@ -7,7 +7,9 @@ use Exception;
 class IllegalRelationshipDefinitionException extends Exception
 {
     private string $type;
+
     private string $startClass;
+
     private string $endClass;
 
     private function __construct(
@@ -17,9 +19,9 @@ class IllegalRelationshipDefinitionException extends Exception
         string $endClass
     ) {
         parent::__construct($message);
-        $this->type         = $type;
-        $this->startClass   = $startClass;
-        $this->endClass     = $endClass;
+        $this->type = $type;
+        $this->startClass = $startClass;
+        $this->endClass = $endClass;
     }
 
     public static function fromRelationship(
@@ -45,7 +47,7 @@ class IllegalRelationshipDefinitionException extends Exception
         return [
             'type' => $this->type,
             'startModel' => $this->startClass,
-            'endModel' => $this->endClass
+            'endModel' => $this->endClass,
         ];
     }
 }

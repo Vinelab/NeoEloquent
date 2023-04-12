@@ -16,11 +16,11 @@ class BelongsToRelationTest extends TestCase
             'lat' => 89765,
             'long' => -876521234,
             'country' => 'The Netherlands',
-            'city' => 'Amsterdam'
+            'city' => 'Amsterdam',
         ]);
         $user = \Vinelab\NeoEloquent\Tests\Fixtures\User::create([
             'name' => 'Daughter',
-            'alias' => 'daughter'
+            'alias' => 'daughter',
         ]);
 
         $user->location()->associate($location);

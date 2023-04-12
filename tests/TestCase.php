@@ -13,7 +13,7 @@ class TestCase extends BaseTestCase
     protected function getPackageProviders($app): array
     {
         return [
-            NeoEloquentServiceProvider::class
+            NeoEloquentServiceProvider::class,
         ];
     }
 
@@ -45,7 +45,7 @@ class TestCase extends BaseTestCase
                 'port' => env('NEO4J_PORT', 7687),
                 'username' => env('NEO4J_USER', 'neo4j'),
                 'password' => env('NEO4J_PASSWORD', 'testtest'),
-            ]
+            ],
         ]);
         $config->set('database.connections', $connections);
     }

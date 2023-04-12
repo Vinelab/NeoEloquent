@@ -2,7 +2,9 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionRolledBack;
@@ -11,12 +13,10 @@ use Laudis\Neo4j\Types\Node;
 use Mockery as M;
 use RuntimeException;
 use Throwable;
-use Vinelab\NeoEloquent\Connection;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Events\Dispatcher;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use function time;
+use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Query\Builder;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class ConnectionTest extends TestCase
 {
@@ -25,7 +25,7 @@ class ConnectionTest extends TestCase
     private array $user = [
         'name' => 'A',
         'email' => 'ABC@efg.com',
-        'username' => 'H I'
+        'username' => 'H I',
     ];
 
     public function testRegisteredConnectionResolver(): void
@@ -203,7 +203,9 @@ class ConnectionTest extends TestCase
     {
         $connection = $this->getConnection();
 
-        $result = $connection->transaction(function ($db) { return $db; });
+        $result = $connection->transaction(function ($db) {
+        return $db;
+        });
         $this->assertEquals($connection, $result);
     }
 
@@ -212,7 +214,9 @@ class ConnectionTest extends TestCase
         $connection = $this->getConnection();
 
         try {
-            $connection->transaction(function () { throw new RuntimeException('foo'); });
+            $connection->transaction(function () {
+            throw new RuntimeException('foo');
+            });
         } catch (Throwable $e) {
             $this->assertEquals('foo', $e->getMessage());
         }

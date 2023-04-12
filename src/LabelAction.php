@@ -5,6 +5,7 @@ namespace Vinelab\NeoEloquent;
 class LabelAction
 {
     private string $label;
+
     private bool $set;
 
     public function __construct(string $label, bool $set = true)
@@ -25,6 +26,6 @@ class LabelAction
 
     public function removesLabel(): bool
     {
-        return !$this->setsLabel();
+        return ! $this->setsLabel();
     }
 }

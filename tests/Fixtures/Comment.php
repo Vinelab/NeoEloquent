@@ -9,9 +9,13 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Comment extends Model
 {
     protected $table = 'Comment';
+
     protected $fillable = ['text'];
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $primaryKey = 'text';
 
     public function commentable(): MorphTo

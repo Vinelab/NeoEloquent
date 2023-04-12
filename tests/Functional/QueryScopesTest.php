@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vinelab\NeoEloquent\Tests\TestCase;
 use Vinelab\NeoEloquent\Tests\Fixtures\Misfit;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class QueryScopesTest extends TestCase
 {

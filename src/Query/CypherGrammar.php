@@ -2,19 +2,18 @@
 
 namespace Vinelab\NeoEloquent\Query;
 
+use function array_key_exists;
+use function array_map;
+use function debug_backtrace;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
+use function implode;
 use Vinelab\NeoEloquent\DSLContext;
 use Vinelab\NeoEloquent\ManagesDSLContext;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
-
-use function array_key_exists;
-use function array_map;
-use function debug_backtrace;
-use function implode;
 
 class CypherGrammar extends Grammar
 {
@@ -155,9 +154,6 @@ class CypherGrammar extends Grammar
         return $this->dsl->compileTruncate($query);
     }
 
-    /**
-     * @return bool
-     */
     public function supportsSavepoints(): bool
     {
         return $this->dsl->supportsSavepoints();
@@ -195,7 +191,7 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * @param Expression|QueryConvertable|string $table
+     * @param  Expression|QueryConvertable|string  $table
      */
     public function wrapTable($table): string
     {
@@ -203,7 +199,7 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * @param Expression|string  $value
+     * @param  Expression|string  $value
      * @param  bool  $prefixAlias
      */
     public function wrap($value, $prefixAlias = false): string
@@ -246,8 +242,7 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * @param Expression|QueryConvertable $expression
-     *
+     * @param  Expression|QueryConvertable  $expression
      * @return mixed
      */
     public function getValue($expression)

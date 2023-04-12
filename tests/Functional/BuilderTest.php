@@ -41,7 +41,7 @@ class BuilderTest extends TestCase
             'length' => 123,
             'height' => 343,
             'power' => 'Strong Fart Noises',
-            'id' => 69
+            'id' => 69,
         ];
 
         $hero = $this->builder->insertGetId($values);
@@ -56,14 +56,14 @@ class BuilderTest extends TestCase
     {
         $this->builder->from('Hero')->insert([
             ['a' => 'b'],
-            ['c' => 'd']
+            ['c' => 'd'],
         ]);
 
         $results = $this->builder->orderBy('a')->get();
         self::assertEquals([
             ['a' => 'b'],
-            ['c' => 'd']
-        ], $results-> toArray());
+            ['c' => 'd'],
+        ], $results->toArray());
     }
 
     public function testUpsert(): void
@@ -89,7 +89,6 @@ class BuilderTest extends TestCase
         ], $this->builder->get()->toArray());
     }
 
-
     public function testFailingWhereWithNullValue(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -106,7 +105,7 @@ class BuilderTest extends TestCase
                 'column' => 'id',
                 'operator' => '=',
                 'value' => 19,
-                'boolean' => 'and'
+                'boolean' => 'and',
             ],
         ], $this->builder->wheres, 'make sure the statement was atted to $wheres');
     }
@@ -122,7 +121,7 @@ class BuilderTest extends TestCase
                 'column' => 'id',
                 'operator' => '=',
                 'value' => 19,
-                'boolean' => 'and'
+                'boolean' => 'and',
             ],
         ], $this->builder->wheres);
     }
@@ -135,7 +134,7 @@ class BuilderTest extends TestCase
             [
                 'type' => 'Null',
                 'boolean' => 'and',
-                'column' => 'farted'
+                'column' => 'farted',
             ],
         ], $this->builder->wheres);
     }

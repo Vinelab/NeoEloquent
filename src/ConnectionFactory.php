@@ -8,7 +8,6 @@ use Laudis\Neo4j\Common\Uri;
 use Laudis\Neo4j\Databags\DriverConfiguration;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
-use function array_key_exists;
 
 final class ConnectionFactory
 {
@@ -20,7 +19,7 @@ final class ConnectionFactory
     }
 
     /**
-     * @param array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string} $config
+     * @param  array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string}  $config
      */
     public function make(string $database, string $prefix, array $config): Connection
     {
@@ -39,6 +38,7 @@ final class ConnectionFactory
         $driver = Driver::create($uri, DriverConfiguration::default(), $auth);
         $sessionConfig = SessionConfiguration::default()
             ->withDatabase($database);
+
         return new Connection(
             $driver->createSession($sessionConfig->withAccessMode(AccessMode::READ())),
             $driver->createSession($sessionConfig),

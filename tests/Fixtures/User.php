@@ -12,9 +12,13 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class User extends Model
 {
     protected $table = 'Individual';
+
     protected $fillable = ['name', 'alias', 'logins', 'points', 'email', 'uuid', 'calls', 'dob'];
+
     protected $primaryKey = 'name';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     public function location(): BelongsTo

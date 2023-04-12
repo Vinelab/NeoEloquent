@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use DateTime;
 use Carbon\Carbon;
+use DateTime;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\Fixtures\Account;
 use Vinelab\NeoEloquent\Tests\Fixtures\Comment;
@@ -20,7 +20,7 @@ class QueryingRelationsTest extends TestCase
     public function testQueryingHasCount()
     {
         Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
-        $postWithComment     = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
+        $postWithComment = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
         $postWithTwoComments = Post::create(['title' => 'I got two']);
         $postWithTenComments = Post::create(['title' => 'Up yours posts, got 10 here']);
 
@@ -28,11 +28,11 @@ class QueryingRelationsTest extends TestCase
         $postWithComment->comments()->save($comment);
 
         // add two comments to $postWithTwoComments
-        for ($i = 0; $i < 2; ++$i) {
+        for ($i = 0; $i < 2; $i++) {
             $postWithTwoComments->comments()->create(['text' => "Comment $i"]);
         }
         // add ten comments to $postWithTenComments
-        for ($i = 0; $i < 10; ++$i) {
+        for ($i = 0; $i < 10; $i++) {
             $postWithTenComments->comments()->create(['text' => "Comment $i"]);
         }
 
@@ -65,20 +65,19 @@ class QueryingRelationsTest extends TestCase
     public function testQueryingNestedHas()
     {
         // user with a role that has only one permission
-        $user       = User::create(['name' => 'cappuccino']);
-        $role       = Role::create(['title' => 'pikachu']);
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['title' => 'pikachu']);
         $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
         $role->permissions()->save($permission);
         $user->roles()->save($role);
 
         // user with a role that has 2 permissions
-        $userWithTwo   = User::create(['name' => 'frappe']);
-        $roleWithTwo   = Role::create(['title' => 'pikachuu']);
+        $userWithTwo = User::create(['name' => 'frappe']);
+        $roleWithTwo = Role::create(['title' => 'pikachuu']);
         $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
         $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
-
 
         // user with a role that has no permission
         $user2 = User::Create(['name' => 'u2']);
@@ -106,14 +105,14 @@ class QueryingRelationsTest extends TestCase
 
     public function testQueryingWhereHasOne()
     {
-        $mrAdmin        = User::create(['name' => 'Rundala']);
-        $anotherAdmin   = User::create(['name' => 'Makhoul']);
-        $mrsEditor      = User::create(['name' => 'Mr. Moonlight']);
-        $mrsManager     = User::create(['name' => 'Batista']);
+        $mrAdmin = User::create(['name' => 'Rundala']);
+        $anotherAdmin = User::create(['name' => 'Makhoul']);
+        $mrsEditor = User::create(['name' => 'Mr. Moonlight']);
+        $mrsManager = User::create(['name' => 'Batista']);
         $anotherManager = User::create(['name' => 'Quin Tukee']);
 
-        $admin   = Role::create(['title' => 'admin']);
-        $editor  = Role::create(['title' => 'editor']);
+        $admin = Role::create(['title' => 'admin']);
+        $editor = Role::create(['title' => 'editor']);
         $manager = Role::create(['title' => 'manager']);
 
         $mrAdmin->roles()->save($admin);
@@ -139,7 +138,7 @@ class QueryingRelationsTest extends TestCase
 
         // check managers
         $expectedManagers = [$mrsManager->getKey(), $anotherManager->getKey()];
-        $managers         = User::whereHas('roles', function ($q) {
+        $managers = User::whereHas('roles', function ($q) {
             $q->where('title', 'manager');
         })->get();
         $this->assertCount(2, $managers);
@@ -165,8 +164,8 @@ class QueryingRelationsTest extends TestCase
 
     public function testQueryingParentWithMultipleWhereHas()
     {
-        $user    = User::create(['name' => 'cappuccino']);
-        $role    = Role::create(['title' => 'pikachu']);
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['title' => 'pikachu']);
         $account = Account::create(['guid' => uniqid()]);
 
         $user->roles()->save($role);
@@ -185,15 +184,15 @@ class QueryingRelationsTest extends TestCase
     public function testQueryingNestedWhereHasUsingProperty()
     {
         // user with a role that has only one permission
-        $user       = User::create(['name' => 'cappuccino']);
-        $role       = Role::create(['title' => 'pikachu']);
+        $user = User::create(['name' => 'cappuccino']);
+        $role = Role::create(['title' => 'pikachu']);
         $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
         $role->permissions()->save($permission);
         $user->roles()->save($role);
 
         // user with a role that has 2 permissions
-        $userWithTwo   = User::create(['name' => 'cappuccino0']);
-        $roleWithTwo   = Role::create(['title' => 'pikachuU']);
+        $userWithTwo = User::create(['name' => 'cappuccino0']);
+        $roleWithTwo = Role::create(['title' => 'pikachuU']);
         $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
         $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
@@ -213,11 +212,11 @@ class QueryingRelationsTest extends TestCase
 
     public function testSavingRelationWithDateTimeAndCarbonInstances()
     {
-        $user      = User::create(['name' => 'Andrew Hale']);
+        $user = User::create(['name' => 'Andrew Hale']);
         $yesterday = Carbon::now();
-        $brother   = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
+        $brother = new User(['name' => 'Simon Hale', 'dob' => $yesterday]);
 
-        $dt      = new DateTime();
+        $dt = new DateTime();
         $someone = User::create(['name' => 'Producer', 'dob' => $dt]);
 
         $user->colleagues()->save($someone);

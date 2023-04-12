@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUndefinedNamespaceInspection */
+<?php
+
+/** @noinspection PhpUndefinedNamespaceInspection */
 
 /** @noinspection PhpUndefinedClassInspection */
 
@@ -14,7 +16,6 @@ use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema;
-use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
@@ -34,11 +35,10 @@ final class Connection extends \Illuminate\Database\Connection
     public function __construct(
         private readonly SessionInterface $readSession,
         private readonly SessionInterface $session,
-        string           $database,
-        string           $tablePrefix,
-        array            $config
-    )
-    {
+        string $database,
+        string $tablePrefix,
+        array $config
+    ) {
         parent::__construct(static fn () => null, $database, $tablePrefix, $config);
     }
 
@@ -47,8 +47,7 @@ final class Connection extends \Illuminate\Database\Connection
         return new CypherGrammar();
     }
 
-
-    protected function getDefaultSchemaGrammar(): \Vinelab\NeoEloquent\Schema\CypherGrammar
+    protected function getDefaultSchemaGrammar(): Schema\CypherGrammar
     {
         return new \Vinelab\NeoEloquent\Schema\CypherGrammar();
     }
@@ -69,7 +68,7 @@ final class Connection extends \Illuminate\Database\Connection
         return new Builder($this);
     }
 
-    protected function getDefaultPostProcessor(): \Vinelab\NeoEloquent\Processor
+    protected function getDefaultPostProcessor(): Processor
     {
         return new \Vinelab\NeoEloquent\Processor();
     }
@@ -132,7 +131,7 @@ final class Connection extends \Illuminate\Database\Connection
 
             yield from $this->getRunner($useReadPdo)
                 ->run($query, array_merge($this->prepareBindings($bindings), $this->queryGrammar->getBoundParameters($query)))
-                ->map(static fn(CypherMap $map) => $map->toArray());
+                ->map(static fn (CypherMap $map) => $map->toArray());
         });
     }
 
@@ -147,7 +146,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function statement($query, $bindings = []): bool
     {
-        return (bool)$this->affectingStatement($query, $bindings);
+        return (bool) $this->affectingStatement($query, $bindings);
     }
 
     public function selectResultSets($query, $bindings = [], $useReadPdo = true): array
@@ -196,10 +195,6 @@ final class Connection extends \Illuminate\Database\Connection
 
     /**
      * Prepare the query bindings for execution.
-     *
-     * @param array $bindings
-     *
-     * @return array
      */
     public function prepareBindings(array $bindings): array
     {
@@ -207,7 +202,7 @@ final class Connection extends \Illuminate\Database\Connection
 
         foreach ($bindings as $key => $value) {
             if (is_int($key)) {
-                $tbr['param' . $key] = $value;
+                $tbr['param'.$key] = $value;
             } else {
                 $tbr[$key] = $value;
             }
@@ -261,11 +256,6 @@ final class Connection extends \Illuminate\Database\Connection
         return count($this->activeTransactions);
     }
 
-    /**
-     * @param SummaryCounters $counters
-     *
-     * @return int
-     */
     private function summarizeCounters(SummaryCounters $counters): int
     {
         return $counters->propertiesSet() +
@@ -293,9 +283,7 @@ final class Connection extends \Illuminate\Database\Connection
 
             try {
                 $callbackResult = $callback($this);
-            }
-
-            catch (Neo4jException $e) {
+            } catch (Neo4jException $e) {
                 if ($e->getClassification() === 'Transaction') {
                     continue;
                 } else {
@@ -310,10 +298,12 @@ final class Connection extends \Illuminate\Database\Connection
 
         return null;
     }
+
     public function bindValues($statement, $bindings)
     {
 
     }
+
     public function reconnect()
     {
         throw new LostConnectionException('Lost connection and no reconnector available.');

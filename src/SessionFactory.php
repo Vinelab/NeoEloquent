@@ -2,7 +2,6 @@
 
 namespace Vinelab\NeoEloquent;
 
-use Closure;
 use Laudis\Neo4j\Contracts\DriverInterface;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Databags\SessionConfiguration;
@@ -12,7 +11,9 @@ use Vinelab\NeoEloquent\Contracts\SessionFactoryInterface;
 class SessionFactory implements SessionFactoryInterface
 {
     private DriverInterface $driver;
+
     private bool $readConnection;
+
     private string $database;
 
     public function __construct(DriverInterface $driver, string $database, bool $readConnection = false)

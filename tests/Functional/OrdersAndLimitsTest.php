@@ -2,8 +2,8 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Vinelab\NeoEloquent\Tests\Fixtures\Click;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vinelab\NeoEloquent\Tests\Fixtures\Click;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class OrdersAndLimitsTest extends TestCase

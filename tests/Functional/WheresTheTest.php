@@ -3,18 +3,20 @@
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vinelab\NeoEloquent\Tests\TestCase;
-use Vinelab\NeoEloquent\Tests\Fixtures\User;
-
 use function usort;
+use Vinelab\NeoEloquent\Tests\Fixtures\User;
+use Vinelab\NeoEloquent\Tests\TestCase;
 
 class WheresTheTest extends TestCase
 {
     use RefreshDatabase;
 
     private User $ab;
+
     private User $cd;
+
     private User $ef;
+
     private User $gh;
 
     private User $ij;
@@ -25,35 +27,35 @@ class WheresTheTest extends TestCase
 
         // Setup the data in the database
         $this->ab = User::create([
-            'name'  => 'Ey Bee',
+            'name' => 'Ey Bee',
             'alias' => 'ab',
             'email' => 'ab@alpha.bet',
             'calls' => 10,
         ]);
 
         $this->cd = User::create([
-            'name'  => 'See Dee',
+            'name' => 'See Dee',
             'alias' => 'cd',
             'email' => 'cd@alpha.bet',
             'calls' => 20,
         ]);
 
         $this->ef = User::create([
-            'name'  => 'Eee Eff',
+            'name' => 'Eee Eff',
             'alias' => 'ef',
             'email' => 'ef@alpha.bet',
             'calls' => 30,
         ]);
 
         $this->gh = User::create([
-            'name'  => 'Gee Aych',
+            'name' => 'Gee Aych',
             'alias' => 'gh',
             'email' => 'gh@alpha.bet',
             'calls' => 40,
         ]);
 
         $this->ij = User::create([
-            'name'  => 'Eye Jay',
+            'name' => 'Eye Jay',
             'alias' => 'ij',
             'email' => 'ij@alpha.bet',
             'calls' => 50,
@@ -210,7 +212,7 @@ class WheresTheTest extends TestCase
          * WHERE actor NOT IN coactors
          * RETURN actor
          */
-        $u     = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->orderBy('calls')->get();
+        $u = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->orderBy('calls')->get();
         $still = [$this->gh->toArray(), $this->ij->toArray()];
 
         $this->assertCount(2, $u);
@@ -266,10 +268,10 @@ class WheresTheTest extends TestCase
         ];
 
         $array = $all->toArray();
-        usort($array, static fn(array $x, array $y) => $x['name'] <=> $y['name']);
+        usort($array, static fn (array $x, array $y) => $x['name'] <=> $y['name']);
 
         $padrougasArray = $padrougas;
-        usort($padrougasArray, static fn(array $x, array $y) => $x['name'] <=> $y['name']);
+        usort($padrougasArray, static fn (array $x, array $y) => $x['name'] <=> $y['name']);
 
         $this->assertEquals($padrougasArray, $array);
     }
