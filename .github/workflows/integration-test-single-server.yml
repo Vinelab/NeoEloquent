@@ -1,0 +1,50 @@
+name: Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    name: "Running on PHP 8.1 with a Neo4j 5.5 instance"
+
+    services:
+      neo4j:
+        image: neo4j:5.5
+        env:
+          NEO4J_AUTH: neo4j/testtest
+          NEO4JLABS_PLUGINS: '["apoc"]'
+        ports:
+          - 7687:7687
+          - 7474:7474
+        options: >-
+          --health-cmd "wget -q --method=HEAD http://localhost:7474 || exit 1"
+          --health-start-period "60s"
+          --health-interval "30s"
+          --health-timeout "15s"
+          --health-retries "5"
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache Composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+      - uses: php-actions/composer@v6
+        with:
+          progress: yes
+          php_version: 8.1
+          version: 2
+      - uses: php-actions/phpunit@v3
+        with:
+          configuration: phpunit.xml.dist
+          php_version: 8.1
+          version: 9
+          testsuite: Integration
+          bootstrap: vendor/autoload.php
