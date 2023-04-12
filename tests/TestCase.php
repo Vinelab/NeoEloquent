@@ -7,7 +7,6 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Vinelab\NeoEloquent\NeoEloquentServiceProvider;
-use function env;
 
 class TestCase extends BaseTestCase
 {

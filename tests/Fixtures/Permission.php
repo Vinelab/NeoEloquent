@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Vinelab\NeoEloquent\Tests\Functional\Role;
 
 class Permission extends Model
 {

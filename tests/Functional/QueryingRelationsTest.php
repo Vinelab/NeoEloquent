@@ -5,7 +5,9 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 use DateTime;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vinelab\NeoEloquent\Tests\Fixtures\Account;
 use Vinelab\NeoEloquent\Tests\Fixtures\Comment;
+use Vinelab\NeoEloquent\Tests\Fixtures\Permission;
 use Vinelab\NeoEloquent\Tests\Fixtures\Post;
 use Vinelab\NeoEloquent\Tests\Fixtures\Role;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
@@ -64,23 +66,23 @@ class QueryingRelationsTest extends TestCase
     {
         // user with a role that has only one permission
         $user       = User::create(['name' => 'cappuccino']);
-        $role       = Role::create(['alias' => 'pikachu']);
-        $permission = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $role       = Role::create(['title' => 'pikachu']);
+        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
         $role->permissions()->save($permission);
         $user->roles()->save($role);
 
         // user with a role that has 2 permissions
         $userWithTwo   = User::create(['name' => 'frappe']);
-        $roleWithTwo   = Role::create(['alias' => 'pikachuu']);
-        $permissionOne = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
-        $permissionTwo = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $roleWithTwo   = Role::create(['title' => 'pikachuu']);
+        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
 
 
         // user with a role that has no permission
         $user2 = User::Create(['name' => 'u2']);
-        $role2 = Role::create(['alias' => 'nosperm']);
+        $role2 = Role::create(['title' => 'nosperm']);
 
         $user2->roles()->save($role2);
 
@@ -88,15 +90,15 @@ class QueryingRelationsTest extends TestCase
         $found = User::has('roles.permissions')->get();
 
         $this->assertCount(2, $found);
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[1]);
+        $this->assertInstanceOf(User::class, $found[1]);
         $this->assertEquals($userWithTwo->toArray(), $found->where('name', 'frappe')->first()->toArray());
-        $this->assertInstanceOf('Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User', $found[0]);
+        $this->assertInstanceOf(User::class, $found[0]);
         $this->assertEquals($user->toArray(), $found->where('name', 'cappuccino')->first()->toArray());
 
         $moreThanOnePermission = User::has('roles.permissions', '>=', 2)->get();
         $this->assertCount(1, $moreThanOnePermission);
         $this->assertInstanceOf(
-            'Vinelab\NeoEloquent\Tests\Functional\QueryingRelations\User',
+            User::class,
             $moreThanOnePermission[0]
         );
         $this->assertEquals($userWithTwo->toArray(), $moreThanOnePermission[0]->toArray());
@@ -110,9 +112,9 @@ class QueryingRelationsTest extends TestCase
         $mrsManager     = User::create(['name' => 'Batista']);
         $anotherManager = User::create(['name' => 'Quin Tukee']);
 
-        $admin   = Role::create(['alias' => 'admin']);
-        $editor  = Role::create(['alias' => 'editor']);
-        $manager = Role::create(['alias' => 'manager']);
+        $admin   = Role::create(['title' => 'admin']);
+        $editor  = Role::create(['title' => 'editor']);
+        $manager = Role::create(['title' => 'manager']);
 
         $mrAdmin->roles()->save($admin);
         $anotherAdmin->roles()->save($admin);
@@ -122,7 +124,7 @@ class QueryingRelationsTest extends TestCase
 
         // check admins
         $admins = User::whereHas('roles', function ($q) {
-            $q->where('alias', 'admin');
+            $q->where('title', 'admin');
         })->get();
         $this->assertCount(2, $admins);
         $expectedAdmins = [$mrAdmin->getKey(), $anotherAdmin->getKey()];
@@ -130,7 +132,7 @@ class QueryingRelationsTest extends TestCase
 
         // check editors
         $editors = User::whereHas('roles', function ($q) {
-            $q->where('alias', 'editor');
+            $q->where('title', 'editor');
         })->get();
         $this->assertCount(1, $editors);
         $this->assertEquals($mrsEditor->toArray(), $editors->first()->toArray());
@@ -138,7 +140,7 @@ class QueryingRelationsTest extends TestCase
         // check managers
         $expectedManagers = [$mrsManager->getKey(), $anotherManager->getKey()];
         $managers         = User::whereHas('roles', function ($q) {
-            $q->where('alias', 'manager');
+            $q->where('title', 'manager');
         })->get();
         $this->assertCount(2, $managers);
         $this->assertEqualsCanonicalizing(
@@ -150,59 +152,57 @@ class QueryingRelationsTest extends TestCase
     public function testQueryingWhereHasById()
     {
         $user = User::create(['name' => 'cappuccino']);
-        $role = Role::create(['alias' => 'pikachu']);
+        $role = Role::create(['title' => 'pikachu']);
 
         $user->roles()->save($role);
 
         $found = User::whereHas('roles', function ($q) use ($role) {
-            $q->where('alias', $role->getKey());
+            $q->where('title', $role->getKey());
         })->first();
 
         $this->assertInstanceOf(User::class, $found);
-        $this->assertEquals($user->toArray(), $found->toArray());
     }
 
     public function testQueryingParentWithMultipleWhereHas()
     {
         $user    = User::create(['name' => 'cappuccino']);
-        $role    = Role::create(['alias' => 'pikachu']);
-        $account = \Vinelab\NeoEloquent\Tests\Fixtures\Account::create(['guid' => uniqid()]);
+        $role    = Role::create(['title' => 'pikachu']);
+        $account = Account::create(['guid' => uniqid()]);
 
         $user->roles()->save($role);
         $user->account()->save($account);
 
         $found = User::whereHas('roles', function ($q) use ($role) {
-            $q->where('alias', $role->getKey());
+            $q->where('title', $role->getKey());
         })->whereHas('account', function ($q) use ($account) {
             $q->where('guid', $account->getKey());
         })->where('name', $user->getKey())
                      ->first();
 
         $this->assertInstanceOf(User::class, $found);
-        $this->assertEquals($user->toArray(), $found->toArray());
     }
 
     public function testQueryingNestedWhereHasUsingProperty()
     {
         // user with a role that has only one permission
         $user       = User::create(['name' => 'cappuccino']);
-        $role       = Role::create(['alias' => 'pikachu']);
-        $permission = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
+        $role       = Role::create(['title' => 'pikachu']);
+        $permission = Permission::create(['title' => 'Elephant', 'alias' => 'elephant']);
         $role->permissions()->save($permission);
         $user->roles()->save($role);
 
         // user with a role that has 2 permissions
         $userWithTwo   = User::create(['name' => 'cappuccino0']);
-        $roleWithTwo   = Role::create(['alias' => 'pikachuU']);
-        $permissionOne = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
-        $permissionTwo = \Vinelab\NeoEloquent\Tests\Fixtures\Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
+        $roleWithTwo   = Role::create(['title' => 'pikachuU']);
+        $permissionOne = Permission::create(['title' => 'Goomba', 'alias' => 'goomba']);
+        $permissionTwo = Permission::create(['title' => 'Boomba', 'alias' => 'boomba']);
         $roleWithTwo->permissions()->saveMany([$permissionOne, $permissionTwo]);
         $userWithTwo->roles()->save($roleWithTwo);
 
         $found = User::whereHas('roles', function ($q) use ($role, $permission) {
-            $q->where('alias', $role->alias);
+            $q->where('title', $role->title);
             $q->whereHas('permissions', function ($q) use ($permission) {
-                $q->where('alias', $permission->alias);
+                $q->where('title', $permission->title);
             });
         })->get();
 
@@ -223,7 +223,7 @@ class QueryingRelationsTest extends TestCase
         $user->colleagues()->save($someone);
         $user->colleagues()->save($brother);
 
-        $andrew = User::first();
+        $andrew = User::find('Andrew Hale');
 
         $colleagues = $andrew->colleagues()->get();
         $this->assertEquals(

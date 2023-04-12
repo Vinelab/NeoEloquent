@@ -99,10 +99,10 @@ class WheresTheTest extends TestCase
 
     public function testWhereGreaterThanOperator()
     {
-        $u = User::where('calls', '>', 10)->first();
+        $u = User::where('calls', '>', 10)->orderBy('calls')->first();
         $this->assertEquals($this->cd->toArray(), $u->toArray());
 
-        $others = User::where('calls', '>', 10)->get();
+        $others = User::where('calls', '>', 10)->orderBy('calls')->get();
         $this->assertCount(4, $others);
 
         $brothers = [
@@ -113,7 +113,7 @@ class WheresTheTest extends TestCase
         ];
         $this->assertEquals($brothers, $others->toArray());
 
-        $lastTwo = User::where('calls', '>=', 40)->get();
+        $lastTwo = User::where('calls', '>=', 40)->orderBy('calls')->get();
         $this->assertCount(2, $lastTwo);
 
         $mothers = [$this->gh->toArray(), $this->ij->toArray()];
@@ -128,10 +128,10 @@ class WheresTheTest extends TestCase
         $u = User::where('calls', '<', 10)->get();
         $this->assertCount(0, $u);
 
-        $ab = User::where('calls', '<', 20)->first();
+        $ab = User::where('calls', '<', 20)->orderBy('calls')->first();
         $this->assertEquals($this->ab->toArray(), $ab->toArray());
 
-        $three = User::where('calls', '<=', 30)->get();
+        $three = User::where('calls', '<=', 30)->orderBy('calls')->get();
         $this->assertCount(3, $three);
 
         $cocoa = [
@@ -165,7 +165,7 @@ class WheresTheTest extends TestCase
 
     public function testWhereIn()
     {
-        $alpha = User::whereIn('alias', ['ab', 'cd', 'ef', 'gh', 'ij'])->get();
+        $alpha = User::whereIn('alias', ['ab', 'cd', 'ef', 'gh', 'ij'])->orderBy('alias')->get();
 
         $crocodile = collect([
             $this->ab->toArray(),
@@ -180,7 +180,7 @@ class WheresTheTest extends TestCase
 
     public function testWhereNotNull()
     {
-        $alpha = User::whereNotNull('alias')->get();
+        $alpha = User::whereNotNull('alias')->orderBy('calls')->get();
 
         $crocodile = collect([
             $this->ab->toArray(),
@@ -210,7 +210,7 @@ class WheresTheTest extends TestCase
          * WHERE actor NOT IN coactors
          * RETURN actor
          */
-        $u     = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->get();
+        $u     = User::whereNotIn('alias', ['ab', 'cd', 'ef'])->orderBy('calls')->get();
         $still = [$this->gh->toArray(), $this->ij->toArray()];
 
         $this->assertCount(2, $u);
@@ -236,6 +236,7 @@ class WheresTheTest extends TestCase
                        ->orWhere('email', 'ef@alpha.bet')
                        ->orWhere('name', $this->gh->getKey())
                        ->orWhere('calls', '>', 40)
+                       ->orderBy('calls')
                        ->get();
 
         $this->assertCount(5, $buddies);
@@ -310,7 +311,7 @@ class WheresTheTest extends TestCase
 
         $this->assertEquals($this->ab->toArray(), $ab->toArray());
 
-        $users = User::whereIn('alias', ['cd', 'ef'])->get();
+        $users = User::whereIn('alias', ['cd', 'ef'])->orderBy('alias')->get();
 
         $this->assertEquals($this->cd->toArray(), $users[0]->toArray());
         $this->assertEquals($this->ef->toArray(), $users[1]->toArray());

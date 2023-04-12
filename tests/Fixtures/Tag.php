@@ -4,8 +4,6 @@ namespace Vinelab\NeoEloquent\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use Vinelab\NeoEloquent\Tests\Fixtures\Post;
-use Vinelab\NeoEloquent\Tests\Fixtures\Video;
 
 class Tag extends Model
 {

@@ -8,43 +8,24 @@ use Illuminate\Database\Schema\Grammars\Grammar;
 use RuntimeException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Fluent;
-
+use Vinelab\NeoEloquent\DSLContext;
+use Vinelab\NeoEloquent\ManagesDSLContext;
+use WikibaseSolutions\CypherDSL\Parameter;
+use WikibaseSolutions\CypherDSL\Query;
 use function addslashes;
-use function array_filter;
-use function array_map;
 use function array_merge;
 use function array_values;
 use function collect;
 use function implode;
 use function in_array;
-use function is_array;
 use function is_int;
 use function is_null;
-use function preg_replace;
-use function reset;
 use function sprintf;
 use function str_replace;
 use function trim;
 
 class CypherGrammar extends Grammar
 {
-    /**
-     * The possible column modifiers.
-     *
-     * @var string[]
-     */
-    protected $modifiers = [
-        'Unsigned', 'Charset', 'Collate', 'VirtualAs', 'StoredAs', 'Nullable', 'Invisible',
-        'Srid', 'Default', 'Increment', 'Comment', 'After', 'First',
-    ];
-
-    /**
-     * The possible column serials.
-     *
-     * @var string[]
-     */
-    protected $serials = ['bigInteger', 'integer', 'mediumInteger', 'smallInteger', 'tinyInteger'];
-
     public function compileCreateDatabase($name, $connection): string
     {
         throw new BadMethodCallException('CRUD operations on databases are not yet supported');
@@ -62,12 +43,12 @@ class CypherGrammar extends Grammar
      */
     public function compileTableExists(): string
     {
-        return <<<'CYPHER'
-CALL db.labels()
-YIELD label
-WHERE label = $param0
-RETURN *
-CYPHER;
+        return Query::new()
+            ->callProcedure('db.labels')
+            ->raw('YIELD', 'label')
+            ->where(Query::variable('label')->equals(Query::parameter('param0')))
+            ->returning(Query::rawExpression('*'))
+            ->toQuery();
     }
 
     /**

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit backupGlobals="false"
+         backupStaticAttributes="false"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnFailure="false"
+>
+    <testsuites>
+        <testsuite name="NeoEloquent Test Suite">
+            <directory suffix=".php">./tests/Vinelab</directory>
+            <directory suffix=".php">./tests/functional</directory>
+        </testsuite>
+        <testsuite name="f">
+            <directory suffix=".php">./tests/functional</directory>
+        </testsuite>
+        <testsuite name="u">
+            <directory suffix=".php">./tests/Vinelab</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="APP_KEY" value="base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10="/>
+    </php>
+</phpunit>

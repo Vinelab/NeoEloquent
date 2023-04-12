@@ -53,12 +53,9 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
     /**
      * @return mixed
      */
-    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
+    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null): mixed
     {
-        /** @var SummarizedResult $result */
-        $result = $query->getConnection()->insert($sql, $values);
-
-        return $result->first()->first()->getValue();
+        return Arr::first($query->getConnection()->selectOne($sql, $values, false));
     }
 
     /**

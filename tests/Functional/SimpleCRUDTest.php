@@ -210,7 +210,7 @@ class SimpleCRUDTest extends TestCase
         // Let's fetch them to see if that's really true.
         $wizzez = Wiz::all(['fiz', 'biz'])->toArray();
 
-        $this->assertEquals($batch, $wizzez);
+        $this->assertEqualsCanonicalizing($batch, $wizzez);
     }
 
     public function testInsertingSingleAndGettingId()

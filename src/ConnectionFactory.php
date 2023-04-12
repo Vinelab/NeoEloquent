@@ -37,11 +37,11 @@ final class ConnectionFactory
         }
 
         $driver = Driver::create($uri, DriverConfiguration::default(), $auth);
-        $config = SessionConfiguration::default()
+        $sessionConfig = SessionConfiguration::default()
             ->withDatabase($database);
         return new Connection(
-            $driver->createSession($config->withAccessMode(AccessMode::READ())),
-            $driver->createSession(),
+            $driver->createSession($sessionConfig->withAccessMode(AccessMode::READ())),
+            $driver->createSession($sessionConfig),
             $database,
             $prefix,
             $config

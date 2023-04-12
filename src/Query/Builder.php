@@ -146,16 +146,16 @@ class Builder extends \Illuminate\Database\Query\Builder
         return $this;
     }
 
-    protected function runSelect(): array
+    public function addWhereCountQuery(self $query,  $operator = '>=', $count = 1, $boolean = 'and'): Builder
     {
-        $query = $this->toSql();
-        if (method_exists($this->grammar, 'latestBoundParameters')) {
-            $bindings = $this->grammar->latestBoundParameters();
-        } else {
-            $bindings = $this->getBindings();
-        }
+        $type = 'count';
+        $value = $count;
 
-        return $this->connection->select($query, $bindings, ! $this->useWritePdo);
+        $this->wheres[] = compact('type', 'query', 'operator', 'value', 'boolean');
+
+        $this->addBinding($query->getBindings(), 'where');
+
+        return $this;
     }
 
     public function insert(array $values): bool

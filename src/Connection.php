@@ -14,6 +14,7 @@ use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema;
+use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
@@ -23,6 +24,7 @@ use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
 use Throwable;
 use Vinelab\NeoEloquent\Query\CypherGrammar;
+use Vinelab\NeoEloquent\Schema\Builder;
 
 final class Connection extends \Illuminate\Database\Connection
 {
@@ -38,8 +40,6 @@ final class Connection extends \Illuminate\Database\Connection
     )
     {
         parent::__construct(static fn () => null, $database, $tablePrefix, $config);
-        $this->postProcessor = new Processor();
-        $this->schemaGrammar = new Schema\Grammars\MySqlGrammar();
     }
 
     protected function getDefaultQueryGrammar(): CypherGrammar
@@ -48,14 +48,30 @@ final class Connection extends \Illuminate\Database\Connection
     }
 
 
-    protected function getDefaultSchemaGrammar(): Schema\Grammars\MySqlGrammar
+    protected function getDefaultSchemaGrammar(): \Vinelab\NeoEloquent\Schema\CypherGrammar
     {
-        return new Schema\Grammars\MySqlGrammar();
+        return new \Vinelab\NeoEloquent\Schema\CypherGrammar();
     }
 
-    protected function getDefaultPostProcessor(): Processor
+    public function query(): Query\Builder
     {
-        return new Processor();
+        return new Query\Builder(
+            $this, $this->getQueryGrammar(), $this->getPostProcessor()
+        );
+    }
+
+    public function getSchemaBuilder(): Builder
+    {
+        if (is_null($this->schemaGrammar)) {
+            $this->useDefaultSchemaGrammar();
+        }
+
+        return new Builder($this);
+    }
+
+    protected function getDefaultPostProcessor(): \Vinelab\NeoEloquent\Processor
+    {
+        return new \Vinelab\NeoEloquent\Processor();
     }
 
     public function getSession(bool $read = false): SessionInterface
@@ -90,7 +106,7 @@ final class Connection extends \Illuminate\Database\Connection
             $result = $callback($query, $bindings);
         } catch (Throwable $e) {
             throw new QueryException(
-                'CYPHER', $query, $this->prepareBindings($bindings), $e
+                'bolt', $query, $this->prepareBindings($bindings), $e
             );
         }
 
@@ -101,7 +117,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function scalar($query, $bindings = [], $useReadPdo = true)
     {
-        return $this->selectOne($query, $bindings, $useReadPdo)?->first()->getValue();
+        return Arr::first($this->selectOne($query, $bindings, $useReadPdo));
     }
 
     public function cursor($query, $bindings = [], $useReadPdo = true): Generator
@@ -115,14 +131,18 @@ final class Connection extends \Illuminate\Database\Connection
             $this->event(new StatementPrepared($this, new Statement($query, $bindings)));
 
             yield from $this->getRunner($useReadPdo)
-                ->run($query, $this->prepareBindings($bindings))
+                ->run($query, array_merge($this->prepareBindings($bindings), $this->queryGrammar->getBoundParameters($query)))
                 ->map(static fn(CypherMap $map) => $map->toArray());
         });
     }
 
     public function select($query, $bindings = [], $useReadPdo = true): array
     {
-        return iterator_to_array($this->cursor($query, $bindings, $useReadPdo));
+        try {
+            return iterator_to_array($this->cursor($query, $bindings, $useReadPdo));
+        } catch (Neo4jException $e) {
+            throw new QueryException($this->getName(), $query, $bindings, $e);
+        }
     }
 
     public function statement($query, $bindings = []): bool
@@ -146,7 +166,7 @@ final class Connection extends \Illuminate\Database\Connection
                 return true;
             }
 
-            $parameters = $this->prepareBindings($bindings);
+            $parameters = array_merge($this->prepareBindings($bindings), $this->queryGrammar->getBoundParameters($query));
             $result = $this->getRunner()->run($query, $parameters);
 
             return $this->summarizeCounters($result->getSummary()->getCounters());
@@ -198,7 +218,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function beginTransaction(): void
     {
-        $this->transactions[] = $this->getSession()->beginTransaction();
+        $this->activeTransactions[] = $this->getSession()->beginTransaction();
 
         $this->transactionsManager?->begin(
             $this->getName(), $this->transactions
@@ -257,7 +277,7 @@ final class Connection extends \Illuminate\Database\Connection
             $counters->relationshipsDeleted();
     }
 
-    public function selectOne($query, $bindings = [], $useReadPdo = true)
+    public function selectOne($query, $bindings = [], $useReadPdo = true): array
     {
         return $this->cursor($query, $bindings, $useReadPdo)->current();
     }

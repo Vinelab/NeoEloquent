@@ -6,6 +6,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Vinelab\NeoEloquent\DSLContext;
+use Vinelab\NeoEloquent\ManagesDSLContext;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
@@ -17,6 +18,11 @@ use function implode;
 
 class CypherGrammar extends Grammar
 {
+    use ManagesDSLContext;
+
+    /** @var array<string, DSLContext> */
+    public static array $contextCache = [];
+
     /**
      * The components that make up a select clause.
      *
@@ -38,26 +44,18 @@ class CypherGrammar extends Grammar
         'offset', // SKIP
     ];
 
-    private ?DSLContext $context = null;
-
-    public function latestBoundParameters(): array
-    {
-        if ($this->context === null) {
-            return [];
-        }
-
-        return $this->context->getParameters();
-    }
-
     public function compileSelect(Builder $query): string
     {
-        $this->context = new DSLContext();
-        return $this->dsl->compileSelect($query, $this->context)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query) {
+            return $this->dsl->compileSelect($query, $context)->toQuery();
+        });
     }
 
     public function compileWheres(Builder $query): string
     {
-        return $this->dsl->compileWheres($query, false, Query::new(), new DSLContext())->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query) {
+            $this->dsl->compileWheres($query, false, Query::new(), $context)->toQuery();
+        });
     }
 
     public function prepareBindingForJsonContains($binding): string
@@ -75,17 +73,23 @@ class CypherGrammar extends Grammar
 
     public function compileExists(Builder $query): string
     {
-        return $this->dsl->compileExists($query)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query) {
+            return $this->dsl->compileExists($query, $context)->toQuery();
+        });
     }
 
     public function compileInsert(Builder $query, array $values): string
     {
-        return $this->dsl->compileInsert($query, $values)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query, $values) {
+            return $this->dsl->compileInsert($query, $values, $context)->toQuery();
+        });
     }
 
     public function compileInsertOrIgnore(Builder $query, array $values): string
     {
-        return $this->dsl->compileInsertOrIgnore($query, $values)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query, $values) {
+            return $this->dsl->compileInsertOrIgnore($query, $values, $context)->toQuery();
+        });
     }
 
     public function compileInsertGetId(Builder $query, $values, $sequence): string
@@ -99,37 +103,48 @@ class CypherGrammar extends Grammar
             }
         }
 
-        return $this->dsl->compileInsertGetId($query, $values ?? [], $sequence ?? '')->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query, $sequence, $values) {
+            return $this->dsl->compileInsertGetId($query, $values ?? [], $sequence ?? '', $context)->toQuery();
+        });
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): string
     {
-        return $this->dsl->compileInsertUsing($query, $columns, $sql)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query, $columns, $sql) {
+            return $this->dsl->compileInsertUsing($query, $columns, $sql, $context)->toQuery();
+        });
     }
 
     public function compileUpdate(Builder $query, array $values): string
     {
-        return $this->dsl->compileUpdate($query, $values)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query, $values) {
+            return $this->dsl->compileUpdate($query, $values, $context)->toQuery();
+        });
     }
 
     public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update): string
     {
-        return $this->dsl->compileUpsert($query, $values, $uniqueBy, $update)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query, $values, $uniqueBy, $update) {
+            return $this->dsl->compileUpsert($query, $values, $uniqueBy, $update, $context)->toQuery();
+        });
+
     }
 
-    public function prepareBindingsForUpdate(array $bindings, array $values)
+    public function prepareBindingsForUpdate(array $bindings, array $values): array
     {
-        return $this->dsl->prepareBindingsForUpdate($bindings, $values);
+        return [];
     }
 
     public function compileDelete(Builder $query): string
     {
-        return $this->dsl->compileDelete($query)->toQuery();
+        return $this->witCachedParams(function (DSLContext $context) use ($query) {
+            return $this->dsl->compileDelete($query, $context)->toQuery();
+        });
     }
 
     public function prepareBindingsForDelete(array $bindings): array
     {
-        return $this->dsl->prepareBindingsForDelete($bindings);
+        return [];
     }
 
     /**
@@ -209,9 +224,9 @@ class CypherGrammar extends Grammar
     /**
      * @param  mixed  $value
      */
-    public function parameter($value, ?DSLContext $context = null): string
+    public function parameter($value): string
     {
-        return $this->dsl->parameter($value, $context)->toQuery();
+        return $this->dsl->parameter($value, new DSLContext())->toQuery();
     }
 
     /**

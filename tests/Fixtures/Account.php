@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Vinelab\NeoEloquent\Tests\Functional\User;
 
 class Account extends Model
 {

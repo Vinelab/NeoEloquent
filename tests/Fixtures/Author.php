@@ -19,6 +19,6 @@ class Author extends Model
 
     public function books(): HasMany
     {
-        return $this->hasMany(\Vinelab\NeoEloquent\Tests\Fixtures\Book::class, 'WROTE');
+        return $this->hasMany(Book::class, 'WROTE');
     }
 }

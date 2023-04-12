@@ -133,12 +133,12 @@ class PolymorphicHyperMorphToTest extends TestCase
         $tagY->videos()->sync([$videoX->getKey(), $videoY->getKey()]);
         $tagZ->videos()->sync([$videoX->getKey()]);
 
-        $this->assertEquals([$postX->getKey(), $postY->getKey(), $postZ->getKey()], $tagX->posts->pluck($postX->getKeyName())->toArray());
-        $this->assertEquals([$postY->getKey(), $postZ->getKey()], $tagY->posts->pluck($postX->getKeyName())->toArray());
-        $this->assertEquals([$postZ->getKey()], $tagZ->posts->pluck($postX->getKeyName())->toArray());
+        $this->assertEqualsCanonicalizing([$postX->getKey(), $postY->getKey(), $postZ->getKey()], $tagX->posts->pluck($postX->getKeyName())->toArray());
+        $this->assertEqualsCanonicalizing([$postY->getKey(), $postZ->getKey()], $tagY->posts->pluck($postX->getKeyName())->toArray());
+        $this->assertEqualsCanonicalizing([$postZ->getKey()], $tagZ->posts->pluck($postX->getKeyName())->toArray());
 
-        $this->assertEquals([$videoX->getKey(), $videoY->getKey(), $videoZ->getKey()], $tagX->videos->pluck($videoX->getKeyName())->toArray());
-        $this->assertEquals([$videoX->getKey(), $videoY->getKey()], $tagY->videos->pluck($videoX->getKeyName())->toArray());
-        $this->assertEquals([$videoX->getKey()], $tagZ->videos->pluck($videoX->getKeyName())->toArray());
+        $this->assertEqualsCanonicalizing([$videoX->getKey(), $videoY->getKey(), $videoZ->getKey()], $tagX->videos->pluck($videoX->getKeyName())->toArray());
+        $this->assertEqualsCanonicalizing([$videoX->getKey(), $videoY->getKey()], $tagY->videos->pluck($videoX->getKeyName())->toArray());
+        $this->assertEqualsCanonicalizing([$videoX->getKey()], $tagZ->videos->pluck($videoX->getKeyName())->toArray());
     }
 }

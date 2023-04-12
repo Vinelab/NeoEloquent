@@ -46,7 +46,7 @@ class HasOneRelationTest extends TestCase
         $this->assertInstanceOf(Profile::class, $relation);
         $this->assertArrayHasKey('profile', $relations);
 
-        $this->assertEquals($profile->toArray(), $relations['profile']->toArray());
+        $this->assertEquals($profile->toArray(), $user->profile->toArray());
     }
 
     public function testSavingMultipleRelationsKeepsOnlyTheLastOne()

@@ -15,6 +15,7 @@ class User extends Model
     protected $fillable = ['name', 'alias', 'logins', 'points', 'email', 'uuid', 'calls', 'dob'];
     protected $primaryKey = 'name';
     public $incrementing = false;
+    protected $keyType = 'string';
 
     public function location(): BelongsTo
     {
@@ -28,22 +29,22 @@ class User extends Model
 
     public function profile(): HasOne
     {
-        return $this->hasOne(\Vinelab\NeoEloquent\Tests\Fixtures\Profile::class);
+        return $this->hasOne(Profile::class);
     }
 
     public function facebookAccount(): HasOne
     {
-        return $this->hasOne(\Vinelab\NeoEloquent\Tests\Fixtures\FacebookAccount::class);
+        return $this->hasOne(FacebookAccount::class);
     }
 
     public function posts(): MorphToMany
     {
-        return $this->morphToMany(\Vinelab\NeoEloquent\Tests\Fixtures\Post::class, 'postable');
+        return $this->morphToMany(Post::class, 'postable');
     }
 
     public function videos(): MorphToMany
     {
-        return $this->morphToMany(\Vinelab\NeoEloquent\Tests\Fixtures\Video::class, 'videoable');
+        return $this->morphToMany(Video::class, 'videoable');
     }
 
     public function account(): HasOne
@@ -53,7 +54,7 @@ class User extends Model
 
     public function colleagues(): HasMany
     {
-        return $this->hasMany(\Vinelab\NeoEloquent\Tests\Functional\User::class);
+        return $this->hasMany(User::class);
     }
 
     public function organization(): BelongsTo
