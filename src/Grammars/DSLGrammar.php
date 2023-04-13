@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Query;
+namespace Vinelab\NeoEloquent\Grammars;
 
 use function array_filter;
 use function array_key_exists;
@@ -21,7 +21,6 @@ use Illuminate\Support\Collection;
 use function in_array;
 use function is_array;
 use function is_string;
-use Mockery\Matcher\Any;
 use function preg_split;
 use function reset;
 use RuntimeException;
@@ -72,10 +71,10 @@ final class DSLGrammar
 {
     private string $tablePrefix = '';
 
-    /** @var array<string, callable(Builder, array, Query, DSLContext): array{0: AnyType, 1: list<CallClause>} */
+    /** @var array<string, callable(\Vinelab\NeoEloquent\Query\Builder, array, Query, DSLContext): array{0: AnyType, 1: list<CallClause>} */
     private array $wheres;
 
-    /** @var array<string, callable(Builder, array, Query, DSLContext): array{0: AnyType, 1: list<CallClause>} */
+    /** @var array<string, callable(\Vinelab\NeoEloquent\Query\Builder, array, Query, DSLContext): array{0: AnyType, 1: list<CallClause>} */
     private array $delayedWheres;
 
     public function __construct()
@@ -641,7 +640,7 @@ final class DSLGrammar
 
     private function whereNested(Builder $query, array $where, DSLContext $context): array
     {
-        /** @var Builder $nestedQuery */
+        /** @var \Vinelab\NeoEloquent\Query\Builder $nestedQuery */
         $nestedQuery = $where['query'];
 
         $sub = Query::new()->match($this->wrapTable($query->from));

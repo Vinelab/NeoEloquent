@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Eloquent\Relationships;
+namespace Vinelab\NeoEloquent\Relations;
 
 use Vinelab\NeoEloquent\Eloquent\HasHardRelationship;
 

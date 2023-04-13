@@ -49,7 +49,7 @@ Or add the package to your `composer.json` and run `composer update`.
 The post install script will automatically add the service provider in `app/config/app.php`:
 
 ```php
-Vinelab\NeoEloquent\NeoEloquentServiceProvider::class
+\Vinelab\NeoEloquent\Database\NeoEloquentServiceProvider::class
 ```
 
 ## Getting started

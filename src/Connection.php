@@ -23,13 +23,13 @@ use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
 use Throwable;
-use Vinelab\NeoEloquent\Query\CypherGrammar;
+use Vinelab\NeoEloquent\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Builder;
-use Vinelab\NeoEloquent\Schema\CypherGrammar as SchemaGrammar;
+use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
 
 final class Connection extends \Illuminate\Database\Connection
 {
-    /** @var list<UnmanagedTransactionInterface> */
+    /** @var UnmanagedTransactionInterface[] */
     private array $activeTransactions = [];
 
     public function __construct(
@@ -70,7 +70,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     protected function getDefaultPostProcessor(): Processor
     {
-        return new \Vinelab\NeoEloquent\Processor();
+        return new Processors\Processor();
     }
 
     public function getSession(bool $read = false): SessionInterface

@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Query;
+namespace Vinelab\NeoEloquent\Grammars;
 
 use function array_key_exists;
 use function array_map;
@@ -10,15 +10,12 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
 use function implode;
 use Vinelab\NeoEloquent\DSLContext;
-use Vinelab\NeoEloquent\ManagesDSLContext;
 use WikibaseSolutions\CypherDSL\Parameter;
 use WikibaseSolutions\CypherDSL\Query;
 use WikibaseSolutions\CypherDSL\QueryConvertable;
 
 class CypherGrammar extends Grammar
 {
-    use ManagesDSLContext;
-
     /** @var array<string, DSLContext> */
     public static array $contextCache = [];
 
@@ -282,4 +279,28 @@ class CypherGrammar extends Grammar
     }
 
     private DSLGrammar $dsl;
+
+    /**
+     * @param  callable(DSLContext): string  $compilation
+     */
+    protected function witCachedParams(callable $compilation): string
+    {
+        $context = new DSLContext();
+
+        $tbr = $compilation($context);
+
+        CypherGrammar::cacheContext($tbr, $context);
+
+        return $tbr;
+    }
+
+    public static function cacheContext(string $query, DSLContext $context): void
+    {
+        CypherGrammar::$contextCache[$query] = $context;
+    }
+
+    public static function getBoundParameters(string $query): array
+    {
+        return (CypherGrammar::$contextCache[$query] ?? null)?->getParameters() ?? [];
+    }
 }

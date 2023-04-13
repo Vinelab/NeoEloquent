@@ -1,21 +1,36 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Eloquent;
+namespace Vinelab\NeoEloquent\Concerns;
 
-use function class_basename;
 use Illuminate\Database\Eloquent\Concerns\HasRelationships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use function implode;
-use function sort;
-use function strtolower;
 
 /**
  * @mixin HasRelationships
  * @mixin Model
  */
-trait FollowsGraphConventions
+trait IsGraphAware
 {
+    use HasRelationships;
+
+    public bool $incrementing = false;
+
+    public function setLabel(string $label): self
+    {
+        return $this->setTable($label);
+    }
+
+    public function getLabel(): string
+    {
+        return $this->getTable();
+    }
+
+    public function nodeLabel(): string
+    {
+        return $this->getTable();
+    }
+
     public static bool $snakeAttributes = false;
 
     public function getForeignKey(): string

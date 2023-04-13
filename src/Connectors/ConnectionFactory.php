@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent;
+namespace Vinelab\NeoEloquent\Connectors;
 
 use Laudis\Neo4j\Authentication\Authenticate;
 use Laudis\Neo4j\Basic\Driver;
@@ -8,6 +8,7 @@ use Laudis\Neo4j\Common\Uri;
 use Laudis\Neo4j\Databags\DriverConfiguration;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
+use Vinelab\NeoEloquent\Connection;
 
 final class ConnectionFactory
 {

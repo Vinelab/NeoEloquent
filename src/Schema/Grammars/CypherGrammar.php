@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Schema;
+namespace Vinelab\NeoEloquent\Schema\Grammars;
 
 use function addslashes;
 use function array_merge;

@@ -14,7 +14,7 @@ class DSLContext
     /** @var array<string, mixed> */
     private array $parameters = [];
 
-    /** @var list<Variable> */
+    /** @var Variable */
     private array $withStack = [];
 
     private int $subResultCounter = 0;
@@ -60,7 +60,7 @@ class DSLContext
     }
 
     /**
-     * @return list<Variable>
+     * @return Variable
      */
     public function getVariables(): array
     {

@@ -2,8 +2,10 @@
 
 namespace Vinelab\NeoEloquent;
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\ServiceProvider;
+use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
 use WikibaseSolutions\CypherDSL\Query;
 
 class NeoEloquentServiceProvider extends ServiceProvider
@@ -14,7 +16,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
             return $this->app->get(ConnectionFactory::class)->make($database, $prefix, $config);
         };
 
-        \Illuminate\Database\Connection::resolverFor('neo4j', $resolver(...));
+        Connection::resolverFor('neo4j', $resolver(...));
 
         $this->registerPercentile('percentileDisc');
         $this->registerPercentile('percentileCont');
@@ -26,7 +28,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
     private function registerPercentile(string $function): void
     {
         $macro = function (string $logins, $percentile = null) use ($function) {
-            /** @var Builder $x */
+            /** @var \Vinelab\NeoEloquent\Query\Builder $x */
             $x = $this;
 
             return $x->aggregate($function, [$logins, Query::literal($percentile ?? 0.0)]);
@@ -38,7 +40,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
     private function registerAggregate(string $function): void
     {
         $macro = function (string $logins) use ($function) {
-            /** @var Builder $x */
+            /** @var \Vinelab\NeoEloquent\Query\Builder $x */
             $x = $this;
 
             return $x->aggregate($function, $logins);
@@ -48,10 +50,10 @@ class NeoEloquentServiceProvider extends ServiceProvider
         \Illuminate\Database\Eloquent\Builder::macro($function, $macro);
     }
 
-    private function registerCollect()
+    private function registerCollect(): void
     {
         $macro = function (string $logins) {
-            /** @var Builder $x */
+            /** @var \Vinelab\NeoEloquent\Query\Builder $x */
             $x = $this;
 
             return collect($x->aggregate('collect', $logins)->toArray());

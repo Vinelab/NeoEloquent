@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
 use Vinelab\NeoEloquent\DSLContext;
-use Vinelab\NeoEloquent\Query\CypherGrammar;
+use Vinelab\NeoEloquent\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class FinalModel extends Model

@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent\Exceptions;
+namespace Vinelab\NeoEloquent;
 
 use Exception;
 

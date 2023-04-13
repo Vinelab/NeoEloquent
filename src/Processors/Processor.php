@@ -1,6 +1,6 @@
 <?php
 
-namespace Vinelab\NeoEloquent;
+namespace Vinelab\NeoEloquent\Processors;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
@@ -13,7 +13,7 @@ use function str_replace;
 
 class Processor extends \Illuminate\Database\Query\Processors\Processor
 {
-    public function processSelect(Builder $query, $results)
+    public function processSelect(Builder $query, $results): array
     {
         $tbr = [];
         $from = $query->from;
@@ -50,10 +50,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         return Arr::first($query->getConnection()->selectOne($sql, $values, false));
     }
 
-    /**
-     * @return mixed
-     */
-    private function filterDateTime($x)
+    private function filterDateTime($x): mixed
     {
         if (is_object($x) && method_exists($x, 'toDateTime')) {
             return $x->toDateTime();
