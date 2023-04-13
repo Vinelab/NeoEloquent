@@ -1,10 +1,11 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 namespace Vinelab\NeoEloquent\Concerns;
 
 use Illuminate\Database\Eloquent\Concerns\HasRelationships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Ramsey\Uuid\Uuid;
 
 /**
  * @mixin HasRelationships
@@ -14,7 +15,22 @@ trait IsGraphAware
 {
     use HasRelationships;
 
-    public bool $incrementing = false;
+    public bool $generateId = true;
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'id';
+
+    public static function bootIsGraphAware(): void
+    {
+        static::creating(function (Model $model) {
+            if (property_exists($model, 'generateId') &&
+                $model->generateId &&
+                !array_key_exists('id', $model->attributesToArray())
+            ) {
+                $model->setAttribute('id', Uuid::uuid4()->toString());
+            }
+        });
+    }
 
     public function setLabel(string $label): self
     {
@@ -25,13 +41,6 @@ trait IsGraphAware
     {
         return $this->getTable();
     }
-
-    public function nodeLabel(): string
-    {
-        return $this->getTable();
-    }
-
-    public static bool $snakeAttributes = false;
 
     public function getForeignKey(): string
     {
