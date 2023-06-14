@@ -204,7 +204,7 @@ class ConnectionTest extends TestCase
         $connection = $this->getConnection();
 
         $result = $connection->transaction(function ($db) {
-        return $db;
+            return $db;
         });
         $this->assertEquals($connection, $result);
     }
@@ -215,7 +215,7 @@ class ConnectionTest extends TestCase
 
         try {
             $connection->transaction(function () {
-            throw new RuntimeException('foo');
+                throw new RuntimeException('foo');
             });
         } catch (Throwable $e) {
             $this->assertEquals('foo', $e->getMessage());

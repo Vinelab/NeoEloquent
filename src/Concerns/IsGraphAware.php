@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpMissingFieldTypeInspection */
+<?php
+
+/** @noinspection PhpMissingFieldTypeInspection */
 
 namespace Vinelab\NeoEloquent\Concerns;
 
@@ -16,16 +18,19 @@ trait IsGraphAware
     use HasRelationships;
 
     public bool $generateId = true;
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $primaryKey = 'id';
 
     public static function bootIsGraphAware(): void
     {
         static::creating(function (Model $model) {
-            if (property_exists($model, 'generateId') &&
-                $model->generateId &&
-                !array_key_exists('id', $model->attributesToArray())
+            /** @var Model&IsGraphAware $model */
+            if ($model->generateId &&
+                ! array_key_exists('id', $model->attributesToArray())
             ) {
                 $model->setAttribute('id', Uuid::uuid4()->toString());
             }

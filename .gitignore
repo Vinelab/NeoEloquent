@@ -9,3 +9,5 @@ Examples/**/vendor
 
 .phpunit.result.cache
 .phpunit.cache/
+
+.psalm

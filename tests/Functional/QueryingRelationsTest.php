@@ -176,7 +176,7 @@ class QueryingRelationsTest extends TestCase
         })->whereHas('account', function ($q) use ($account) {
             $q->where('guid', $account->getKey());
         })->where('name', $user->getKey())
-                     ->first();
+            ->first();
 
         $this->assertInstanceOf(User::class, $found);
     }

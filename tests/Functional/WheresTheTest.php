@@ -234,12 +234,12 @@ class WheresTheTest extends TestCase
     public function testOrWhere()
     {
         $buddies = User::where('name', 'Ey Bee')
-                       ->orWhere('alias', 'cd')
-                       ->orWhere('email', 'ef@alpha.bet')
-                       ->orWhere('name', $this->gh->getKey())
-                       ->orWhere('calls', '>', 40)
-                       ->orderBy('calls')
-                       ->get();
+            ->orWhere('alias', 'cd')
+            ->orWhere('email', 'ef@alpha.bet')
+            ->orWhere('name', $this->gh->getKey())
+            ->orWhere('calls', '>', 40)
+            ->orderBy('calls')
+            ->get();
 
         $this->assertCount(5, $buddies);
         $bigBrothers = [
@@ -256,8 +256,8 @@ class WheresTheTest extends TestCase
     public function testOrWhereIn()
     {
         $all = User::whereIn('name', [$this->ab->getKey(), $this->cd->getKey()])
-                   ->orWhereIn('alias', ['ef', 'gh', 'ij'])
-                   ->get();
+            ->orWhereIn('alias', ['ef', 'gh', 'ij'])
+            ->get();
 
         $padrougas = [
             $this->ab->toArray(),
@@ -293,9 +293,9 @@ class WheresTheTest extends TestCase
     public function testWhereMultipleValuesForSameColumn()
     {
         $u = User::where('alias', '=', 'ab')
-                 ->orWhere('alias', '=', 'cd')
-                 ->orderBy('alias')
-                 ->get();
+            ->orWhere('alias', '=', 'cd')
+            ->orderBy('alias')
+            ->get();
 
         $this->assertCount(2, $u);
         $this->assertEquals('ab', $u[0]->alias);

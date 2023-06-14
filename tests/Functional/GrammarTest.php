@@ -13,8 +13,8 @@ use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Support\Facades\DB;
 use Mockery as M;
 use PHPUnit\Framework\MockObject\MockObject;
-use Vinelab\NeoEloquent\DSLContext;
 use Vinelab\NeoEloquent\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\ParameterStack;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class FinalModel extends Model
@@ -117,7 +117,7 @@ class GrammarTest extends TestCase
 
     public function testParametrizeRepeatWithContext(): void
     {
-        $context = new DSLContext();
+        $context = new ParameterStack();
         $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c'], $context));
         $this->assertEquals('$param3, $param4, $param5', $this->grammar->parameterize(['a', 'b', 'c'], $context));
     }
@@ -167,7 +167,7 @@ class GrammarTest extends TestCase
             ->method('select')
             ->with('MATCH (Node:Node) RETURN * ORDER BY Node.x ASC, Node.y ASC, Node.z DESC', [], true);
 
-//        $this->table->grammar = new MySqlGrammar();
+        //        $this->table->grammar = new MySqlGrammar();
         $this->table->orderBy('x')->orderBy('y')->orderBy('z', 'desc')->get();
     }
 
@@ -449,15 +449,9 @@ class GrammarTest extends TestCase
 
     public function testWhereRelationship(): void
     {
-        $this->connection->expects($this->once())
-            ->method('select')
-            ->with(
-                'MATCH (Node:Node) WHERE (Node)-[:`HAS_OTHER_NODE`]->(OtherNode) RETURN *',
-                [],
-                true
-            );
+        $sql = $this->table->whereRelationship('HAS_OTHER_NODE', 'OtherNode', '>')->toSql();
 
-        $this->table->whereRelationship('HAS_OTHER_NODE>', 'OtherNode')->get();
+        $this->assertMatchesRegularExpression('/MATCH \(Node:Node\) WHERE -\[\w+:`HAS_OTHER_NODE`]-> RETURN \*/', $sql);
     }
 
     public function testRightJoin(): void

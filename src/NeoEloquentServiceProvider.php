@@ -3,8 +3,12 @@
 namespace Vinelab\NeoEloquent;
 
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\ServiceProvider;
+use Laudis\Neo4j\Basic\Driver;
+use Laudis\Neo4j\Databags\SessionConfiguration;
+use Laudis\Neo4j\Enum\AccessMode;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
 use WikibaseSolutions\CypherDSL\Query;
 
@@ -12,11 +16,9 @@ class NeoEloquentServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $resolver = function ($connection, string $database, string $prefix, array $config) {
-            return $this->app->get(ConnectionFactory::class)->make($database, $prefix, $config);
-        };
+        $this->app->singleton('db.connector.neo4j', ConnectionFactory::class);
 
-        Connection::resolverFor('neo4j', $resolver(...));
+        Connection::resolverFor('neo4j', $this->neo4jResolver(...));
 
         $this->registerPercentile('percentileDisc');
         $this->registerPercentile('percentileCont');
@@ -27,39 +29,59 @@ class NeoEloquentServiceProvider extends ServiceProvider
 
     private function registerPercentile(string $function): void
     {
-        $macro = function (string $logins, $percentile = null) use ($function) {
+        $macro = function (string $logins, float|int $percentile = null) use ($function): float {
             /** @var \Vinelab\NeoEloquent\Query\Builder $x */
             $x = $this;
 
             return $x->aggregate($function, [$logins, Query::literal($percentile ?? 0.0)]);
         };
+
         Builder::macro($function, $macro);
         \Illuminate\Database\Eloquent\Builder::macro($function, $macro);
     }
 
-    private function registerAggregate(string $function): void
+    private function registerAggregate(string $functionName): void
     {
-        $macro = function (string $logins) use ($function) {
+        $macro = function (string $logins) use ($functionName): mixed {
             /** @var \Vinelab\NeoEloquent\Query\Builder $x */
             $x = $this;
 
-            return $x->aggregate($function, $logins);
+            return $x->aggregate($functionName, [$logins]);
         };
 
-        Builder::macro($function, $macro);
-        \Illuminate\Database\Eloquent\Builder::macro($function, $macro);
+        Builder::macro($functionName, $macro);
+        \Illuminate\Database\Eloquent\Builder::macro($functionName, $macro);
     }
 
     private function registerCollect(): void
     {
-        $macro = function (string $logins) {
+        $macro = function (string $logins): Collection {
             /** @var \Vinelab\NeoEloquent\Query\Builder $x */
             $x = $this;
 
-            return collect($x->aggregate('collect', $logins)->toArray());
+            return new Collection($x->aggregate('collect', [$logins])->toArray());
         };
 
         Builder::macro('collect', $macro);
         \Illuminate\Database\Eloquent\Builder::macro('collect', $macro);
+    }
+
+    /**
+     * @param  callable():Driver  $driver
+     */
+    private function neo4jResolver(callable $driver, string $database, string $prefix, array $config): Connection
+    {
+        $sessionConfig = SessionConfiguration::default()
+            ->withDatabase($config['database'] ?? null);
+
+        $driver = $driver();
+
+        return new \Vinelab\NeoEloquent\Connection(
+            $driver->createSession($sessionConfig->withAccessMode(AccessMode::READ())),
+            $driver->createSession($sessionConfig),
+            $database,
+            $prefix,
+            $config
+        );
     }
 }

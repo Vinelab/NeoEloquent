@@ -2,22 +2,20 @@
 
 namespace Vinelab\NeoEloquent\Grammars;
 
-use function array_key_exists;
-use function array_map;
-use function debug_backtrace;
+use BadMethodCallException;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
-use function implode;
-use Vinelab\NeoEloquent\DSLContext;
-use WikibaseSolutions\CypherDSL\Parameter;
+use PhpGraphGroup\CypherQueryBuilder\GrammarPipeline;
+use PhpGraphGroup\QueryBuilder\QueryStructure;
+use Vinelab\NeoEloquent\ParameterStack;
+use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
+use Vinelab\NeoEloquent\Query\Grammar\VariableGrammar;
 use WikibaseSolutions\CypherDSL\Query;
-use WikibaseSolutions\CypherDSL\QueryConvertable;
 
 class CypherGrammar extends Grammar
 {
-    /** @var array<string, DSLContext> */
-    public static array $contextCache = [];
+    public function __construct() { }
 
     /**
      * The components that make up a select clause.
@@ -42,88 +40,95 @@ class CypherGrammar extends Grammar
 
     public function compileSelect(Builder $query): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query) {
-            return $this->dsl->compileSelect($query, $context)->toQuery();
-        });
+        return IlluminateToQueryStructurePipeline::create()
+            ->withWheres()
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher();
     }
 
     public function compileWheres(Builder $query): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query) {
-            $this->dsl->compileWheres($query, false, Query::new(), $context)->toQuery();
-        });
+        return IlluminateToQueryStructurePipeline::create()
+            ->withWheres()
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher(GrammarPipeline::create()->withWhereGrammar());
     }
 
     public function prepareBindingForJsonContains($binding): string
     {
-        return $this->dsl->prepareBindingForJsonContains($binding);
+        throw new BadMethodCallException('Json contains is not supported in Neo4j');
     }
 
-    /**
-     * @param  string  $seed
-     */
     public function compileRandom($seed): string
     {
-        return Query::function()::raw('rand', [])->toQuery();
+        return 'random()';
     }
 
     public function compileExists(Builder $query): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query) {
-            return $this->dsl->compileExists($query, $context)->toQuery();
-        });
+        return IlluminateToQueryStructurePipeline::create()
+            ->withWheres()
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher(GrammarPipeline::create()->withWhereGrammar());
     }
 
     public function compileInsert(Builder $query, array $values): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query, $values) {
-            return $this->dsl->compileInsert($query, $values, $context)->toQuery();
-        });
+        return IlluminateToQueryStructurePipeline::create()
+            ->withWheres()
+            ->withCreate($values)
+            ->pipe($query)
+            ->toCypher();
     }
 
     public function compileInsertOrIgnore(Builder $query, array $values): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query, $values) {
-            return $this->dsl->compileInsertOrIgnore($query, $values, $context)->toQuery();
-        });
+        throw new BadMethodCallException('Compile Insert or Ignore not supported by Neo4j');
     }
 
     public function compileInsertGetId(Builder $query, $values, $sequence): string
     {
-        // Very dirty hack as the model query builder does not propagate the sequence by default. There is no other way to access the key name then to backtrace it or introducing breaking api changes in the Model object.
-        if ($sequence === null) {
-            foreach (debug_backtrace() as $step) {
-                if (array_key_exists('object', $step) && $step['object'] instanceof \Illuminate\Database\Eloquent\Builder) {
-                    $sequence = $step['object']->getModel()->getKeyName();
-                }
+        foreach ($values as $i => $value) {
+            $values[$i] = [];
+            foreach (explode(',', $sequence) as $j => $key) {
+                $values[$i][$key] = $value[$j];
             }
         }
-
-        return $this->witCachedParams(function (DSLContext $context) use ($query, $sequence, $values) {
-            return $this->dsl->compileInsertGetId($query, $values ?? [], $sequence ?? '', $context)->toQuery();
-        });
+        return IlluminateToQueryStructurePipeline::create()
+            ->withCreate($values)
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher();
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query, $columns, $sql) {
-            return $this->dsl->compileInsertUsing($query, $columns, $sql, $context)->toQuery();
-        });
+        // TODO
+        throw new BadMethodCallException('Compile Insert Using not supported yet by driver');
     }
 
     public function compileUpdate(Builder $query, array $values): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query, $values) {
-            return $this->dsl->compileUpdate($query, $values, $context)->toQuery();
-        });
+        $pipeline = IlluminateToQueryStructurePipeline::create()
+            ->withWheres()
+            ->withSet($values)
+            ->withReturn();
+
+        return $this->witCachedParams($query, $this->dsl->compileUpdate(...), $pipeline->decorate(...));
     }
 
     public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query, $values, $uniqueBy, $update) {
-            return $this->dsl->compileUpsert($query, $values, $uniqueBy, $update, $context)->toQuery();
-        });
+        $pipeline = IlluminateToQueryStructurePipeline::create($this->variables)
+            ->withMatch()
+            ->withWheres()
+            ->withMerge($values, $uniqueBy, $update)
+            ->withReturn();
 
+        return $this->witCachedParams($query, $this->dsl->compileUpsert(...), $pipeline->decorate(...));
     }
 
     public function prepareBindingsForUpdate(array $bindings, array $values): array
@@ -133,9 +138,13 @@ class CypherGrammar extends Grammar
 
     public function compileDelete(Builder $query): string
     {
-        return $this->witCachedParams(function (DSLContext $context) use ($query) {
-            return $this->dsl->compileDelete($query, $context)->toQuery();
-        });
+        $pipeline = IlluminateToQueryStructurePipeline::create($this->variables)
+            ->withMatch()
+            ->withWheres()
+            ->withDelete()
+            ->withReturn();
+
+        return $this->witCachedParams($query, $this->dsl->compileDelete(...), $pipeline->decorate(...));
     }
 
     public function prepareBindingsForDelete(array $bindings): array
@@ -144,16 +153,20 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * @return string[]
+     * @return array<string, list<string>>
      */
     public function compileTruncate(Builder $query): array
     {
-        return $this->dsl->compileTruncate($query);
+        $pipeline = IlluminateToQueryStructurePipeline::create($this->variables)
+            ->withMatch()
+            ->withDelete();
+
+        return [$this->witCachedParams($query, $this->dsl->compileTruncate(...), $pipeline->decorate(...)) => []];
     }
 
     public function supportsSavepoints(): bool
     {
-        return $this->dsl->supportsSavepoints();
+        return false;
     }
 
     /**
@@ -161,7 +174,7 @@ class CypherGrammar extends Grammar
      */
     public function compileSavepoint($name): string
     {
-        return $this->dsl->compileSavepoint($name);
+        throw new BadMethodCallException('Savepoints are not supported by this driver.');
     }
 
     /**
@@ -169,138 +182,93 @@ class CypherGrammar extends Grammar
      */
     public function compileSavepointRollBack($name): string
     {
-        return $this->dsl->compileSavepointRollBack($name);
+        throw new BadMethodCallException('Savepoints are not supported by this driver.');
     }
 
     public function getOperators(): array
     {
-        return $this->dsl->getOperators();
+        return [
+            '=',
+            '==',
+            '===',
+            'CONTAINS',
+            'STARTS WITH',
+            'ENDS WITH',
+            'IN',
+            'LIKE',
+            '=~',
+            '>',
+            '>=',
+            '<',
+            '<=',
+            '<>',
+            '!=',
+            '!==',
+        ];
     }
 
     public function getBitwiseOperators(): array
     {
-        return $this->dsl->getBitwiseOperators();
-    }
-
-    public function wrapArray(array $values): array
-    {
-        return array_map(static fn ($x) => $x->toQuery(), $this->dsl->wrapArray($values)->getExpressions());
+        return [];
     }
 
     /**
-     * @param  Expression|QueryConvertable|string  $table
+     * @param  Expression|string  $table
      */
     public function wrapTable($table): string
     {
-        return $this->dsl->wrapTable($table)->toQuery();
+        if ($table instanceof Expression) {
+            $table = (string) $this->getValue($table);
+        }
+
+        return $this->variables->toNodeOrRelationship($table)->toQuery();
     }
 
-    /**
-     * @param  Expression|string  $value
-     * @param  bool  $prefixAlias
-     */
-    public function wrap($value, $prefixAlias = false): string
-    {
-        return $this->dsl->wrap($value, $prefixAlias)->toQuery();
-    }
-
-    public function columnize(array $columns): string
-    {
-        return implode(', ', array_map([$this, 'wrap'], $columns));
-    }
-
-    public function parameterize(array $values, ?DSLContext $context = null): string
-    {
-        return implode(', ', array_map(static fn (Parameter $x) => $x->toQuery(), $this->dsl->parameterize($values, $context)));
-    }
-
-    /**
-     * @param  mixed  $value
-     */
-    public function parameter($value): string
-    {
-        return $this->dsl->parameter($value, new DSLContext())->toQuery();
-    }
-
-    /**
-     * @param  string|array  $value
-     */
-    public function quoteString($value): string
-    {
-        return implode(', ', array_map([$this, 'getValue'], $this->dsl->quoteString($value)));
-    }
-
-    /**
-     * @param  mixed  $value
-     */
-    public function isExpression($value): bool
-    {
-        return $this->dsl->isExpression($value);
-    }
-
-    /**
-     * @param  Expression|QueryConvertable  $expression
-     * @return mixed
-     */
-    public function getValue($expression)
-    {
-        return $this->dsl->getValue($expression);
-    }
-
-    /**
-     * Get the format for database stored dates.
-     */
-    public function getDateFormat(): string
-    {
-        return $this->dsl->getDateFormat();
-    }
-
-    /**
-     * Get the grammar's table prefix.
-     */
     public function getTablePrefix(): string
     {
-        return $this->dsl->getTablePrefix();
+        return $this->variables->getPrefix();
     }
 
-    /**
-     * Set the grammar's table prefix.
-     */
     public function setTablePrefix($prefix): self
     {
-        $this->dsl->setTablePrefix($prefix);
+        $this->variables->setPrefix($prefix);
 
         return $this;
     }
 
-    public function __construct()
-    {
-        $this->dsl = new DSLGrammar();
-    }
-
-    private DSLGrammar $dsl;
-
     /**
-     * @param  callable(DSLContext): string  $compilation
+     * @param  callable(QueryStructure): Query  $compilation
+     * @param  callable(Builder, QueryStructure): QueryStructure  $queryDecorator
      */
-    protected function witCachedParams(callable $compilation): string
+    protected function witCachedParams(Builder $builder, callable $compilation, callable $queryDecorator): string
     {
-        $context = new DSLContext();
+        $structure = $this->initialiseStructure($builder);
 
-        $tbr = $compilation($context);
+        $structure = $queryDecorator($builder, $structure);
 
-        CypherGrammar::cacheContext($tbr, $context);
+        $tbr = $compilation($structure)->toQuery();
+
+        CypherGrammar::storeParameters($tbr, $structure->parameters);
 
         return $tbr;
     }
 
-    public static function cacheContext(string $query, DSLContext $context): void
+    public static function storeParameters(string $query, ParameterStack $context): void
     {
         CypherGrammar::$contextCache[$query] = $context;
     }
 
+    /**
+     * @param string $query
+     * @return array<string, mixed>
+     */
     public static function getBoundParameters(string $query): array
     {
         return (CypherGrammar::$contextCache[$query] ?? null)?->getParameters() ?? [];
+    }
+
+    public function initialiseStructure(Builder $query): QueryStructure
+    {
+        return new QueryStructure(new ParameterStack(), $this->variables->toNodeOrRelationship($query->from));
     }
 }

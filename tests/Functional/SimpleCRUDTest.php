@@ -175,9 +175,9 @@ class SimpleCRUDTest extends TestCase
             ]);
 
         $found = Wiz::where('fiz', '=', 'notfooanymore')
-                    ->orWhere('biz', '=', 'noNotBoo!')
-                    ->orWhere('triz', '=', 'newhere')
-                    ->first();
+            ->orWhere('biz', '=', 'noNotBoo!')
+            ->orWhere('triz', '=', 'newhere')
+            ->first();
 
         $this->assertNotEquals($w->getKey(), $found->getKey());
     }
@@ -310,9 +310,9 @@ class SimpleCRUDTest extends TestCase
         $this->assertNotNull($w->getKey());
 
         $found = Wiz::whereNull('biz')
-                    ->where('fiz', '=', false)
-                    ->where('triz', '=', true)
-                    ->first();
+            ->where('fiz', '=', false)
+            ->where('triz', '=', true)
+            ->first();
 
         $this->assertNull($found->biz);
         $this->assertFalse($found->fiz);

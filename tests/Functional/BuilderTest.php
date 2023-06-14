@@ -35,7 +35,7 @@ class BuilderTest extends TestCase
 
     public function testInsertingAndGettingId(): void
     {
-        $this->builder->from('Hero');
+        $this->builder->from('Hero')->join();
 
         $values = [
             'length' => 123,

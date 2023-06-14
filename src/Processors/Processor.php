@@ -5,9 +5,9 @@ namespace Vinelab\NeoEloquent\Processors;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use function is_object;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
-use function method_exists;
+use Laudis\Neo4j\Types\DateTime;
+use Laudis\Neo4j\Types\DateTimeZoneId;
 use function str_contains;
 use function str_replace;
 
@@ -17,7 +17,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
     {
         $tbr = [];
         $from = $query->from;
-        foreach (($results ?? []) as $row) {
+        foreach ($results as $row) {
             $processedRow = [];
             $foundNode = collect($row)->filter(static function ($value, $key) use ($from) {
                 return $key === $from && $value instanceof HasPropertiesInterface;
@@ -32,7 +32,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
                     }
                 } elseif (
                     str_contains($query->from.'.', $key) ||
-                    (! str_contains('.', $key) && ! $foundNode) ||
+                    (! str_contains($key, '.') && ! $foundNode) ||
                     Str::startsWith($key, 'pivot_')
                 ) {
                     $key = str_replace($query->from.'.', '', $key);
@@ -50,9 +50,9 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         return Arr::first($query->getConnection()->selectOne($sql, $values, false));
     }
 
-    private function filterDateTime($x): mixed
+    private function filterDateTime(mixed $x): mixed
     {
-        if (is_object($x) && method_exists($x, 'toDateTime')) {
+        if ($x instanceof DateTimeZoneId || $x instanceof DateTime) {
             return $x->toDateTime();
         }
 

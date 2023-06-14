@@ -144,12 +144,12 @@ class BelongsToManyRelationTest extends TestCase
         ]);
 
         $edges = $user->roles()
-                      ->withPivot('type')
-                      ->orderBy('title')
-                      ->select(['title'])
-                      ->get()
-                      ->pluck('title', 'pivot.type')
-                      ->toArray();
+            ->withPivot('type')
+            ->orderBy('title')
+            ->select(['title'])
+            ->get()
+            ->pluck('title', 'pivot.type')
+            ->toArray();
 
         $this->assertEquals(['Admin' => 'Admin', 'Editor' => 'Editor', 'Master' => 'Master'], $edges);
     }

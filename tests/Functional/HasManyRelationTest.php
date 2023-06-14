@@ -144,7 +144,7 @@ class HasManyRelationTest extends TestCase
         $this->assertCount(count($novel), $relations['books']);
 
         $booksIds = array_map(function ($book) {
-        return $book->getKey();
+            return $book->getKey();
         }, $novel);
 
         $this->assertEquals(['A Game of Thrones', 'A Clash of Kings', 'A Storm of Swords', 'A Feast for Crows'], $booksIds);

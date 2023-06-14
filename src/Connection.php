@@ -1,12 +1,7 @@
 <?php
 
-/** @noinspection PhpUndefinedNamespaceInspection */
-
-/** @noinspection PhpUndefinedClassInspection */
-
 namespace Vinelab\NeoEloquent;
 
-use Arr;
 use BadMethodCallException;
 use Closure;
 use Doctrine\DBAL\Types\Type;
@@ -15,6 +10,7 @@ use Illuminate\Database\Events\StatementPrepared;
 use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Arr;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
@@ -22,11 +18,15 @@ use Laudis\Neo4j\Databags\Statement;
 use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
+use LogicException;
 use Throwable;
 use Vinelab\NeoEloquent\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Builder;
 use Vinelab\NeoEloquent\Schema\Grammars\CypherGrammar as SchemaGrammar;
 
+/**
+ * @psalm-suppress PropertyNotSetInConstructor
+ */
 final class Connection extends \Illuminate\Database\Connection
 {
     /** @var UnmanagedTransactionInterface[] */
@@ -39,7 +39,7 @@ final class Connection extends \Illuminate\Database\Connection
         string $tablePrefix,
         array $config
     ) {
-        parent::__construct(static fn () => null, $database, $tablePrefix, $config);
+        parent::__construct(static fn () => throw new LogicException('Cannot use PDO in '. self::class), $database, $tablePrefix, $config);
     }
 
     protected function getDefaultQueryGrammar(): CypherGrammar
@@ -61,10 +61,6 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function getSchemaBuilder(): Builder
     {
-        if (is_null($this->schemaGrammar)) {
-            $this->useDefaultSchemaGrammar();
-        }
-
         return new Builder($this);
     }
 
@@ -99,13 +95,13 @@ final class Connection extends \Illuminate\Database\Connection
 
         $this->reconnectIfMissingConnection();
 
-        $start = microtime(true);
+        $start = (int) microtime(true);
 
         try {
-            $result = $callback($query, $bindings);
+            $result = $callback($query);
         } catch (Throwable $e) {
             throw new QueryException(
-                'bolt', $query, $this->prepareBindings($bindings), $e
+                'bolt', $query, CypherGrammar::getBoundParameters($query), $e
             );
         }
 
@@ -116,21 +112,25 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function scalar($query, $bindings = [], $useReadPdo = true)
     {
-        return Arr::first($this->selectOne($query, $bindings, $useReadPdo));
+        return Arr::first($this->selectOne($query, $bindings, $useReadPdo) ?? []);
     }
 
     public function cursor($query, $bindings = [], $useReadPdo = true): Generator
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+        return $this->run($query, $bindings, function (string $query) use ($useReadPdo) {
             if ($this->pretending) {
                 return;
             }
 
-            /** @noinspection PhpParamsInspection */
-            $this->event(new StatementPrepared($this, new Statement($query, $bindings)));
+            $statement = new Statement($query, CypherGrammar::getBoundParameters($query));
+            /**
+             * @noinspection PhpParamsInspection
+             * @psalm-suppress InvalidArgument
+             */
+            $this->event(new StatementPrepared($this, $statement));
 
             yield from $this->getRunner($useReadPdo)
-                ->run($query, array_merge($this->prepareBindings($bindings), $this->queryGrammar->getBoundParameters($query)))
+                ->runStatement($statement)
                 ->map(static fn (CypherMap $map) => $map->toArray());
         });
     }
@@ -140,7 +140,7 @@ final class Connection extends \Illuminate\Database\Connection
         try {
             return iterator_to_array($this->cursor($query, $bindings, $useReadPdo));
         } catch (Neo4jException $e) {
-            throw new QueryException($this->getName(), $query, $bindings, $e);
+            throw new QueryException($this->getName() ?? '', $query, $bindings, $e);
         }
     }
 
@@ -151,22 +151,21 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function selectResultSets($query, $bindings = [], $useReadPdo = true): array
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+        return $this->run($query, $bindings, function (string $query) use ($useReadPdo) {
             return [
-                $this->select($query, $bindings, $useReadPdo),
+                $this->select($query, useReadPdo: $useReadPdo),
             ];
         });
     }
 
     public function affectingStatement($query, $bindings = []): int
     {
-        return $this->run($query, $bindings, function ($query, $bindings) {
+        return $this->run($query, $bindings, function (string $query) {
             if ($this->pretending) {
                 return true;
             }
 
-            $parameters = array_merge($this->prepareBindings($bindings), $this->queryGrammar->getBoundParameters($query));
-            $result = $this->getRunner()->run($query, $parameters);
+            $result = $this->getRunner()->run($query, CypherGrammar::getBoundParameters($query));
 
             return $this->summarizeCounters($result->getSummary()->getCounters());
         });
@@ -174,7 +173,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function unprepared($query): bool
     {
-        return $this->run($query, [], function ($query) {
+        return $this->run($query, [], function (string $query) {
             if ($this->pretending) {
                 return true;
             }
@@ -190,7 +189,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function insert($query, $bindings = []): bool
     {
-        return $this->affectingStatement($query, $bindings);
+        return (bool) $this->affectingStatement($query);
     }
 
     /**
@@ -215,9 +214,7 @@ final class Connection extends \Illuminate\Database\Connection
     {
         $this->activeTransactions[] = $this->getSession()->beginTransaction();
 
-        $this->transactionsManager?->begin(
-            $this->getName(), $this->transactions
-        );
+        $this->transactionsManager->begin($this->getName() ?? '', $this->transactions);
 
         $this->fireConnectionEvent('beganTransaction');
     }
@@ -229,7 +226,7 @@ final class Connection extends \Illuminate\Database\Connection
         $this->popTransaction()?->commit();
 
         if ($this->afterCommitCallbacksShouldBeExecuted()) {
-            $this->transactionsManager?->commit($this->getName());
+            $this->transactionsManager->commit($this->getName() ?? '');
         }
 
         $this->fireConnectionEvent('committed');
@@ -269,7 +266,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function selectOne($query, $bindings = [], $useReadPdo = true): array|null
     {
-        foreach ($this->cursor($query, $bindings, $useReadPdo) as $result) {
+        foreach ($this->cursor($query, useReadPdo:  $useReadPdo) as $result) {
             return $result;
         }
 
@@ -282,6 +279,7 @@ final class Connection extends \Illuminate\Database\Connection
             $this->beginTransaction();
 
             try {
+                /** @psalm-suppress ArgumentTypeCoercion */
                 $callbackResult = $callback($this);
             } catch (Neo4jException $e) {
                 if ($e->getClassification() === 'Transaction') {
@@ -293,6 +291,7 @@ final class Connection extends \Illuminate\Database\Connection
 
             $this->commit();
 
+            /** @psalm-suppress PossiblyUndefinedVariable */
             return $callbackResult;
         }
 
@@ -301,7 +300,6 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function bindValues($statement, $bindings)
     {
-
     }
 
     public function reconnect()

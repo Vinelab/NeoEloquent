@@ -2,15 +2,13 @@
 
 namespace Vinelab\NeoEloquent\Connectors;
 
+use Illuminate\Database\Connectors\ConnectorInterface;
 use Laudis\Neo4j\Authentication\Authenticate;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Common\Uri;
 use Laudis\Neo4j\Databags\DriverConfiguration;
-use Laudis\Neo4j\Databags\SessionConfiguration;
-use Laudis\Neo4j\Enum\AccessMode;
-use Vinelab\NeoEloquent\Connection;
 
-final class ConnectionFactory
+final class ConnectionFactory implements ConnectorInterface
 {
     private Uri $defaultUri;
 
@@ -20,9 +18,12 @@ final class ConnectionFactory
     }
 
     /**
-     * @param  array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string}  $config
+     * @psalm-suppress MoreSpecificImplementedParamType
+     * @psalm-suppress ImplementedReturnTypeMismatch
+     *
+     * @param  array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string, prefix ?: string}  $config
      */
-    public function make(string $database, string $prefix, array $config): Connection
+    public function connect(array $config): Driver
     {
         $port = $config['port'] ?? null;
         $port = (is_null($port) || $port === '') ? null : ((int) $port);
@@ -30,22 +31,12 @@ final class ConnectionFactory
             ->withHost($config['host'] ?? '')
             ->withPort($port);
 
-        if (($config['username'] ?? false) && ($config['password'] ?? false)) {
+        if (array_key_exists('username', $config) && array_key_exists('password', $config)) {
             $auth = Authenticate::basic($config['username'], $config['password']);
         } else {
             $auth = Authenticate::disabled();
         }
 
-        $driver = Driver::create($uri, DriverConfiguration::default(), $auth);
-        $sessionConfig = SessionConfiguration::default()
-            ->withDatabase($database);
-
-        return new Connection(
-            $driver->createSession($sessionConfig->withAccessMode(AccessMode::READ())),
-            $driver->createSession($sessionConfig),
-            $database,
-            $prefix,
-            $config
-        );
+        return Driver::create($uri, DriverConfiguration::default(), $auth);
     }
 }
