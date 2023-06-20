@@ -1,6 +1,6 @@
 {
     "name": "vinelab/neoeloquent",
-    "description": "Laravel wrapper for the Neo4j graph database REST interface",
+    "description": "Neo4j database driver for Laravel integrating with the query builder and Laravel models.",
     "keywords": [
         "neo4j",
         "ogm",
@@ -29,7 +29,6 @@
         "psr/container": "^1.1.2",
         "illuminate/contracts": "^10.0",
         "illuminate/database": "^10.0",
-        "wikibase-solutions/php-cypher-dsl": "^5.0",
         "php-graph-group/cypher-query-builder": "dev-master"
     },
     "require-dev": {
@@ -39,9 +38,9 @@
         "psalm/plugin-laravel": "^2.8"
     },
     "autoload": {
+
         "psr-4": {
-            "Vinelab\\NeoEloquent\\": "src/",
-            "PhpGraphGroup\\QueryBuilder\\": "query-builder/"
+            "Vinelab\\NeoEloquent\\": "src/"
         }
     },
     "autoload-dev": {

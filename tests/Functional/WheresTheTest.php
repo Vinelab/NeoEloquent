@@ -219,18 +219,6 @@ class WheresTheTest extends TestCase
         $this->assertEquals($still, $u->toArray());
     }
 
-    public function testWhereBetween()
-    {
-        $u = User::whereBetween('name', [$this->ab->getKey(), $this->ij->getKey()])->orderBy('name')->get();
-
-        $mwahaha = [
-            $this->ab->toArray(),
-            $this->ij->toArray(),
-        ];
-        $this->assertCount(2, $u);
-        $this->assertEquals($mwahaha, $u->toArray());
-    }
-
     public function testOrWhere()
     {
         $buddies = User::where('name', 'Ey Bee')

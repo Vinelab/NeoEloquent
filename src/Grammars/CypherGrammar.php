@@ -3,19 +3,25 @@
 namespace Vinelab\NeoEloquent\Grammars;
 
 use BadMethodCallException;
-use Illuminate\Contracts\Database\Query\Expression;
+use Closure;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;
 use PhpGraphGroup\CypherQueryBuilder\GrammarPipeline;
-use PhpGraphGroup\QueryBuilder\QueryStructure;
-use Vinelab\NeoEloquent\ParameterStack;
+use RuntimeException;
 use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
-use Vinelab\NeoEloquent\Query\Grammar\VariableGrammar;
-use WikibaseSolutions\CypherDSL\Query;
+use WeakReference;
 
+use function array_key_first;
+use function is_array;
+
+/**
+ * @psalm-suppress PropertyNotSetInConstructor
+ * @psalm-suppress InvalidArgument
+ */
 class CypherGrammar extends Grammar
 {
-    public function __construct() { }
+    /** @var array<string, array<string, mixed>|WeakReference<Builder>> */
+    private static array $cache = [];
 
     /**
      * The components that make up a select clause.
@@ -40,20 +46,22 @@ class CypherGrammar extends Grammar
 
     public function compileSelect(Builder $query): string
     {
-        return IlluminateToQueryStructurePipeline::create()
+        return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withReturn()
             ->pipe($query)
-            ->toCypher();
+            ->toCypher()
+        );
     }
 
     public function compileWheres(Builder $query): string
     {
-        return IlluminateToQueryStructurePipeline::create()
-            ->withWheres()
-            ->withReturn()
-            ->pipe($query)
-            ->toCypher(GrammarPipeline::create()->withWhereGrammar());
+        return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
+                                                          ->withWheres()
+                                                          ->withReturn()
+                                                          ->pipe($query)
+                                                          ->toCypher(GrammarPipeline::create()->withWhereGrammar())
+        );
     }
 
     public function prepareBindingForJsonContains($binding): string
@@ -68,20 +76,24 @@ class CypherGrammar extends Grammar
 
     public function compileExists(Builder $query): string
     {
-        return IlluminateToQueryStructurePipeline::create()
+        return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withReturn()
             ->pipe($query)
-            ->toCypher(GrammarPipeline::create()->withWhereGrammar());
+            ->toCypher(GrammarPipeline::create()->withWhereGrammar())
+        );
     }
 
     public function compileInsert(Builder $query, array $values): string
     {
-        return IlluminateToQueryStructurePipeline::create()
-            ->withWheres()
-            ->withCreate($values)
-            ->pipe($query)
-            ->toCypher();
+        $pipeline = IlluminateToQueryStructurePipeline::create()->withWheres();
+        if (is_int(array_key_first($values))) {
+            $pipeline = $pipeline ->withBatchCreate($values);
+        } else {
+            $pipeline = $pipeline->withCreate($values);
+        }
+
+        return $this->cache($query, static fn () => $pipeline->pipe($query)->toCypher());
     }
 
     public function compileInsertOrIgnore(Builder $query, array $values): string
@@ -91,44 +103,39 @@ class CypherGrammar extends Grammar
 
     public function compileInsertGetId(Builder $query, $values, $sequence): string
     {
-        foreach ($values as $i => $value) {
-            $values[$i] = [];
-            foreach (explode(',', $sequence) as $j => $key) {
-                $values[$i][$key] = $value[$j];
-            }
-        }
-        return IlluminateToQueryStructurePipeline::create()
+        return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withCreate($values)
             ->withReturn()
             ->pipe($query)
-            ->toCypher();
+            ->toCypher()
+        );
     }
 
     public function compileInsertUsing(Builder $query, array $columns, string $sql): string
     {
-        // TODO
-        throw new BadMethodCallException('Compile Insert Using not supported yet by driver');
+        throw new RuntimeException('This database engine does not support is compile insert using yet');
     }
 
     public function compileUpdate(Builder $query, array $values): string
     {
-        $pipeline = IlluminateToQueryStructurePipeline::create()
+         return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withSet($values)
-            ->withReturn();
-
-        return $this->witCachedParams($query, $this->dsl->compileUpdate(...), $pipeline->decorate(...));
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher()
+         );
     }
 
     public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update): string
     {
-        $pipeline = IlluminateToQueryStructurePipeline::create($this->variables)
-            ->withMatch()
+         return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withMerge($values, $uniqueBy, $update)
-            ->withReturn();
-
-        return $this->witCachedParams($query, $this->dsl->compileUpsert(...), $pipeline->decorate(...));
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher()
+         );
     }
 
     public function prepareBindingsForUpdate(array $bindings, array $values): array
@@ -138,13 +145,13 @@ class CypherGrammar extends Grammar
 
     public function compileDelete(Builder $query): string
     {
-        $pipeline = IlluminateToQueryStructurePipeline::create($this->variables)
-            ->withMatch()
+         return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withDelete()
-            ->withReturn();
-
-        return $this->witCachedParams($query, $this->dsl->compileDelete(...), $pipeline->decorate(...));
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher()
+        );
     }
 
     public function prepareBindingsForDelete(array $bindings): array
@@ -157,11 +164,13 @@ class CypherGrammar extends Grammar
      */
     public function compileTruncate(Builder $query): array
     {
-        $pipeline = IlluminateToQueryStructurePipeline::create($this->variables)
-            ->withMatch()
-            ->withDelete();
+        $cypher = $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
+            ->withDelete()
+            ->pipe($query)
+            ->toCypher()
+        );
 
-        return [$this->witCachedParams($query, $this->dsl->compileTruncate(...), $pipeline->decorate(...)) => []];
+        return [ $cypher => []];
     }
 
     public function supportsSavepoints(): bool
@@ -212,63 +221,122 @@ class CypherGrammar extends Grammar
         return [];
     }
 
+    public function compileJsonValueCast($value): string
+    {
+        throw new RuntimeException('This database engine does not support JSON value cast operations.');
+    }
+
+    public function whereFullText(Builder $query, $where)
+    {
+        throw new RuntimeException('This database engine does not support Full Text operations yet.');
+    }
+
+    public function whereExpression(Builder $query, $where)
+    {
+        throw new RuntimeException('This database engine does not support solo Where expressions yet.');
+    }
+
+    public function wrapArray(array $values)
+    {
+        throw new RuntimeException('This database engine does not support solo wrap Array expressions yet.');
+    }
+
+    public function wrap($value, $prefixAlias = false)
+    {
+        throw new RuntimeException('This database engine does not support solo wrap expressions.');
+    }
+
+    public function columnize(array $columns)
+    {
+        throw new RuntimeException('This database engine does not support wrap expressions yet.');
+    }
+
+    public function parameterize(array $values)
+    {
+        throw new RuntimeException('This database engine does not support solo parametrization yet.');
+    }
+
+    public function parameter($value)
+    {
+        throw new RuntimeException('This database engine does not support solo parametrization yet.');
+    }
+
+    public function quoteString($value)
+    {
+        throw new RuntimeException('This database engine does not support string quotation yet.');
+    }
+
+    public function escape($value, $binary = false)
+    {
+        throw new RuntimeException('This database engine does not support string escapes yet.');
+    }
+
+    public function isExpression($value)
+    {
+        throw new RuntimeException('This database engine does not support is expression yet.');
+    }
+
+    public function getValue($expression)
+    {
+        throw new RuntimeException('This database engine does not support is get value yet.');
+    }
+
+    public function getDateFormat(): string
+    {
+        return 'Y-m-d H:i:s';
+    }
+
+    public function getTablePrefix()
+    {
+        throw new RuntimeException('This database engine does not support is table prefixes yet.');
+    }
+
+    public function setTablePrefix($prefix)
+    {
+        throw new RuntimeException('This database engine does not support is table prefixes yet.');
+    }
+
+    public function wrapTable($table)
+    {
+        throw new RuntimeException('This database engine does not support is table wrapping yet.');
+    }
+
     /**
-     * @param  Expression|string  $table
+     * @param Closure():string $function
      */
-    public function wrapTable($table): string
+    private function cache(Builder $query, Closure $function): string
     {
-        if ($table instanceof Expression) {
-            $table = (string) $this->getValue($table);
-        }
+        $cypher               = $function();
 
-        return $this->variables->toNodeOrRelationship($table)->toQuery();
-    }
+        self::$cache[$cypher] = WeakReference::create($query);
 
-    public function getTablePrefix(): string
-    {
-        return $this->variables->getPrefix();
-    }
-
-    public function setTablePrefix($prefix): self
-    {
-        $this->variables->setPrefix($prefix);
-
-        return $this;
+        return $cypher;
     }
 
     /**
-     * @param  callable(QueryStructure): Query  $compilation
-     * @param  callable(Builder, QueryStructure): QueryStructure  $queryDecorator
-     */
-    protected function witCachedParams(Builder $builder, callable $compilation, callable $queryDecorator): string
-    {
-        $structure = $this->initialiseStructure($builder);
-
-        $structure = $queryDecorator($builder, $structure);
-
-        $tbr = $compilation($structure)->toQuery();
-
-        CypherGrammar::storeParameters($tbr, $structure->parameters);
-
-        return $tbr;
-    }
-
-    public static function storeParameters(string $query, ParameterStack $context): void
-    {
-        CypherGrammar::$contextCache[$query] = $context;
-    }
-
-    /**
-     * @param string $query
      * @return array<string, mixed>
      */
-    public static function getBoundParameters(string $query): array
+    public static function getBindings(string $cypher): array
     {
-        return (CypherGrammar::$contextCache[$query] ?? null)?->getParameters() ?? [];
+        $reference = self::$cache[$cypher] ?? null;
+        if (is_array($reference)) {
+            return $reference;
+        }
+
+        $builder = $reference?->get();
+
+        if ($builder instanceof Builder) {
+            return IlluminateToQueryStructurePipeline::getBindings($builder);
+        }
+
+        return [];
     }
 
-    public function initialiseStructure(Builder $query): QueryStructure
+    /**
+     * @param array<string, mixed> $bindings
+     */
+    public static function setBindings(string $cypher, array $bindings): void
     {
-        return new QueryStructure(new ParameterStack(), $this->variables->toNodeOrRelationship($query->from));
+        self::$cache[$cypher] = $bindings;
     }
 }

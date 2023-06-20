@@ -2,14 +2,20 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class AggregateTest extends TestCase
 {
-    use RefreshDatabase;
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->getConnection()->affectingStatement('MATCH (x) DETACH DELETE x');
+
+        $this->builder = new Builder($this->getConnection());
+    }
 
     public function testCount(): void
     {

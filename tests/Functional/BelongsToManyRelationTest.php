@@ -9,7 +9,12 @@ use Vinelab\NeoEloquent\Tests\TestCase;
 
 class BelongsToManyRelationTest extends TestCase
 {
-    use RefreshDatabase;
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->getConnection()->affectingStatement('MATCH (x) DETACH DELETE x');
+    }
 
     public function testSavingRelatedBelongsToMany(): void
     {

@@ -5,14 +5,12 @@ namespace Vinelab\NeoEloquent\Concerns;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Vinelab\NeoEloquent\Query\Concerns\ControlsDirectionWithEncoding;
 
 /**
  * @mixin Model
  */
 trait AsRelationship
 {
-    use ControlsDirectionWithEncoding;
 
     protected string $leftKeyPropertyName;
 

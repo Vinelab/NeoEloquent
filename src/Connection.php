@@ -14,11 +14,13 @@ use Illuminate\Support\Arr;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
+use Laudis\Neo4j\Databags\ResultSummary;
 use Laudis\Neo4j\Databags\Statement;
 use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Exception\Neo4jException;
 use Laudis\Neo4j\Types\CypherMap;
 use LogicException;
+use RuntimeException;
 use Throwable;
 use Vinelab\NeoEloquent\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Schema\Builder;
@@ -32,6 +34,54 @@ final class Connection extends \Illuminate\Database\Connection
     /** @var UnmanagedTransactionInterface[] */
     private array $activeTransactions = [];
 
+    private SummaryCounters $totals;
+
+    public function escape($value, $binary = false)
+    {
+        throw new RuntimeException('Escaping from the connection is not supported yet.');
+    }
+
+    public function hasModifiedRecords(): bool
+    {
+        return $this->totals->containsUpdates();
+    }
+
+    public function recordsHaveBeenModified($value = true)
+    {
+        throw new RuntimeException('Record modification is handled by summary totals in this connection.');
+    }
+
+    public function setRecordModificationState(bool $value)
+    {
+        throw new RuntimeException('Record modification is handled by summary totals in this connection.');
+    }
+
+    public function forgetRecordModificationState(): void
+    {
+        $this->totals = new SummaryCounters();
+    }
+
+    public function getPdo(): SessionInterface
+    {
+        return $this->session;
+    }
+
+    public function getRawPdo(): SessionInterface
+    {
+        return $this->session;
+    }
+
+    public function getReadPdo(): SessionInterface
+    {
+        return $this->readSession;
+    }
+
+    public function getRawReadPdo(): SessionInterface
+    {
+        return $this->readSession;
+    }
+
+
     public function __construct(
         private readonly SessionInterface $readSession,
         private readonly SessionInterface $session,
@@ -40,16 +90,20 @@ final class Connection extends \Illuminate\Database\Connection
         array $config
     ) {
         parent::__construct(static fn () => throw new LogicException('Cannot use PDO in '. self::class), $database, $tablePrefix, $config);
-    }
 
-    protected function getDefaultQueryGrammar(): CypherGrammar
-    {
-        return new CypherGrammar();
+        $this->useDefaultSchemaGrammar();
+
+        $this->totals = new SummaryCounters();
     }
 
     protected function getDefaultSchemaGrammar(): SchemaGrammar
     {
         return new SchemaGrammar();
+    }
+
+    protected function getDefaultQueryGrammar(): CypherGrammar
+    {
+        return new CypherGrammar();
     }
 
     public function query(): Query\Builder
@@ -89,6 +143,14 @@ final class Connection extends \Illuminate\Database\Connection
 
     protected function run($query, $bindings, Closure $callback): mixed
     {
+        $autobound = CypherGrammar::getBindings($query);
+        if (count($autobound) === 0) {
+            foreach ($bindings as $i => $binding) {
+                $autobound['param' . $i] = $binding;
+            }
+            CypherGrammar::setBindings($query, $autobound);
+        }
+        $bindings = $autobound;
         foreach ($this->beforeExecutingCallbacks as $beforeExecutingCallback) {
             $beforeExecutingCallback($query, $bindings, $this);
         }
@@ -100,9 +162,7 @@ final class Connection extends \Illuminate\Database\Connection
         try {
             $result = $callback($query);
         } catch (Throwable $e) {
-            throw new QueryException(
-                'bolt', $query, CypherGrammar::getBoundParameters($query), $e
-            );
+            throw new QueryException('bolt', $query, $bindings, $e);
         }
 
         $this->logQuery($query, $bindings, $this->getElapsedTime($start));
@@ -122,7 +182,7 @@ final class Connection extends \Illuminate\Database\Connection
                 return;
             }
 
-            $statement = new Statement($query, CypherGrammar::getBoundParameters($query));
+            $statement = new Statement($query, CypherGrammar::getBindings($query));
             /**
              * @noinspection PhpParamsInspection
              * @psalm-suppress InvalidArgument
@@ -165,7 +225,7 @@ final class Connection extends \Illuminate\Database\Connection
                 return true;
             }
 
-            $result = $this->getRunner()->run($query, CypherGrammar::getBoundParameters($query));
+            $result = $this->getRunner()->run($query, CypherGrammar::getBindings($query));
 
             return $this->summarizeCounters($result->getSummary()->getCounters());
         });

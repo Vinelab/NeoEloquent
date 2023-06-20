@@ -8,18 +8,16 @@ use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
 /**
  * Decorates the Return part of the query structure. (clauses RETURN, LIMIT, SKIP, ORDER BY)
  */
-class IlluminateToMergeDecorator implements IlluminateToQueryStructureDecorator
+class IlluminateToSettingDecorator implements IlluminateToQueryStructureDecorator
 {
-    public function __construct(private readonly array $values, private readonly array $uniqueBy, private readonly array $update) {
-
+    public function __construct(private readonly array $values)
+    {
     }
 
     public function decorate(Builder $illuminateBuilder, \PhpGraphGroup\CypherQueryBuilder\Contracts\Builder $cypherBuilder): void
     {
-        $merging = [];
-        foreach ($this->values as $row)
-        $cypherBuilder->merging($this->uniqueBy)
-            ->onCreating($this->values)
-            ->onMatching($this->update);
+        foreach ($this->values as $property =>  $value) {
+            $cypherBuilder->setting($property, $value);
+        }
     }
 }

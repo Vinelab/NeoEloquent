@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
+use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
 use WikibaseSolutions\CypherDSL\Query;
 
@@ -33,7 +34,7 @@ class NeoEloquentServiceProvider extends ServiceProvider
             /** @var \Vinelab\NeoEloquent\Query\Builder $x */
             $x = $this;
 
-            return $x->aggregate($function, [$logins, Query::literal($percentile ?? 0.0)]);
+            return $x->aggregate($function, [$logins, new RawExpression((string) ($percentile ?? 0.0))]);
         };
 
         Builder::macro($function, $macro);

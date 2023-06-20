@@ -3,23 +3,24 @@
 namespace Vinelab\NeoEloquent\Query\Adapter\Partial;
 
 use Illuminate\Contracts\Database\Query\Builder;
-use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder as IBuilder;
-use PhpGraphGroup\CypherQueryBuilder\Where\BooleanOperator;
-use RuntimeException;
-use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
-use WikibaseSolutions\CypherDSL\Expressions\Property;
-use WikibaseSolutions\CypherDSL\Expressions\RawExpression;
-use WikibaseSolutions\CypherDSL\Query;
-use WikibaseSolutions\CypherDSL\Syntax\Alias;
-use WikibaseSolutions\CypherDSL\Types\AnyType;
-use WikibaseSolutions\CypherDSL\Types\PropertyTypes\BooleanType;
-use WikibaseSolutions\CypherDSL\Types\PropertyTypes\PropertyType;
 use Illuminate\Support\Str;
-use WikibaseSolutions\CypherDSL\Types\PropertyTypes\StringType;
+use PhpGraphGroup\CypherQueryBuilder\Common\ParameterStack;
+use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\SubQueryBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\WhereBuilder;
+use PhpGraphGroup\CypherQueryBuilder\Where\BooleanOperator;
+use Vinelab\NeoEloquent\Processors\Processor;
+use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
+use WikibaseSolutions\CypherDSL\Query;
+
+use function array_map;
+use function end;
+use function explode;
+use function reset;
+use function str_contains;
+use function str_replace;
 
 /**
- * @psalm-type WhereCommonArray = array{boolean: string, type: string}
+ * @psalm-type WhereCommonArray = array{boolean: string, type: string, not: bool, ...}
  * @psalm-type WhereBasicArray = WhereCommonArray&array{column: string, operator: string, value: mixed}
  * @psalm-type WhereColumnArray = WhereCommonArray&array{column: string, operator: string}
  * @psalm-type WhereBasicColumnArray = WhereCommonArray&array{first: string, second: string, operator: string}
@@ -31,8 +32,11 @@ use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\WhereBuilder;
  */
 class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
 {
-    private function where(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function where(Builder $builder, array $where, SubQueryBuilder $cypherBuilder): void
     {
+        /** @psalm-suppress InternalProperty */
+        $stack = $cypherBuilder->getStructure()->parameters;
+
         $method = Str::camel($where['type']);
 
         match ($method) {
@@ -48,243 +52,250 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
             'notExists' => $this->notExists($builder, $where, $cypherBuilder),
             'exists' => $this->exists($builder, $where, $cypherBuilder),
             'count' => $this->count($builder, $where, $cypherBuilder),
-            'year' => $this->year($builder, $where, $cypherBuilder),
-            'month' => $this->month($builder, $where, $cypherBuilder),
-            'day' => $this->day($builder, $where, $cypherBuilder),
-            'time' => $this->time($builder, $where, $cypherBuilder),
-            'date' => $this->date($builder, $where, $cypherBuilder),
+            'year' => $this->year($builder, $where, $cypherBuilder, $stack),
+            'month' => $this->month($builder, $where, $cypherBuilder, $stack),
+            'day' => $this->day($builder, $where, $cypherBuilder, $stack),
+            'time' => $this->time($builder, $where, $cypherBuilder, $stack),
+            'date' => $this->date($builder, $where, $cypherBuilder, $stack),
             'column' => $this->column($builder, $where, $cypherBuilder),
             'betweenColumn' => $this->betweenColumn($builder, $where, $cypherBuilder),
-            'between' => $this->between($builder, $where, $cypherBuilder),
+            'between' => $this->between($builder, $where, $cypherBuilder, $stack),
             'nested' => $this->nested($builder, $where, $cypherBuilder),
         };
     }
 
 
     /**
-     * @param  WhereRawArray  $where
+     * @param WhereRawArray $where
      */
-    private function raw(array $where, IBuilder $cypherBuilder): void
+    private function raw(array $where, WhereBuilder $cypherBuilder): void
     {
         $cypherBuilder->whereRaw($where['sql'], $this->compileBoolean($where['boolean']));
     }
 
     /**
-     * @param  WhereBasicArray  $where
+     * @param WhereBasicArray $where
      */
-    private function basic(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function basic(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypherBuilder->where($builder->from . '.' . $where['column'], $where['operator'], $where['value'], $this->compileBoolean($where['boolean']));
+        $cypherBuilder->where(
+            $where['column'],
+            $where['operator'],
+            $where['value'],
+            $this->compileBoolean($where['boolean'])
+        );
     }
 
     /**
-     * @param  WhereColumnInArray  $where
+     * @param WhereColumnInArray $where
      */
-    private function in(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function in(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
         $where['value'] = $where['values'];
+
+        $where['operator'] = 'in';
 
         $this->basic($builder, $where, $cypherBuilder);
     }
 
     /**
-     * @param  WhereColumnInArray  $where
+     * @param WhereColumnInArray $where
      */
-    private function notIn(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function notIn(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypherBuilder->whereNot(function (WhereBuilder $builder) use ($where, $cypherBuilder) {
-             $this->in($builder, $where, $cypherBuilder);
+        $cypherBuilder->whereNot(function (SubQueryBuilder $cypherBuilder) use ($builder, $where) {
+            $this->in($builder, $where, $cypherBuilder);
+        }, $this->compileBoolean($where['boolean']));
+    }
+
+    /**
+     * @param WhereColumnInArray $where
+     */
+    private function inRaw(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        $cypher = Query::variable(str_replace(['<', '>'], '', explode(':', $builder->from))[0])
+                       ->property($where['column'])
+                       ->in(Query::list(array_map(static fn($x) => Query::literal($x), $where['values'])))
+                       ->toQuery();
+
+        $cypherBuilder->whereRaw($cypher, $this->compileBoolean($where['boolean']));
+    }
+
+    /**
+     * @param WhereColumnInArray $where
+     */
+    private function notInRaw(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        $cypherBuilder->whereNot(function (SubQueryBuilder $cypherBuilder) use ($builder, $where) {
+            $this->inRaw($builder, $where, $cypherBuilder);
+        }, $this->compileBoolean($where['boolean']));
+    }
+
+    /**
+     * @param WhereColumnArray $where
+     */
+    private function null(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        $cypherBuilder->whereNull($where['column'], $this->compileBoolean($where['boolean']));
+    }
+
+    private function notNull(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        $cypherBuilder->whereNot(function (SubQueryBuilder $cypherBuilder) use ($builder, $where) {
+            $this->null($builder, $where, $cypherBuilder);
+        }, $this->compileBoolean($where['boolean']));
+    }
+
+    /**
+     * @param WhereColumns $where
+     */
+    private function rowValues(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        foreach ($where['columns'] as $i => $column) {
+            $cypherBuilder->whereEquals($column, $where['values'][$i], BooleanOperator::AND);
+        }
+    }
+
+    private function notExists(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        $cypherBuilder->whereNot(function (SubQueryBuilder $cypherBuilder) use ($builder, $where) {
+            $this->exists($builder, $where, $cypherBuilder);
         }, $where['boolean']);
     }
 
-    /**
-     * @param  WhereColumnInArray  $where
-     */
-    private function inRaw(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function exists(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
-        $value = Query::list(array_map(static fn ($x) => Query::literal($x), $where['values']));
+        $cypherBuilder->whereExists(function (SubQueryBuilder $subQueryBuilder) use ($builder) {
+            $this->decorate($builder, $subQueryBuilder);
+        }, $this->compileBoolean($where['boolean']));
+    }
 
-        $this->whereBasicBinary('IN', $where['column'], $builder->from, $value, $stack);
+    private function count(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        $cypherBuilder->whereCount(function (SubQueryBuilder $subQueryBuilder) use ($builder) {
+            $this->decorate($builder, $subQueryBuilder);
+        }, $where['count'], '>=', $this->compileBoolean($where['boolean']));
     }
 
     /**
-     * @param  WhereColumnInArray  $where
+     * @param WhereBasicArray $where
      */
-    private function notInRaw(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function year(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
-        return $this->inRaw($stack, $where, $query)->not();
+        $this->temporal($builder, $where, $cypherBuilder, 'year', $stack);
     }
 
     /**
-     * @param  WhereColumnArray  $where
+     * @param WhereBasicArray $where
      */
-    private function null(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function temporal(Builder $builder, array $where, WhereBuilder $cypherBuilder, string $attribute, ParameterStack $stack): void
     {
-        return $this->variables->wrapProperty($where['column'], $query->from)->isNull(false);
-    }
+        $cypher = Query::variable(str_replace(['<', '>'], '', explode(':', $builder->from))[0])
+                       ->property($where['column'])
+                       ->property($attribute)
+                       ->equals($stack->add($where['value']))
+                       ->toQuery();
 
-    private function notNull(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        return $this->variables->wrapProperty($where['column'], $query->from)->isNotNull(false);
+        $cypherBuilder->whereRaw($cypher, $this->compileBoolean($where['boolean']));
     }
 
     /**
-     * @param  WhereColumns  $where
+     * @param WhereBasicArray $where
      */
-    private function rowValues(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function month(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
-        $lhs = $this->variables->columnize($where['columns'], $builder->from);
-
-        return $this->fromBinarySymbol(
-            $where['operator'],
-            $lhs,
-            $stack->addParameter($where['values'])
-        );
-    }
-
-    private function notExists(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        return $this->exists($stack, $where)->not();
-    }
-
-    private function exists(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        ['query' => $query] = $where['query'];
-
-        $join = $this->joinTranslator->translateStrict($query);
-
-        $wheres = $this->combine($stack, $wheres);
-
-        $sub = Query::new()
-            ->addClause($match)
-            ->where($wheres);
-
-        return Query::exists($query, $query->wheres, false);
-    }
-
-    private function count(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        $query = $this->exists($stack, $where)->toQuery();
-        $query = 'COUNT'.substr($query, 6);
-
-        return Query::rawExpression($query)->gte(Query::integer($where['count']));
+        $this->temporal($builder, $where, $cypherBuilder, 'month', $stack);
     }
 
     /**
-     * @param  WhereBasicArray  $where
+     * @param WhereBasicArray $where
      */
-    private function year(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function day(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
-        $where['column'] = $where['column'].'.year';
-
-        return $this->basic($stack, $where, $builder);
+        $this->temporal($builder, $where, $cypherBuilder, 'day', $stack);
     }
 
     /**
-     * @param  WhereBasicArray  $where
+     * @param WhereBasicArray $where
      */
-    private function month(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function time(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
-        $where['column'] = $where['column'].'.month';
-
-        return $this->basic($stack, $where, $builder);
+        $this->temporal($builder, $where, $cypherBuilder, 'time', $stack);
     }
 
     /**
-     * @param  WhereBasicArray  $where
+     * @param WhereBasicArray $where
      */
-    private function day(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function date(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
-        $where['column'] = $where['column'].'.day';
-
-        return $this->basic($stack, $where, $builder);
+        $this->temporal($builder, $where, $cypherBuilder, 'date', $stack);
     }
 
     /**
-     * @param  WhereBasicArray  $where
+     * @param WhereBasicColumnArray $where
      */
-    private function time(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function column(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
-        $where['column'] = $where['column'].'.time';
-
-        return $this->basic($stack, $where, $builder);
-    }
-
-    /**
-     * @param  WhereBasicArray  $where
-     */
-    private function date(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        $where['column'] = $where['column'].'.date';
-
-        return $this->basic($stack, $where, $builder);
-    }
-
-    /**
-     * @param  WhereBasicColumnArray  $where
-     */
-    private function column(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        $column = $this->variables->wrapProperty($where['first'], $builder->from, false);
-        $value = $this->variables->wrapProperty($where['second'], $builder->from, false);
-
-        return $this->fromBinarySymbol($where['operator'], $column, $value);
-    }
-
-    private function betweenColumn(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        $first = reset($where['values']);
-        $second = end($where['values']);
-
-        $left = $this->column(['first' => $where['column'], 'second' => $first, 'operator' => '>='], $builder);
-        $right = $this->column(['first' => $where['column'], 'second' => $second, 'operator' => '<='], $builder);
-
-        $binary = $left->and($right);
-        if ($where['not']) {
-            $binary = $binary->not();
-        }
-
-        return $binary;
-    }
-
-    private function between(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        $first = reset($where['values']);
-        $second = end($where['values']);
-
-        $left = $this->basic($stack, ['column' => $where['column'], 'value' => $first, 'operator' => '>='], $builder);
-        $right = $this->basic($stack, ['column' => $where['column'], 'value' => $second, 'operator' => '<='], $builder);
-
-        $binary = $left->and($right);
-        if ($where['not']) {
-            $binary = $binary->not();
-        }
-
-        return $binary;
-    }
-
-    private function nested(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
-    {
-        return $this->combine($stack, array_map(
-            static fn (array $whereSub) => ['query' => $where['query'], 'where' => $whereSub],
-            $where['query']->wheres)
+        $cypherBuilder->wherePropertiesEquals(
+            $where['first'],
+            $where['second'],
+            $this->compileBoolean($where['boolean'])
         );
     }
 
     /**
-     * @param  non-empty-list<array{builder: Builder, where: array}>  $wheres
+     * @param WhereColumns $where
      */
-    public function combine(WhereBuilder $builder, array $where, IBuilder $cypherBuilder): void
+    private function betweenColumn(Builder $builder, array $where, SubQueryBuilder $cypherBuilder): void
     {
-        $tbr = null;
-        foreach ($wheres as $where) {
-            ['builder' => $builder, 'where' => $where] = $where;
+        $callable = function (SubQueryBuilder $cypherBuilder) use ($builder, $where): void {
+            $first  = reset($where['values']);
+            $second = end($where['values']);
 
-            $right = $this->where($builder, $where, $stack);
-            $tbr = $this->compile($tbr, BooleanBinaryOperator::from(Str::upper($where['boolean'])), $right);
+            $where['first']  = $where['column'];
+            $where['second'] = $first;
+            $this->column($builder, $where, $cypherBuilder);
+
+            $where['second'] = $second;
+            $this->column($builder, $where, $cypherBuilder);
+        };
+
+        if ($where['not']) {
+            $cypherBuilder->whereNot($callable);
+        } else {
+            $callable($cypherBuilder);
         }
+    }
 
-        return $tbr;
+    /**
+     * @param WhereColumnArray $where
+     */
+    private function between(Builder $builder, array $where, SubQueryBuilder $cypherBuilder): void
+    {
+        $callable = function (SubQueryBuilder $cypherBuilder) use ($builder, $where): void {
+            $first  = reset($where['values']);
+            $second = end($where['values']);
+
+            $where['operator'] = '=';
+            $where['value'] = $first;
+            $this->basic($builder, $where, $cypherBuilder);
+
+            $where['value'] = $second;
+            $this->basic($builder, $where, $cypherBuilder);
+        };
+
+        if ($where['not']) {
+            $cypherBuilder->whereNot($callable);
+        } else {
+            $callable($cypherBuilder);
+        }
+    }
+
+    private function nested(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    {
+        $cypherBuilder->whereInner(function (SubQueryBuilder $cypherBuilder) use ($builder) {
+            $this->decorate($builder, $cypherBuilder);
+        }, $this->compileBoolean($where['boolean']));
     }
 
     private function compileBoolean(string $operator): BooleanOperator
@@ -296,13 +307,15 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
         };
     }
 
-    public function decorate(WhereBuilder $illuminateBuilder, IBuilder $cypherBuilder): void
+    public function decorate(Builder $illuminateBuilder, SubQueryBuilder $cypherBuilder): void
     {
-        foreach ($illuminateBuilder->wheres as $where) {
+        /** @psalm-suppress RedundantConditionGivenDocblockType */
+        foreach (array_merge($illuminateBuilder->wheres, ($illuminateBuilder->havings ?? [])) as $where) {
             $this->where($illuminateBuilder, $where, $cypherBuilder);
         }
-        
-        foreach ($illuminateBuilder->joins as $join) {
+
+        /** @psalm-suppress RedundantConditionGivenDocblockType */
+        foreach (($illuminateBuilder->joins ?? []) as $join) {
             $this->decorate($join, $cypherBuilder);
         }
     }
