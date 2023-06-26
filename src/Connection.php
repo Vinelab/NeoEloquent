@@ -145,12 +145,10 @@ final class Connection extends \Illuminate\Database\Connection
     {
         $autobound = CypherGrammar::getBindings($query);
         if (count($autobound) === 0) {
-            foreach ($bindings as $i => $binding) {
-                $autobound['param' . $i] = $binding;
-            }
-            CypherGrammar::setBindings($query, $autobound);
+            CypherGrammar::setBindings($query, $bindings);
+        } else {
+            $bindings = $autobound;
         }
-        $bindings = $autobound;
         foreach ($this->beforeExecutingCallbacks as $beforeExecutingCallback) {
             $beforeExecutingCallback($query, $bindings, $this);
         }

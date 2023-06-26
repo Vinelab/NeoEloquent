@@ -36,7 +36,7 @@ class CypherGrammar extends Grammar
         return <<<'CYPHER'
 CALL db.labels()
 YIELD label
-WHERE label = $param0
+WHERE label = $0
 RETURN label
 CYPHER;
     }
