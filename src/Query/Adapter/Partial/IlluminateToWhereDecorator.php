@@ -113,12 +113,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
      */
     private function inRaw(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypher = Query::variable(str_replace(['<', '>'], '', explode(':', $builder->from))[0])
-                       ->property($where['column'])
-                       ->in(Query::list(array_map(static fn($x) => Query::literal($x), $where['values'])))
-                       ->toQuery();
-
-        $cypherBuilder->whereRaw($cypher, $this->compileBoolean($where['boolean']));
+        $this->in($builder, $where, $cypherBuilder);
     }
 
     /**
