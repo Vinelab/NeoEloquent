@@ -65,8 +65,16 @@ class IlluminateToReturnDecorator implements IlluminateToQueryStructureDecorator
         $distinct = $illuminateBuilder->distinct;
         $cypherBuilder->distinct(is_bool($distinct) ? $distinct : count($distinct) > 0);
 
-        if (count($columns) > 0 && $columns !== ['*']) {
-            $cypherBuilder->returning(...$columns);
+        if (count($columns) > 0) {
+            $usedRaw = false;
+            foreach ($columns as $column) {
+                if (!$usedRaw && str_contains($column, '*')) {
+                    $cypherBuilder->returningRaw('*');
+                    $usedRaw = true;
+                } else {
+                    $cypherBuilder->returning($column);
+                }
+            }
         } else {
             $cypherBuilder->returningAll();
         }

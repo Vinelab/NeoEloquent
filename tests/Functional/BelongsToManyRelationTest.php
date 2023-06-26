@@ -46,6 +46,7 @@ class BelongsToManyRelationTest extends TestCase
         $user->roles()->attach([$master->getKey(), $admin->getKey(), $editor->getKey()]);
 
         $this->assertCount(3, $user->roles);
+        $roles = $user->roles;
         $this->assertEqualsCanonicalizing(['Master', 'Admin', 'Editor'], $user->roles->pluck('title')->toArray());
     }
 
