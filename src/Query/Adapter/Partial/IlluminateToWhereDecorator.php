@@ -9,6 +9,7 @@ use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\SubQueryBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\WhereBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Where\BooleanOperator;
 use Vinelab\NeoEloquent\Processors\Processor;
+use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
 use WikibaseSolutions\CypherDSL\Query;
 
@@ -50,8 +51,8 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
             'notNull' => $this->notNull($builder, $where, $cypherBuilder),
             'rowValues' => $this->rowValues($builder, $where, $cypherBuilder),
             'notExists' => $this->notExists($builder, $where, $cypherBuilder),
-            'exists' => $this->exists($builder, $where, $cypherBuilder),
-            'count' => $this->count($builder, $where, $cypherBuilder),
+            'exists' => $this->exists($where, $cypherBuilder),
+            'count' => $this->count($where, $cypherBuilder),
             'year' => $this->year($builder, $where, $cypherBuilder, $stack),
             'month' => $this->month($builder, $where, $cypherBuilder, $stack),
             'day' => $this->day($builder, $where, $cypherBuilder, $stack),
@@ -59,7 +60,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
             'date' => $this->date($builder, $where, $cypherBuilder, $stack),
             'column' => $this->column($builder, $where, $cypherBuilder),
             'betweenColumn' => $this->betweenColumn($builder, $where, $cypherBuilder),
-            'between' => $this->between($builder, $where, $cypherBuilder, $stack),
+            'between' => $this->between($builder, $where, $cypherBuilder),
             'nested' => $this->nested($builder, $where, $cypherBuilder),
         };
     }
@@ -154,22 +155,26 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     private function notExists(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
         $cypherBuilder->whereNot(function (SubQueryBuilder $cypherBuilder) use ($builder, $where) {
-            $this->exists($builder, $where, $cypherBuilder);
+            $this->exists($where, $cypherBuilder);
         }, $where['boolean']);
     }
 
-    private function exists(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    private function exists(array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypherBuilder->whereExists(function (SubQueryBuilder $subQueryBuilder) use ($builder) {
-            $this->decorate($builder, $subQueryBuilder);
-        }, $this->compileBoolean($where['boolean']));
+        $builder = IlluminateToQueryStructurePipeline::create()
+            ->withWheres()
+            ->pipe($where['query']);
+
+        $cypherBuilder->whereExists($builder, $this->compileBoolean($where['boolean']));
     }
 
-    private function count(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    private function count(array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypherBuilder->whereCount(function (SubQueryBuilder $subQueryBuilder) use ($builder) {
-            $this->decorate($builder, $subQueryBuilder);
-        }, $where['count'], '>=', $this->compileBoolean($where['boolean']));
+        $builder = IlluminateToQueryStructurePipeline::create()
+            ->withWheres()
+            ->pipe($where['query']);
+
+        $cypherBuilder->whereCount($builder, $where['count'], '>=', $this->compileBoolean($where['boolean']));
     }
 
     /**

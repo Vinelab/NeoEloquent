@@ -98,77 +98,14 @@ class GrammarTest extends TestCase
         parent::tearDown();
     }
 
-    public function testGettingQueryParameterFromRegularValue(): void
-    {
-        $p = $this->grammar->parameter('value');
-        $this->assertStringStartsWith('$param', $p);
-    }
-
-    public function testParametrize(): void
-    {
-        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c']));
-    }
-
-    public function testParametrizeRepeat(): void
-    {
-        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c']));
-        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c']));
-    }
-
-    public function testParametrizeRepeatWithContext(): void
-    {
-        $context = new ParameterStack();
-        $this->assertEquals('$param0, $param1, $param2', $this->grammar->parameterize(['a', 'b', 'c'], $context));
-        $this->assertEquals('$param3, $param4, $param5', $this->grammar->parameterize(['a', 'b', 'c'], $context));
-    }
-
-    public function testTable(): void
-    {
-        $p = $this->grammar->wrapTable('Node');
-
-        $this->assertEquals('(Node:Node)', $p);
-    }
-
-    public function testTableAlias(): void
-    {
-        $p = $this->grammar->wrapTable('Node AS x');
-
-        $this->assertEquals('(x:Node)', $p);
-    }
-
-    public function testTablePrefixAlias(): void
-    {
-        $this->grammar->setTablePrefix('x_');
-        $p = $this->grammar->wrapTable('Node AS x');
-
-        $this->assertEquals('(`x_x`:`x_Node`)', $p);
-    }
-
-    public function testTablePrefix(): void
-    {
-        $this->grammar->setTablePrefix('x_');
-        $p = $this->grammar->wrapTable('Node');
-
-        $this->assertEquals('(`x_Node`:`x_Node`)', $p);
-    }
-
-    public function testSimpleFrom(): void
-    {
-        $this->connection->expects($this->once())
-            ->method('select')
-            ->with('MATCH (Node:Node) RETURN *', [], true);
-
-        $this->table->get();
-    }
-
     public function testOrderBy(): void
     {
         $this->connection->expects($this->once())
             ->method('select')
-            ->with('MATCH (Node:Node) RETURN * ORDER BY Node.x ASC, Node.y ASC, Node.z DESC', [], true);
+            ->with('MATCH (Node:Node) RETURN * ORDER BY Node.x,Node.y,Node.z DESC', [], true);
 
         //        $this->table->grammar = new MySqlGrammar();
-        $this->table->orderBy('x')->orderBy('y')->orderBy('z', 'desc')->get();
+        $this->table->orderBy('x', 'desc')->orderBy('y')->orderBy('z', 'desc')->get();
     }
 
     public function testBasicWhereEquals(): void

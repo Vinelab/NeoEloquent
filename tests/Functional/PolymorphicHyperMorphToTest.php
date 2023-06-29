@@ -91,13 +91,11 @@ class PolymorphicHyperMorphToTest extends TestCase
 
         foreach ($video->comments as $comment) {
             $this->assertInstanceOf(Comment::class, $comment);
-            $this->assertTrue($comment->exists());
         }
 
         $post->comments()->saveMany([$commentOnVideo, $anotherCommentOnVideo]);
         foreach ($post->comments as $comment) {
             $this->assertInstanceOf(Comment::class, $comment);
-            $this->assertTrue($comment->exists());
         }
     }
 

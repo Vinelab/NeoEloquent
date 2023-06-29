@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class User extends Model
 {
@@ -36,9 +39,14 @@ class User extends Model
         return $this->hasOne(Profile::class);
     }
 
-    public function facebookAccount(): HasOne
+    public function firstInRole(): HasOneThrough
     {
-        return $this->hasOne(FacebookAccount::class);
+        return $this->hasOneThrough(Role::class, User::class);
+    }
+
+    public function sameRoles(): HasManyThrough
+    {
+        return $this->hasManyThrough(Role::class, User::class);
     }
 
     public function posts(): MorphToMany
@@ -46,23 +54,14 @@ class User extends Model
         return $this->morphToMany(Post::class, 'postable');
     }
 
-    public function videos(): MorphToMany
-    {
-        return $this->morphToMany(Video::class, 'videoable');
-    }
 
-    public function account(): HasOne
+    public function morphToLocation(): MorphTo
     {
-        return $this->hasOne(Account::class);
+        return $this->morphTo(Location::class, 'locatable');
     }
 
     public function colleagues(): HasMany
     {
         return $this->hasMany(User::class);
-    }
-
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class);
     }
 }

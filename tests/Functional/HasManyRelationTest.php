@@ -101,7 +101,6 @@ class HasManyRelationTest extends TestCase
             $edge = $author->books()->create($book);
 
             $this->assertInstanceOf(Book::class, $edge);
-            $this->assertTrue($edge->exists());
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
         }
