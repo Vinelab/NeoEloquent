@@ -4,38 +4,42 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\Fixtures\FacebookAccount;
+use Vinelab\NeoEloquent\Tests\Fixtures\Profile;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class ParameterGroupingTest extends TestCase
 {
-    use RefreshDatabase;
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->getConnection()->affectingStatement('MATCH (x) DETACH DELETE x');
+    }
 
     public function testNestedWhereClause()
     {
         $searchedUser = User::create(['name' => 'John Doe']);
-        $searchedUser->facebookAccount()->save(
-            FacebookAccount::create([
-                'gender' => 'male',
-                'age' => 20,
-                'interest' => 'Dancing',
+        $searchedUser->profile()->save(
+            Profile::create([
+                'guid' => 'abcd',
+                'service' => 'Music',
             ]));
 
         $anotherUser = User::create(['name' => 'John Smith']);
-        $anotherUser->facebookAccount()->save(
-            FacebookAccount::create([
-                'gender' => 'male',
-                'age' => 30,
-                'interest' => 'Music',
+        $anotherUser->profile()->save(
+            Profile::create([
+                'guid' => 'abc',
+                'service' => 'Music',
             ]));
 
-        $users = User::whereHas('facebookAccount', function ($query) {
-            $query->where('gender', 'male')->where(function ($query) {
-                $query->orWhere('age', '<', 24)->orWhere('interest', 'Entertainment');
+        $users = User::whereHas('profile', function ($query) {
+            $query->where('guid', 'abc')->where(function ($query) {
+                $query->orWhere('service', 'Music')->orWhere('service', 'Video');
             });
         })->get();
 
         $this->assertCount(1, $users);
-        $this->assertEquals($searchedUser->name, $users->shift()->name);
+        $this->assertEquals('John Smith', $users->first()->name);
     }
 }

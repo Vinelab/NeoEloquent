@@ -8,16 +8,13 @@ use PhpGraphGroup\CypherQueryBuilder\Common\ParameterStack;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\SubQueryBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\WhereBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Where\BooleanOperator;
-use Vinelab\NeoEloquent\Processors\Processor;
 use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
 use WikibaseSolutions\CypherDSL\Query;
 
-use function array_map;
 use function end;
 use function explode;
 use function reset;
-use function str_contains;
 use function str_replace;
 
 /**
@@ -61,7 +58,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
             'column' => $this->column($builder, $where, $cypherBuilder),
             'betweenColumn' => $this->betweenColumn($builder, $where, $cypherBuilder),
             'between' => $this->between($builder, $where, $cypherBuilder),
-            'nested' => $this->nested($builder, $where, $cypherBuilder),
+            'nested' => $this->nested($where, $cypherBuilder),
         };
     }
 
@@ -162,6 +159,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     private function exists(array $where, WhereBuilder $cypherBuilder): void
     {
         $builder = IlluminateToQueryStructurePipeline::create()
+            ->withParameterStack($cypherBuilder->getStructure()->parameters)
             ->withWheres()
             ->pipe($where['query']);
 
@@ -291,11 +289,14 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
         }
     }
 
-    private function nested(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
+    private function nested(array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypherBuilder->whereInner(function (SubQueryBuilder $cypherBuilder) use ($builder) {
-            $this->decorate($builder, $cypherBuilder);
-        }, $this->compileBoolean($where['boolean']));
+        $sub = IlluminateToQueryStructurePipeline::create()
+            ->withParameterStack($cypherBuilder->getStructure()->parameters)
+            ->withWheres()
+            ->pipe($where['query']);
+
+        $cypherBuilder->whereInner($sub, $this->compileBoolean($where['boolean']));
     }
 
     private function compileBoolean(string $operator): BooleanOperator

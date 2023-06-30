@@ -6,6 +6,7 @@ use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
 use PhpGraphGroup\CypherQueryBuilder\Builders\GraphPatternBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Common\Parameter;
+use PhpGraphGroup\CypherQueryBuilder\Common\ParameterStack;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\PatternBuilder;
 use PhpGraphGroup\CypherQueryBuilder\QueryBuilder;
 use Vinelab\NeoEloquent\Processors\Processor;
@@ -28,7 +29,8 @@ class IlluminateToQueryStructurePipeline
      * @param  list<Decorator>  $decorators
      */
     private function __construct(
-        private readonly array $decorators
+        private readonly array $decorators,
+        private readonly ParameterStack $parameterStack
     ) {
     }
 
@@ -66,11 +68,19 @@ class IlluminateToQueryStructurePipeline
 
         $builder = QueryBuilder::from($patterns);
 
+        foreach ($this->parameterStack as $key => $value) {
+            $builder->getStructure()->parameters->add($value, $key);
+        }
+
         foreach ($this->decorators as $decorator) {
             $decorator->decorate($illuminateBuilder, $builder);
         }
 
         self::getCache()[$illuminateBuilder] = $builder;
+
+        foreach ($builder->getStructure()->parameters as $key => $value) {
+            $this->parameterStack->add($value, $key);
+        }
 
         return $builder;
     }
@@ -115,51 +125,56 @@ class IlluminateToQueryStructurePipeline
     }
 
 
-    public static function create(): self
+    public static function create(ParameterStack|null $stack = null): self
     {
-        return new self([]);
+        return new self([], $stack ?? new ParameterStack());
     }
 
     public function withWheres(): self
     {
-        return new self([...$this->decorators, ...[new IlluminateToWhereDecorator()]]);
+        return new self([...$this->decorators, ...[new IlluminateToWhereDecorator()]], $this->parameterStack);
     }
 
     public function withReturn(): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToReturnDecorator()]]);
+        return new self([... $this->decorators, ...[new IlluminateToReturnDecorator()]], $this->parameterStack);
     }
 
     public function withCreate(array $values): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToCreatingDecorating($values, false)]]);
+        return new self([... $this->decorators, ...[new IlluminateToCreatingDecorating($values, false)]], $this->parameterStack);
     }
 
     public function withBatchCreate(array $values): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToCreatingDecorating($values, true)]]);
+        return new self([... $this->decorators, ...[new IlluminateToCreatingDecorating($values, true)]], $this->parameterStack);
     }
 
     public function withSet(array $values): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToSettingDecorator($values)]]);
+        return new self([... $this->decorators, ...[new IlluminateToSettingDecorator($values)]], $this->parameterStack);
     }
 
     public function withMerge(array $values, array $uniqueBy, array $update): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToMergeDecorator($values, $uniqueBy, $update)]]);
+        return new self([... $this->decorators, ...[new IlluminateToMergeDecorator($values, $uniqueBy, $update)]], $this->parameterStack);
+    }
+
+    public function withParameterStack(ParameterStack $stack): self
+    {
+        return new self($this->decorators, $stack);
     }
 
     public function withDelete(): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToDeletingDecorator()]]);
+        return new self([... $this->decorators, ...[new IlluminateToDeletingDecorator()]], $this->parameterStack);
     }
 
     public function withUnion(): self
     {
         return new self([... $this->decorators, ...[new IlluminateToUnioningDecorator(
             static fn () => IlluminateToQueryStructurePipeline::create()->withWheres()->withReturn()
-        )]]);
+        )]], $this->parameterStack);
     }
 
     /**
