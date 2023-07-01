@@ -9,8 +9,6 @@ use Vinelab\NeoEloquent\Tests\TestCase;
 
 class WheresTheTest extends TestCase
 {
-    use RefreshDatabase;
-
     private User $ab;
 
     private User $cd;
@@ -24,6 +22,8 @@ class WheresTheTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+
+        $this->getConnection()->raw('MATCH (n) DETACH DELETE n');
 
         // Setup the data in the database
         $this->ab = User::create([
