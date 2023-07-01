@@ -3,8 +3,8 @@
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vinelab\NeoEloquent\Tests\Fixtures\Author;
-use Vinelab\NeoEloquent\Tests\Fixtures\Book;
+use Vinelab\NeoEloquent\Tests\Fixtures\Permission;
+use Vinelab\NeoEloquent\Tests\Fixtures\Role;
 use Vinelab\NeoEloquent\Tests\TestCase;
 
 class HasManyRelationTest extends TestCase
@@ -13,16 +13,16 @@ class HasManyRelationTest extends TestCase
 
     public function testSavingSingleAndDynamicLoading(): void
     {
-        $author = Author::create(['name' => 'George R. R. Martin']);
+        $role = Role::create(['title' => 'George R. R. Martin']);
 
-        $got = new Book(['title' => 'A Game of Thrones', 'pages' => '704', 'release_date' => 'August 1996']);
-        $cok = new Book(['title' => 'A Clash of Kings', 'pages' => '768', 'release_date' => 'February 1999']);
+        $got = new Permission(['title' => 'A Game of Thrones', 'alias' => '704']);
+        $cok = new Permission(['title' => 'A Clash of Kings', 'alias' => '768']);
 
-        $author->books()->save($got);
-        $author->books()->save($cok);
+        $role->permissions()->save($got);
+        $role->permissions()->save($cok);
 
-        $author = Author::first();
-        $books = $author->books;
+        $role = Role::first();
+        $books = $role->permissions;
 
         $expectedBooks = [
             'A Game of Thrones' => $got->getAttributes(),
@@ -38,69 +38,61 @@ class HasManyRelationTest extends TestCase
 
     public function testSavingManyAndDynamicLoading()
     {
-        $author = Author::create(['name' => 'George R. R. Martin']);
+        $author = Role::create(['title' => 'George R. R. Martin']);
 
         $novel = [
-            new Book([
+            new Permission([
                 'title' => 'A Game of Thrones',
-                'pages' => 704,
-                'release_date' => 'August 1996',
+                'alias' => '704'
             ]),
-            new Book([
+            new Permission([
                 'title' => 'A Clash of Kings',
-                'pages' => 768,
-                'release_date' => 'February 1999',
+                'alias' => '768'
             ]),
-            new Book([
+            new Permission([
                 'title' => 'A Storm of Swords',
-                'pages' => 992,
-                'release_date' => 'November 2000',
+                'alias' => '992'
             ]),
-            new Book([
+            new Permission([
                 'title' => 'A Feast for Crows',
-                'pages' => 753,
-                'release_date' => 'November 2005',
+                'alias' => '753'
             ]),
         ];
 
-        $edges = $author->books()->saveMany($novel);
+        $edges = $author->permissions()->saveMany($novel);
         $this->assertCount(count($novel), $edges);
 
-        $books = $author->books->toArray();
+        $books = $author->permissions->toArray();
         $this->assertCount(count($novel), $books);
     }
 
     public function testCreatingSingleRelatedModels()
     {
-        $author = Author::create(['name' => 'George R. R. Martin']);
+        $author = Role::create(['title' => 'George R. R. Martin']);
 
         $novel = [
             [
                 'title' => 'A Game of Thrones',
-                'pages' => 704,
-                'release_date' => 'August 1996',
+                'alias' => '704'
             ],
             [
                 'title' => 'A Clash of Kings',
-                'pages' => 768,
-                'release_date' => 'February 1999',
+                'alias' => '768'
             ],
             [
                 'title' => 'A Storm of Swords',
-                'pages' => 992,
-                'release_date' => 'November 2000',
+                'alias' => '992'
             ],
             [
                 'title' => 'A Feast for Crows',
-                'pages' => 753,
-                'release_date' => 'November 2005',
+                'alias' => '753'
             ],
         ];
 
         foreach ($novel as $book) {
-            $edge = $author->books()->create($book);
+            $edge = $author->permissions()->create($book);
 
-            $this->assertInstanceOf(Book::class, $edge);
+            $this->assertInstanceOf(Permission::class, $edge);
             $this->assertNotNull($edge->created_at);
             $this->assertNotNull($edge->updated_at);
         }
@@ -108,44 +100,40 @@ class HasManyRelationTest extends TestCase
 
     public function testEagerLoadingHasMany()
     {
-        $author = Author::create(['name' => 'George R. R. Martin']);
+        $author = Role::create(['title' => 'George R. R. Martin']);
 
         $novel = [
-            new Book([
+            new Permission([
                 'title' => 'A Game of Thrones',
-                'pages' => 704,
-                'release_date' => 'August 1996',
+                'alias' => '704'
             ]),
-            new Book([
+            new Permission([
                 'title' => 'A Clash of Kings',
-                'pages' => 768,
-                'release_date' => 'February 1999',
+                'alias' => '768'
             ]),
-            new Book([
+            new Permission([
                 'title' => 'A Storm of Swords',
-                'pages' => 992,
-                'release_date' => 'November 2000',
+                'alias' => '992'
             ]),
-            new Book([
+            new Permission([
                 'title' => 'A Feast for Crows',
-                'pages' => 753,
-                'release_date' => 'November 2005',
+                'alias' => '753'
             ]),
         ];
 
-        $edges = $author->books()->saveMany($novel);
+        $edges = $author->permissions()->saveMany($novel);
         $this->assertCount(count($novel), $edges);
 
-        $author = Author::with('books')->find($author->getKey());
+        $author = Role::with('permissions')->find($author->getKey());
         $relations = $author->getRelations();
 
-        $this->assertArrayHasKey('books', $relations);
-        $this->assertCount(count($novel), $relations['books']);
+        $this->assertArrayHasKey('permissions', $relations);
+        $this->assertCount(count($novel), $relations['permissions']);
 
         $booksIds = array_map(function ($book) {
             return $book->getKey();
         }, $novel);
 
-        $this->assertEquals(['A Game of Thrones', 'A Clash of Kings', 'A Storm of Swords', 'A Feast for Crows'], $booksIds);
+        $this->assertEquals(['704', '768', '992', '753'], $booksIds);
     }
 }
