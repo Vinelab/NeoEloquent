@@ -3,10 +3,11 @@
 namespace Vinelab\NeoEloquent\Query\Adapter\Partial;
 
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use PhpGraphGroup\CypherQueryBuilder\Common\Distinct;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
+use Vinelab\NeoEloquent\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
 
 use function array_search;
@@ -68,6 +69,9 @@ class IlluminateToReturnDecorator implements IlluminateToQueryStructureDecorator
         if (count($columns) > 0) {
             $usedRaw = false;
             foreach ($columns as $column) {
+                if ($column instanceof Expression) {
+                    $column = $column->getValue(new CypherGrammar());
+                }
                 if (!$usedRaw && str_contains($column, '*')) {
                     $cypherBuilder->returningRaw('*');
                     $usedRaw = true;

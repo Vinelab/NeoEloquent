@@ -172,7 +172,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
             ->withWheres()
             ->pipe($where['query']);
 
-        $cypherBuilder->whereCount($builder, $where['count'], '>=', $this->compileBoolean($where['boolean']));
+        $cypherBuilder->whereCount($builder, $where['value'], '>=', $this->compileBoolean($where['boolean']));
     }
 
     /**
@@ -234,6 +234,13 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
      */
     private function column(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
+        // Workaround in a very obscure bug when using deeply nested WHERE EXISTS subqueries.
+        if (str_starts_with($where['second'], $builder->from) && $where['operator'] === '=') {
+            $tmp = $where['first'];
+            $where['first'] = $where['second'];
+            $where['second'] = $tmp;
+        }
+
         $cypherBuilder->wherePropertiesEquals(
             $where['first'],
             $where['second'],

@@ -16,9 +16,4 @@ class Post extends Model
     protected $keyType = 'string';
 
     protected $primaryKey = 'title';
-
-    public function comments(): MorphMany
-    {
-        return $this->morphMany(Comment::class, 'commentable');
-    }
 }

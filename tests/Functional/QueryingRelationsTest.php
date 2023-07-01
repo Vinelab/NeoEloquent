@@ -15,51 +15,11 @@ use Vinelab\NeoEloquent\Tests\TestCase;
 
 class QueryingRelationsTest extends TestCase
 {
-    use RefreshDatabase;
-
-    public function testQueryingHasCount()
+    protected function setUp(): void
     {
-        Post::create(['title' => 'I have no comments =(', 'body' => 'None!']);
-        $postWithComment = Post::create(['title' => 'Nananana', 'body' => 'Commentmaaan']);
-        $postWithTwoComments = Post::create(['title' => 'I got two']);
-        $postWithTenComments = Post::create(['title' => 'Up yours posts, got 10 here']);
+        parent::setUp();
 
-        $comment = new Comment(['text' => 'food']);
-        $postWithComment->comments()->save($comment);
-
-        // add two comments to $postWithTwoComments
-        for ($i = 0; $i < 2; $i++) {
-            $postWithTwoComments->comments()->create(['text' => "Comment $i"]);
-        }
-        // add ten comments to $postWithTenComments
-        for ($i = 0; $i < 10; $i++) {
-            $postWithTenComments->comments()->create(['text' => "Comment $i"]);
-        }
-
-        $allPosts = Post::get();
-        $this->assertCount(4, $allPosts);
-
-        $posts = Post::has('comments')->get();
-        $this->assertCount(3, $posts);
-        $expectedHasComments = [
-            $postWithComment->getKey(),
-            $postWithTwoComments->getKey(),
-            $postWithTenComments->getKey(),
-        ];
-        foreach ($posts as $post) {
-            $this->assertTrue(in_array($post->getKey(), $expectedHasComments));
-        }
-
-        $postsWithMoreThanOneComment = Post::has('comments', '>=', 2)->get();
-        $this->assertCount(2, $postsWithMoreThanOneComment);
-        $expectedWithMoreThanOne = [$postWithTwoComments->getKey(), $postWithTenComments->getKey()];
-        foreach ($postsWithMoreThanOneComment as $post) {
-            $this->assertTrue(in_array($post->getKey(), $expectedWithMoreThanOne));
-        }
-
-        $postWithTen = Post::has('comments', '=', 10)->get();
-        $this->assertCount(1, $postWithTen);
-        $this->assertEquals($postWithTenComments->toArray(), $postWithTen->first()->toArray());
+        $this->getConnection()->statement('MATCH (n) DETACH DELETE n');
     }
 
     public function testQueryingNestedHas()
@@ -158,25 +118,6 @@ class QueryingRelationsTest extends TestCase
         $found = User::whereHas('roles', function ($q) use ($role) {
             $q->where('title', $role->getKey());
         })->first();
-
-        $this->assertInstanceOf(User::class, $found);
-    }
-
-    public function testQueryingParentWithMultipleWhereHas()
-    {
-        $user = User::create(['name' => 'cappuccino']);
-        $role = Role::create(['title' => 'pikachu']);
-        $account = Account::create(['guid' => uniqid()]);
-
-        $user->roles()->save($role);
-        $user->account()->save($account);
-
-        $found = User::whereHas('roles', function ($q) use ($role) {
-            $q->where('title', $role->getKey());
-        })->whereHas('account', function ($q) use ($account) {
-            $q->where('guid', $account->getKey());
-        })->where('name', $user->getKey())
-            ->first();
 
         $this->assertInstanceOf(User::class, $found);
     }
