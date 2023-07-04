@@ -43,14 +43,14 @@ CYPHER;
     /**
      * Compile the query to determine the list of columns.
      */
-    public function compileColumnListing(): string
+    public function compileColumnListing(string $table): string
     {
-        return <<<'CYPHER'
-CALL db.schema.nodeTypeProperties()
-YIELD nodeLabels, propertyName
-WHERE [ label IN nodeLabels WHERE label = $param0 | label ] <> []
-RETURN propertyName as column_name
-CYPHER;
+        return <<<CYPHER
+        CALL db.schema.nodeTypeProperties()
+        YIELD nodeLabels, propertyName
+        WHERE [ label IN nodeLabels WHERE label = "$table" | label ] <> []
+        RETURN propertyName as column_name
+        CYPHER;
     }
 
     /**

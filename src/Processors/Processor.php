@@ -105,4 +105,9 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
 
         return $x;
     }
+
+    public function processColumnListing($results): array
+    {
+        return Arr::pluck($results, 'column_name');
+    }
 }

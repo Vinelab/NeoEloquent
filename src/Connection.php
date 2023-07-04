@@ -156,7 +156,7 @@ final class Connection extends \Illuminate\Database\Connection
         $start = (int) microtime(true);
 
         try {
-            $result = $callback($query);
+            $result = $callback($query, $bindings);
         } catch (Throwable $e) {
             throw new QueryException('bolt', $query, $bindings, $e);
         }
@@ -173,12 +173,12 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function cursor($query, $bindings = [], $useReadPdo = true): Generator
     {
-        return $this->run($query, $bindings, function (string $query) use ($useReadPdo) {
+        return $this->run($query, $bindings, function (string $query, $bindings) use ($useReadPdo) {
             if ($this->pretending) {
                 return;
             }
 
-            $statement = new Statement($query, CypherGrammar::getBindings($query));
+            $statement = new Statement($query, $bindings);
             /**
              * @noinspection PhpParamsInspection
              *
