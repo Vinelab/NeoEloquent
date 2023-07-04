@@ -8,6 +8,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use Vinelab\NeoEloquent\Grammars\CypherGrammar;
+use Vinelab\NeoEloquent\Processors\Processor;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
 
 use function array_search;
@@ -76,7 +77,7 @@ class IlluminateToReturnDecorator implements IlluminateToQueryStructureDecorator
                     $cypherBuilder->returningRaw('*');
                     $usedRaw = true;
                 } else {
-                    $cypherBuilder->returning($column);
+                    $cypherBuilder->returning(Processor::standardiseColumn($column));
                 }
             }
         } else {

@@ -49,19 +49,29 @@ class IlluminateToCreatingDecorating implements IlluminateToQueryStructureDecora
                 $toCreate['parent'] = $row[$object->getForeignPivotKeyName()];
                 $toCreate['related'] = $row[$object->getRelatedPivotKeyName()];
 
-                unset($row[$object->getForeignPivotKeyName()]);
-                unset($row[$object->getRelatedPivotKeyName()]);
+//                unset($row[$object->getForeignPivotKeyName()]);
+//                unset($row[$object->getRelatedPivotKeyName()]);
 
                 $toCreate['values'] = $row;
                 $creating[] = $toCreate;
             }
 
 
-            $cypherBuilder->getStructure()->parameters->add($creating, 'toCreate');
-
             [1 => $name] = Processor::fromToName($illuminateBuilder);
 
-            $cypherBuilder->creating($name);
+            foreach (array_keys($values[0]) as $column) {
+                $original = $column;
+                if (!str_contains($column, '.')) {
+                    $column = "$name.$column";
+                }
+
+                $cypherBuilder->creating([
+                    Processor::standardiseColumn($column) => new RawExpression("toCreate['values']['$original']")
+                ]);
+            }
+
+            $cypherBuilder->getStructure()->parameters->add($creating, 'toCreate');
+
 
             return;
         }

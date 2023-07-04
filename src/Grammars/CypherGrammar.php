@@ -10,6 +10,7 @@ use Illuminate\Database\Query\Grammars\Grammar;
 use PhpGraphGroup\CypherQueryBuilder\GrammarPipeline;
 use RuntimeException;
 use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
+use Vinelab\NeoEloquent\Query\Adapter\Tracer;
 use WeakReference;
 
 use function array_key_first;
@@ -88,11 +89,12 @@ class CypherGrammar extends Grammar
     public function compileInsert(Builder $query, array $values): string
     {
         $prefix = '';
-        $trace = debug_backtrace(limit: 4)[3] ?? null;
-        if (($trace['object'] ?? null) instanceof BelongsToMany) {
+        if (Tracer::isInBelongsToManyWithRelationship($query)) {
             $prefix = 'UNWIND $toCreate AS toCreate ';
         }
+
         $pipeline = IlluminateToQueryStructurePipeline::create()->withWheres();
+
         if (is_int(array_key_first($values))) {
             $pipeline = $pipeline ->withBatchCreate($values);
         } else {

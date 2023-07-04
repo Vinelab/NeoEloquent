@@ -5,9 +5,11 @@ namespace Vinelab\NeoEloquent\Query\Adapter\Partial;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Str;
 use PhpGraphGroup\CypherQueryBuilder\Common\ParameterStack;
+use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\SubQueryBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\WhereBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Where\BooleanOperator;
+use Vinelab\NeoEloquent\Processors\Processor;
 use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
 use WikibaseSolutions\CypherDSL\Query;
@@ -77,7 +79,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     private function basic(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
         $cypherBuilder->where(
-            $where['column'],
+            Processor::standardiseColumn($where['column']),
             $where['operator'],
             $where['value'],
             $this->compileBoolean($where['boolean'])
@@ -129,7 +131,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
      */
     private function null(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypherBuilder->whereNull($where['column'], $this->compileBoolean($where['boolean']));
+        $cypherBuilder->whereNull(Processor::standardiseColumn($where['column']), $this->compileBoolean($where['boolean']));
     }
 
     private function notNull(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
@@ -145,7 +147,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     private function rowValues(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
         foreach ($where['columns'] as $i => $column) {
-            $cypherBuilder->whereEquals($column, $where['values'][$i], BooleanOperator::AND);
+            $cypherBuilder->whereEquals(Processor::standardiseColumn($column), $where['values'][$i], BooleanOperator::AND);
         }
     }
 
@@ -188,13 +190,12 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
      */
     private function temporal(Builder $builder, array $where, WhereBuilder $cypherBuilder, string $attribute, ParameterStack $stack): void
     {
-        $cypher = Query::variable(str_replace(['<', '>'], '', explode(':', $builder->from))[0])
-                       ->property($where['column'])
-                       ->property($attribute)
-                       ->equals($stack->add($where['value']))
-                       ->toQuery();
-
-        $cypherBuilder->whereRaw($cypher, $this->compileBoolean($where['boolean']));
+        $cypherBuilder->where(
+            Processor::standardiseColumn($where['column']),
+            '=',
+            new RawExpression('$'.$stack->add($where['value'])->name.'.'.$attribute),
+            $this->compileBoolean($where['boolean'])
+        );
     }
 
     /**
@@ -242,8 +243,8 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
         }
 
         $cypherBuilder->wherePropertiesEquals(
-            $where['first'],
-            $where['second'],
+            Processor::standardiseColumn($where['first']),
+            Processor::standardiseColumn($where['second']),
             $this->compileBoolean($where['boolean'])
         );
     }

@@ -56,15 +56,16 @@ class IlluminateToQueryStructurePipeline
 
     public function pipe(Builder $illuminateBuilder): QueryBuilder
     {
-        [$labelOrType, $name, $isRelationship, $direction] = Processor::fromToName($illuminateBuilder);
 
         if ($object = Tracer::isInBelongsToManyWithRelationship($illuminateBuilder)) {
             $parent = $object->getParent();
             $related = $object->getRelated();
 
+            [0 => $labelOrType, 1 => $name, 3 => $direction] = Processor::fromToName($object->getTable());
+
+
             [$parentLabelOrType, $parentName] = Processor::fromToName($parent->getTable());
             [$relatedLabelOrType, $relatedName] = Processor::fromToName($related->getTable());
-
 
             $patterns = GraphPatternBuilder::fromNode($parentLabelOrType, $parentName)
                 ->addRelationship($labelOrType, $name, $direction)
@@ -72,6 +73,8 @@ class IlluminateToQueryStructurePipeline
                 ->end()
             ->end();
         } else {
+            [$labelOrType, $name, $isRelationship, $direction] = Processor::fromToName($illuminateBuilder);
+
             if ($isRelationship) {
                 $patterns = GraphPatternBuilder::fromRelationship($labelOrType, $name, $direction, $this->containsLeftJoin($illuminateBuilder));
             } else {

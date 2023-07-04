@@ -54,6 +54,19 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         return [ $labelOrType[0], $name, $target === 'relationship', $direction];
     }
 
+    public static function standardiseColumn(string $column): string
+    {
+        if (!str_contains($column, '.')) {
+            return $column;
+        }
+
+        [$table, $column] = explode('.', $column, 2);
+        [1 => $name] = Processor::fromToName($table);
+
+        return "$name.$column";
+    }
+
+
     public function processSelect(Builder $query, $results): array
     {
         $tbr = [];
