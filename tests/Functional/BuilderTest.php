@@ -68,25 +68,25 @@ class BuilderTest extends TestCase
     public function testUpsert(): void
     {
         $this->markTestSkipped('Upsert not supported yet');
-//        $this->builder->from('Hero')->upsert([
-//            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
-//            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
-//        ], ['a'], ['c']);
-//
-//        self::assertEqualsCanonicalizing([
-//            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
-//            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
-//        ], $this->builder->get()->toArray());
-//
-//        $this->builder->from('Hero')->upsert([
-//            ['a' => 'aa', 'b' => 'bb', 'c' => 'cdc'],
-//            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
-//        ], ['a'], ['c']);
-//
-//        self::assertEqualsCanonicalizing([
-//            ['a' => 'aa', 'b' => 'bb', 'c' => 'cdc'],
-//            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
-//        ], $this->builder->get()->toArray());
+        //        $this->builder->from('Hero')->upsert([
+        //            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
+        //            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
+        //        ], ['a'], ['c']);
+        //
+        //        self::assertEqualsCanonicalizing([
+        //            ['a' => 'aa', 'b' => 'bb', 'c' => 'cc'],
+        //            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccc'],
+        //        ], $this->builder->get()->toArray());
+        //
+        //        $this->builder->from('Hero')->upsert([
+        //            ['a' => 'aa', 'b' => 'bb', 'c' => 'cdc'],
+        //            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
+        //        ], ['a'], ['c']);
+        //
+        //        self::assertEqualsCanonicalizing([
+        //            ['a' => 'aa', 'b' => 'bb', 'c' => 'cdc'],
+        //            ['a' => 'aaa', 'b' => 'bbb', 'c' => 'ccdc'],
+        //        ], $this->builder->get()->toArray());
     }
 
     public function testFailingWhereWithNullValue(): void

@@ -4,11 +4,7 @@ namespace Vinelab\NeoEloquent\Tests\Functional;
 
 use Carbon\Carbon;
 use DateTime;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vinelab\NeoEloquent\Tests\Fixtures\Account;
-use Vinelab\NeoEloquent\Tests\Fixtures\Comment;
 use Vinelab\NeoEloquent\Tests\Fixtures\Permission;
-use Vinelab\NeoEloquent\Tests\Fixtures\Post;
 use Vinelab\NeoEloquent\Tests\Fixtures\Role;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;

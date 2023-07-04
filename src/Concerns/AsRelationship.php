@@ -11,7 +11,6 @@ use Illuminate\Support\Str;
  */
 trait AsRelationship
 {
-
     protected string $leftKeyPropertyName;
 
     protected string $leftLabel;

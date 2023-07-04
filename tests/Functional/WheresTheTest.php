@@ -2,7 +2,6 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use function usort;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;
@@ -23,7 +22,7 @@ class WheresTheTest extends TestCase
     {
         parent::setUp();
 
-        $this->getConnection()->raw('MATCH (n) DETACH DELETE n');
+        $this->getConnection()->affectingStatement('MATCH (n) DETACH DELETE n');
 
         // Setup the data in the database
         $this->ab = User::create([

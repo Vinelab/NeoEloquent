@@ -43,19 +43,19 @@ class HasManyRelationTest extends TestCase
         $novel = [
             new Permission([
                 'title' => 'A Game of Thrones',
-                'alias' => '704'
+                'alias' => '704',
             ]),
             new Permission([
                 'title' => 'A Clash of Kings',
-                'alias' => '768'
+                'alias' => '768',
             ]),
             new Permission([
                 'title' => 'A Storm of Swords',
-                'alias' => '992'
+                'alias' => '992',
             ]),
             new Permission([
                 'title' => 'A Feast for Crows',
-                'alias' => '753'
+                'alias' => '753',
             ]),
         ];
 
@@ -73,19 +73,19 @@ class HasManyRelationTest extends TestCase
         $novel = [
             [
                 'title' => 'A Game of Thrones',
-                'alias' => '704'
+                'alias' => '704',
             ],
             [
                 'title' => 'A Clash of Kings',
-                'alias' => '768'
+                'alias' => '768',
             ],
             [
                 'title' => 'A Storm of Swords',
-                'alias' => '992'
+                'alias' => '992',
             ],
             [
                 'title' => 'A Feast for Crows',
-                'alias' => '753'
+                'alias' => '753',
             ],
         ];
 
@@ -105,19 +105,19 @@ class HasManyRelationTest extends TestCase
         $novel = [
             new Permission([
                 'title' => 'A Game of Thrones',
-                'alias' => '704'
+                'alias' => '704',
             ]),
             new Permission([
                 'title' => 'A Clash of Kings',
-                'alias' => '768'
+                'alias' => '768',
             ]),
             new Permission([
                 'title' => 'A Storm of Swords',
-                'alias' => '992'
+                'alias' => '992',
             ]),
             new Permission([
                 'title' => 'A Feast for Crows',
-                'alias' => '753'
+                'alias' => '753',
             ]),
         ];
 

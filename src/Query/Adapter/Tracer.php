@@ -22,7 +22,7 @@ class Tracer
     {
         $object = $backtrace['object'] ?? null;
         [2 => $isRelationship] = Processor::fromToName($builder);
-        if (!$isRelationship && is_array($builder->joins) && count($builder->joins) === 1) {
+        if (! $isRelationship && is_array($builder->joins) && count($builder->joins) === 1) {
             [2 => $isRelationship] = Processor::fromToName($builder->joins[0]->table);
         }
 

@@ -37,9 +37,6 @@ class Builder extends \Illuminate\Database\Query\Builder
      * Add a sub-query count clause to this query.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  string  $operator
-     * @param  int  $count
-     * @param  string  $boolean
      * @return $this
      */
     protected function addWhereCountQuery(\Illuminate\Contracts\Database\Query\Builder $query, string $operator = '>=', int $count = 1, string $boolean = 'and'): static

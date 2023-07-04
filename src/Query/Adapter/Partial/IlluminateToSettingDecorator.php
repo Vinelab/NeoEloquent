@@ -16,7 +16,7 @@ class IlluminateToSettingDecorator implements IlluminateToQueryStructureDecorato
 
     public function decorate(Builder $illuminateBuilder, \PhpGraphGroup\CypherQueryBuilder\Contracts\Builder $cypherBuilder): void
     {
-        foreach ($this->values as $property =>  $value) {
+        foreach ($this->values as $property => $value) {
             $cypherBuilder->setting($property, $value);
         }
     }

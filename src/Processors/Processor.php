@@ -8,13 +8,8 @@ use Illuminate\Support\Arr;
 use Laudis\Neo4j\Contracts\HasPropertiesInterface;
 use Laudis\Neo4j\Types\DateTime;
 use Laudis\Neo4j\Types\DateTimeZoneId;
-use PhpGraphGroup\CypherQueryBuilder\Builders\GraphPatternBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Common\GraphPattern;
-use PhpGraphGroup\CypherQueryBuilder\Common\PropertyRelationship;
-
-use function preg_match;
 use function str_contains;
-use function str_replace;
 
 class Processor extends \Illuminate\Database\Query\Processors\Processor
 {
@@ -30,7 +25,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
 
         if ($builder instanceof JoinClause) {
             $from = $builder->from ?? $builder->table;
-        } else if ($builder instanceof Builder) {
+        } elseif ($builder instanceof Builder) {
             $from = $builder->from;
         } else {
             $from = $builder;
@@ -42,7 +37,6 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
             $label = $from;
         }
 
-
         if (str_starts_with($label, '<') || str_ends_with($label, '>')) {
             $target = 'relationship';
         } else {
@@ -51,12 +45,12 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
 
         [$labelOrType, $name] = (new GraphPattern())->decode($label, $target, $direction, $name);
 
-        return [ $labelOrType[0], $name, $target === 'relationship', $direction];
+        return [$labelOrType[0], $name, $target === 'relationship', $direction];
     }
 
     public static function standardiseColumn(string $column): string
     {
-        if (!str_contains($column, '.')) {
+        if (! str_contains($column, '.')) {
             return $column;
         }
 
@@ -65,7 +59,6 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
 
         return "$name.$column";
     }
-
 
     public function processSelect(Builder $query, $results): array
     {

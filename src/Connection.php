@@ -14,7 +14,6 @@ use Illuminate\Support\Arr;
 use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
-use Laudis\Neo4j\Databags\ResultSummary;
 use Laudis\Neo4j\Databags\Statement;
 use Laudis\Neo4j\Databags\SummaryCounters;
 use Laudis\Neo4j\Exception\Neo4jException;
@@ -81,7 +80,6 @@ final class Connection extends \Illuminate\Database\Connection
         return $this->readSession;
     }
 
-
     public function __construct(
         private readonly SessionInterface $readSession,
         private readonly SessionInterface $session,
@@ -89,7 +87,7 @@ final class Connection extends \Illuminate\Database\Connection
         string $tablePrefix,
         array $config
     ) {
-        parent::__construct(static fn () => throw new LogicException('Cannot use PDO in '. self::class), $database, $tablePrefix, $config);
+        parent::__construct(static fn () => throw new LogicException('Cannot use PDO in '.self::class), $database, $tablePrefix, $config);
 
         $this->useDefaultSchemaGrammar();
 
@@ -183,6 +181,7 @@ final class Connection extends \Illuminate\Database\Connection
             $statement = new Statement($query, CypherGrammar::getBindings($query));
             /**
              * @noinspection PhpParamsInspection
+             *
              * @psalm-suppress InvalidArgument
              */
             $this->event(new StatementPrepared($this, $statement));
@@ -324,7 +323,7 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function selectOne($query, $bindings = [], $useReadPdo = true): array|null
     {
-        foreach ($this->cursor($query, useReadPdo:  $useReadPdo) as $result) {
+        foreach ($this->cursor($query, useReadPdo: $useReadPdo) as $result) {
             return $result;
         }
 

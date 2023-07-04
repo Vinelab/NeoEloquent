@@ -2,8 +2,6 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vinelab\NeoEloquent\Tests\Fixtures\FacebookAccount;
 use Vinelab\NeoEloquent\Tests\Fixtures\Profile;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;

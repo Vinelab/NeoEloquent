@@ -10,7 +10,8 @@ use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
  */
 class IlluminateToMergeDecorator implements IlluminateToQueryStructureDecorator
 {
-    public function __construct(private readonly array $values, private readonly array $uniqueBy, private readonly array $update) {
+    public function __construct(private readonly array $values, private readonly array $uniqueBy, private readonly array $update)
+    {
 
     }
 

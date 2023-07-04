@@ -3,7 +3,6 @@
 namespace Vinelab\NeoEloquent\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Post extends Model
 {

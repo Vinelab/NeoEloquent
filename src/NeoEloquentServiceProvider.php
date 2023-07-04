@@ -11,7 +11,6 @@ use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
-use WikibaseSolutions\CypherDSL\Query;
 
 class NeoEloquentServiceProvider extends ServiceProvider
 {

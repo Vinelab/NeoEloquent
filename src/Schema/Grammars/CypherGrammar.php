@@ -4,7 +4,6 @@ namespace Vinelab\NeoEloquent\Schema\Grammars;
 
 use function array_merge;
 use function array_values;
-use BadMethodCallException;
 use function collect;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
@@ -437,8 +436,6 @@ CYPHER;
 
     /**
      * Compile the command to disable foreign key constraints.
-     *
-     * @return string
      */
     public function compileDisableForeignKeyConstraints(): string
     {

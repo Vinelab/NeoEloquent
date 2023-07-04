@@ -2,7 +2,6 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Laudis\Neo4j\Databags\SummarizedResult;
 use Vinelab\NeoEloquent\Tests\Fixtures\Role;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;
@@ -21,7 +20,7 @@ class RelatedTest extends TestCase
         $user = User::create(['name' => 'User']);
 
         $user->relatedRoles()->create([
-            'title' => 'Role'
+            'title' => 'Role',
         ]);
 
         $results = $this->getConnection()->select('RETURN COUNT { MATCH (u:Individual) - [:HAS_ROLE] -> (r:Role) } AS count');

@@ -35,8 +35,6 @@ class IlluminateToQueryStructurePipeline
     }
 
     /**
-     * @param Builder $builder
-     *
      * @return array<string, mixed>
      */
     public static function getBindings(Builder $builder): array
@@ -63,15 +61,14 @@ class IlluminateToQueryStructurePipeline
 
             [0 => $labelOrType, 1 => $name, 3 => $direction] = Processor::fromToName($object->getTable());
 
-
             [$parentLabelOrType, $parentName] = Processor::fromToName($parent->getTable());
             [$relatedLabelOrType, $relatedName] = Processor::fromToName($related->getTable());
 
             $patterns = GraphPatternBuilder::fromNode($parentLabelOrType, $parentName)
                 ->addRelationship($labelOrType, $name, $direction)
-                    ->addChildNode($relatedLabelOrType, $relatedName)
+                ->addChildNode($relatedLabelOrType, $relatedName)
                 ->end()
-            ->end();
+                ->end();
         } else {
             [$labelOrType, $name, $isRelationship, $direction] = Processor::fromToName($illuminateBuilder);
 
@@ -108,6 +105,7 @@ class IlluminateToQueryStructurePipeline
         /**
          * @psalm-suppress RedundantConditionGivenDocblockType
          * @psalm-suppress DocblockTypeContradiction
+         *
          * @var JoinClause $join
          */
         foreach (($builder->joins ?? []) as $join) {
@@ -126,7 +124,6 @@ class IlluminateToQueryStructurePipeline
         }
     }
 
-
     private function containsLeftJoin(Builder $builder): bool
     {
         /**
@@ -142,7 +139,6 @@ class IlluminateToQueryStructurePipeline
         return false;
     }
 
-
     public static function create(ParameterStack|null $stack = null): self
     {
         return new self([], $stack ?? new ParameterStack());
@@ -155,27 +151,27 @@ class IlluminateToQueryStructurePipeline
 
     public function withReturn(): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToReturnDecorator()]], $this->parameterStack);
+        return new self([...$this->decorators, ...[new IlluminateToReturnDecorator()]], $this->parameterStack);
     }
 
     public function withCreate(array $values): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToCreatingDecorating($values, false)]], $this->parameterStack);
+        return new self([...$this->decorators, ...[new IlluminateToCreatingDecorating($values, false)]], $this->parameterStack);
     }
 
     public function withBatchCreate(array $values): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToCreatingDecorating($values, true)]], $this->parameterStack);
+        return new self([...$this->decorators, ...[new IlluminateToCreatingDecorating($values, true)]], $this->parameterStack);
     }
 
     public function withSet(array $values): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToSettingDecorator($values)]], $this->parameterStack);
+        return new self([...$this->decorators, ...[new IlluminateToSettingDecorator($values)]], $this->parameterStack);
     }
 
     public function withMerge(array $values, array $uniqueBy, array $update): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToMergeDecorator($values, $uniqueBy, $update)]], $this->parameterStack);
+        return new self([...$this->decorators, ...[new IlluminateToMergeDecorator($values, $uniqueBy, $update)]], $this->parameterStack);
     }
 
     public function withParameterStack(ParameterStack $stack): self
@@ -185,12 +181,12 @@ class IlluminateToQueryStructurePipeline
 
     public function withDelete(): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToDeletingDecorator()]], $this->parameterStack);
+        return new self([...$this->decorators, ...[new IlluminateToDeletingDecorator()]], $this->parameterStack);
     }
 
     public function withUnion(): self
     {
-        return new self([... $this->decorators, ...[new IlluminateToUnioningDecorator(
+        return new self([...$this->decorators, ...[new IlluminateToUnioningDecorator(
             static fn () => IlluminateToQueryStructurePipeline::create()->withWheres()->withReturn()
         )]], $this->parameterStack);
     }

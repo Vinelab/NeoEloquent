@@ -2,20 +2,19 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
+use function in_array;
 use ReflectionClass;
 use Vinelab\NeoEloquent\Connection;
 use Vinelab\NeoEloquent\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Tests\TestCase;
-
-use function in_array;
 
 class ReflectionTests extends TestCase
 {
     /**
      * @dataProvider classesAndSkippingMethods
      *
-     * @param class-string<string> $class
-     * @param list<string> $skippingMethods
+     * @param  class-string<string>  $class
+     * @param  list<string>  $skippingMethods
      */
     public function testImplementation(string $class, array $skippingMethods): void
     {
@@ -47,8 +46,8 @@ class ReflectionTests extends TestCase
                     'hasMacro',
                     'flushMacros',
                     '__callStatic',
-                    '__call'
-                ]
+                    '__call',
+                ],
             ],
             Connection::class => [
                 Connection::class,
@@ -108,9 +107,9 @@ class ReflectionTests extends TestCase
                     'hasMacro',
                     'flushMacros',
                     '__callStatic',
-                    '__call'
-                ]
-            ]
+                    '__call',
+                ],
+            ],
         ];
     }
 }

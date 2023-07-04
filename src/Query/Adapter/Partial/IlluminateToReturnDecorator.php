@@ -6,14 +6,12 @@ use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use function in_array;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
+use function str_contains;
 use Vinelab\NeoEloquent\Grammars\CypherGrammar;
 use Vinelab\NeoEloquent\Processors\Processor;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
-
-use function array_search;
-use function in_array;
-use function str_contains;
 
 /**
  * Decorates the Return part of the query structure. (clauses RETURN, LIMIT, SKIP, ORDER BY)
@@ -29,11 +27,11 @@ class IlluminateToReturnDecorator implements IlluminateToQueryStructureDecorator
         $aggregate = $illuminateBuilder->aggregate;
         if ($aggregate) {
             if (in_array('*', $aggregate['columns'])) {
-                $aggregate['columns'] = [ new RawExpression('*') ];
+                $aggregate['columns'] = [new RawExpression('*')];
             }
 
             if ($illuminateBuilder->distinct) {
-                $aggregate['columns'] = [ new RawExpression('DISTINCT'), ... $aggregate['columns']];
+                $aggregate['columns'] = [new RawExpression('DISTINCT'), ...$aggregate['columns']];
             }
 
             $cypherBuilder->returningProcedure($aggregate['function'], 'aggregate', ...$aggregate['columns']);
@@ -73,7 +71,7 @@ class IlluminateToReturnDecorator implements IlluminateToQueryStructureDecorator
                 if ($column instanceof Expression) {
                     $column = $column->getValue(new CypherGrammar());
                 }
-                if (!$usedRaw && str_contains($column, '*')) {
+                if (! $usedRaw && str_contains($column, '*')) {
                     $cypherBuilder->returningRaw('*');
                     $usedRaw = true;
                 } else {

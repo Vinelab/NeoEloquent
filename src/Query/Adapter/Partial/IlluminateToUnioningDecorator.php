@@ -2,12 +2,11 @@
 
 namespace Vinelab\NeoEloquent\Query\Adapter\Partial;
 
+use function call_user_func;
 use Closure;
 use Illuminate\Contracts\Database\Query\Builder;
 use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
-
-use function call_user_func;
 
 /**
  * Decorates the Return part of the query structure. (clauses RETURN, LIMIT, SKIP, ORDER BY)
@@ -15,7 +14,7 @@ use function call_user_func;
 class IlluminateToUnioningDecorator implements IlluminateToQueryStructureDecorator
 {
     /**
-     * @param Closure(): IlluminateToQueryStructurePipeline $pipeline
+     * @param  Closure(): IlluminateToQueryStructurePipeline  $pipeline
      */
     public function __construct(private readonly Closure $pipeline)
     {

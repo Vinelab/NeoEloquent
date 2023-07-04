@@ -2,7 +2,6 @@
 
 namespace Vinelab\NeoEloquent\Tests\Functional;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vinelab\NeoEloquent\Tests\Fixtures\Role;
 use Vinelab\NeoEloquent\Tests\Fixtures\User;
 use Vinelab\NeoEloquent\Tests\TestCase;

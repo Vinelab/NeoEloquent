@@ -2,6 +2,7 @@
 
 namespace Vinelab\NeoEloquent\Query\Adapter\Partial;
 
+use function end;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Str;
 use PhpGraphGroup\CypherQueryBuilder\Common\ParameterStack;
@@ -9,15 +10,10 @@ use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\SubQueryBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder\WhereBuilder;
 use PhpGraphGroup\CypherQueryBuilder\Where\BooleanOperator;
+use function reset;
 use Vinelab\NeoEloquent\Processors\Processor;
 use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
-use WikibaseSolutions\CypherDSL\Query;
-
-use function end;
-use function explode;
-use function reset;
-use function str_replace;
 
 /**
  * @psalm-type WhereCommonArray = array{boolean: string, type: string, not: bool, ...}
@@ -64,9 +60,8 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
         };
     }
 
-
     /**
-     * @param WhereRawArray $where
+     * @param  WhereRawArray  $where
      */
     private function raw(array $where, WhereBuilder $cypherBuilder): void
     {
@@ -74,7 +69,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicArray $where
+     * @param  WhereBasicArray  $where
      */
     private function basic(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -87,7 +82,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumnInArray $where
+     * @param  WhereColumnInArray  $where
      */
     private function in(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -99,7 +94,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumnInArray $where
+     * @param  WhereColumnInArray  $where
      */
     private function notIn(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -109,7 +104,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumnInArray $where
+     * @param  WhereColumnInArray  $where
      */
     private function inRaw(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -117,7 +112,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumnInArray $where
+     * @param  WhereColumnInArray  $where
      */
     private function notInRaw(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -127,7 +122,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumnArray $where
+     * @param  WhereColumnArray  $where
      */
     private function null(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -142,7 +137,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumns $where
+     * @param  WhereColumns  $where
      */
     private function rowValues(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -153,7 +148,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
 
     private function notExists(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
-        $cypherBuilder->whereNot(function (SubQueryBuilder $cypherBuilder) use ($builder, $where) {
+        $cypherBuilder->whereNot(function (SubQueryBuilder $cypherBuilder) use ($where) {
             $this->exists($where, $cypherBuilder);
         }, $where['boolean']);
     }
@@ -178,7 +173,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicArray $where
+     * @param  WhereBasicArray  $where
      */
     private function year(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
@@ -186,7 +181,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicArray $where
+     * @param  WhereBasicArray  $where
      */
     private function temporal(Builder $builder, array $where, WhereBuilder $cypherBuilder, string $attribute, ParameterStack $stack): void
     {
@@ -199,7 +194,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicArray $where
+     * @param  WhereBasicArray  $where
      */
     private function month(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
@@ -207,7 +202,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicArray $where
+     * @param  WhereBasicArray  $where
      */
     private function day(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
@@ -215,7 +210,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicArray $where
+     * @param  WhereBasicArray  $where
      */
     private function time(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
@@ -223,7 +218,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicArray $where
+     * @param  WhereBasicArray  $where
      */
     private function date(Builder $builder, array $where, WhereBuilder $cypherBuilder, ParameterStack $stack): void
     {
@@ -231,7 +226,7 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereBasicColumnArray $where
+     * @param  WhereBasicColumnArray  $where
      */
     private function column(Builder $builder, array $where, WhereBuilder $cypherBuilder): void
     {
@@ -250,15 +245,15 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumns $where
+     * @param  WhereColumns  $where
      */
     private function betweenColumn(Builder $builder, array $where, SubQueryBuilder $cypherBuilder): void
     {
         $callable = function (SubQueryBuilder $cypherBuilder) use ($builder, $where): void {
-            $first  = reset($where['values']);
+            $first = reset($where['values']);
             $second = end($where['values']);
 
-            $where['first']  = $where['column'];
+            $where['first'] = $where['column'];
             $where['second'] = $first;
             $this->column($builder, $where, $cypherBuilder);
 
@@ -274,12 +269,12 @@ class IlluminateToWhereDecorator implements IlluminateToQueryStructureDecorator
     }
 
     /**
-     * @param WhereColumnArray $where
+     * @param  WhereColumnArray  $where
      */
     private function between(Builder $builder, array $where, SubQueryBuilder $cypherBuilder): void
     {
         $callable = function (SubQueryBuilder $cypherBuilder) use ($builder, $where): void {
-            $first  = reset($where['values']);
+            $first = reset($where['values']);
             $second = end($where['values']);
 
             $where['operator'] = '=';

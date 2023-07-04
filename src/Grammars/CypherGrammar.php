@@ -2,19 +2,17 @@
 
 namespace Vinelab\NeoEloquent\Grammars;
 
+use function array_key_first;
 use BadMethodCallException;
 use Closure;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;
+use function is_array;
 use PhpGraphGroup\CypherQueryBuilder\GrammarPipeline;
 use RuntimeException;
 use Vinelab\NeoEloquent\Query\Adapter\IlluminateToQueryStructurePipeline;
 use Vinelab\NeoEloquent\Query\Adapter\Tracer;
 use WeakReference;
-
-use function array_key_first;
-use function is_array;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
@@ -59,10 +57,10 @@ class CypherGrammar extends Grammar
     public function compileWheres(Builder $query): string
     {
         return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
-                                                          ->withWheres()
-                                                          ->withReturn()
-                                                          ->pipe($query)
-                                                          ->toCypher(GrammarPipeline::create()->withWhereGrammar())
+            ->withWheres()
+            ->withReturn()
+            ->pipe($query)
+            ->toCypher(GrammarPipeline::create()->withWhereGrammar())
         );
     }
 
@@ -96,12 +94,12 @@ class CypherGrammar extends Grammar
         $pipeline = IlluminateToQueryStructurePipeline::create()->withWheres();
 
         if (is_int(array_key_first($values))) {
-            $pipeline = $pipeline ->withBatchCreate($values);
+            $pipeline = $pipeline->withBatchCreate($values);
         } else {
             $pipeline = $pipeline->withCreate($values);
         }
 
-        return $this->cache($query, static fn () => $prefix . $pipeline->pipe($query)->toCypher());
+        return $this->cache($query, static fn () => $prefix.$pipeline->pipe($query)->toCypher());
     }
 
     public function compileInsertOrIgnore(Builder $query, array $values): string
@@ -126,24 +124,24 @@ class CypherGrammar extends Grammar
 
     public function compileUpdate(Builder $query, array $values): string
     {
-         return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
+        return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withSet($values)
             ->withReturn()
             ->pipe($query)
             ->toCypher()
-         );
+        );
     }
 
     public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update): string
     {
-         return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
+        return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withMerge($values, $uniqueBy, $update)
             ->withReturn()
             ->pipe($query)
             ->toCypher()
-         );
+        );
     }
 
     public function prepareBindingsForUpdate(array $bindings, array $values): array
@@ -153,7 +151,7 @@ class CypherGrammar extends Grammar
 
     public function compileDelete(Builder $query): string
     {
-         return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
+        return $this->cache($query, static fn () => IlluminateToQueryStructurePipeline::create()
             ->withWheres()
             ->withDelete()
             ->withReturn()
@@ -178,7 +176,7 @@ class CypherGrammar extends Grammar
             ->toCypher()
         );
 
-        return [ $cypher => []];
+        return [$cypher => []];
     }
 
     public function supportsSavepoints(): bool
@@ -310,11 +308,11 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * @param Closure():string $function
+     * @param  Closure():string  $function
      */
     private function cache(Builder $query, Closure $function): string
     {
-        $cypher               = $function();
+        $cypher = $function();
 
         self::$cache[$cypher] = WeakReference::create($query);
 
@@ -341,7 +339,7 @@ class CypherGrammar extends Grammar
     }
 
     /**
-     * @param array<string, mixed> $bindings
+     * @param  array<string, mixed>  $bindings
      */
     public static function setBindings(string $cypher, array $bindings): void
     {

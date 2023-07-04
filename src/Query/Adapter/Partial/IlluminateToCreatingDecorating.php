@@ -6,11 +6,9 @@ use Illuminate\Contracts\Database\Query\Builder as IlluminateBuilder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use PhpGraphGroup\CypherQueryBuilder\Contracts\Builder as CypherBuilder;
-use PhpGraphGroup\CypherQueryBuilder\QueryBuilder;
 use Vinelab\NeoEloquent\Processors\Processor;
 use Vinelab\NeoEloquent\Query\Adapter\Tracer;
 use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
-use WikibaseSolutions\CypherDSL\Expressions\Procedures\Procedure;
 
 /**
  * Decorates the Return part of the query structure. (clauses RETURN, LIMIT, SKIP, ORDER BY)
@@ -49,29 +47,27 @@ class IlluminateToCreatingDecorating implements IlluminateToQueryStructureDecora
                 $toCreate['parent'] = $row[$object->getForeignPivotKeyName()];
                 $toCreate['related'] = $row[$object->getRelatedPivotKeyName()];
 
-//                unset($row[$object->getForeignPivotKeyName()]);
-//                unset($row[$object->getRelatedPivotKeyName()]);
+                //                unset($row[$object->getForeignPivotKeyName()]);
+                //                unset($row[$object->getRelatedPivotKeyName()]);
 
                 $toCreate['values'] = $row;
                 $creating[] = $toCreate;
             }
 
-
             [1 => $name] = Processor::fromToName($illuminateBuilder);
 
             foreach (array_keys($values[0]) as $column) {
                 $original = $column;
-                if (!str_contains($column, '.')) {
+                if (! str_contains($column, '.')) {
                     $column = "$name.$column";
                 }
 
                 $cypherBuilder->creating([
-                    Processor::standardiseColumn($column) => new RawExpression("toCreate['values']['$original']")
+                    Processor::standardiseColumn($column) => new RawExpression("toCreate['values']['$original']"),
                 ]);
             }
 
             $cypherBuilder->getStructure()->parameters->add($creating, 'toCreate');
-
 
             return;
         }
