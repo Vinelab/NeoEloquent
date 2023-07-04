@@ -9,6 +9,7 @@ use Laudis\Neo4j\Contracts\HasPropertiesInterface;
 use Laudis\Neo4j\Types\DateTime;
 use Laudis\Neo4j\Types\DateTimeZoneId;
 use PhpGraphGroup\CypherQueryBuilder\Builders\GraphPatternBuilder;
+use PhpGraphGroup\CypherQueryBuilder\Common\GraphPattern;
 use PhpGraphGroup\CypherQueryBuilder\Common\PropertyRelationship;
 
 use function preg_match;
@@ -25,6 +26,8 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
      */
     public static function fromToName(Builder|JoinClause|string $builder): array
     {
+        $name = null;
+
         if ($builder instanceof JoinClause) {
             $from = $builder->from ?? $builder->table;
         } else if ($builder instanceof Builder) {
@@ -33,18 +36,22 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
             $from = $builder;
         }
 
-        preg_match('/(?<label>\w+)(?:\s+as\s+(?<name>\w+))?/i', $from, $matches);
-
-        $label = $matches['label'] ?? null;
-        $name = $matches['name'] ?? null;
-
-
-        $nodeOrRelationship = GraphPatternBuilder::from($label, $name)->getPattern()->chunk('match')[0];
-        if ($nodeOrRelationship instanceof PropertyRelationship) {
-            return [ $nodeOrRelationship->types[0], $nodeOrRelationship->name->name, true, $nodeOrRelationship->direction];
+        if (str_contains($from, ' as ')) {
+            [$label, $name] = explode(' as ', $from, 2);
+        } else {
+            $label = $from;
         }
 
-        return [$nodeOrRelationship->labels[0], $nodeOrRelationship->name->name, false, null];
+
+        if (str_starts_with($label, '<') || str_ends_with($label, '>')) {
+            $target = 'relationship';
+        } else {
+            $target = 'node';
+        }
+
+        [$labelOrType, $name] = (new GraphPattern())->decode($label, $target, $direction, $name);
+
+        return [ $labelOrType[0], $name, $target === 'relationship', $direction];
     }
 
     public function processSelect(Builder $query, $results): array

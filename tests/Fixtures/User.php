@@ -64,4 +64,9 @@ class User extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function relatedRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, table: 'HAS_ROLE>');
+    }
 }

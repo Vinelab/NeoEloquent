@@ -16,8 +16,6 @@ class IlluminateToMergeDecorator implements IlluminateToQueryStructureDecorator
 
     public function decorate(Builder $illuminateBuilder, \PhpGraphGroup\CypherQueryBuilder\Contracts\Builder $cypherBuilder): void
     {
-        $merging = [];
-        foreach ($this->values as $row)
         $cypherBuilder->merging($this->uniqueBy)
             ->onCreating($this->values)
             ->onMatching($this->update);

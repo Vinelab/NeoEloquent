@@ -58,13 +58,28 @@ class IlluminateToQueryStructurePipeline
     {
         [$labelOrType, $name, $isRelationship, $direction] = Processor::fromToName($illuminateBuilder);
 
-        if ($isRelationship) {
-            $patterns = GraphPatternBuilder::fromRelationship($labelOrType, $name, $direction, $this->containsLeftJoin($illuminateBuilder));
-        } else {
-            $patterns = GraphPatternBuilder::fromNode($labelOrType, $name, $this->containsLeftJoin($illuminateBuilder));
-        }
+        if ($object = Tracer::isInBelongsToManyWithRelationship($illuminateBuilder)) {
+            $parent = $object->getParent();
+            $related = $object->getRelated();
 
-        $this->decorateBuilder($illuminateBuilder, $patterns);
+            [$parentLabelOrType, $parentName] = Processor::fromToName($parent->getTable());
+            [$relatedLabelOrType, $relatedName] = Processor::fromToName($related->getTable());
+
+
+            $patterns = GraphPatternBuilder::fromNode($parentLabelOrType, $parentName)
+                ->addRelationship($labelOrType, $name, $direction)
+                    ->addChildNode($relatedLabelOrType, $relatedName)
+                ->end()
+            ->end();
+        } else {
+            if ($isRelationship) {
+                $patterns = GraphPatternBuilder::fromRelationship($labelOrType, $name, $direction, $this->containsLeftJoin($illuminateBuilder));
+            } else {
+                $patterns = GraphPatternBuilder::fromNode($labelOrType, $name, $this->containsLeftJoin($illuminateBuilder));
+            }
+
+            $this->decorateBuilder($illuminateBuilder, $patterns);
+        }
 
         $builder = QueryBuilder::from($patterns);
 

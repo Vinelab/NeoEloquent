@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent\Grammars;
 
 use BadMethodCallException;
 use Closure;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;
 use PhpGraphGroup\CypherQueryBuilder\GrammarPipeline;
@@ -86,6 +87,11 @@ class CypherGrammar extends Grammar
 
     public function compileInsert(Builder $query, array $values): string
     {
+        $prefix = '';
+        $trace = debug_backtrace(limit: 4)[3] ?? null;
+        if (($trace['object'] ?? null) instanceof BelongsToMany) {
+            $prefix = 'UNWIND $toCreate AS toCreate ';
+        }
         $pipeline = IlluminateToQueryStructurePipeline::create()->withWheres();
         if (is_int(array_key_first($values))) {
             $pipeline = $pipeline ->withBatchCreate($values);
@@ -93,7 +99,7 @@ class CypherGrammar extends Grammar
             $pipeline = $pipeline->withCreate($values);
         }
 
-        return $this->cache($query, static fn () => $pipeline->pipe($query)->toCypher());
+        return $this->cache($query, static fn () => $prefix . $pipeline->pipe($query)->toCypher());
     }
 
     public function compileInsertOrIgnore(Builder $query, array $values): string
