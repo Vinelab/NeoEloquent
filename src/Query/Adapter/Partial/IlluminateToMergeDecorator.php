@@ -12,7 +12,6 @@ class IlluminateToMergeDecorator implements IlluminateToQueryStructureDecorator
 {
     public function __construct(private readonly array $values, private readonly array $uniqueBy, private readonly array $update)
     {
-
     }
 
     public function decorate(Builder $illuminateBuilder, \PhpGraphGroup\CypherQueryBuilder\Contracts\Builder $cypherBuilder): void

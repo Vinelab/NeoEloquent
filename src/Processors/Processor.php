@@ -32,6 +32,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
         }
 
         if (str_contains($from, ' as ')) {
+            /** @psalm-suppress PossiblyUndefinedArrayOffset */
             [$label, $name] = explode(' as ', $from, 2);
         } else {
             $label = $from;
@@ -43,6 +44,10 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
             $target = 'node';
         }
 
+        /**
+         * @psalm-suppress InternalClass
+         * @psalm-suppress InternalMethod
+         */
         [$labelOrType, $name] = (new GraphPattern())->decode($label, $target, $direction, $name);
 
         return [$labelOrType[0], $name, $target === 'relationship', $direction];
@@ -54,6 +59,7 @@ class Processor extends \Illuminate\Database\Query\Processors\Processor
             return $column;
         }
 
+        /** @psalm-suppress PossiblyUndefinedArrayOffset */
         [$table, $column] = explode('.', $column, 2);
         [1 => $name] = Processor::fromToName($table);
 

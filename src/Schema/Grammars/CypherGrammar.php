@@ -2,6 +2,11 @@
 
 namespace Vinelab\NeoEloquent\Schema\Grammars;
 
+use Doctrine\DBAL\Schema\AbstractSchemaManager as SchemaManager;
+use Doctrine\DBAL\Schema\TableDiff;
+use Illuminate\Contracts\Database\Query\Expression;
+use Illuminate\Database\Schema\Grammars\ChangeColumn;
+use Illuminate\Database\Schema\Grammars\RenameColumn;
 use function array_merge;
 use function array_values;
 use function collect;
@@ -33,11 +38,11 @@ class CypherGrammar extends Grammar
     public function compileTableExists(): string
     {
         return <<<'CYPHER'
-CALL db.labels()
-YIELD label
-WHERE label = $0
-RETURN label
-CYPHER;
+        CALL db.labels()
+        YIELD label
+        WHERE label = $0
+        RETURN label
+        CYPHER;
     }
 
     /**
@@ -54,110 +59,67 @@ CYPHER;
     }
 
     /**
-     * Compile a create table command.
-     *
-     *
-     * @return array
+     * @return list<string>
      */
-    public function compileCreate(Blueprint $blueprint, Fluent $command, Connection $connection)
+    public function compileCreate(Blueprint $blueprint): array
     {
-        return [];
-        //        $sql = $this->compileCreateTable(
-        //            $blueprint, $command, $connection
-        //        );
-        //
-        //        // Once we have the primary SQL, we can add the encoding option to the SQL for
-        //        // the table.  Then, we can check if a storage engine has been supplied for
-        //        // the table. If so, we will add the engine declaration to the SQL query.
-        //        $sql = $this->compileCreateEncoding(
-        //            $sql, $connection, $blueprint
-        //        );
-        //
-        //        // Finally, we will append the engine configuration onto this SQL statement as
-        //        // the final thing we do before returning this finished SQL. Once this gets
-        //        // added the query will be ready to execute against the real connections.
-        //        return array_values(array_filter(array_merge([$this->compileCreateEngine(
-        //            $sql, $connection, $blueprint
-        //        )], $this->compileAutoIncrementStartingValues($blueprint))));
-    }
-
-    /**
-     * Create the main create table clause.
-     *
-     * @param  Blueprint  $blueprint
-     * @param  Fluent  $command
-     * @param  Connection  $connection
-     * @return array
-     */
-    protected function compileCreateTable($blueprint, $command, $connection)
-    {
-        return trim(sprintf('%s table %s (%s)',
-            $blueprint->temporary ? 'create temporary' : 'create',
-            $this->wrapTable($blueprint),
-            implode(', ', $this->getColumns($blueprint))
-        ));
-    }
-
-    /**
-     * Append the character set specifications to a command.
-     *
-     * @param  string  $sql
-     * @return string
-     */
-    protected function compileCreateEncoding($sql, Connection $connection, Blueprint $blueprint)
-    {
-        // First we will set the character set if one has been set on either the create
-        // blueprint itself or on the root configuration for the connection that the
-        // table is being created on. We will add these to the create table query.
-        if (isset($blueprint->charset)) {
-            $sql .= ' default character set '.$blueprint->charset;
-        } elseif (! is_null($charset = $connection->getConfig('charset'))) {
-            $sql .= ' default character set '.$charset;
-        }
-
-        // Next we will add the collation to the create table statement if one has been
-        // added to either this create table blueprint or the configuration for this
-        // connection that the query is targeting. We'll add it to this SQL query.
-        if (isset($blueprint->collation)) {
-            $sql .= " collate '{$blueprint->collation}'";
-        } elseif (! is_null($collation = $connection->getConfig('collation'))) {
-            $sql .= " collate '{$collation}'";
-        }
-
-        return $sql;
-    }
-
-    /**
-     * Append the engine specifications to a command.
-     *
-     * @param  string  $sql
-     * @return string
-     */
-    protected function compileCreateEngine($sql, Connection $connection, Blueprint $blueprint)
-    {
-        if (isset($blueprint->engine)) {
-            return $sql.' engine = '.$blueprint->engine;
-        } elseif (! is_null($engine = $connection->getConfig('engine'))) {
-            return $sql.' engine = '.$engine;
-        }
-
-        return $sql;
-    }
-
-    /**
-     * Compile an add column command.
-     *
-     *
-     * @return array
-     */
-    public function compileAdd(Blueprint $blueprint, Fluent $command)
-    {
-        $columns = $this->prefixArray('add', $this->getColumns($blueprint));
-
         return array_values(array_merge(
-            ['alter table '.$this->wrapTable($blueprint).' '.implode(', ', $columns)],
+            $this->getColumns($blueprint),
             $this->compileAutoIncrementStartingValues($blueprint)
         ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function getColumns(Blueprint $blueprint): array
+    {
+        $columns = [];
+
+        foreach ($blueprint->getAddedColumns() as $column) {
+            // Each of the column types has their own compiler functions, which are tasked
+            // with turning the column definition into its SQL format for this platform
+            // used by the connection. The column's modifiers are compiled and added.
+            $sql = $this->wrap($column).' '.$this->getType($column);
+
+            $columns = array_merge($columns, $this->addModifiers($sql, $blueprint, $column));
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Add the column modifiers to the definition.
+     *
+     * @param  string  $sql
+     * @param Blueprint $blueprint
+     * @param Fluent $column
+     *
+     * @return list<string>
+     */
+    protected function addModifiers($sql, Blueprint $blueprint, Fluent $column): array
+    {
+        $tbr = [];
+
+        foreach ($this->modifiers as $modifier) {
+            if (method_exists($this, $method = "modify{$modifier}")) {
+                $modification = $this->{$method}($blueprint, $column);
+                if (is_string($modification) && trim($modification) !== '') {
+                    $tbr[] = $modification;
+                }
+            }
+        }
+
+        return $tbr;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function compileAdd(Blueprint $blueprint): array
+    {
+        // adding or creating is syntactically the same in Neo4J.
+        return $this->compileCreate($blueprint);
     }
 
     /**
@@ -394,17 +356,6 @@ CYPHER;
     }
 
     /**
-     * Compile the SQL needed to drop all views.
-     *
-     * @param  array  $views
-     * @return string
-     */
-    public function compileDropAllViews($views)
-    {
-        return 'drop view '.implode(',', $this->wrapArray($views));
-    }
-
-    /**
      * Compile the SQL needed to retrieve all table names.
      *
      * @return string
@@ -412,16 +363,6 @@ CYPHER;
     public function compileGetAllTables()
     {
         return 'SHOW FULL TABLES WHERE table_type = \'BASE TABLE\'';
-    }
-
-    /**
-     * Compile the SQL needed to retrieve all view names.
-     *
-     * @return string
-     */
-    public function compileGetAllViews()
-    {
-        return 'SHOW FULL TABLES WHERE table_type = \'VIEW\'';
     }
 
     /**
@@ -451,5 +392,82 @@ CYPHER;
     protected function wrapValue($value)
     {
         throw new RuntimeException('Wrapping of values is not allowed');
+    }
+
+    /**
+     * Compile a foreign key command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileForeign(Blueprint $blueprint, Fluent $command): string
+    {
+        // Neo4j does not support foreign keys, but we will totally accept this mistake
+        // to improve maintainability.
+        // TODO - provided indexes instead
+        return 'RETURN true AS true';
+    }
+
+    /**
+     * Compile a rename column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @param  \Illuminate\Database\Connection  $connection
+     * @return array|string
+     */
+    public function compileRenameColumn(Blueprint $blueprint, Fluent $command, Connection $connection)
+    {
+        return RenameColumn::compile($this, $blueprint, $command, $connection);
+    }
+
+    /**
+     * Compile a change column command into a series of SQL statements.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @param  \Illuminate\Database\Connection  $connection
+     * @return array|string
+     *
+     * @throws \RuntimeException
+     */
+    public function compileChange(Blueprint $blueprint, Fluent $command, Connection $connection)
+    {
+        return ChangeColumn::compile($this, $blueprint, $command, $connection);
+    }
+
+
+    /**
+     * Create an empty Doctrine DBAL TableDiff from the Blueprint.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Doctrine\DBAL\Schema\AbstractSchemaManager  $schema
+     * @return \Doctrine\DBAL\Schema\TableDiff
+     */
+    public function getDoctrineTableDiff(Blueprint $blueprint, SchemaManager $schema)
+    {
+        $tableName = $this->getTablePrefix().$blueprint->getTable();
+
+        $table = $schema->introspectTable($tableName);
+
+        return new TableDiff(tableName: $tableName, fromTable: $table);
+    }
+
+    /**
+     * Format a value so that it can be used in "default" clauses.
+     *
+     * @param  mixed  $value
+     * @return string
+     */
+    protected function getDefaultValue($value)
+    {
+        if ($value instanceof Expression) {
+            return $this->getValue($value);
+        }
+
+        return is_bool($value)
+            ? "'".(int) $value."'"
+            : "'".(string) $value."'";
     }
 }

@@ -22,6 +22,8 @@ class Tracer
     {
         $object = $backtrace['object'] ?? null;
         [2 => $isRelationship] = Processor::fromToName($builder);
+
+        /** @psalm-suppress RedundantConditionGivenDocblockType */
         if (! $isRelationship && is_array($builder->joins) && count($builder->joins) === 1) {
             [2 => $isRelationship] = Processor::fromToName($builder->joins[0]->table);
         }

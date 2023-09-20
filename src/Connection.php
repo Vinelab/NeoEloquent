@@ -45,36 +45,46 @@ final class Connection extends \Illuminate\Database\Connection
         return $this->totals->containsUpdates();
     }
 
-    public function recordsHaveBeenModified($value = true)
-    {
-        throw new RuntimeException('Record modification is handled by summary totals in this connection.');
-    }
-
-    public function setRecordModificationState(bool $value)
-    {
-        throw new RuntimeException('Record modification is handled by summary totals in this connection.');
-    }
-
     public function forgetRecordModificationState(): void
     {
         $this->totals = new SummaryCounters();
     }
 
+    /**
+     * @psalm-suppress ImplementedReturnTypeMismatch
+     *
+     * @return SessionInterface
+     */
     public function getPdo(): SessionInterface
     {
         return $this->session;
     }
 
+    /**
+     * @psalm-suppress ImplementedReturnTypeMismatch
+     *
+     * @return SessionInterface
+     */
     public function getRawPdo(): SessionInterface
     {
         return $this->session;
     }
 
+    /**
+     * @psalm-suppress ImplementedReturnTypeMismatch
+     *
+     * @return SessionInterface
+     */
     public function getReadPdo(): SessionInterface
     {
         return $this->readSession;
     }
 
+    /**
+     * @psalm-suppress ImplementedReturnTypeMismatch
+     *
+     * @return SessionInterface
+     */
     public function getRawReadPdo(): SessionInterface
     {
         return $this->readSession;
@@ -173,12 +183,14 @@ final class Connection extends \Illuminate\Database\Connection
 
     public function cursor($query, $bindings = [], $useReadPdo = true): Generator
     {
-        return $this->run($query, $bindings, function (string $query, $bindings) use ($useReadPdo) {
+        return $this->run($query, $bindings, function (string $query, array $bindings) use ($useReadPdo) {
             if ($this->pretending) {
                 return;
             }
 
+            /** @var array<string, mixed> $bindings */
             $statement = new Statement($query, $bindings);
+
             /**
              * @noinspection PhpParamsInspection
              *

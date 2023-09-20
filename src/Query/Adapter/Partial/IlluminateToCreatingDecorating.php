@@ -15,6 +15,9 @@ use Vinelab\NeoEloquent\Query\Contracts\IlluminateToQueryStructureDecorator;
  */
 class IlluminateToCreatingDecorating implements IlluminateToQueryStructureDecorator
 {
+    /**
+     * @param list<array<string, mixed>> $values
+     */
     public function __construct(private readonly array $values, private readonly bool $batch)
     {
     }
@@ -67,6 +70,7 @@ class IlluminateToCreatingDecorating implements IlluminateToQueryStructureDecora
                 ]);
             }
 
+            /** @psalm-suppress InternalProperty */
             $cypherBuilder->getStructure()->parameters->add($creating, 'toCreate');
 
             return;
