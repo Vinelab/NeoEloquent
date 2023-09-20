@@ -23,7 +23,7 @@ final class ConnectionFactory implements ConnectorInterface
      * @psalm-suppress MoreSpecificImplementedParamType
      * @psalm-suppress ImplementedReturnTypeMismatch
      *
-     * @param array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string, prefix ?: string} $config
+     * @param array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string, prefix ?: string, name: string} $config
      */
     public function connect(array $config): Driver
     {

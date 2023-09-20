@@ -2,11 +2,18 @@
 
 namespace Vinelab\NeoEloquent;
 
+use Illuminate\Container\Container;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\ServiceProvider;
+use Laudis\Neo4j\Basic\Client;
 use Laudis\Neo4j\Basic\Driver;
+use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\ClientBuilder;
+use Laudis\Neo4j\Contracts\ClientInterface;
+use Laudis\Neo4j\Contracts\DriverInterface;
+use Laudis\Neo4j\Contracts\SessionInterface;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
@@ -16,7 +23,8 @@ class NeoEloquentServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton('db.connector.neo4j', ConnectionFactory::class);
+        $this->app->singleton(ConnectionFactory::class);
+        $this->app->alias(ConnectionFactory::class, 'db.connector.neo4j');
 
         Connection::resolverFor('neo4j', $this->neo4jResolver(...));
 
@@ -25,6 +33,40 @@ class NeoEloquentServiceProvider extends ServiceProvider
         $this->registerAggregate('stdev');
         $this->registerAggregate('stdevp');
         $this->registerCollect();
+
+        $this->app->singleton(Client::class, static function (Container $container): Client {
+            $connections = $container->get('config')->get('connections');
+            $builder = ClientBuilder::create();
+            $factory = $container->get(ConnectionFactory::class);
+            $default = $container->get('config')->get('connections.default');
+
+            foreach ($connections as $name => $connection) {
+                if ($connection['driver'] === 'neo4j') {
+                    [$uri, $config, $auth] = $factory->toBaseConnectionParts($connection);
+
+                    $builder = $builder->withDriver($name, $uri, $config, $auth);
+                }
+
+                if ($name === $default) {
+                    $builder = $builder->withDefaultDriver($default);
+                }
+            }
+
+            return new Client($builder->build());
+        });
+
+        $this->app->alias(Client::class, \Laudis\Neo4j\Client::class);
+        $this->app->alias(Client::class, ClientInterface::class);
+
+        $this->app->singleton(Driver::class, static function (Container $container): Driver {
+            return $container->get(Client::class)->getDriver(null);
+        });
+        $this->app->alias(Driver::class, DriverInterface::class);
+
+        $this->app->bind(Session::class, static function (Container $container): Session {
+            return $container->get(Driver::class)->createSession();
+        });
+        $this->app->alias(Session::class, SessionInterface::class);
     }
 
     private function registerPercentile(string $function): void
