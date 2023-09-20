@@ -11,11 +11,17 @@ use Laudis\Neo4j\Basic\Client;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Basic\Session;
 use Laudis\Neo4j\ClientBuilder;
+use Laudis\Neo4j\Common\DriverSetupManager;
 use Laudis\Neo4j\Contracts\ClientInterface;
 use Laudis\Neo4j\Contracts\DriverInterface;
 use Laudis\Neo4j\Contracts\SessionInterface;
+use Laudis\Neo4j\Databags\DriverConfiguration;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
+use Laudis\Neo4j\Formatter\OGMFormatter;
+use Laudis\Neo4j\Formatter\Specialised\BoltOGMTranslator;
+use Laudis\Neo4j\Formatter\Specialised\JoltHttpOGMTranslator;
+use Laudis\Neo4j\Formatter\SummarizedResultFormatter;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
 
@@ -23,7 +29,10 @@ class NeoEloquentServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(ConnectionFactory::class);
+        $this->app->singleton(ConnectionFactory::class, static function (Container $container) {
+            return new ConnectionFactory(client: $container->get(Client::class));
+        });
+
         $this->app->alias(ConnectionFactory::class, 'db.connector.neo4j');
 
         Connection::resolverFor('neo4j', $this->neo4jResolver(...));
@@ -37,14 +46,14 @@ class NeoEloquentServiceProvider extends ServiceProvider
         $this->app->singleton(Client::class, static function (Container $container): Client {
             $connections = $container->get('config')->get('connections');
             $builder = ClientBuilder::create();
-            $factory = $container->get(ConnectionFactory::class);
+            $factory = new ConnectionFactory();
             $default = $container->get('config')->get('connections.default');
 
             foreach ($connections as $name => $connection) {
                 if ($connection['driver'] === 'neo4j') {
                     [$uri, $config, $auth] = $factory->toBaseConnectionParts($connection);
 
-                    $builder = $builder->withDriver($name, $uri, $config, $auth);
+                    $builder = $builder->withDriver($name, $uri->__toString(), $auth, $config);
                 }
 
                 if ($name === $default) {

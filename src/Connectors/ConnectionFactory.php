@@ -4,6 +4,7 @@ namespace Vinelab\NeoEloquent\Connectors;
 
 use Illuminate\Database\Connectors\ConnectorInterface;
 use Laudis\Neo4j\Authentication\Authenticate;
+use Laudis\Neo4j\Basic\Client;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Common\Uri;
 use Laudis\Neo4j\Contracts\AuthenticateInterface;
@@ -13,10 +14,12 @@ use Psr\Http\Message\UriInterface;
 final class ConnectionFactory implements ConnectorInterface
 {
     private Uri $defaultUri;
+    private ?Client $client;
 
-    public function __construct(Uri $defaultUri = null)
+    public function __construct(Uri $defaultUri = null, ?Client $client = null)
     {
         $this->defaultUri = $defaultUri ?? Uri::create();
+        $this->client = $client;
     }
 
     /**
@@ -27,18 +30,21 @@ final class ConnectionFactory implements ConnectorInterface
      */
     public function connect(array $config): Driver
     {
+        if ($this->client !== null && $this->client->hasDriver($config['name'])) {
+            return $this->client->getDriver($config['name']);
+        }
+
         [$uri, $config, $auth] = $this->toBaseConnectionParts($config);
 
         return Driver::create($uri, $config, $auth);
     }
 
     /**
-     * @param array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string, prefix ?: string} $config
+     * @param array{scheme?: string, driver: string, host?: string, port?: string|int, username ?: string, password ?: string, database ?: string, prefix ?: string, name: string} $config
      * @return array{0: UriInterface, 1: DriverConfiguration, 2: AuthenticateInterface}
      */
     public function toBaseConnectionParts(array $config): array
-    {
-        $port = $config['port'] ?? null;
+    {$port = $config['port'] ?? null;
         $port = (is_null($port) || $port === '') ? null : ((int)$port);
         $uri = $this->defaultUri->withScheme($config['scheme'] ?? '')
             ->withHost($config['host'] ?? '')
