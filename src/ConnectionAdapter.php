@@ -3,11 +3,9 @@
 namespace Vinelab\NeoEloquent;
 
 use Closure;
-use Exception;
+use Illuminate\Support\Facades\App;
 use Throwable;
 use Vinelab\NeoEloquent\Exceptions\QueryException;
-use Vinelab\NeoEloquent\ConnectionInterface;
-
 use Illuminate\Contracts\Events\Dispatcher as IlluminateDispatcher;
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\Processors\Processor;
@@ -535,15 +533,14 @@ class ConnectionAdapter extends BaseConnection implements ConnectionInterface
 		return $this->neoeloquent->getEventDispatcher();
 	}
 
-	/**
-	 * Set the event dispatcher instance on the connection.
-	 *
-	 * @param  \Illuminate\Contracts\Events\Dispatcher
-	 * @return void
-	 */
-	public function setEventDispatcher(IlluminateDispatcher $events)
+    /**
+     * @param  IlluminateDispatcher  $events
+     *
+     * @return void
+     */
+    public function setEventDispatcher(IlluminateDispatcher $events)
 	{
-		$this->neoeloquent->setEventDispatcher(\App::make(Dispatcher::class));
+		$this->neoeloquent->setEventDispatcher(App::make(Dispatcher::class));
 	}
 
 	/**
