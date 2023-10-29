@@ -9,21 +9,21 @@ class MigrationCreator extends IlluminateMigrationCreator
     /**
      * Populate the place-holders in the migration stub.
      *
-     * @param string $name
      * @param string $stub
      * @param string $label
      *
      * @return string
      */
-    protected function populateStub($name, $stub, $label)
+    protected function populateStub($stub, $table)
     {
-        $stub = str_replace('{{class}}', studly_case($name), $stub);
-
-        // Here we will replace the label place-holders with the label specified by
-        // the developer, which is useful for quickly creating a labels creation
+        // Here we will replace the table place-holders with the table specified by
+        // the developer, which is useful for quickly creating a tables creation
         // or update migration from the console instead of typing it manually.
-        if (!is_null($label)) {
-            $stub = str_replace('{{label}}', $label, $stub);
+        if (! is_null($table)) {
+            $stub = str_replace(
+                ['DummyTable', '{{ table }}', '{{table}}'],
+                $table, $stub
+            );
         }
 
         return $stub;
