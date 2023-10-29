@@ -1071,7 +1071,7 @@ class Connection implements ConnectionInterface
     /**
      * Reconnect to the database if a PDO connection is missing.
      */
-    protected function reconnectIfMissingConnection()
+    public function reconnectIfMissingConnection()
     {
         if (is_null($this->getClient())) {
             $this->reconnect();
