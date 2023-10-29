@@ -20,7 +20,7 @@
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8",
         "illuminate/container": "^10.0",
         "illuminate/contracts": "^10.0",
         "illuminate/database": "^10.0",
