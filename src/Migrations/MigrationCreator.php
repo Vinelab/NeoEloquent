@@ -8,8 +8,8 @@ class MigrationCreator extends IlluminateMigrationCreator
 {
 
     /**
-     * @param string $stub
-     * @param string $table
+     * @param  string       $stub
+     * @param  null|string  $table
      *
      * @return string
      */
