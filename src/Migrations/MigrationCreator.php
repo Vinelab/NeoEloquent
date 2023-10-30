@@ -6,11 +6,10 @@ use Illuminate\Database\Migrations\MigrationCreator as IlluminateMigrationCreato
 
 class MigrationCreator extends IlluminateMigrationCreator
 {
+
     /**
-     * Populate the place-holders in the migration stub.
-     *
      * @param string $stub
-     * @param string $label
+     * @param string $table
      *
      * @return string
      */
@@ -19,9 +18,9 @@ class MigrationCreator extends IlluminateMigrationCreator
         // Here we will replace the table place-holders with the table specified by
         // the developer, which is useful for quickly creating a tables creation
         // or update migration from the console instead of typing it manually.
-        if (! is_null($table)) {
+        if ($table !== null) {
             $stub = str_replace(
-                ['DummyTable', '{{ table }}', '{{table}}'],
+                ['{{ table }}', '{{table}}'],
                 $table, $stub
             );
         }
