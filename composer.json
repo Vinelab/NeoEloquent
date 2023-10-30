@@ -23,7 +23,6 @@
         "php": "^8.2",
         "illuminate/container": "^10.0",
         "illuminate/contracts": "^10.0",
-        "illuminate/collections": "^10.0",
         "illuminate/database": "^10.0",
         "illuminate/events": "^10.0",
         "illuminate/support": "^10.0",
