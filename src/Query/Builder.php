@@ -9,10 +9,8 @@ use BadMethodCallException;
 use InvalidArgumentException;
 use Laudis\Neo4j\Databags\SummarizedResult;
 use Laudis\Neo4j\Types\CypherList;
-use Laudis\Neo4j\Types\CypherMap;
 use Laudis\Neo4j\Types\Node;
 use Vinelab\NeoEloquent\ConnectionInterface;
-use GraphAware\Common\Result\AbstractRecordCursor as Result;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 
@@ -218,8 +216,6 @@ class Builder
 
     /**
      * Create a new query builder instance.
-     *
-     * @param Vinelab\NeoEloquent\Connection $connection
      */
     public function __construct(ConnectionInterface $connection, Grammar $grammar)
     {
@@ -1725,13 +1721,7 @@ class Builder
 
         $cypher = $this->grammar->compileDelete($this);
 
-        $result = $this->connection->delete($cypher, $this->getBindings());
-
-        if ($result instanceof Result) {
-            $result = true;
-        }
-
-        return $result;
+        return $this->connection->delete($cypher, $this->getBindings());
     }
 
     /**

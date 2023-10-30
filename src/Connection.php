@@ -926,11 +926,9 @@ class Connection implements ConnectionInterface
 
         return $query->from($label);
     }
-
+    
     /**
      * Get a new query builder instance.
-     *
-     * @return \Illuminate\Database\Query\Builder
      */
     public function query()
     {
