@@ -7,10 +7,10 @@ use DateTime;
 use Carbon\Carbon;
 use BadMethodCallException;
 use InvalidArgumentException;
+use Laudis\Neo4j\Databags\SummarizedResult;
 use Laudis\Neo4j\Types\CypherList;
 use Laudis\Neo4j\Types\Node;
 use Vinelab\NeoEloquent\ConnectionInterface;
-use GraphAware\Common\Result\AbstractRecordCursor as Result;
 use Vinelab\NeoEloquent\Eloquent\Collection;
 use Vinelab\NeoEloquent\Query\Grammars\Grammar;
 
@@ -216,8 +216,6 @@ class Builder
 
     /**
      * Create a new query builder instance.
-     *
-     * @param Vinelab\NeoEloquent\Connection $connection
      */
     public function __construct(ConnectionInterface $connection, Grammar $grammar)
     {
@@ -453,7 +451,7 @@ class Builder
         }
 
         if (func_num_args() == 2) {
-            list($value, $operator) = array($operator, '=');
+            [$value, $operator] = array($operator, '=');
         } elseif ($this->invalidOperatorAndValue($operator, $value)) {
             throw new \InvalidArgumentException('Value must be provided.');
         }
@@ -469,7 +467,7 @@ class Builder
         // assume that the developer is just short-cutting the '=' operators and
         // we will set the operators to '=' and set the values appropriately.
         if (!in_array(mb_strtolower($operator), $this->operators, true)) {
-            list($value, $operator) = array($operator, '=');
+            [$value, $operator] = array($operator, '=');
         }
 
         // If the value is a Closure, it means the developer is performing an entire
@@ -1406,7 +1404,7 @@ class Builder
      *
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function paginate($perPage = 15, $columns = ['*'], $pageName = 'page', $page = null)
+    public function paginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null)
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
@@ -1456,8 +1454,11 @@ class Builder
 
         $this->aggregate = ['function' => 'count', 'columns' => $columns];
 
+        /**
+         *
+         * @var SummarizedResult $results
+         */
         $results = $this->get();
-
         $this->aggregate = null;
 
         $this->restoreFieldsForCount();
@@ -1466,7 +1467,7 @@ class Builder
             return count($results);
         }
 
-        return isset($results[0]) ? (int) array_change_key_case((array) $results[0])['aggregate'] : 0;
+        return isset($results[0]) ? (int) $results->get(0)->get('count(*)') : 0;
     }
 
     /**
@@ -1720,13 +1721,7 @@ class Builder
 
         $cypher = $this->grammar->compileDelete($this);
 
-        $result = $this->connection->delete($cypher, $this->getBindings());
-
-        if ($result instanceof Result) {
-            $result = true;
-        }
-
-        return $result;
+        return $this->connection->delete($cypher, $this->getBindings());
     }
 
     /**
@@ -2251,8 +2246,8 @@ class Builder
     public function aggregate($function, $columns = array('*'), $percentile = null)
     {
         $this->aggregate = array_merge([
-            'label' => $this->from,
-        ], compact('function', 'columns', 'percentile'));
+                                           'label' => $this->from,
+                                       ], compact('function', 'columns', 'percentile'));
 
         $previousColumns = $this->columns;
 

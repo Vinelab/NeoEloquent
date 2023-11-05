@@ -256,7 +256,7 @@ abstract class Delegate
             unset($properties['id']);
         }
 
-        return new Node($id, new CypherList([$label]), new CypherMap($properties));
+        return new Node($id, new CypherList([$label]), new CypherMap($properties), null);
     }
 
     /**

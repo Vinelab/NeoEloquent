@@ -792,7 +792,7 @@ abstract class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializab
      * @override
      * Get a new query builder instance for the connection.
      *
-     * @return Vinelab\NeoEloquent\Query\Builder
+     * @return QueryBuilder
      */
     protected function newBaseQueryBuilder()
     {

@@ -47,7 +47,7 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
      */
     public function getRan()
     {
-        return $this->model->all()->lists('migration');
+        return $this->model->all()->pluck('migration')->toArray();
     }
 
     /**
@@ -61,6 +61,21 @@ class DatabaseMigrationRepository implements MigrationRepositoryInterface
         $query = $this->label()->where('batch', '>=', '1');
 
         return $query->orderBy('migration', 'desc')->take($steps)->get()->all();
+    }
+
+    /**
+     * Get the list of the migrations by batch number.
+     *
+     * @param  int  $batch
+     * @return array
+     */
+    public function getMigrationsByBatch($batch)
+    {
+        return $this->label()
+                    ->where('batch', $batch)
+                    ->orderBy('migration', 'desc')
+                    ->get()
+                    ->all();
     }
 
     /**
