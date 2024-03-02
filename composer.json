@@ -21,18 +21,18 @@
     ],
     "require": {
         "php": ">=7.4",
-        "illuminate/container": "^8.0",
-        "illuminate/contracts": "^8.0",
-        "illuminate/database": "^8.0",
-        "illuminate/events": "^8.0",
-        "illuminate/support": "^8.0",
-        "illuminate/pagination": "^8.0",
-        "nesbot/carbon": "^2.0",
-        "laudis/neo4j-php-client": "^2.3.3"
+        "illuminate/container": "^8.0|^11.0",
+        "illuminate/contracts": "^8.0|^11.0",
+        "illuminate/database": "^8.0|^11.0",
+        "illuminate/events": "^8.0|^11.0",
+        "illuminate/support": "^8.0|^11.0",
+        "illuminate/pagination": "^8.0|^11.0",
+        "nesbot/carbon": "^2.0|^3.0",
+        "laudis/neo4j-php-client": "^2.3.3|^3.0"
     },
     "require-dev": {
-        "mockery/mockery": "~1.3.0",
-        "phpunit/phpunit": "^9.0",
+        "mockery/mockery": "~1.3.0|^1.6",
+        "phpunit/phpunit": "^9.0|^10.5",
         "symfony/var-dumper": "*",
         "fzaninotto/faker": "~1.4",
         "composer/composer": "^2.1"
