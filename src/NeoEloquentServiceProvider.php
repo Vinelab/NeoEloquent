@@ -11,17 +11,11 @@ use Laudis\Neo4j\Basic\Client;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Basic\Session;
 use Laudis\Neo4j\ClientBuilder;
-use Laudis\Neo4j\Common\DriverSetupManager;
 use Laudis\Neo4j\Contracts\ClientInterface;
 use Laudis\Neo4j\Contracts\DriverInterface;
 use Laudis\Neo4j\Contracts\SessionInterface;
-use Laudis\Neo4j\Databags\DriverConfiguration;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Enum\AccessMode;
-use Laudis\Neo4j\Formatter\OGMFormatter;
-use Laudis\Neo4j\Formatter\Specialised\BoltOGMTranslator;
-use Laudis\Neo4j\Formatter\Specialised\JoltHttpOGMTranslator;
-use Laudis\Neo4j\Formatter\SummarizedResultFormatter;
 use PhpGraphGroup\CypherQueryBuilder\Common\RawExpression;
 use Vinelab\NeoEloquent\Connectors\ConnectionFactory;
 
@@ -44,16 +38,16 @@ class NeoEloquentServiceProvider extends ServiceProvider
         $this->registerCollect();
 
         $this->app->singleton(Client::class, static function (Container $container): Client {
-            $connections = $container->get('config')->get('connections');
+            $connections = $container->get('config')->get('database.connections');
             $builder = ClientBuilder::create();
             $factory = new ConnectionFactory();
-            $default = $container->get('config')->get('connections.default');
+            $default = $container->get('config')->get('database.connections.default');
 
             foreach ($connections as $name => $connection) {
                 if ($connection['driver'] === 'neo4j') {
-                    [$uri, $config, $auth] = $factory->toBaseConnectionParts($connection);
+                    [ 0 => $uri, 2 => $auth] = $factory->toBaseConnectionParts($connection);
 
-                    $builder = $builder->withDriver($name, $uri->__toString(), $auth, $config);
+                    $builder = $builder->withDriver($name, $uri->__toString(), $auth);
                 }
 
                 if ($name === $default) {
