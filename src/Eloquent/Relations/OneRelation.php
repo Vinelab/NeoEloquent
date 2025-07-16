@@ -92,7 +92,7 @@ abstract class OneRelation extends Relation implements RelationInterface
             // with the first key being the model we need, and the other being
             // the related model so we'll just take the first model out of the array.
             if (is_array($model)) {
-                $model = reset($model);
+                $model = end($model);
             }
 
             $model->setRelation($relation, null);
@@ -256,7 +256,7 @@ abstract class OneRelation extends Relation implements RelationInterface
             // with the first key being the model we need, and the other being
             // the related model so we'll just take the first model out of the array.
             if (is_array($model)) {
-                $model = reset($model);
+                $model = end($model);
             }
 
             if (!is_null($value = $model->{$this->otherKey})) {

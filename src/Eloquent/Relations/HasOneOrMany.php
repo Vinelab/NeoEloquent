@@ -66,7 +66,7 @@ abstract class HasOneOrMany extends Relation implements RelationInterface
             // with the first key being the model we need, and the other being
             // the related model so we'll just take the first model out of the array.
             if (is_array($model)) {
-                $model = reset($model);
+                $model = end($model);
             }
             // } else if ($model instanceof Relationship) {
             //     $model = $model->getEndModel();
